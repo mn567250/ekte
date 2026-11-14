@@ -1,0 +1,16 @@
+{
+ "strings": {
+  "1 monitor matches these filters.": "1 monitor samsvarer med disse filtrene.",
+  "{n} monitors match these filters.": "{n} monitorer samsvarer med disse filtrene.",
+  "No monitors match these filters.": "Ingen monitorer samsvarer med disse filtrene.",
+  "Clear filters": "Fjern filtre",
+  "Open in History": "Åpne i historikken",
+  "{link}: {name}": "{link}: {name}",
+  "Monitors for this relay and model": "Monitorer for denne reléen og modellen",
+  "Monitors for this relay and model: {model} · {relay}": "Monitorer for denne reléen og modellen: {model} · {relay}",
+  "Monitors for these filters": "Monitorer for disse filtrene",
+  "Alerting": "Varsler",
+  "At or above its alert threshold": "På eller over varslingsterskelen",
+  "Below its alert threshold": "Under varslingsterskelen"
+ }
+}

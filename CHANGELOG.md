@@ -20,6 +20,110 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: one filter pattern, browser-cached answers and live updates on History, Analytics and Monitors ([#150](https://github.com/mn567250/ekte/issues/150))
+
+History, Analytics and Monitors now work the same way: one filter panel that
+shows only the fields that apply to the page, filters kept in the URL, every
+part of a page loaded from one cached URL, and new data shown without a
+reload. Steps [#151](https://github.com/mn567250/ekte/issues/151) to
+[#161](https://github.com/mn567250/ekte/issues/161).
+
+#### Breaking changes
+
+- **History defaults to the last 30 days** (was: all time), as Analytics
+  does; the default is defined once in `filters.js`. **All time** writes
+  `range=` (empty) into the URL (#152).
+- **Day ranges no longer end at now.** `range=7d` / `30d` / `90d` / `365d`
+  are today plus the previous N − 1 calendar days from 00:00 in the viewer's
+  time zone: answers have `"to": null`, `from` is a local midnight in `tz`,
+  and the canonical `filters` of an answer hold `range` and `tz` (#152).
+- **The widgets' own zone keys are gone.** `trend.tz`, `heat.tz` and
+  `errors.tz` are now a 400 `unknown parameter`: the shared `tz` replaced
+  them (#152, #161).
+- **`GET /api/watches` answers differently** (#158). It takes the shared
+  monitor filter keys and refuses every other key (`range` and `risk`
+  included) with a 400; each row gains `state`, `alerting`, `relay_key` and
+  `relay_label`; the live fields `running`, `queued` and `progress` are gone.
+  They are in `GET /api/jobs` (job `monitor-<id>`, `watch_id`, `status`
+  `queued` or `running`, `progress`).
+- **`groups.focus` answers `{"id", "found", ...}`**: `{"id", "found": true,
+  "key"}` for a run on the page (was `{"id", "key"}`), and
+  `{"id", "found": false, ...}` instead of `null` for one that is not (#157).
+- **Monitor links to History** use `runs.focus=<id>` and the default period
+  instead of `range=` and `#r-<id>`; the old saved Monitors filters
+  (`ekte.v2.monitors.filters`) are no longer read (#160).
+
+#### Added
+
+- **Change signal `GET /api/version`** (#151): `{"data", "live"}`, two opaque
+  tokens with an `ETag` (`304` while unchanged), under 5 ms p95 and scanning
+  no table. `data` changes with every history write from any process (a CLI
+  audit included) and with a knowledge-base change; `live` when a job or
+  monitor run is queued, starts or ends, when a monitor is created, edited or
+  records a run, and when the master key is entered or locked. `watches.db`
+  gains a `meta` table with a `data_version` counter (schema version 5).
+- **Live updates** (#156, #160, #161). Every page asks `/api/version` every
+  10 s while its tab is visible, never while it is hidden (`static/live.js`,
+  `window.EkteLive`). **Analytics** then updates its panels in place,
+  quietly, keeping focus, scroll position, open tables and sub-tabs;
+  **History** keeps its list and shows "N new runs" with **Show** (or
+  "History changed" with **Refresh**), announced once. **Monitors** reloads
+  its list only when a filter, a run or a monitor changed, and follows a
+  running monitor's progress through its event stream instead of polling
+  every 2 s. The **Audit** page's Running list does the same instead of
+  polling `/api/jobs` every 2–5 s.
+- **Day ranges from local midnight and a viewer time zone** (#152). `30d` on
+  Nov 10 is Oct 12 00:00 → now, labelled "Oct 12 – Nov 10"; the summary
+  compares it with the 30 calendar days before. The cache key and `ETag`
+  change once a day instead of every minute. `24h` stays an exact span. The
+  new shared key `tz` (IANA name, default `UTC`; unknown: 400) is added to
+  every widget request but never to a page URL, so a shared link resolves
+  in each viewer's own zone.
+- **Browser-held answers** (#153). The pages leave their answers to the
+  browser's HTTP cache, so a reload or a change of page revalidates them
+  (`304`) instead of loading them again. `GET /api/history/status` and the
+  report detail `GET /api/history/{id}` (also `?trend=1`) are now cached with
+  an `ETag` too.
+- **Filters remembered across pages** (#154). Filters chosen on one page
+  follow you to the others through the navigation when the link has no
+  filters of its own; the URL always wins, each page updates only the filters
+  it shows, and the search text stays with its page. **Keep filters across
+  pages** in the filter panel's foot (on by default) switches to separate
+  filters per page.
+- **The runs of one monitor** (#155): the run filter **Monitor**
+  (`watch=<id>`) on History, Analytics and every endpoint behind them;
+  `GET /api/filters/options` lists each monitor with its run count, and the
+  runs of a deleted monitor stay filterable as "Deleted monitor #<id>".
+  History's database schema 16 copies each run's monitor onto its row.
+- **A link to a run outside the filters shows it** (#157). The `focus`
+  answer of `GET /api/history/groups` and `/runs` says when a run exists but
+  is outside the filters (`outside`, `started_at`, `by_range_only`,
+  `excluded_by`). When only the range leaves it out, History widens the
+  range to the run's day and says so once; otherwise it offers **Show it**,
+  which clears the filters that leave it out.
+- **Monitors API** (#158). `GET /api/watches` is filtered on the server
+  (`q`, `surface`, `relay`, `model`, `suite`, `api`, `stream` plus the
+  Monitors-only `state` and `alerting`) and cached; the new
+  `GET /api/watches/options` counts monitors per value under the other
+  filters. Both answer `304` until a monitor is created, edited, deleted or
+  runs, and stay under 50 ms p95 with 200 monitors. They accept `tz` (which
+  every page request carries) and ignore it; an unknown zone is still a 400.
+- **Links between the pages, filters filled in** (#159, #160).
+  `EkteFilters.PAGES` lists the keys each page shows and
+  `EkteFilters.href(page, state, extra)` builds the links, keeping only the
+  target page's keys. Every History group has **Open in Analytics** and
+  **Monitors for this relay and model**; every monitor has **Open in
+  Analytics**, **Open in History** and **From run #n**, which open the exact
+  run even when it is older than History's period; the Analytics filter
+  panel offers **Monitors for these filters**.
+- **The Monitors page joins the pattern** (#160): the shared filter panel
+  with **Status** and **Alerting**, filters in the URL, "No monitors match
+  these filters" with **Clear filters**.
+- `scripts/bench_fixture.py` writes 200 monitors (`--monitors`; `--watches`
+  still works), and the budget tests cover `/api/version`, the Monitors
+  endpoints, History's status and report detail, `watch=` and the day
+  ranges. Every case stays under its budget on the 20k-run fixture.
+
 ### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
 
 A monitor can have a run window, for example Mon–Fri, 07:00–19:00,

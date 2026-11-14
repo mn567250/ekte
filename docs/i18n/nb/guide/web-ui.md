@@ -154,7 +154,27 @@ der nettleseren ikke tillater det): å åpne lenken viser akkurat den visningen.
 Filterpanelet er det samme på **Historikk**, **Overvåking** og **Analyse**:
 lukket viser det hvor mange filtre som er aktive, og navngir dem på én linje
 (f.eks. «Siste 30 dager · standard · Strømming · Example Relay»), så en delt
-visning sier hva den viser.
+visning sier hva den viser. **Historikk** og **Analyse** starter på de siste 30
+dagene: i dag og de 29 dagene før, fra midnatt i din tidssone (**Hele
+perioden** viser alle kjøringer). En delt lenke beholder perioden, ikke
+datoene: hver mottaker ser den i sin egen tidssone.
+
+**Filtre på tvers av sider, direkte oppdatering og lenker.** Filtrene du
+velger, huskes mellom **Historikk**, **Analyse** og **Overvåking**: en relé
+valgt på én side er allerede valgt på den neste, og filtre som bare én side
+har (som risikoen i Historikk), beholder den siden for seg selv. Slå av
+**Behold filtre på tvers av sider** nederst i filterpanelet for å gi hver side
+egne filtre. Filtrene i en lenke går alltid foran de huskede. En åpen side
+merker nye data selv: så lenge fanen er synlig, spør den hvert 10. sekund om
+noe er endret (en skjult fane spør ikke). **Analyse** oppdateres da på stedet,
+stille; **Historikk** beholder listen sin og viser «1 ny kjøring» (eller «N
+nye kjøringer») med **Vis**, eller «Historikken er endret» med **Oppdater**;
+**Overvåking** følger fremdriften til en monitor som kjører, direkte. Sidene
+lenker til hverandre med filtrene fylt ut: **Åpne i Analyse** på hver gruppe i
+Historikk og hver monitor, **Åpne i historikken** og **Fra kjøring #n** på en
+monitor (begge åpner akkurat den kjøringen, også når den er eldre enn perioden
+Historikk viser), **Monitorer for denne reléen og modellen** på en gruppe i
+Historikk og **Monitorer for disse filtrene** i filterpanelet i Analyse.
 
 **Suksess-, feil-, 429- og svekkelsesandel.** Hver forespørsel ekte sender til reléet i løpet av en kjøring, har nøyaktig ett utfall: suksess, reléfeil (tidsavbrudd mens den venter på reléet, et 5xx- eller 4xx-svar eller et annet ødelagt svar), ratebegrensning (HTTP 429) eller en feil som aldri nådde reléet (nettet mellom deg og reléet, eller ekte selv). Gjentatte forsøk teller én gang. Reléet vurderes bare på forespørslene som nådde det: **suksessandel**, **feilandel** og **429-andel** er suksesser, reléfeil og ratebegrensninger delt på disse forespørslene, og blir alltid 100 % til sammen. **Svekket andel** er delen av alle forespørsler som feilet før reléet: den sier hvor mye man kan stole på selve kjøringen, ikke hvor godt reléet er; er den høy, kjør revisjonen på nytt. Over flere kjøringer slås andelene sammen (alle forespørsler samlet), så én dårlig kjøring blant mange gode fortsatt synes (ni kjøringer på 0 % og én på 40 % gir rundt 4 %, ikke 0 %); poeng, ventetider, hastigheter og faktureringsforhold er medianen av kjøringene. Historikk, Analyse og rapporten viser de samme tallene for de samme kjøringene, og én enkelt kjøring viser nøyaktig verdiene i sin rapport. Pålitelighetssjekken i rapporten har en egen andel («Suksessandel for pålitelighetssjekken»), som bare teller i poengsummen.
 

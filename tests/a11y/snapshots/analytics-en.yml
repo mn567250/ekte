@@ -92,6 +92,10 @@
       - option "All" [selected]
       - option "Manual (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "All" [selected]
+      - option "gpt-4o (4)"
     - text: Group by
     - combobox "Group by":
       - option "Relay" [selected]
@@ -99,6 +103,8 @@
       - option "Relay × model"
       - option "All"
     - text: 15 runs match these filters.
+    - checkbox "Keep filters across pages" [checked]
+    - text: Keep filters across pages
     - status
     - button "Copy link to this view"
   - tablist "Analytics views":
@@ -113,7 +119,7 @@
       - tab "Leaderboard"
     - tabpanel "Key figures":
       - heading "Key figures" [level=2]
-      - paragraph: Sep 1 – Oct 1, 2026, compared with the period of the same length before (Aug 2 – Sep 1, 2026).
+      - paragraph: Sep 2 – Oct 1, 2026, compared with the period of the same length before (Aug 3 – Sep 1, 2026).
       - list "Key figures":
         - listitem: Runs 15 rising +15
         - listitem: Relays 3 rising +3

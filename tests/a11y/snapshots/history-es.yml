@@ -101,10 +101,10 @@
     - spinbutton "Puntuación mín."
     - text: Periodo
     - combobox "Periodo":
-      - option "Todo el periodo" [selected]
+      - option "Todo el periodo"
       - option "Últimas 24 horas"
       - option "Últimos 7 días"
-      - option "Últimos 30 días"
+      - option "Últimos 30 días" [selected]
       - option "Últimos 90 días"
       - option "Últimos 365 días"
       - option "Periodo personalizado"
@@ -113,6 +113,10 @@
       - option "Todos" [selected]
       - option "Manual (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "Todos" [selected]
+      - option "gpt-4o (4)"
     - group "Tendencias":
       - text: Tendencias 2 de un máximo de 2 seleccionados
       - button "Puntuación" [pressed]
@@ -122,6 +126,8 @@
       - button "Velocidad de decodificación p50" [disabled]
       - button "Tasa de errores" [disabled]
     - text: Mostrando 15 de 15 auditorías
+    - checkbox "Mantener los filtros entre páginas" [checked]
+    - text: Mantener los filtros entre páginas
     - status
     - button "Copiar el enlace a esta vista"
   - status
@@ -134,7 +140,14 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay Example Relay Puntuación
+    - text: Relay Example Relay
+    - 'link "Abrir en Analítica: model-a · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: Abrir en Analítica
+    - 'link "Monitores de este relay y modelo: model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Monitores de este relay y modelo
+    - text: Puntuación
     - 'img "Tendencia de Puntuación en 7 auditorías: de 70 a 82, al alza."'
     - text: 82 Latencia p50
     - 'img "Tendencia de Latencia p50 en 7 auditorías: de <duration> a <duration>, a la baja."'
@@ -178,7 +191,14 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Puntuación
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "Abrir en Analítica: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: Abrir en Analítica
+    - 'link "Monitores de este relay y modelo: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Monitores de este relay y modelo
+    - text: Puntuación
     - 'img "Tendencia de Puntuación en 4 auditorías: de 58 a 64, al alza."'
     - text: 64 Latencia p50
     - 'img "Tendencia de Latencia p50 en 4 auditorías: de <duration> a <duration>, a la baja."'
@@ -207,7 +227,14 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay Example Relay Puntuación
+    - text: Relay Example Relay
+    - 'link "Abrir en Analítica: model-b · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: Abrir en Analítica
+    - 'link "Monitores de este relay y modelo: model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Monitores de este relay y modelo
+    - text: Puntuación
     - 'img "Tendencia de Puntuación en 2 auditorías: de 89 a 91, al alza."'
     - text: 91 Latencia p50
     - 'img "Tendencia de Latencia p50 en 2 auditorías: de <duration> a <duration>, a la baja."'
@@ -226,7 +253,14 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Puntuación 72 Latencia p50 <duration>
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "Abrir en Analítica: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: Abrir en Analítica
+    - 'link "Monitores de este relay y modelo: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Monitores de este relay y modelo
+    - text: Puntuación 72 Latencia p50 <duration>
     - list:
       - listitem:
         - button "27 sept 2026, 10:02 Mayormente fiable Puntuación 72 Nota D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -307,7 +341,14 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: Relay 127.0.0.1:9099 Puntuación 53 Latencia p50 sin datos
+    - text: Relay 127.0.0.1:9099
+    - 'link "Abrir en Analítica: gpt-4o · 127.0.0.1:9099"':
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: Abrir en Analítica
+    - 'link "Monitores de este relay y modelo: gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Monitores de este relay y modelo
+    - text: Puntuación 53 Latencia p50 sin datos
     - list:
       - listitem:
         - button "27 sept 2026, 7:47 Gato por liebre Puntuación 53 Nota F check · standard"
@@ -318,7 +359,7 @@
           - text: ¿Eliminar esta entrada del historial?
           - button "Eliminar"
           - button "Cancelar"
-  - text: "Auditorías guardadas: 15"
+  - text: Mostrando 15 de 15 auditorías
   - button "Borrar historial"
   - status
 - contentinfo:

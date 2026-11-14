@@ -101,10 +101,10 @@
     - spinbutton "Score min."
     - text: Période
     - combobox "Période":
-      - option "Toute la période" [selected]
+      - option "Toute la période"
       - option "Dernières 24 heures"
       - option "7 derniers jours"
-      - option "30 derniers jours"
+      - option "30 derniers jours" [selected]
       - option "90 derniers jours"
       - option "365 derniers jours"
       - option "Période personnalisée"
@@ -113,6 +113,10 @@
       - option "Tous" [selected]
       - option "Manuel (11)"
       - option "Surveillance (4)"
+    - text: Surveillance
+    - combobox "Surveillance":
+      - option "Tous" [selected]
+      - option "gpt-4o (4)"
     - group "Tendances":
       - text: Tendances 2 sélectionné(s) sur 2 au maximum
       - button "Score" [pressed]
@@ -122,6 +126,8 @@
       - button "Vitesse de décodage p50" [disabled]
       - button "Taux d'erreur" [disabled]
     - text: 15 audits affichés sur 15
+    - checkbox "Conserver les filtres d’une page à l’autre" [checked]
+    - text: Conserver les filtres d’une page à l’autre
     - status
     - button "Copier le lien vers cette vue"
   - status
@@ -134,7 +140,14 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relais Example Relay Score
+    - text: Relais Example Relay
+    - 'link "Ouvrir dans Analyses : model-a · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Moniteurs de ce relais et de ce modèle
+    - text: Score
     - 'img "Tendance Score sur 7 audits : de 70 à 82, en hausse."'
     - text: 82 Latence p50
     - 'img "Tendance Latence p50 sur 7 audits : de <duration> à <duration>, en baisse."'
@@ -178,7 +191,14 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relais gateway.a-very-long-relay-hostname.example.org Score
+    - text: Relais gateway.a-very-long-relay-hostname.example.org
+    - 'link "Ouvrir dans Analyses : model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Moniteurs de ce relais et de ce modèle
+    - text: Score
     - 'img "Tendance Score sur 4 audits : de 58 à 64, en hausse."'
     - text: 64 Latence p50
     - 'img "Tendance Latence p50 sur 4 audits : de <duration> à <duration>, en baisse."'
@@ -207,7 +227,14 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relais Example Relay Score
+    - text: Relais Example Relay
+    - 'link "Ouvrir dans Analyses : model-b · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Moniteurs de ce relais et de ce modèle
+    - text: Score
     - 'img "Tendance Score sur 2 audits : de 89 à 91, en hausse."'
     - text: 91 Latence p50
     - 'img "Tendance Latence p50 sur 2 audits : de <duration> à <duration>, en baisse."'
@@ -226,7 +253,14 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relais gateway.a-very-long-relay-hostname.example.org Score 72 Latence p50 <duration>
+    - text: Relais gateway.a-very-long-relay-hostname.example.org
+    - 'link "Ouvrir dans Analyses : model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Moniteurs de ce relais et de ce modèle
+    - text: Score 72 Latence p50 <duration>
     - list:
       - listitem:
         - button "27 sept. 2026, 10:02 Globalement fiable Score 72 Note D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -307,7 +341,14 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: Relais 127.0.0.1:9099 Score 53 Latence p50 aucune donnée
+    - text: Relais 127.0.0.1:9099
+    - 'link "Ouvrir dans Analyses : gpt-4o · 127.0.0.1:9099"':
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Moniteurs de ce relais et de ce modèle
+    - text: Score 53 Latence p50 aucune donnée
     - list:
       - listitem:
         - button "27 sept. 2026, 07:47 Tromperie sur la marchandise Score 53 Note F check · standard"
@@ -318,7 +359,7 @@
           - text: Supprimer cette entrée de l'historique ?
           - button "Supprimer"
           - button "Annuler"
-  - text: "Audits enregistrés : 15"
+  - text: 15 audits affichés sur 15
   - button "Effacer l'historique"
   - status
 - contentinfo:

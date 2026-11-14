@@ -1,0 +1,13 @@
+{
+ "strings": {
+  "1 new run": "1 次新检测",
+  "{n} new runs": "{n} 次新检测",
+  "History changed": "检测历史已变化",
+  "Saved since this list was loaded.": "在此列表加载之后保存。",
+  "Runs were changed or deleted since this list was loaded.": "此列表加载之后有检测被更改或删除。",
+  "Show": "显示",
+  "Refresh": "刷新",
+  "Use the Show button above the list.": "用列表上方的“显示”按钮查看。",
+  "Use the Refresh button above the list.": "用列表上方的“刷新”按钮重新加载。"
+ }
+}

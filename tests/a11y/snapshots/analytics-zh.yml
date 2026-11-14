@@ -92,6 +92,10 @@
       - option "全部" [selected]
       - option "手动 (11)"
       - option "监控 (4)"
+    - text: 监控
+    - combobox "监控":
+      - option "全部" [selected]
+      - option "gpt-4o (4)"
     - text: 分组
     - combobox "分组":
       - option "中转站" [selected]
@@ -99,6 +103,8 @@
       - option "中转站 × 模型"
       - option "全部"
     - text: 15 次检测符合筛选条件。
+    - checkbox "在页面间保留筛选" [checked]
+    - text: 在页面间保留筛选
     - status
     - button "复制此视图的链接"
   - tablist "分析视图":
@@ -113,7 +119,7 @@
       - tab "排行榜"
     - tabpanel "关键指标":
       - heading "关键指标" [level=2]
-      - paragraph: 2026/9/1 – 2026/10/1，与之前同样长度的一段时间（2026/8/2 – 2026/9/1）对比。
+      - paragraph: 2026/9/2 – 2026/10/1，与之前同样长度的一段时间（2026/8/3 – 2026/9/1）对比。
       - list "关键指标":
         - listitem: 检测次数 15 上升 +15
         - listitem: 中转站 3 上升 +3

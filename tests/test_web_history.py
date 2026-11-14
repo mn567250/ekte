@@ -276,6 +276,33 @@ def test_status_sums_up_the_history_for_the_page_notices(data):
     assert history.status()["pending"] == 1
 
 
+def test_status_reads_the_reused_connection_and_sees_other_writers(data, monkeypatch):
+    """status() opens no connection of its own (the reused read connection
+    keeps its page cache warm), yet a write committed through any other
+    connection shows at once."""
+    import threading
+
+    first = history.save(_report(0, None))
+    assert history.status()["runs"] == 1  # opens this thread's read connection
+    # a save on another thread, i.e. through another connection
+    saved: list[int] = []
+    worker = threading.Thread(target=lambda: saved.append(history.save(_report(1, None))))
+    worker.start()
+    worker.join()
+
+    def no_new_connection():
+        raise AssertionError("status() must not open a connection")
+
+    monkeypatch.setattr(history, "_connect", no_new_connection)
+    s = history.status()
+    assert s["runs"] == 2 and s["latest"]["id"] == saved[0]
+    # a delete through a plain sqlite3 connection (as another process would)
+    with sqlite3.connect(data / "history.db") as conn:
+        conn.execute("DELETE FROM history WHERE id = ?", (saved[0],))
+    s = history.status()
+    assert s["runs"] == 1 and s["latest"]["id"] == first
+
+
 def test_status_endpoint_is_not_taken_for_a_report_id(data):
     from fastapi.testclient import TestClient
 

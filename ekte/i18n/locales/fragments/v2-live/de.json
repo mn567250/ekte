@@ -1,0 +1,13 @@
+{
+ "strings": {
+  "1 new run": "1 neuer Lauf",
+  "{n} new runs": "{n} neue Läufe",
+  "History changed": "Verlauf geändert",
+  "Saved since this list was loaded.": "Gespeichert, seit diese Liste geladen wurde.",
+  "Runs were changed or deleted since this list was loaded.": "Läufe wurden geändert oder gelöscht, seit diese Liste geladen wurde.",
+  "Show": "Anzeigen",
+  "Refresh": "Aktualisieren",
+  "Use the Show button above the list.": "Mit der Schaltfläche „Anzeigen“ über der Liste.",
+  "Use the Refresh button above the list.": "Mit der Schaltfläche „Aktualisieren“ über der Liste."
+ }
+}

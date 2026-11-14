@@ -26,9 +26,11 @@
  *   opts.fields      FIELDS keys the page shows, e.g. ["range", "relay", "q"]
  *   opts.defaults    { key: value } page defaults, shared ("range": "30d")
  *                    and widget keys ("trend.metric": "score")
- *   opts.page        names the localStorage fallback (the last filters used
- *                    on this page, applied only when the URL has no filter
- *                    key) and the panel's remembered open state
+ *   opts.page        names the localStorage fallback (the last filters,
+ *                    shared across pages or this page's own, see
+ *                    "remembered filters"; applied only when the URL has no
+ *                    filter key) and the panel's remembered open state;
+ *                    with it the foot shows "Keep filters across pages"
  *   opts.onChange(state, changed)  after every change (changed: the keys)
  *   opts.optionsUrl  option lists, default "/api/filters/options"; false: none
  *   opts.foot        HTML at the start of the panel's foot ("Showing 3 of 9"),
@@ -41,8 +43,13 @@
  *   state()          { key: value } every declared, widget and view key with
  *                    its effective value (relay / model: arrays)
  *   widgetParams(ns) the query string for a widget: the shared filters plus
- *                    the ns.* keys (ns: a name, a list, or none)
- *   set(patch)       { key: value | null } (null: back to the default)
+ *                    the ns.* keys (ns: a name, a list, or none), and tz:
+ *                    the viewer's time zone, which resolves day ranges and
+ *                    buckets times; it is never in state() or url(), so a
+ *                    shared link resolves in each viewer's own zone
+ *   set(patch, how)  { key: value | null } (null: back to the default); how:
+ *                    { render, quiet (no announcement), remember: false (a
+ *                    change the page made, not the viewer: not stored) }
  *   reset()          every filter back to its default (widget keys stay)
  *   load(widgets)    { ns: { url, done(data), fail(err) } }: fetches them all
  *                    at once with widgetParams(ns); a newer load (and every
@@ -52,18 +59,23 @@
  *   url()            the link to this view; copyLink() puts it on the clipboard
  *   render(), setOptions(options), panel (the EkteFilterPanel)
  * EkteFilters.state() / .widgetParams(ns): the same on the page's instance.
- * EkteFilters.fetchWidget(url, { signal }) -> Promise of the JSON: sends
- *   If-None-Match with the ETag last seen for that URL (kept in memory) and
- *   answers a 304 from that copy; an error status rejects with an Error that
- *   has .status and the server's message.
+ * EkteFilters.fetchWidget(url, { signal }) -> Promise of the JSON: a plain
+ *   fetch on the browser's HTTP cache (the server's ETag + no-cache make the
+ *   browser revalidate; a 304 arrives as a 200 with the stored body); an error
+ *   status rejects with an Error that has .status and the server's message.
  * EkteFilters.keyed(key, labels): the text of an i18n key ("metric.score"),
  *   falling back to labels[key] (GET /api/metrics `labels`), then the key.
  * Pure helpers (tested under node): parse, serialise, params, initial,
- *   loader, FIELDS.
+ *   remember, scope, setScope (storage injectable), loader, viewerZone,
+ *   FIELDS.
+ * EkteFilters.PAGES: the filter keys each page shows; EkteFilters.href(page,
+ *   state, extra) -> "/<path>?<query>", a link to that page with only its keys.
  *
  * /api/filters/options (issue 123) is read as { "<key>": [{ value, label?, runs? }] }
+ * (/api/watches/options: monitors? in place of runs?)
  * for the keys of FIELDS ("-" is "(unknown)"), requested with the shared
- * filters; a key it does not list keeps its fixed options.
+ * filters; a key it does not list keeps its fixed options. A watch option
+ * with deleted: true is a monitor that no longer exists ("Deleted monitor #<id>").
  */
 (function () {
   "use strict";
@@ -80,7 +92,8 @@
     relay: ["中转站 / 厂商", "Relay / provider"], model: ["声称模型", "Claimed model"], suite: ["套件", "Suite"],
     mode: ["模式", "Mode"], api: ["协议", "Protocol"], stream: ["探测请求", "Probe requests"],
     detect: ["协议识别", "Protocol detection"], risk: ["风险", "Risk"], min_score: ["最低健康分", "Min. score"],
-    exec: ["执行方式", "Execution"], group: ["分组", "Group by"],
+    exec: ["执行方式", "Execution"], watch: ["监控", "Monitor"], group: ["分组", "Group by"],
+    state: ["状态", "Status"], alerting: ["告警", "Alerting"],
     from: ["开始日期", "Start date"], to: ["结束日期", "End date"],
   };
   var V = {
@@ -92,15 +105,20 @@
     detect: { auto: ["自动识别", "auto-detected"], manual: ["手动指定", "set manually"] },
     exec: { manual: ["手动", "Manual"], monitor: ["监控", "Monitor"] },
     group: { relay: ["中转站", "Relay"], model: ["模型", "Model"], relay_model: ["中转站 × 模型", "Relay × model"], all: ["全部", "All"] },
+    state: { active: ["启用中", "Enabled"], paused: ["已暂停", "Paused"], draft: ["待设置", "Needs setup"] },
+    alerting: { yes: ["达到告警阈值", "At or above its alert threshold"], no: ["低于告警阈值", "Below its alert threshold"] },
   };
 
   /* The URL schema of ekte/web/query.py, in the order fields are shown and
    * keys are written. kind: text | range | select | multi | number;
    * values: the fixed choices (null: free, listed by the options endpoint);
-   * unknown: "-" ("(unknown)") is a valid value; def: the schema default. */
+   * unknown: "-" ("(unknown)") is a valid value; pattern: what a free value
+   * must look like (watch: a monitor id); def: the schema default
+   * (range: the last 30 days on every page; "range=" is all time);
+   * page: always remembered per page, never shared ("remembered filters"). */
   var FIELDS = {
-    q: { kind: "text", def: "" },
-    range: { kind: "range", def: "", values: RANGES },
+    q: { kind: "text", def: "", page: true },
+    range: { kind: "range", def: "30d", values: RANGES },
     surface: { kind: "select", def: "", values: ["chat", "embedding", "rerank"] },
     relay: { kind: "multi", def: [], values: null, unknown: true },
     model: { kind: "multi", def: [], values: null, unknown: true },
@@ -112,7 +130,11 @@
     risk: { kind: "select", def: "", values: ["clean", "low", "medium", "high", "inconclusive"] },
     min_score: { kind: "number", def: "" },
     exec: { kind: "select", def: "", values: ["manual", "monitor"] },
+    watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,18}$/ },
     group: { kind: "select", def: "relay", values: ["relay", "model", "relay_model", "all"], required: true },
+    // Monitors only (ekte/web/watches_api.py): the server decides both per monitor
+    state: { kind: "select", def: "", values: ["active", "paused", "draft"], page: true },
+    alerting: { kind: "select", def: "", values: ["yes", "no"], page: true },
   };
   var ORDER = Object.keys(FIELDS);
 
@@ -160,6 +182,7 @@
     }
     if (f.kind === "text" || f.kind === "multi") return v;
     if (v === UNKNOWN) return f.unknown ? v : undefined;
+    if (f.pattern && !f.pattern.test(v)) return undefined;
     return !f.values || f.values.indexOf(v) >= 0 ? v : undefined;
   }
 
@@ -187,6 +210,9 @@
       }
     });
     if (out.range) { delete out.from; delete out.to; }
+    // from / to without range: a custom range (as written before range had a
+    // non-empty default), not the default range over the dates
+    else if ((out.from || out.to) && !("range" in out)) out.range = "";
     // "group=" means the default: the server requires a value
     if (out.group === "") delete out.group;
     return out;
@@ -219,10 +245,16 @@
     return q.toString();
   }
 
+  // The viewer's time zone (IANA name), "UTC" when the browser names none.
+  function viewerZone() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) { return "UTC"; }
+  }
+
   /* The query string a widget sends to its endpoint: the shared filters with
-   * a value, then the keys of the widget's namespace(s), sorted. Empty values
-   * are left out (the server reads them as not given). */
-  function params(state, fields, ns) {
+   * a value, then the keys of the widget's namespace(s), sorted, then tz
+   * (given: the viewer's zone, see widgetParams). Empty values are left out
+   * (the server reads them as not given). */
+  function params(state, fields, ns, tz) {
     var own = keysOf(fields || ORDER), q = new URLSearchParams();
     var spaces = ns == null ? [] : [].concat(ns);
     var pick = function (k) {
@@ -234,13 +266,95 @@
     extraKeys(state, own).forEach(function (k) {
       if (spaces.some(function (n) { return k.indexOf(n + ".") === 0; })) pick(k);
     });
+    if (tz) q.append("tz", tz);
     return q.toString();
   }
 
+  /* ---------------- remembered filters ----------------
+   * Two memories in localStorage, used only when the URL has no filter key of
+   * the page (the URL always wins):
+   *   ekte.v2.filters.<page>   the page's last filters, a query string (all of
+   *                            its keys, written in both modes)
+   *   ekte.v2.filters.shared   JSON { key: value } of the shared keys pages
+   *                            last showed, as shown (a page's defaults
+   *                            differ: "all time" stays "all time"); each page
+   *                            merges in only the keys it shows, the others
+   *                            stay untouched
+   * ekte.v2.filters.scope ("shared", the default, or "page") picks the memory.
+   * Keys flagged page: true in FIELDS (q) always come from the page's own
+   * memory. Shared mode with no shared memory yet reads the page's own (as
+   * before the toggle existed). Every access is wrapped in try/catch. */
+  var SCOPE_KEY = "ekte.v2.filters.scope", SHARED_KEY = "ekte.v2.filters.shared";
+
   function storeKey(page) { return "ekte.v2.filters." + page; }
+  function storeOf(storage) {
+    if (storage !== undefined) return storage;
+    try { return window.localStorage; } catch (e) { return null; }
+  }
+  function getItem(store, k) {
+    try { return store ? store.getItem(k) : null; } catch (e) { return null; }
+  }
+  function setItem(store, k, v) {
+    try { if (store) store.setItem(k, v); } catch (e) { /* ignore */ }
+  }
+  function isPageKey(k) { return !!(FIELDS[k] && FIELDS[k].page); }
+  // the keys a page writes to the shared memory (from / to with range)
+  function sharedKeys(fields) { return keysOf(fields).filter(function (k) { return !isPageKey(k); }); }
+
+  // "shared" (default) or "page"
+  function scope(storage) {
+    return getItem(storeOf(storage), SCOPE_KEY) === "page" ? "page" : "shared";
+  }
+  // the shared memory as an object, or null (none yet, or unreadable)
+  function readShared(store) {
+    var raw = getItem(store, SHARED_KEY);
+    if (!raw) return null;
+    try {
+      var v = JSON.parse(raw);
+      return v && typeof v === "object" && !isArr(v) ? v : null;
+    } catch (e) { return null; }
+  }
+  // a { key: value } object as a query string, for parse() to validate
+  function toSearch(obj, keys) {
+    var q = new URLSearchParams();
+    keys.forEach(function (k) { if (Object.prototype.hasOwnProperty.call(obj, k)) append(q, k, obj[k]); });
+    return q.toString();
+  }
+
+  /* Merges the page's shown shared keys into the shared memory, with their
+   * values as shown; keys the page does not show stay. */
+  function share(state, fields, storage) {
+    var store = storeOf(storage), mem = readShared(store) || {};
+    sharedKeys(fields).forEach(function (k) { if (k in state) mem[k] = copy(state[k]); });
+    setItem(store, SHARED_KEY, JSON.stringify(mem));
+  }
+
+  /* Sets the per-viewer preference ("shared" | "page"). Turning sharing on
+   * merges the current view's shared keys (o: { state, fields }) into the
+   * shared memory and leaves the view as it is; turning it off copies
+   * nothing. */
+  function setScope(value, storage, o) {
+    var store = storeOf(storage), v = value === "page" ? "page" : "shared";
+    setItem(store, SCOPE_KEY, v);
+    if (v === "shared" && o && o.state) share(o.state, o.fields || [], store);
+    return v;
+  }
+
+  /* The remembered filters of a page: { key: value } of its keys found in
+   * memory (validated like a URL), empty when there are none. */
+  function recall(o) {
+    var fields = o.fields, store = storeOf(o.storage);
+    var saved = getItem(store, storeKey(o.page));
+    var mine = saved ? parse(saved, fields, []) : {};
+    var shared = scope(store) === "shared" ? readShared(store) : null;
+    if (!shared) return mine;
+    var out = parse(toSearch(shared, sharedKeys(fields)), fields, []);
+    keysOf(fields).forEach(function (k) { if (isPageKey(k) && k in mine) out[k] = mine[k]; });
+    return out;
+  }
 
   /* The state to start from: the URL's, else (no filter key in it) the
-   * filters last used on this page (storage may be missing or throw), each
+   * remembered filters (see above; storage may be missing or throw), each
    * over the defaults. source: "url" | "storage" | "defaults". */
   function initial(search, o) {
     var fields = o.fields, defaults = o.defaults || {}, own = keysOf(fields);
@@ -249,15 +363,11 @@
     var start = fromUrl;
     if (source === "defaults" && o.page) {
       try {
-        var store = o.storage !== undefined ? o.storage : window.localStorage;
-        var saved = store && store.getItem(storeKey(o.page));
-        if (saved) {
-          var fromStore = parse(saved, fields, []);
-          if (own.some(function (k) { return k in fromStore; })) {
-            source = "storage";
-            // the URL's widget and view keys stay
-            start = Object.assign({}, fromUrl, fromStore);
-          }
+        var fromStore = recall(o);
+        if (own.some(function (k) { return k in fromStore; })) {
+          source = "storage";
+          // the URL's widget and view keys stay
+          start = Object.assign({}, fromUrl, fromStore);
         }
       } catch (e) { /* storage unavailable: the defaults */ }
     }
@@ -269,30 +379,78 @@
     return { state: state, source: source };
   }
 
+  /* After a filter change: the page's own memory always, and in shared mode
+   * the shared memory too (merged, see share). */
   function remember(page, state, fields, defaults, storage) {
     if (!page) return;
-    var own = keysOf(fields), shared = {};
-    own.forEach(function (k) { shared[k] = state[k]; });
-    try {
-      var store = storage !== undefined ? storage : window.localStorage;
-      if (store) store.setItem(storeKey(page), serialise(shared, defaults, fields));
-    } catch (e) { /* ignore */ }
+    var mine = {}, store = storeOf(storage);
+    keysOf(fields).forEach(function (k) { mine[k] = state[k]; });
+    // (setItem / getItem swallow storage errors)
+    setItem(store, storeKey(page), serialise(mine, defaults, fields));
+    if (scope(store) === "shared") share(state, fields, store);
+  }
+
+  /* ---------------- pages and links between them ---------------- */
+  /* The filter keys each page shows (umbrella issue 150, design D), in the
+   * order its panel shows them: a page creates its panel with fields:
+   * PAGES[page], href() keeps exactly these keys in a link to it (range
+   * brings from / to). */
+  var PAGES = {
+    history: ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec", "watch"],
+    analytics: ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
+    watches: ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"],
+  };
+  var PATHS = { history: "/history", analytics: "/analytics", watches: "/watches" };
+
+  /* A link to another page with the filters of `state` that it shows:
+   * "/<path>?<query>". Keys the target does not show are dropped (the target
+   * would drop them anyway: a filter never applies without its field on
+   * screen), and so are the source's widget and view keys and tz (each viewer
+   * resolves ranges in their own zone). `range` is written
+   * whenever the source has one, also "range=" (all time), so the target's
+   * default range never applies by accident; from / to go along with a
+   * custom range. extra: { key: value } — filter keys of the target replace
+   * the state's (a group's relay), other keys (tab, runs.focus) are appended
+   * as given; null / undefined values are left out. Values are validated as
+   * in parse(); relay / model may be arrays (one key each value). */
+  function href(page, state, extra) {
+    var fields = PAGES[page];
+    if (!fields) throw new Error("EkteFilters: unknown page " + page);
+    var own = keysOf(fields), st = Object.assign({}, state || {}), rest = [];
+    extra = extra || {};
+    Object.keys(extra).forEach(function (k) {
+      if (extra[k] == null || k === "tz") return;
+      if (own.indexOf(k) >= 0) st[k] = extra[k];
+      else if (!FIELDS[k] && k !== "from" && k !== "to") rest.push(k);
+    });
+    var custom = "range" in st && !st.range;
+    var q = new URLSearchParams();
+    own.forEach(function (k) {
+      var v = st[k];
+      if (v == null || ((k === "from" || k === "to") && !custom)) return;
+      var multi = FIELDS[k] && FIELDS[k].kind === "multi";
+      var vals = [].concat(v).map(function (x) { return clean(k, x); })
+        .filter(function (x) { return x !== undefined; });
+      // all time (or a custom range): "range=", never the target's default
+      if (k === "range") { if (vals.length) q.append(k, vals[0]); return; }
+      vals = vals.filter(function (x) { return x !== ""; });
+      (multi ? vals : vals.slice(0, 1)).forEach(function (x) { q.append(k, x); });
+    });
+    rest.sort().forEach(function (k) { append(q, k, extra[k]); });
+    var qs = q.toString();
+    return PATHS[page] + (qs ? "?" + qs : "");
   }
 
   /* ---------------- fetching ---------------- */
-  var etags = new Map(); // url -> { etag, data }, newest last
-  var MAX_ETAGS = 200;
-
+  /* A plain fetch in the default cache mode: the server answers with an ETag
+   * and Cache-Control: no-cache, so the browser's HTTP cache keeps the answer
+   * (across reloads and pages) and revalidates it on every use; a 304 reaches
+   * the page as a 200 with the stored body. No copy is kept here. */
   function fetchWidget(url, o) {
     o = o || {};
-    var hit = etags.get(url), headers = { Accept: "application/json" };
-    if (hit) headers["If-None-Match"] = hit.etag;
-    return fetch(url, { signal: o.signal, headers: headers, credentials: "same-origin" }).then(function (r) {
-      if (r.status === 304 && hit) {
-        etags.delete(url);
-        etags.set(url, hit);
-        return hit.data;
-      }
+    return fetch(url, {
+      signal: o.signal, credentials: "same-origin", headers: { Accept: "application/json" },
+    }).then(function (r) {
       if (!r.ok) {
         return r.json().catch(function () { return {}; }).then(function (body) {
           var err = new Error((body && body.error) || "HTTP " + r.status);
@@ -300,15 +458,7 @@
           throw err;
         });
       }
-      return r.json().then(function (data) {
-        var tag = r.headers && r.headers.get ? r.headers.get("ETag") : null;
-        etags.delete(url);
-        if (tag) {
-          etags.set(url, { etag: tag, data: data });
-          if (etags.size > MAX_ETAGS) etags.delete(etags.keys().next().value);
-        }
-        return data;
-      });
+      return r.json();
     });
   }
 
@@ -362,7 +512,11 @@
     if (key === "risk") return window.EKTE_I18N && EKTE_I18N.label ? EKTE_I18N.label("RISK_LEVEL", v) : v;
     if (V[key] && V[key][v]) return tr(V[key][v]);
     var o = opts && opts[key];
-    if (o) for (var i = 0; i < o.length; i++) if (o[i].value === v && o[i].label) return o[i].label;
+    if (o) for (var i = 0; i < o.length; i++) if (o[i].value === v && o[i].label) {
+      // a monitor that no longer exists (watch): the server's English label, translated here
+      if (o[i].deleted) return Tf("已删除的监控 #{id}", "Deleted monitor #{id}", { id: v });
+      return o[i].label;
+    }
     return v;
   }
   function num(n) { return window.EKTE_LANG && EKTE_LANG.numFmt ? EKTE_LANG.numFmt().format(n) : String(n); }
@@ -377,6 +531,8 @@
     o = o || {};
     var fields = (o.fields || []).slice();
     fields.forEach(function (k) { if (!FIELDS[k]) throw new Error("EkteFilters: unknown filter key " + k); });
+    // the fixed keys beside ekte.v2.filters.<page>
+    if (o.page === "shared" || o.page === "scope") throw new Error("EkteFilters: page name " + o.page + " is reserved");
     var defaults = Object.assign({}, o.defaults || {});
     var viewKeys = o.viewKeys || ["tab"];
     var own = keysOf(fields);
@@ -413,7 +569,9 @@
     function rangeText() {
       if (st.range || !(st.from || st.to)) return tr(V.range[st.range] || [st.range, st.range]);
       var to = DAY.test(st.to) ? shiftDay(st.to, -1) : st.to;
-      return (st.from || "…") + " – " + (to || "…");
+      // a local midnight with its offset (History's widened range, issue 157) reads as its day
+      var from = /^\d{4}-\d{2}-\d{2}T00:00(?::00)?[+-]/.test(st.from) ? st.from.slice(0, 10) : st.from;
+      return (from || "…") + " – " + (to || "…");
     }
     function summary() {
       return fields.filter(active).map(function (k) {
@@ -437,8 +595,10 @@
       if (f.values) f.values.forEach(function (v) { add(v); });
       (server || []).forEach(function (x) {
         if (x.value === UNKNOWN && !f.unknown) return;
-        if (seen[x.value]) out[seen[x.value] - 1].runs = x.runs;
-        else add(x.value, x.runs);
+        // runs (/api/filters/options) or monitors (/api/watches/options)
+        var n = x.runs != null ? x.runs : x.monitors;
+        if (seen[x.value]) out[seen[x.value] - 1].runs = n;
+        else add(x.value, n);
       });
       [].concat(st[k]).forEach(function (v) { add(v); });
       // "(unknown)" when the server lists it, or there is no list to ask
@@ -490,7 +650,12 @@
 
     function footHTML() {
       var foot = typeof o.foot === "function" ? o.foot() : o.foot;
-      return '<span class="ekf-foot">' + (foot || "") + "</span>" +
+      // the remembered-filters preference: per viewer, never in the URL
+      var keep = o.page
+        ? '<label class="ekf-scope"><input type="checkbox" id="fscope"' + (scope(o.storage) === "shared" ? " checked" : "") +
+          " /><span>" + esc(tr(["在页面间保留筛选", "Keep filters across pages"])) + "</span></label>"
+        : "";
+      return '<span class="ekf-foot">' + (foot || "") + "</span>" + keep +
         '<span class="ekf-share"><span class="ekf-sharest" id="fsharest" role="status"></span>' +
         '<button type="button" class="linkbtn" id="fshare">' + esc(tr(["复制此视图的链接", "Copy link to this view"])) + "</button></span>" +
         '<div class="ekf-sharefb" id="fsharefb" hidden><label><span>' + esc(tr(["此视图的链接", "Link to this view"])) +
@@ -541,11 +706,14 @@
         changed.push(k);
       });
       if (changed.indexOf("range") >= 0 && st.range) { st.from = ""; st.to = ""; }
+      // dates set without a range (by the page): the select shows "Custom range"
+      if (!st.range && (st.from || st.to)) custom = true;
+      else if (st.range) custom = false;
       if (!changed.length) return changed;
       var filters = changed.some(function (k) { return own.indexOf(k) >= 0; });
       writeUrl();
       if (filters) {
-        remember(o.page, st, fields, defaults, o.storage);
+        if (how.remember !== false) remember(o.page, st, fields, defaults, o.storage);
         widgets.abort(); // a newer state: what is in flight is stale
         if (how.render) render(); else sync();
         if (!how.quiet) say(Tf("筛选已更新：{n} 项生效", "Filters updated: {n} active", { n: activeCount() }));
@@ -567,7 +735,7 @@
       Object.keys(st).forEach(function (k) { out[k] = copy(st[k]); });
       return out;
     }
-    function widgetParams(ns) { return params(st, fields, ns); }
+    function widgetParams(ns) { return params(st, fields, ns, viewerZone()); }
     function url() {
       var qs = serialise(st, defaults, fields);
       return location.origin + location.pathname + (qs ? "?" + qs : "");
@@ -621,6 +789,11 @@
     section.addEventListener("change", function (ev) {
       var el = ev.target;
       if (el.closest("#fshareurl")) return;
+      if (el.id === "fscope") {
+        // the view stays as it is; on: its shared keys go into the shared memory
+        setScope(el.checked ? "shared" : "page", o.storage, { state: st, fields: fields });
+        return;
+      }
       var m = el.getAttribute("data-m");
       if (m) {
         var vals = Array.prototype.map.call(section.querySelectorAll('input[data-m="' + m + '"]:checked'), function (x) { return x.value; });
@@ -679,7 +852,9 @@
     state: function () { return current ? current.state() : {}; },
     widgetParams: function (ns) { return current ? current.widgetParams(ns) : ""; },
     fetchWidget: fetchWidget, keyed: keyed,
-    parse: parse, serialise: serialise, params: params, initial: initial, loader: loader,
+    parse: parse, serialise: serialise, params: params, initial: initial, loader: loader, viewerZone: viewerZone,
+    remember: remember, scope: scope, setScope: setScope,
     FIELDS: FIELDS, UNKNOWN: UNKNOWN,
+    PAGES: PAGES, href: href,
   };
 })();

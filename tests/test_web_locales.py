@@ -1092,3 +1092,26 @@ def test_every_metric_label_key_is_in_every_locale():
     assert i18n.keyed("metric.decode_tps", "en") == "Decode speed p50"
     assert i18n.keyed("metric.decode_tps", "xx") == "Decode speed p50"
     assert i18n.keyed("no.such.key", "de") == "no.such.key"
+
+
+# The fragments of the pages #150 reworked: every key is still a text the
+# pages or the server use (#161 removed the ones the rework left behind).
+_REWORKED_FRAGMENTS = ("v2-monitors", "v2-monitors-filter", "v2-monitors-links", "v2-filter-memory",
+                       "v2-live", "v2-links", "watch-filter")
+
+
+def test_reworked_pages_carry_no_unused_locale_keys():
+    import html
+
+    root = Path(__file__).resolve().parent.parent / "ekte"
+    texts = []
+    for p in root.rglob("*"):
+        if p.is_file() and "locales" not in p.parts and p.suffix in (".py", ".js", ".html", ".json"):
+            t = p.read_text(encoding="utf-8", errors="ignore")
+            texts += [t, html.unescape(t), t.replace('\\"', '"').replace("\\'", "'")]
+    corpus = "\n".join(texts)
+    for frag in _REWORKED_FRAGMENTS:
+        keys = json.loads((root / "i18n" / "locales" / "fragments" / frag / "en.json")
+                          .read_text(encoding="utf-8"))["strings"]
+        unused = sorted(k for k in keys if k not in corpus)
+        assert not unused, f"fragments/{frag}: remove from every language: {unused}"

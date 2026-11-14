@@ -35,7 +35,7 @@ cached per URL/key/protocol) → claimed model from the knowledge base
 knowledge base** (`POST /api/kb/relays`). Its pure helpers are tested under node.
 The custom suite's **Dimensions to run** chips are `v2/dimpick.js`. The
 "Running" list of background audits and running monitors (`GET /api/jobs`) is
-`v2/jobs.js` with `v2/jobs.css`, shared by the Audit and Monitors pages. The
+`v2/jobs.js` with `v2/jobs.css`, shared by the Audit and Monitors pages; neither polls it on a timer (the Audit page passes `live: true`: it reads `/api/jobs` at start and on every `ekte:live` and follows each running audit through `/api/jobs/<id>/events` (one connection per running audit, none for the audit the page follows itself); the Monitors page passes `poll: false` and hands in the jobs it reads itself, #161). The
 Knowledge page draws each of its three tabs with one section component,
 `v2/kbsection.js`, on top of the DOM-free helpers in `v2/kbview.js`.
 
@@ -129,7 +129,11 @@ holds the filters (`EkteFilters`), the sort (`groups.sort`, also sent as
 `runs.sort`), the trends (`trend.metrics`, default `score,latency_p50`) and the
 focused run (`runs.focus`: the open report or the last row "Show more"
 revealed; a `#r-<id>` link sets it), sent as `groups.focus` / `runs.focus` so
-a copied link shows that run again. The trend picker (in the filter panel,
+a copied link shows that run again, also outside the filters: when only the range leaves it
+out (`focus.by_range_only`), the range widens to a custom range from the run's
+day and the page notice says so once; otherwise the notice offers "Show it",
+which clears the filters in `focus.excluded_by` and moves focus to the run
+(see `docs/dev/web-server.md`, **The `focus` answer**). The trend picker (in the filter panel,
 `EkteFilters` `extra`) lists `history_trends` of `GET /api/metrics` by
 `label_key`; `v2/trendpick.js` (`EkteTrendPick.clean / toggle / buttons`,
 tested under node) keeps one or two on: with two on the others are `disabled`
@@ -137,8 +141,8 @@ and `aria-disabled`, with one on that one is, and a "2 / 2" hint next to the
 label (the group's description, in words for screen readers) counts them.
 
 **Shared filters and URL state** (`v2/filters.js`, `window.EkteFilters`, #125;
-History (#127) and Analytics (#126) use it, Monitors and Knowledge keep
-their own fields). One module owns the filter fields, the view state and widget
+History (#127), Analytics (#126) and Monitors (#160) use it, Knowledge keeps
+its own fields). One module owns the filter fields, the view state and widget
 fetching, inside the `filterpanel.js` frame; it holds no metric logic.
 `EkteFilters.create({section, fields, defaults, page, onChange, optionsUrl, foot, extra, live})`
 (`foot`: HTML or a function returning it, `extra()`: the page's own controls
@@ -160,12 +164,36 @@ the module.
 - `state()` is the parsed view; `widgetParams(ns)` the query string a widget
   sends, unchanged: the shared filters with a value plus its `ns.*` keys
   (`EkteFilters.state()` / `.widgetParams()` ask the page's instance).
-- **localStorage is only a fallback**: the page's last filters
-  (`ekte.v2.filters.<page>`) apply when the URL has no filter key, and are then
-  written into the URL; every access is wrapped in try/catch.
+- **localStorage is only a fallback** (#154): the remembered filters apply when
+  the URL has no filter key of the page (the URL always wins), and are then
+  written into the URL; every access is wrapped in try/catch. Two memories:
+  `ekte.v2.filters.shared` (JSON `{key: value}` of the shared keys, values at
+  the page's default left out) and `ekte.v2.filters.<page>` (the page's own
+  last filters, a query string, written in both modes). The per-viewer
+  preference `ekte.v2.filters.scope` is `"shared"` (default) or `"page"`,
+  set by **Keep filters across pages**, a checkbox in the panel's foot on
+  every page with `page` (never part of the URL).
+  - Shared: a page takes the keys it shows from the shared memory, and the
+    keys flagged `page: true` in `FIELDS` (`q`: search text belongs to one
+    list) from its own. A change merges only the keys the page shows into the
+    shared memory, so a page without `range` never erases another's. With no
+    shared memory yet, the page's own memory applies.
+  - Per page: everything comes from the page's own memory.
+  - Turning the checkbox on leaves the view as it is and writes its shared
+    keys into the shared memory; turning it off copies nothing.
+  - Pure helpers, tested under node with an injected `storage`:
+    `initial(search, {fields, defaults, page, storage})`,
+    `remember(page, state, fields, defaults, storage)`, `scope(storage)`,
+    `setScope(value, storage, {state, fields, defaults})`.
 - `load({ns: {url, done, fail}})` fetches every widget at once through
-  `EkteFilters.fetchWidget(url, {signal})`, which sends `If-None-Match` with the
-  ETag last seen for that URL (in memory) and answers a 304 from that copy. A
+  `EkteFilters.fetchWidget(url, {signal})`: a plain `fetch` (default cache
+  mode, `credentials: "same-origin"`, `Accept: application/json`) that keeps
+  no copy of its own. The server's `ETag` + `Cache-Control: no-cache` make the
+  browser's HTTP cache hold every answer, across reloads and pages, and
+  revalidate it on each use; a `304` reaches the page as a `200` with the
+  stored body. An error status rejects with an `Error` carrying `.status` and
+  the server's message. History's status and report detail
+  (`/api/history/status`, `/api/history/{id}?trend=1`) load through it too. A
   newer load or any filter change aborts the requests in flight
   (`AbortController`); `fail` gets one widget's error, never an abort.
 - **Copy link to this view** sits in the panel's foot on every page using the
@@ -176,6 +204,50 @@ the module.
   region ("Filters updated: N active").
 - `EkteFilters.keyed(key, labels)` reads an i18n key such as `metric.score`,
   falling back to `GET /api/metrics`' `labels` (English has no keyed strings).
+
+**Live refresh** (`v2/live.js`, `window.EkteLive`, #156; History,
+Analytics, Monitors and the Audit page load it). One poller per tab (a second copy of the script changes
+nothing) asks `GET /api/version` every 10 s while
+`document.visibilityState` is `visible`, and once as soon as the tab is shown
+again; a hidden tab sends nothing. It is a plain `fetch`, so the browser
+revalidates by `ETag` and an unchanged answer is a `304`. When a token
+changes it dispatches `ekte:data` (a history write from any process, the CLI
+included) and / or `ekte:live` (a job or monitor run started or ended,
+monitor settings changed) on `window`, with `detail: {before, after}`; the
+first answer is only the baseline. Errors are silent and the next tick asks
+again. `EkteLive.start()` / `stop()` / `poll()` / `tokens()` are for tests;
+`EkteLive.version()` asks once without touching the baseline. The scheduling
+logic is `EkteLive.createPoller(env)`, pure (clock, request, visibility and
+events passed in) and tested under node (`tests/test_web_v2_live_js.py`). No
+page polls a data endpoint on a fixed interval: they refetch their own cached
+URLs only on an event.
+
+- **Analytics**, on `ekte:data`: the panels already loaded load again with the
+  same view, in place and quietly. The shown ones load now, the others are
+  marked stale and load when their tab is shown. `p.quiet` makes `panelLoad`
+  keep the panel until the answers are in and redraw it through
+  `stillRender()`: `state.still` (no count-up, no chart entry motion),
+  `steady()` (the scroll position) and the panel's focused control focused
+  again (by id, control attribute or place). Open tables and sub-tabs are URL
+  keys, so they stay. Nothing is announced: `#live` is left alone and the page
+  notice is repainted with `aria-live="off"` until the next change the viewer
+  makes. The filter options update too, but not the panel while it has the
+  focus. A failed quiet load keeps what is shown. A filter change aborts it
+  (each panel's `AbortController`); during a filter change's own load the
+  refresh waits for it. An empty page ("no audits yet") starts quietly with its
+  first saved run.
+- **History**, on `ekte:data`: the list never reloads by itself. The page asks
+  the groups' answer for the current filters with `groups.limit=1` (a cached
+  URL) and reads `total_runs`; N is that total minus the total shown. A notice
+  above the list (`#fresh`, drawn by `notice.js` but no live region itself)
+  says "N new runs" with **Show** (N > 0) or "History changed" with
+  **Refresh**. It is announced once, politely, through `#live`; a further
+  change while it is shown updates N in place without a new announcement. The
+  button loads the list again (the focused run and collapsed groups kept) and
+  moves focus to the focused run, else the first one. Any load of the list (a
+  filter or sort change too) removes the notice. Each load notes the data
+  version it shows (`EkteLive.version()`, asked before the list), so a change
+  the page made itself (a delete) raises no notice.
 
 **No business logic in pages.** History and Analytics (and every page that
 shows metrics) draw what the server sends; they compute no metric, grade,
@@ -190,9 +262,61 @@ classification, a new aggregate) goes into `ekte/web/metrics.py`,
 `tests/test_metrics_e2e.py` fails when a page compares a score with a grade
 threshold, an HTTP status with a code, or defines its own median.
 
-The monitors' **Open in history** links use the schema: `surface`, `relay`
-(the watch's `relay_key` from `/api/watches`, the relay its runs are grouped
-under), `model` and `suite`, plus `#r-<run>`.
+**Pages and links between them** (#159). `EkteFilters.PAGES` lists the
+filter keys each page shows (`history`, `analytics`, `watches`: #150, design
+D); History and Analytics create their panels with `fields: PAGES[page]` and
+keep no list of their own. `EkteFilters.href(page, state, extra)` (pure,
+tested under node) builds `"/<path>?<query>"` for another page with
+`URLSearchParams`: only the target's keys (plus `from` / `to` with a custom
+range), so a key the target does not show (History's `risk` on Analytics)
+never travels silently; the source's widget and view keys and `tz` are
+dropped. `range` is written whenever the source has one, `range=` for all
+time too, so the target's default range never applies by accident. `extra`
+replaces filter keys (a group's `relay`) and appends widget and view keys
+(`{tab: "overview"}`, `{"runs.focus": 42}`). Every History group header has
+an **Open in Analytics** link: the group's relay and model as the server
+keys them (the two parts of the `relay_model` group key, `(unknown)`
+included: the values the `relay` / `model` filters match), the current
+History filters Analytics shows and
+`tab=overview`; its accessible name ("Open in Analytics: model · relay")
+names the group, so the links on one page are unique.
+
+**Monitors** (`v2/watches.html`, #160) is the third page of the pattern. Its
+panel is `EkteFilters.create({page: "watches", fields: PAGES.watches,
+optionsUrl: "/api/watches/options"})`: the monitor keys `q`, `surface`,
+`relay`, `model`, `suite`, `api`, `stream` plus its own `state`
+(`active` / `paused` / `draft`) and `alerting` (`yes` / `no`), flagged
+`page: true` in `FIELDS` so they are remembered per page and never shared;
+the options count monitors (`monitors` in place of `runs`). The filters are
+the URL query string; `#w-<id>` links still open a monitor, and clear the
+filters for that view (not in the remembered filters) when they hide it.
+The list is one cached URL, `EkteFilters.fetchWidget("/api/watches?" +
+widgetParams())`, fetched on load, on every filter change, after a change
+made on the page and on `ekte:live` (`v2/live.js`); cards show the server's
+`state` and `alerting`. "No monitors match these filters" (with **Clear
+filters**) and "No monitors yet" are two empty states. Live state is not in
+the list: on the same occasions the page reads `GET /api/jobs` and opens an
+`EventSource` on `/api/jobs/monitor-<id>/events` for every queued or running
+monitor; `EkteJobs.progress()` (`v2/jobs.js`, tested under node) counts the
+progress from its events as the server does for `/api/jobs`, and the card's
+bar is updated in place. The stream is closed when the run ends (`done`:
+the page asks `EkteLive.poll()`, whose `ekte:live` reloads the list) or
+fails (the next `ekte:live` reads `/api/jobs` again). The Running tab is
+`EkteJobs.init(list, {poll: false})`, fed with the same jobs through `set()`.
+Nothing on the page is polled on a timer.
+
+Links from a monitor card, all `EkteFilters.href`, named "<link>: <monitor
+name>": **Open in Analytics** (`watch=<id>`, `surface`, `relay` = its
+`relay_key`, `model` = claimed model else model, `suite`, `stream`, `api`,
+`exec=monitor`, `tab=overview`), **Open in History** (the last run:
+`watch=<id>`, `surface`, `relay`, `model`, `suite`, `runs.focus=<report>`)
+and **From run #n** (the same without `watch`, since the run the monitor
+was made from is not one of its runs). History widens its range to a focused
+run outside it (#157), so both find the run whatever its age. Links to
+Monitors: every History group header has **Monitors for this relay and
+model** beside **Open in Analytics** ("Monitors for this relay and model:
+model · relay"), and the Analytics panel's foot has **Monitors for these
+filters** once a relay or model is chosen.
 
 **Translation convention.** The pages are written in English
 (`<html lang="en">`); every translatable element carries the same English

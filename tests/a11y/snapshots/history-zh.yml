@@ -101,10 +101,10 @@
     - spinbutton "最低健康分"
     - text: 时间范围
     - combobox "时间范围":
-      - option "全部时间" [selected]
+      - option "全部时间"
       - option "最近 24 小时"
       - option "最近 7 天"
-      - option "最近 30 天"
+      - option "最近 30 天" [selected]
       - option "最近 90 天"
       - option "最近 365 天"
       - option "自定义"
@@ -113,6 +113,10 @@
       - option "全部" [selected]
       - option "手动 (11)"
       - option "监控 (4)"
+    - text: 监控
+    - combobox "监控":
+      - option "全部" [selected]
+      - option "gpt-4o (4)"
     - group "趋势图":
       - text: 趋势图 已选 2 个，最多 2 个
       - button "健康分" [pressed]
@@ -122,6 +126,8 @@
       - button "输出速度 p50" [disabled]
       - button "错误率" [disabled]
     - text: 显示 15 / 15 条记录
+    - checkbox "在页面间保留筛选" [checked]
+    - text: 在页面间保留筛选
     - status
     - button "复制此视图的链接"
   - status
@@ -134,7 +140,14 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: 中转站 Example Relay 健康分
+    - text: 中转站 Example Relay
+    - link "在分析中打开：model-a · Example Relay":
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: 在分析中打开
+    - link "此中转站和模型的监控：model-a · Example Relay":
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: 此中转站和模型的监控
+    - text: 健康分
     - img "健康分趋势（7 次检测）：从 70 到 82，上升。"
     - text: 82 延迟 p50
     - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>，下降。"
@@ -178,7 +191,14 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: 中转站 gateway.a-very-long-relay-hostname.example.org 健康分
+    - text: 中转站 gateway.a-very-long-relay-hostname.example.org
+    - link "在分析中打开：model-a · gateway.a-very-long-relay-hostname.example.org":
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: 在分析中打开
+    - link "此中转站和模型的监控：model-a · gateway.a-very-long-relay-hostname.example.org":
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: 此中转站和模型的监控
+    - text: 健康分
     - img "健康分趋势（4 次检测）：从 58 到 64，上升。"
     - text: 64 延迟 p50
     - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>，下降。"
@@ -207,7 +227,14 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: 中转站 Example Relay 健康分
+    - text: 中转站 Example Relay
+    - link "在分析中打开：model-b · Example Relay":
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: 在分析中打开
+    - link "此中转站和模型的监控：model-b · Example Relay":
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: 此中转站和模型的监控
+    - text: 健康分
     - img "健康分趋势（2 次检测）：从 89 到 91，上升。"
     - text: 91 延迟 p50
     - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>，下降。"
@@ -226,7 +253,14 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: 中转站 gateway.a-very-long-relay-hostname.example.org 健康分 72 延迟 p50 <duration>
+    - text: 中转站 gateway.a-very-long-relay-hostname.example.org
+    - link "在分析中打开：model-b · gateway.a-very-long-relay-hostname.example.org":
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: 在分析中打开
+    - link "此中转站和模型的监控：model-b · gateway.a-very-long-relay-hostname.example.org":
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: 此中转站和模型的监控
+    - text: 健康分 72 延迟 p50 <duration>
     - list:
       - listitem:
         - button "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>" [expanded]
@@ -307,7 +341,14 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: 中转站 127.0.0.1:9099 健康分 53 延迟 p50 无数据
+    - text: 中转站 127.0.0.1:9099
+    - link "在分析中打开：gpt-4o · 127.0.0.1:9099":
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: 在分析中打开
+    - link "此中转站和模型的监控：gpt-4o · 127.0.0.1:9099":
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: 此中转站和模型的监控
+    - text: 健康分 53 延迟 p50 无数据
     - list:
       - listitem:
         - button "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard"
@@ -318,7 +359,7 @@
           - text: 删除这条历史记录？
           - button "删除"
           - button "取消"
-  - text: 共 15 条记录
+  - text: 显示 15 / 15 条记录
   - button "清空历史"
   - status
 - contentinfo:

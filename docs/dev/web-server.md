@@ -14,7 +14,8 @@
   models; `/api/report/export` renders a report; `/api/history…`,
   `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages,
   `/api/secret…` the master key of the monitors' stored API keys (status, new,
-  unlock, lock, reset, storage mode) and `GET /api/health` answers a liveness
+  unlock, lock, reset, storage mode), `GET /api/version` is the change signal
+  the pages poll (below) and `GET /api/health` answers a liveness
   check. All of these are internal; the public subset is [HTTP API v1](#http-api-v1).
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
@@ -36,10 +37,41 @@
   on one key wait for one computation; errors are not cached. Answers carry
   `ETag` (a hash of the key and the ekte version) and `Cache-Control: no-cache`;
   a matching `If-None-Match` gets `304 Not Modified` without computing.
+  `GET /api/history/status` and the report detail `GET /api/history/{id}`
+  (keyed per run and `trend`; its own 16-entry LRU, as reports are large; an
+  unknown id answers 404, never cached) go through it as well. POST / DELETE,
+  `/api/secret`, `/api/jobs*` and the evidence endpoints (`no-store`) stay
+  uncached.
   Reads use `datadir.read_connection(name)`: one reused read-only connection
   per thread (`mode=ro`, WAL, `query_only`), schema-checked only on the first
   open in the process (again if the file was replaced); writes keep using
   `datadir.connect`.
+- **Change signal** (`GET /api/version`, #151). Answers
+  `{"data": "<token>", "live": "<token>"}`: opaque strings that clients only
+  compare for equality (`server.version_tokens()`).
+  - `data` is a hash of exactly what keys the response cache above:
+    `history.data_version()`, `kb_version`, `EXTRACT_VERSION` and the
+    database (keep `version_tokens()` and `cache_key()` in step). It changes
+    with every history write from any process (a CLI audit included) and with
+    a knowledge-base change, and only then.
+  - `live` is a hash of this process's id (a restarted server never repeats
+    a token), the in-process counter `jobs.live_version()` and
+    `watches.data_version()`. The counter is bumped (`jobs.bump_live()`) when
+    a job is queued, waits for its relay, starts running or ends (done, error
+    or cancelled: every end emits `done`), when a monitor run starts and ends
+    (`_run_one_watch`), and when the master key is entered or locked (the
+    monitors' key status changes without a write). `watches.data_version()`
+    is a counter in `watches.db`'s `meta` table (schema version 5), bumped in
+    the same transaction as every write that changes what `/api/watches`
+    returns: `create`, `update`, `set_enabled`, `set_language`, `delete`,
+    `pin`, `mark_run`, `mark_attempt` and the key-storage changes
+    (`keys_to_memory`, `keys_to_store`, `migrate_keys`, `adopt_key`,
+    `forget_keys`), from any process.
+  - Cheap: two primary-key lookups on the reused read connections (no table
+    is scanned; `tests/test_web_version.py` checks the query plans) and the
+    cached knowledge-base fingerprint; budget 5 ms p95. The answer carries an
+    `ETag` (a hash of both tokens and the ekte version) and
+    `Cache-Control: no-cache`; a matching `If-None-Match` gets `304`.
 - **Background audits.** `jobs.py` runs every audit as a job owned by the
   server. `POST /api/jobs` queues one, `GET /api/jobs` lists queued, running and
   recently finished jobs (plus running monitors) with progress,
@@ -84,6 +116,7 @@ same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
 |---|---|
 | `GET /`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility` | the pages (`/v2/…`, `/tools`, `/console`: 308 redirects until 1.0.0) |
 | `GET /api/health` | `{ok, version}` |
+| `GET /api/version` | the change signal `{data, live}` (ETag, 304; see **Change signal** above) |
 | `POST /api/jobs` (`/api/v1/jobs`), `GET /api/jobs`, `GET /api/jobs/{id}` (`/api/v1/…`), `GET /api/jobs/{id}/events` (`/api/v1/…`), `POST /api/jobs/{id}/cancel` | background audits |
 | `POST /api/models`, `POST /api/report/export` | a relay's models; a report rendered as JSON / Markdown / HTML / PDF |
 | `GET /api/kb`, `POST /api/kb/relays`, `GET /api/kb/profiles`, `PUT /api/kb/enabled`, `GET /api/kb/prompt`, `POST /api/kb/resolve`, `POST /api/kb/scan`, `POST /api/kb/import`, `GET /api/kb/export`, `PATCH` / `DELETE /api/kb/entries/{id}` | the knowledge base |
@@ -91,12 +124,13 @@ same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
 | `GET /api/filters/options` | every filter key's values with run counts ([Analytics API](#analytics-api); History uses it too) |
 | `GET /api/analytics/summary`, `series`, `heatmap`, `leaderboard`, `breakdown`, `errors`, `integrity` | the Analytics widgets ([Analytics API](#analytics-api)) |
 | `GET /api/history/groups`, `GET /api/history/runs` | the History widgets ([History API](#history-api)) |
-| `GET /api/history/status` | the history as a whole, for the page notices |
-| `GET /api/history/{id}` (`?trend=1`), `GET /api/v1/history/{id}` | one saved report |
+| `GET /api/history/status` | the history as a whole, for the page notices (cached) |
+| `GET /api/history/{id}` (`?trend=1`, cached), `GET /api/v1/history/{id}` | one saved report |
 | `DELETE /api/history/{id}`, `DELETE /api/history` | delete one run, or all |
 | `GET /api/v1/history` | the newest runs (public; `limit`, `perf`) |
 | `GET /api/v1/history/{id}/evidence`, `…/evidence/exchanges`, `…/evidence/export`, `POST /api/history/{id}/rescore` (`/api/v1/…`) | a run's evidence; re-score it |
-| `GET /api/watches`, `POST /api/watches`, `POST /api/watches/from-history/{id}`, `PATCH` / `DELETE /api/watches/{id}`, `POST /api/watches/{id}/run`, `POST /api/watches/{id}/cancel` | monitors |
+| `GET /api/watches`, `GET /api/watches/options` | the monitors, filtered and cached, and their filter options (see [Monitors API](#monitors-api)) |
+| `POST /api/watches`, `POST /api/watches/from-history/{id}`, `PATCH` / `DELETE /api/watches/{id}`, `POST /api/watches/{id}/run`, `POST /api/watches/{id}/cancel` | monitors |
 | `GET /api/secret`, `POST /api/secret/new`, `…/new/confirm`, `…/unlock`, `…/lock`, `…/reset`, `…/storage` | the monitors' master key |
 
 Every widget endpoint (metrics, filter options, Analytics, History groups and
@@ -120,7 +154,8 @@ not given; `-` means "(unknown)", i.e. the run has no value.
 | Key | Values | Replaces |
 |---|---|---|
 | `from`, `to` | ISO 8601 (naive = UTC) against the run's `started_at`; `to` exclusive | Analytics `from` / `to` |
-| `range` | `24h`, `7d`, `30d`, `90d`, `365d`: `to` = now rounded up to the next minute, `from` = `to` − range; not with `from` / `to` | History `days`, Analytics range presets |
+| `range` | `24h`, `7d`, `30d`, `90d`, `365d`. A **day range** (`7d` … `365d`, N days) is today plus the previous N − 1 calendar days in `tz`: `from` = 00:00 local of the first day (`zoneinfo` calendar days, so a range across a DST change is N days, not N × 24 h), no `to`. **`24h`** is exact: `to` = now rounded up to the next minute, `from` = `to` − 24 h. Not with `to`; a day range takes `from` only in its resolved form (a local midnight in `tz`, as `Query.canonical()` writes it). The pages default to `30d` (`filters.js` `FIELDS`); `range=` (empty) is all time | History `days`, Analytics range presets |
+| `tz` | the viewer's time zone, an IANA name (default `UTC`; unknown: 400). Selects no runs: it places day ranges and is the zone of every time bucket (the widgets have no zone key of their own: `trend.tz`, `heat.tz` and `errors.tz` went with [#161](https://github.com/mn567250/ekte/issues/161) and are now a 400). `EkteFilters.widgetParams()` sends the browser's zone with every widget request; the page URL never holds it, so a shared link resolves in each viewer's zone | the pages' `trend.tz` / `heat.tz` / `errors.tz` |
 | `surface` | `chat`, `embedding`, `rerank` (NULL reads as chat); empty: all surfaces | both |
 | `relay` | a relay key (`relay_map.relay_key`, `(unknown)` without URL), repeatable | both |
 | `model` | a claimed model (`(unknown)` without one), repeatable | both |
@@ -129,6 +164,7 @@ not given; `-` means "(unknown)", i.e. the run has no value.
 | `risk` | `clean`, `low`, `medium`, `high`, `inconclusive` (no risk level is inconclusive) | History `risk` |
 | `min_score` | 0–100 (runs without a score are left out) | History `min` |
 | `exec` | `manual`, `monitor` | History `exec` (`adhoc`), Analytics `source` |
+| `watch` | a monitor id (positive integer, not repeatable): the runs of exactly that monitor, also after it was deleted | — (new, [#155](https://github.com/mn567250/ekte/issues/155)) |
 | `q` | substring, case-insensitive for ASCII (SQL `LIKE`, `%` `_` `\` literal) of base URL, relay label, claimed model, model, suite, mode, api | History `q` |
 | `group` | `relay` (default), `model`, `relay_model`, `all` | both |
 
@@ -137,8 +173,12 @@ Keys with a dot belong to one widget (`trend.metric`, `runs.sort`,
 400 error naming it. `parse_query(params, now=None) -> Query` validates
 (`QueryError`, an `AnalyticsError`, so the existing 400 handling catches it);
 `Query.canonical()` is the sorted, resolved form and `Query.params()` its URL
-pairs. `resolve_params` is the `prepare=` of `cached_endpoint`, so a relative
-range is cached under its absolute bounds. History's time filter moves from
+pairs: `from` (plus `to` for `24h`), `range` for a day range (it names the day
+count) and `tz` unless UTC. `resolve_params` is the `prepare=` of
+`cached_endpoint`, so a relative range is cached under its absolute bounds: a
+day range's key and `ETag` stay the same all day and change at the viewer's
+next midnight (otherwise only the data version invalidates them); `24h`
+changes them every minute. History's time filter moves from
 the save time (`ts`) to the run's start (`started_at`).
 
 **Selection.** `select_runs(q) -> RunSelection` (`.sql` = `FROM … WHERE …`,
@@ -146,7 +186,9 @@ the save time (`ts`) to the run's start (`started_at`).
 (`ekte/web/run_row.py`): the time on `m.started_us` (`time_sql`, exact to the
 microsecond), the surface on `m.surface_id`, the other few-valued keys as
 `m.facet_id IN (…)` (looked up once in `facet_combo`), relays and models by
-`m.relay_id` / `m.model_id`, `min_score` on `m.score`. Only text search
+`m.relay_id` / `m.model_id`, `watch` on `m.watch_id` (the run's
+`history.watch_id`, copied onto the run row by its triggers, history schema
+16), `min_score` on `m.score`. Only text search
 (`q`) joins `history h` (through `idx_history_query`) and the run's relay
 `rm`. Runs are grouped by an integer of their row (`run_row.GROUP_ID_SQL`:
 relay id, model id, or both packed as `relay_id << 20 | model_id`), read in
@@ -200,12 +242,17 @@ pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
 `scripts/bench_fixture.py --data-dir DIR --bench` writes a
 synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
 reports, an ekte release every 3 weeks with an occasional one-day rollback,
-a profile change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
+a profile change every 45 days) plus 200 monitors in `watches.db`
+(`--monitors`, formerly `--watches`: spread over the fixture's relays and
+models, about 70 % active, 20 % paused and 10 % drafts, with mixed alert
+thresholds, last risks and a few run windows), and prints p50 / p95 (nearest rank, 40 calls) of
 `aggregate`, `series` and `page_runs`.
 
 The budget tests (marked `slow`) check that every case's p95 stays under the
 budget: `tests/test_query.py` (the query core), `tests/test_analytics_widgets.py`
-(the Analytics widgets) and `tests/test_history_api.py` (the History API). They
+(the Analytics widgets), `tests/test_history_api.py` (the History API),
+`tests/test_watches_api.py` (the Monitors API) and
+`tests/test_web_version.py` (`/api/version`, 5 ms). They
 are skipped unless `EKTE_BENCH=1`; run them serially, so the timings are not
 shared with other tests:
 
@@ -226,7 +273,7 @@ python scripts/bench_report.py bench.json   # the Markdown table
 
 - **Budgets.** 50 ms p95 by default, the budget of the reference machine;
   `EKTE_BENCH_BUDGET_MS` overrides it. A case with a budget of its own has
-  its own variable: `/api/version` (5 ms, the budget test comes with #150)
+  its own variable: `/api/version` (5 ms, `tests/test_web_version.py`)
   reads `EKTE_BENCH_VERSION_BUDGET_MS`. A new budget test
   reads its budget with `tests.bench_report.budget()` (a case with its own
   budget passes its own variable) and takes the `bench_data` fixture
@@ -300,7 +347,7 @@ page only draws. Every endpoint:
 
 - takes every key of the query core's URL schema (`range`, `from`, `to`,
   `surface`, `relay`, `model`, `suite`, `mode`, `api`, `stream`, `detect`,
-  `risk`, `min_score`, `exec`, `q`, `group`) plus its own namespaced keys
+  `risk`, `min_score`, `exec`, `watch`, `q`, `group`) plus its own namespaced keys
   (below); other widgets' dotted keys are ignored. An unknown key (shared or
   of its own namespace), a key given twice or an invalid value answers 400
   `{"error": "..."}` (never cached);
@@ -330,7 +377,7 @@ The values present for each filter key, counted under the current filters
 **except that key** (a selected value and its siblings stay listed):
 
 ```json
-{"filters": {...}, "keys": ["surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk", "exec"],
+{"filters": {...}, "keys": ["surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk", "exec", "watch"],
  "runs": 60, "surface_default": "chat",
  "surface": [{"value": "chat", "runs": 60}],
  "relay": [{"value": "cheap-gpt", "label": "Cheap GPT", "kind": "relay", "in_kb": true, "runs": 15}],
@@ -339,18 +386,27 @@ The values present for each filter key, counted under the current filters
  "mode": [...], "api": [...], "stream": [...],
  "detect": [{"value": "auto", "runs": 20}, {"value": "manual", "runs": 20}, {"value": "-", "runs": 20}],
  "risk": [{"value": "inconclusive", "runs": 5}, ...], "exec": [{"value": "manual", "runs": 48}, ...],
+ "watch": [{"value": "7", "runs": 9, "label": "relay check"},
+           {"value": "3", "runs": 2, "label": "Deleted monitor #3", "deleted": true}],
  "span": {"first": "<iso>", "last": "<iso>"}, "dimensions": ["protocol", ...]}
 ```
 
 `value` is spelled as the URL takes it (`-` = none; relays and models use
 `(unknown)`, their group key); a relay's `label` is what History calls it
 (`history_api.relay_labels`: its knowledge-base name, else the host of its
-URL); lists are ordered by runs, then label / value.
+URL); a monitor's (`watch`) is its name, read from `watches.db` once per
+request, or, for a monitor that no longer exists, `Deleted monitor #<id>`
+with `deleted: true` (the panel shows it translated); the widget endpoints'
+`prepare` adds the monitors' data version (`options.watches`,
+`watches.data_version()`) to the cache key, so a renamed or deleted monitor
+gets a new answer and `ETag` although the history did not change. `watch` lists only
+monitor runs, so its counts add up to `exec=monitor`'s. Lists are ordered by
+runs, then label / value.
 `runs` counts the full selection; `span` is the first and last run under
 every filter except `from` / `to`; `dimensions` lists the `dim:<key>` keys of
 the selection. The surface is not defaulted here: `surface_default` names the
 one the widgets would use. One statement: the runs matching `min_score` / `q`
-are read once; `relay` (by relay id) and `model` are a `GROUP BY` over them,
+are read once; `relay` (by relay id), `model` and `watch` are a `GROUP BY` over them,
 and the other lists, `span` and `runs` are folded from one `GROUP BY` of each
 run's facet combination (`history_metrics.facet_id`, `ekte/web/run_row.py`).
 
@@ -359,7 +415,10 @@ run's facet combination (`history_metrics.facet_id`, `ekte/web/run_row.py`).
 The 12 tiles of `KPI_GRID` in order (runs, relays, models, score,
 risk_high_share, success_rate, error_rate, latency_p50, ttft_p50,
 decode_tps, billing_ratio_prompt, billing_ratio_completion), for the range
-and the previous range of the same length (none without `from`):
+and the previous range (none without `from`): for a day range the N calendar
+days before it in `tz` (`[from − N days, from)`), otherwise the span of the
+same length before `from`. A day range's answer has `"to": null` (no end
+bound); the page labels it up to today ("Oct 12 – Nov 10"):
 
 ```json
 {..., "previous": {"from": "<iso>", "to": "<iso>"} | null, "runs": 30,
@@ -377,8 +436,8 @@ request (same denominator). The counts have `n` = runs and are always judged.
 ### `GET /api/analytics/series`
 
 One metric per group (`group`) over time: `trend.metric` (default `score`;
-`dim:<key>` too), `trend.bucket` `hour|day|week` (default `day`), `trend.tz`
-(IANA, default UTC), `trend.key` (repeatable, up to 4 series keys; default the
+`dim:<key>` too), `trend.bucket` `hour|day|week` (default `day`; buckets in the shared `tz`),
+`trend.key` (repeatable, up to 4 series keys; default the
 busiest groups). The answer is `SeriesResult.public()`: `metric`
 (`Metric.public()`), `group`, `bucket`, `tz`, `span_days`, `series` (a group
 plus `n`, `coverage`, `mixed` {suite, stream_mode, api}, `annotations`
@@ -424,7 +483,7 @@ median and p25 / p75, so the forecast joins the history); `points` are the
 The weekday × time-of-day grid of one metric: `heat.metric`, `heat.block`
 (hours per row 1, 2, 3, 4, 6), `heat.fold` (`week`, `4weeks`, `month_week`;
 falls back to `week` until the runs cover 90 / 180 days: `fold` vs
-`fold_requested`), `heat.tz`, `heat.key` (one series key of `group`; default
+`fold_requested`), `heat.key` (one series key of `group`; default
 all selected runs as one series of group `all`). Same shape as `series` with
 `bucket: "dow_hour"`, `block`, `fold`; each point has `dow` (1 = Monday),
 `hour`, `hours` (block > 1) and `week` (folds).
@@ -451,7 +510,7 @@ read from each run's row: `history_metrics.outcome_<class>`;
 classes `success`, `rate_limited`, `relay_timeout`, `relay_5xx`, `relay_4xx`,
 `relay_other`, `network`, `local`), per group (`group`), in total and per
 time bucket of the run's start: `errors.bucket` `hour|day|week|dow_hour`
-(default `day`), `errors.block` (dow_hour), `errors.tz`; `errors.run=<id>`
+(default `day`), `errors.block` (dow_hour), buckets in the shared `tz`; `errors.run=<id>`
 adds that run's per-minute timeline from its request records (`OUTCOME_SQL`:
 `errorclass.outcome()` in SQL over `error_class`, `error_type`, `status_code`,
 `retried`, `phase`; repeated attempts and `param_retry` never count).
@@ -524,7 +583,7 @@ by host, port and path (no scheme, no trailing slash). Computed once per
   "trend_metrics": ["score", "latency_p50"], "points_max": 50, "min_runs": 3,
   "total_groups": 37, "total_runs": 1204,
   "after": "<cursor or null>",
-  "focus": {"id": 812, "key": "https://relay.example/v1|gpt-4o"},
+  "focus": {"id": 812, "found": true, "key": "https://relay.example/v1|gpt-4o"},
   "groups": [{
     "key": "https://relay.example/v1|gpt-4o",
     "kind": "relay_model",
@@ -545,8 +604,9 @@ by host, port and path (no scheme, no trailing slash). Computed once per
 }
 ```
 
-`focus` is null without `groups.focus` or when the run is not among the
-filtered runs. `relay` is null for `group=model|all`, `claimed_model` null for
+`focus` is null without `groups.focus`; otherwise `found` says whether the
+page holds the run's group (`key`). For a run that is not among the filtered
+runs, see **The `focus` answer** below. `relay` is null for `group=model|all`, `claimed_model` null for
 `relay|all` (and for runs without a claimed model). `label` is the relay label
 (`relay`), the model (`model`), `(all)` (`all`) or `<relay label> · <model>`,
 with `(unknown)` for a missing part. `base_urls` lists the group's URLs, the
@@ -594,6 +654,36 @@ without `runs.focus`. `risk_level` is `inconclusive` for a run without one,
 `manual` / `monitor`; `family` holds the colour families of the risk badge,
 score and grade (`metrics.family`).
 
+### The `focus` answer
+
+`groups.focus` and `runs.focus` name a run by its id, whatever the filters.
+The answer's `focus` is:
+
+| The run | `focus` |
+|---|---|
+| on the page (the groups' page holds its group; the runs' page holds it) | `{"id": 812, "found": true}`, plus `"key"` for `groups` |
+| among the filtered runs but not on this page (`runs`: another group, or before the cursor) | `{"id": 812, "found": false}` |
+| exists, outside the filters | `{"id": 812, "found": false, "outside": true, "started_at": "2026-08-14T09:10:02.000000+00:00", "by_range_only": true, "excluded_by": ["range"]}` |
+| does not exist | `{"id": 812, "found": false}` |
+
+`started_at` is the run's start (UTC, as in its run row; null without one).
+`excluded_by` lists the URL keys of the filters that leave the run out, in
+the schema's order (`range` stands for `range` / `from` / `to`; filters are
+ANDed, so the run matches them all exactly when it matches each);
+`by_range_only` is `excluded_by == ["range"]`: the run matches every other
+filter. Costs one statement on the run's own row (by its id) with one
+`EXISTS` per filter set, and only when the run is not on the page; no extra
+query over the runs.
+
+History widens the range when `by_range_only` is true: `range=` (empty), `from`
+= 00:00 of the run's day in the viewer's zone, written with its UTC offset
+(`2026-08-14T00:00:00+02:00`: a bare `YYYY-MM-DD` would be read as UTC
+midnight), no `to`, every other filter and the focus kept; the page notice
+says "Range widened to show run #n" once. Otherwise the notice says "Run #n
+doesn't match the current filters", and its "Show it" clears the filters in
+`excluded_by` (the range widened as above when it is one of them), keeping
+the focus.
+
 ### `GET /api/history/{rid}?trend=1`
 
 Besides the running request medians, the report gains `history_trends`:
@@ -608,6 +698,58 @@ gone. `GET /api/v1/history` is part of the public API and keeps its shape
 `ttft_p50_ms`, `decode_tps_p50`) comes from the run's `history_metrics` row,
 the one store of those values since schema version 13 dropped the copies on
 `history` (#128).
+
+## Monitors API
+
+`ekte/web/watches_api.py` answers the Monitors page in the shared pattern:
+filtered on the server, cached, no live state.
+
+- **`GET /api/watches?<keys>`**: the monitors matching the filters, newest
+  first, as a JSON list. Rows never contain an API key (`has_key` and
+  `key_status` say whether one is set) and carry no live run state. Each row
+  has `state`, `alerting`, `relay_key` and `relay_label` besides the stored
+  settings.
+- **`GET /api/watches/options?<keys>`**: `{"filters", "keys", "monitors",
+  "<key>": [{value, monitors, label?}]}` for `surface`, `relay` (with its
+  `label`), `model`, `suite`, `api`, `stream`, `state` and `alerting`.
+  Counts are **monitors**, each list under every filter but its own (as
+  `/api/filters/options` counts runs), most monitors first; `monitors` is
+  how many match every filter.
+
+| Key | A monitor matches when |
+|---|---|
+| `q` | the text is a substring (ASCII case-insensitive) of its name, base URL, relay label, claimed model, model or suite |
+| `surface` | its surface is the value |
+| `relay` | its `relay_key` (the relay its runs are grouped under) is one of the values; repeatable |
+| `model` | its claimed model, else its model (`(unknown)` without either), is one of the values; repeatable |
+| `suite`, `api`, `stream` | its suite / resolved protocol (`api_resolved`) / probe request mode (`stream_mode`) is the value; `-` for none |
+| `state` | `active` (enabled, set up), `paused` (set up, disabled) or `draft` (scheduled from History, no interval yet; the key stays optional) |
+| `alerting` | `yes`: its last run's risk is at or above its `alert_on` threshold (`watches.risk_meets`, the rule the scheduler alerts on); else `no` |
+
+The shared keys are validated by `query.parse_query` (same values and
+errors). `tz`, which every widget request of the pages carries
+(`EkteFilters.widgetParams()`), is validated the same way (an unknown zone is
+a 400) but filters nothing and is not part of the cache key (#160). Any other
+key, the run-only keys `range`, `from`, `to`, `risk`,
+`exec`, `group`, … and dotted widget keys included, is a 400
+`unknown parameter`. Filtering runs in Python over the monitor rows (bounded
+by the number of monitors, not runs); relays and knowledge-base profiles are
+resolved once per request. Budget: 50 ms p95 with 200 monitors, cold cache
+(`tests/test_watches_api.py`).
+
+**Caching.** Both go through `cached_endpoint` (ETag, `Cache-Control:
+no-cache`, 304). Besides the history data version and the knowledge-base
+relay version, `watches_api.resolve_params` (the `prepare`) adds a token of
+what else the rows depend on: `watches.data_version()` (a monitor created,
+edited, deleted or run), the master key held and the keys held in memory
+(`key_status`), the audit knowledge base (`kb_changed`), the phase of every
+run window (`in_window`, `next_window_ts`) and the server process.
+
+**Live state** (running, queued, progress) is `GET /api/jobs`: a running
+monitor is the job `monitor-<id>` with `kind: "monitor"`, `watch_id`,
+`status` (`queued` while it waits for its relay, then `running`),
+`progress` (percent, `null` while queued), `done`, `total`, `current` and
+`waiting_for`. The Monitors page reads both and merges them by `watch_id`.
 
 ## HTTP API v1
 

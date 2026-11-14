@@ -21,6 +21,11 @@ waits on a relay it does not use.
 Jobs live in memory only. A finished job's report is in the history store;
 the job itself is kept a little while so a re-attaching page still gets its
 final event, then dropped.
+
+Live version: :func:`live_version` is an in-process counter, bumped
+(:func:`bump_live`) whenever a job or a monitor run is queued, starts or ends
+(done, failed or cancelled), so ``GET /api/version`` can tell open pages that
+the job list changed without them polling it.
 """
 
 from __future__ import annotations
@@ -29,6 +34,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import threading
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
@@ -51,6 +57,27 @@ _KEEP_FINISHED_MAX = 20
 
 Emit = Callable[[dict[str, Any]], None]
 Runner = Callable[[Emit], Awaitable[dict[str, Any]]]
+
+# The events that change what /api/jobs (or a monitor card) shows: a job was
+# queued behind another audit, started running, or ended ("done" follows every
+# end: success, error and cancel alike).
+_LIVE_EVENTS = frozenset({"queued", "running", "done"})
+
+_live_counter = 0
+_live_lock = threading.Lock()
+
+
+def bump_live() -> None:
+    """Note a change of the live state (see the module docstring). Safe from
+    any thread (the master-key endpoints bump it from worker threads)."""
+    global _live_counter
+    with _live_lock:
+        _live_counter += 1
+
+
+def live_version() -> int:
+    """The in-process live counter (see :func:`bump_live`)."""
+    return _live_counter
 
 
 def relay_key(base_url: str | None) -> str:
@@ -225,6 +252,8 @@ class Job:
             event.setdefault("at", time.time())
         track_progress(self.progress, event)
         self.events.append(event)
+        if event.get("type") in _LIVE_EVENTS:
+            bump_live()
         for q in self._subscribers:
             q.put_nowait(event)
 
@@ -296,6 +325,7 @@ class JobManager:
         keys = frozenset(relay_key(u) for u in urls if u)
         job = Job(summary, keys)
         self._jobs[job.id] = job
+        bump_live()  # a new job in the list, queued
         job.task = asyncio.create_task(self._drive(job, run))
         return job
 

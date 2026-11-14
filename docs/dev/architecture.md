@@ -284,10 +284,16 @@ run's stored value (`tests/test_query.py`, `tests/test_metrics_e2e.py`).
 
 **URL schema.** One set of keys serves both pages and every widget (`range`,
 `from`, `to`, `surface`, `relay`, `model`, `suite`, `mode`, `api`, `stream`,
-`detect`, `risk`, `min_score`, `exec`, `q`, `group`; table in
+`detect`, `risk`, `min_score`, `exec`, `watch`, `q`, `group`, `tz`; table in
 [Web server](web-server.md#query-core)). Keys with a dot belong to one widget
 (`trend.metric`, `runs.after`, `board.by`); view keys (`tab`) never reach an
-endpoint. Relative ranges are resolved to absolute bounds before caching.
+endpoint. Relative ranges are resolved to absolute bounds before caching: a
+day range (`7d` … `365d`) to `from` = 00:00 of today − (N − 1) in the viewer's
+zone `tz` and no `to`, so its cache key changes once a day; `24h` stays exact
+(`to` = now, rounded up to the minute). Each page shows the keys of its
+registry entry (`EkteFilters.PAGES`); the Monitors page adds its own keys
+`state` and `alerting` and is filtered by `GET /api/watches` on the same
+validation.
 The pages keep the whole view in the query string (`EkteFilters`,
 [UI](ui.md)), so a copied link reproduces it. Paging is keyset
 (`(started_at, id)` or the sort value and id), never offsets, so History
@@ -305,11 +311,36 @@ is no time slot. Identical requests in flight share one computation
 releases the GIL while SQLite works, so widgets fetched in parallel are
 computed in parallel.
 
-**Budget.** Every widget endpoint answers in under 50 ms p95 on the synthetic
-20,000-run history of `scripts/bench_fixture.py` (cold cache; opt-in with
-`EKTE_BENCH=1`: `tests/test_query.py`, `tests/test_analytics_widgets.py`,
-`tests/test_history_api.py`; in CI the "performance budget" job, see
-[Benchmark](web-server.md#benchmark)).
+**Change signal** (#150). `GET /api/version` answers two opaque tokens:
+`data` (a hash of what the response cache keys on: the data version, the
+knowledge-base version, `EXTRACT_VERSION`, the database) and `live` (the
+process, an in-process counter bumped when a job or monitor run is queued,
+starts or ends, and `watches.db`'s own data version, bumped with every write
+that changes the monitor list). It reads two primary keys and scans no
+table. Every open page polls it through `v2/live.js` every 10 s while the
+tab is visible; a changed `data` makes Analytics reload its panels in place
+and History offer the new runs, a changed `live` makes Monitors and the
+Audit page read `/api/jobs` again. Live progress comes from the job event
+streams (`/api/jobs/<id>/events`). No page polls a data endpoint.
+
+**Caching layers.** Three, from the server out:
+
+1. the server's response cache above (in-process LRU, single-flight),
+   covering every GET a page component uses: the widgets, History's status
+   and report detail, `/api/watches` and `/api/watches/options` (keyed on the
+   watches data version and the run-window phases besides);
+2. `ETag` + `Cache-Control: no-cache` on every answer, so the browser's HTTP
+   cache keeps the answers across reloads and pages and revalidates them with
+   `304` (`EkteFilters.fetchWidget` is a plain `fetch` and keeps no copy);
+3. the change signal, which tells a page when revalidating is worth it.
+
+**Budget.** Every endpoint a page component uses answers in under 50 ms p95
+on the synthetic 20,000-run history with 200 monitors of
+`scripts/bench_fixture.py` (cold cache), and `/api/version` in under 5 ms
+p95 (opt-in with `EKTE_BENCH=1`: `tests/test_query.py`,
+`tests/test_analytics_widgets.py`, `tests/test_history_api.py`,
+`tests/test_watches_api.py`, `tests/test_web_version.py`; in CI the
+"performance budget" job, see [Benchmark](web-server.md#benchmark)).
 
 ## Local data
 

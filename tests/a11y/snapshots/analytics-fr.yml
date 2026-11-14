@@ -92,6 +92,10 @@
       - option "Tous" [selected]
       - option "Manuel (11)"
       - option "Surveillance (4)"
+    - text: Surveillance
+    - combobox "Surveillance":
+      - option "Tous" [selected]
+      - option "gpt-4o (4)"
     - text: Grouper par
     - combobox "Grouper par":
       - option "Relais" [selected]
@@ -99,6 +103,8 @@
       - option "Relais × modèle"
       - option "Tous"
     - text: 15 exécutions correspondent à ces filtres.
+    - checkbox "Conserver les filtres d’une page à l’autre" [checked]
+    - text: Conserver les filtres d’une page à l’autre
     - status
     - button "Copier le lien vers cette vue"
   - tablist "Vues de l’analyse":
@@ -113,7 +119,7 @@
       - tab "Classement"
     - tabpanel "Chiffres clés":
       - heading "Chiffres clés" [level=2]
-      - paragraph: 1 sept. – 1 oct. 2026, comparé à la période de même durée qui précède (2 août – 1 sept. 2026).
+      - paragraph: 2 sept. – 1 oct. 2026, comparé à la période de même durée qui précède (3 août – 1 sept. 2026).
       - list "Chiffres clés":
         - listitem: Exécutions 15 en hausse +15
         - listitem: Relais 3 en hausse +3

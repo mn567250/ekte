@@ -92,6 +92,10 @@
       - option "Alle" [selected]
       - option "Manuell (11)"
       - option "Überwachung (4)"
+    - text: Überwachung
+    - combobox "Überwachung":
+      - option "Alle" [selected]
+      - option "gpt-4o (4)"
     - text: Gruppieren nach
     - combobox "Gruppieren nach":
       - option "Relay" [selected]
@@ -99,6 +103,8 @@
       - option "Relay × Modell"
       - option "Alle"
     - text: 15 Läufe entsprechen diesen Filtern.
+    - checkbox "Filter über Seiten hinweg behalten" [checked]
+    - text: Filter über Seiten hinweg behalten
     - status
     - button "Link zu dieser Ansicht kopieren"
   - tablist "Analyseansichten":
@@ -113,7 +119,7 @@
       - tab "Rangliste"
     - tabpanel "Kennzahlen":
       - heading "Kennzahlen" [level=2]
-      - paragraph: 01.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (02.08. – 01.09.2026).
+      - paragraph: 02.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (03.08. – 01.09.2026).
       - list "Kennzahlen":
         - listitem: Läufe 15 steigend +15
         - listitem: Relays 3 steigend +3

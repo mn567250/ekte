@@ -352,12 +352,23 @@ def test_running_watch_is_flagged_and_rejects_run_now(tmp_path, monkeypatch, cli
     from ekte.web import server, watches
 
     wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "gpt-4o"})
+    live = ("running", "queued", "progress")
+
+    def monitor_jobs() -> list:
+        return [j for j in client.get("/api/jobs").json()["jobs"] if j.get("watch_id") == wid]
+
     w = client.get("/api/watches").json()[0]
-    assert w["running"] is False and w["progress"] is None
+    assert not set(live) & set(w) and monitor_jobs() == []
     server._running_watches[wid] = {"total": 4, "done": 1}
     try:
-        w = client.get("/api/watches").json()[0]
-        assert w["running"] is True and w["progress"] == 25
+        # queued (waiting for its relay): listed by /api/jobs, without progress
+        [job] = monitor_jobs()
+        assert job["id"] == f"monitor-{wid}" and job["status"] == "queued" and job["progress"] is None
+        server._running_watches[wid]["started"] = True
+        [job] = monitor_jobs()
+        assert job["status"] == "running" and job["progress"] == 25
+        # the list itself never carries the live state
+        assert not set(live) & set(client.get("/api/watches").json()[0])
         assert client.post(f"/api/watches/{wid}/run").status_code == 409
     finally:
         server._running_watches.pop(wid, None)
@@ -453,7 +464,14 @@ def _audit_report(target):
     )
 
 
-async def _until(cond, timeout: float = 30.0) -> None:
+# How long a test waits for a monitor run before calling it hung. It only ends
+# a run that went wrong, so it allows for a heavily loaded runner: on Windows
+# under xdist a run's first save into a fresh data directory (creating and
+# migrating history.db) has taken more than 5 s.
+HANG_S = 30.0
+
+
+async def _until(cond, timeout: float = HANG_S) -> None:
     """Wait for ``cond``: the timeout only ends a run that went wrong, so it
     allows for a heavily loaded runner (Windows under xdist)."""
     import asyncio
@@ -711,7 +729,7 @@ async def test_alert_webhooks_are_sent_at_the_same_time(tmp_path, monkeypatch):
     monkeypatch.setattr(notify, "send", fake_send)
     wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "m",
                           "alert_on": "medium", "webhooks": [*hooks, "  "]})
-    await asyncio.wait_for(server._run_one_watch(watches.get(wid)), 5)
+    await asyncio.wait_for(server._run_one_watch(watches.get(wid)), HANG_S)
     assert sorted(entered) == hooks
     assert watches.get(wid)["last_report_id"] is not None
 
@@ -783,7 +801,7 @@ async def test_run_now_refuses_a_watch_the_scheduler_just_started(tmp_path, monk
         r = await ac.post(f"/api/watches/{wid}/run")
         assert r.status_code == 409
         audits.event("m").set()
-        await asyncio.wait_for(task, 5)
+        await asyncio.wait_for(task, HANG_S)
     assert audits.calls == ["m"]
     assert watches.get(wid)["last_report_id"] is not None
 
@@ -841,8 +859,9 @@ def test_watch_db_v3_gains_a_run_window_column(tmp_path, monkeypatch):
         conn.execute("PRAGMA user_version = 3")
     [w] = watches.list_all()
     assert w["run_window"] is None
-    with sqlite3.connect(path) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
+    with sqlite3.connect(path) as conn:  # migrated to the latest version (5: meta, #151)
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert "run_window" in {r[1] for r in conn.execute("PRAGMA table_info(watches)")}
 
 
 def test_update_sets_clears_and_keeps_the_run_window(tmp_path, monkeypatch):

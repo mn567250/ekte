@@ -58,7 +58,7 @@ _PAGE = """<!doctype html>
   window.__changes = [];
   window.__f = EkteFilters.create({
     section: document.getElementById("filters"), page: "fixture",
-    fields: %(fields)s, defaults: { range: "30d", "trend.metric": "score", tab: "overview" },
+    fields: %(fields)s, defaults: { "trend.metric": "score", tab: "overview" },  // range: the schema's 30d
     foot: '<span id="fcount">Showing all runs</span>',
     onChange: function (s, changed) { window.__changes.push({ changed: changed, trend: EkteFilters.widgetParams("trend") }); },
   });
@@ -68,7 +68,8 @@ _PAGE = """<!doctype html>
 
 def _context(open_page: Any, clipboard: bool = False) -> BrowserContext:
     base = open_page.base_url
-    ctx = open_page.browser.new_context(viewport={"width": 1280, "height": 900})
+    # a fixed viewer zone: widget requests carry it as tz (#152)
+    ctx = open_page.browser.new_context(viewport={"width": 1280, "height": 900}, timezone_id="Europe/Berlin")
     open_page.contexts.append(ctx)
     track_network(ctx)
     if clipboard:
@@ -120,7 +121,7 @@ def test_fields_are_labelled_and_the_panel_passes_axe(open_page) -> None:
     if legends != ["Relay / provider", "Claimed model"]:
         issues.append(f"the relay / model groups are not named by their legend: {legends}")
     # the options endpoint was asked with the shared filters, and its values are offered
-    if ctx.options_calls != ["/api/filters/options?range=30d&group=relay"]:  # type: ignore[attr-defined]
+    if ctx.options_calls != ["/api/filters/options?range=30d&group=relay&tz=Europe%2FBerlin"]:  # type: ignore[attr-defined]
         issues.append(f"options requested as {ctx.options_calls}")  # type: ignore[attr-defined]
     if "Example Relay (9)" not in page.locator("#fbody fieldset").first.inner_text():
         issues.append("the relay options from /api/filters/options are not shown")
@@ -153,7 +154,8 @@ def test_changes_go_to_the_url_and_are_announced(open_page) -> None:
     if page.evaluate("history.length") != entries:
         issues.append("a filter change added a history entry")
     last = page.evaluate("window.__changes[window.__changes.length - 1]")
-    if last != {"changed": ["q"], "trend": "q=gpt&relay=example&relay=-&risk=high&group=relay&trend.metric=latency_p50"}:
+    if last != {"changed": ["q"], "trend": "q=gpt&relay=example&relay=-&risk=high&group=relay&trend.metric=latency_p50"
+                                                       "&tz=Europe%2FBerlin"}:
         issues.append(f"the widget's parameters are {last}")
     live = page.locator("#live").inner_text()
     if live != "Filters updated: 4 active":
@@ -241,14 +243,15 @@ def test_storage_is_only_a_fallback(open_page) -> None:
     broken = _context(open_page)
     broken.add_init_script("""Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } });""")
     p = _open(broken, base, "?relay=example")
-    if p.evaluate("EkteFilters.widgetParams()") != "range=30d&relay=example&group=relay":
+    if p.evaluate("EkteFilters.widgetParams()") != "range=30d&relay=example&group=relay&tz=Europe%2FBerlin":
         issues.append(f"without storage the state is {p.evaluate('EkteFilters.state()')}")
     assert_no_issues(issues, "filters fixture [en]", "filter-storage")
 
 
 def test_monitor_open_in_history_uses_the_shared_keys(open_page) -> None:
-    """The monitor's links to History name its relay by the relay key (not the
-    old base_url=) and open History filtered to its runs."""
+    """The monitor's links to History (EkteFilters.href, #160) name its relay
+    by the relay key (not the old base_url=), add watch=<id> and focus the
+    run (runs.focus): History opens filtered to the monitor's runs, with it."""
     page = open_page("/watches")
     hrefs = page.evaluate("() => [...document.querySelectorAll('a[href^=\"/history?\"]')].map((a) => a.getAttribute('href'))")
     issues: list[str] = []
@@ -256,16 +259,17 @@ def test_monitor_open_in_history_uses_the_shared_keys(open_page) -> None:
         issues.append("no link to History on the monitors page")
     for href in hrefs:
         query = dict(parse_qsl(urlsplit(href).query))
-        if set(query) - {"surface", "relay", "model", "suite"} or "relay" not in query:
+        if set(query) - {"surface", "relay", "model", "suite", "watch", "runs.focus"} or not {"relay", "runs.focus"} <= set(query):
             issues.append(f"{href}: not the shared keys")
+        if urlsplit(href).fragment:
+            issues.append(f"{href}: a fragment instead of runs.focus")
     if hrefs:
         query = dict(parse_qsl(urlsplit(hrefs[0]).query))
-        run = urlsplit(hrefs[0]).fragment
         page.goto(open_page.base_url + hrefs[0], wait_until="load")
         settle(page)
         checked = page.evaluate("() => [...document.querySelectorAll('input[data-m=relay]:checked')].map((b) => b.value)")
         if checked != [query["relay"]]:
             issues.append(f"History's relay filter is {checked!r}")
-        if not page.locator("#" + run).count():
-            issues.append(f"the monitor's run {run} is not in the filtered list")
+        if not page.locator("#r-" + query["runs.focus"]).count():
+            issues.append(f"the monitor's run {query['runs.focus']} is not in the filtered list")
     assert_no_issues(issues, "monitors -> history [en]", "monitor-link")

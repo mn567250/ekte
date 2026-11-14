@@ -19,6 +19,9 @@ Without ``surface`` a widget uses the most common surface of the selection
 (:func:`ekte.web.query.default_surface`, worked out once per selection and data
 version: :func:`default_surface`), so runs of different surfaces never mix;
 the answer names it (``surface``).
+
+Time buckets are made in the viewer's time zone, the shared ``tz``
+(:mod:`ekte.web.query`; default UTC); the widgets have no zone key of their own.
 """
 
 from __future__ import annotations
@@ -96,7 +99,9 @@ def default_surface(conn: Any, q: query.Query) -> str:
     """:func:`ekte.web.query.default_surface` of ``q``'s runs, computed once per
     selection and data version (:data:`SURFACE_CACHE`). ``q.surface`` and
     ``q.group`` do not select runs, so they are not part of the key."""
-    key = cache.cache_key("default_surface", q.replace(surface=None, group="relay").params())
+    # (tz and range only say how from was found: the runs are the same)
+    key = cache.cache_key("default_surface",
+                          q.replace(surface=None, group="relay", range=None, tz=query.DEFAULT_TZ).params())
     return str(SURFACE_CACHE.get_or_compute(key, lambda: query.default_surface(conn, q)))
 
 
@@ -150,15 +155,27 @@ def _judged(m: Metric, cell: dict[str, Any]) -> dict[str, Any]:
 
 def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[str, str]]:
     """The ``prepare`` of the widget endpoints: :func:`ekte.web.query.resolve_params`
-    (``range`` resolved), and ``from`` without ``to`` bounded at now (the next
-    whole minute), so every
-    answer is cached under an absolute range."""
+    (``range`` resolved; a day range to its first local midnight with no
+    ``to``, so its key changes once a day), and a custom ``from`` without
+    ``to`` bounded at now (the next whole minute), so every answer is cached
+    under an absolute range. :data:`WATCHES_KEY` carries the monitors' data
+    version (:func:`ekte.web.watches.data_version`, one primary-key read): the
+    filter options name monitors (:func:`watch_labels`), so a renamed or
+    deleted monitor gives them a new cache key and ETag."""
+    from ekte.web import watches
+
     pairs = query.resolve_params(params, now=now)
     keys = {k for k, _ in pairs}
     if "from" in keys and "to" not in keys and "range" not in keys:
         # rounded up to the next whole minute, as range=: a minute's requests share an answer
         pairs.append(("to", analytics_store.format_ts(query._ceil_minute((now or datetime.now(UTC)).astimezone(UTC)))))
+    pairs = [(k, v) for k, v in pairs if k != WATCHES_KEY]  # (never the client's)
+    pairs.append((WATCHES_KEY, str(watches.data_version())))
     return pairs
+
+
+WATCHES_KEY = "options.watches"
+"""The key :func:`resolve_params` adds (dotted: no endpoint's parser reads it)."""
 
 
 # --------------------------------------------------------------------------- #
@@ -188,18 +205,24 @@ def _kpi_cells(conn: Any, q: query.Query) -> dict[str, query.Cell]:
 def widget_summary(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/summary``: the 12 tiles of
     :data:`ekte.web.metrics.KPI_GRID`, in order, over the range and over the
-    previous range of the same length (none without ``from``)."""
+    previous range (``previous``; none without ``from``): for a day range the
+    same number of calendar days before it in ``tz`` (``[from − N days,
+    from)``), else the span of the same length before ``from``."""
     _widget(params, "kpi")
     conn, q = _setup(params)
     prev_q: query.Query | None = None
     start = q.start
-    if start is not None:
-        end = q.end or datetime.now(UTC)
-        q = q.replace(end=end)
-        try:
+    days = q.days
+    try:
+        if start is not None and days is not None:
+            prev_q = q.replace(start=query.previous_days(start, days, q.zone), end=start,
+                               range=None)
+        elif start is not None:
+            end = q.end or datetime.now(UTC)
+            q = q.replace(end=end)
             prev_q = q.replace(start=start - (end - start), end=start)
-        except OverflowError:
-            prev_q = None
+    except (OverflowError, ValueError):
+        prev_q = None
     now = _kpi_cells(conn, q)
     then = _kpi_cells(conn, prev_q) if prev_q is not None else {}
     tiles = []
@@ -244,16 +267,16 @@ def _series_public(result: query.SeriesResult, ahead: int | None = None) -> dict
 def widget_series(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/series``: one metric per group (``group``) over
     time buckets. ``trend.metric`` (default score), ``trend.bucket`` (hour,
-    day, week), ``trend.tz`` (IANA, default UTC), ``trend.key`` (repeatable,
+    day, week), ``trend.key`` (repeatable,
     up to :data:`MAX_KEYS` series keys; default the busiest groups),
     ``trend.ahead`` (buckets to forecast: hour 12 / 24, day 3 / 7, week 2 / 4;
     0 or absent for none): each series' ``forecast``
     (:mod:`ekte.web.forecast`), or None."""
-    w = _widget(params, "trend", ("metric", "bucket", "tz", "ahead"), ("key",))
+    w = _widget(params, "trend", ("metric", "bucket", "ahead"), ("key",))
     conn, q = _setup(params)
     bucket = _str_choice(w, "bucket", "trend.bucket", TREND_BUCKETS, "day")
     ahead = _int_choice(w, "ahead", "trend.ahead", (0, *forecast.AHEAD[bucket]), 0)
-    result = query.series(conn, q, w.get("metric") or "score", None, bucket, w.get("tz") or "UTC",
+    result = query.series(conn, q, w.get("metric") or "score", None, bucket, q.tz,
                           keys=w["key"], quantiles=True)
     return {**_head(q), **_series_public(result, ahead)}
 
@@ -262,15 +285,15 @@ def widget_heatmap(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/heatmap``: one metric on the weekday x time-of-day
     grid (a series with bucket ``dow_hour``). ``heat.metric`` (default score),
     ``heat.block`` (hours per row: 1, 2, 3, 4, 6), ``heat.fold`` (week,
-    4weeks, month_week), ``heat.tz``, ``heat.key`` (one series key of
+    4weeks, month_week), ``heat.key`` (one series key of
     ``group``; default every selected run as one series, group ``all``)."""
-    w = _widget(params, "heat", ("metric", "block", "fold", "tz", "key"))
+    w = _widget(params, "heat", ("metric", "block", "fold", "key"))
     conn, q = _setup(params)
     block = _int_choice(w, "block", "heat.block", BLOCKS, 1)
     fold = _str_choice(w, "fold", "heat.fold", FOLDS, "week")
     key = w.get("key")
     result = query.series(conn, q, w.get("metric") or "score", None if key else "all", "dow_hour",
-                          w.get("tz") or "UTC", keys=[key] if key else (), block=block, fold=fold,
+                          q.tz, keys=[key] if key else (), block=block, fold=fold,
                           max_keys=1)
     return {**_head(q), **_series_public(result)}
 
@@ -436,13 +459,13 @@ def widget_errors(params: Any) -> dict[str, Any]:
     outcome (:data:`ERROR_CLASSES`, from ``history_outcomes``), pooled per group
     (``group``), in total and per time bucket of the run's start
     (``errors.bucket``: hour, day, week, dow_hour; ``errors.block`` for
-    dow_hour; ``errors.tz``). ``errors.run=<id>``: also that run's per-minute
+    dow_hour; the time zone is the shared ``tz``). ``errors.run=<id>``: also that run's per-minute
     timeline (``run``), classified from its request records."""
-    w = _widget(params, "errors", ("bucket", "block", "tz", "run"))
+    w = _widget(params, "errors", ("bucket", "block", "run"))
     conn, q = _setup(params)
     size = _str_choice(w, "bucket", "errors.bucket", BUCKETS, "day")
     block = _int_choice(w, "block", "errors.block", BLOCKS, 1)
-    zone, zone_name = query._zone(w.get("tz") or "UTC")
+    zone, zone_name = query._zone(q.tz)
     rid = None
     if w.get("run") is not None:
         if not w["run"].isdigit():
@@ -552,9 +575,29 @@ def widget_integrity(params: Any) -> dict[str, Any]:
 # field each sets.
 _FIELDS: dict[str, str] = {
     "surface": "surface", "relay": "relays", "model": "models",
-    **{k: k for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
+    **{k: k for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec", "watch")},
 }
 OPTION_KEYS = tuple(_FIELDS)
+
+
+def deleted_watch_label(wid: int) -> str:
+    """The label of a monitor that no longer exists (English: the page
+    translates it, as the ``deleted`` option says)."""
+    return f"Deleted monitor #{wid}"
+
+
+def watch_labels(ids: Iterable[int]) -> dict[int, str]:
+    """Monitor id -> its name, for the ``ids`` that still exist (one read of
+    ``watches.db``: monitors are few). A monitor without a name is ``#<id>``."""
+    from ekte import datadir
+    from ekte.web import watches
+
+    wanted = set(ids)
+    if not wanted:
+        return {}
+    conn = datadir.read_connection("watches.db", watches.MIGRATIONS)
+    return {int(wid): str(name or f"#{wid}") for wid, name in conn.execute("SELECT id, name FROM watches")
+            if int(wid) in wanted}
 
 
 def filter_options(params: Any) -> dict[str, Any]:
@@ -564,7 +607,11 @@ def filter_options(params: Any) -> dict[str, Any]:
     except the key itself (a selected value and its siblings never
     disappear). ``relay`` values carry their ``label`` (as History names
     the relay, :func:`ekte.web.history_api.relay_labels`: a relay of no
-    knowledge-base entry by its host), ``kind`` and ``in_kb``; ``span`` is the first and last run time under every filter
+    knowledge-base entry by its host), ``kind`` and ``in_kb``; ``watch``
+    values (monitor ids, as integers) their monitor's ``label``, read from
+    ``watches.db`` once (:func:`watch_labels`), and ``deleted: true`` for a
+    monitor that no longer exists (labelled ``Deleted monitor #<id>``, which
+    the page translates); ``span`` is the first and last run time under every filter
     but ``from`` / ``to``; ``dimensions`` the dimension keys of the selected
     runs (for ``dim:<key>`` metrics). Unlike the widgets no surface is
     defaulted: ``surface_default`` names the one they would use.
@@ -584,7 +631,7 @@ def filter_options(params: Any) -> dict[str, Any]:
         start=None, end=None, **{f: () if f in ("relays", "models") else None for f in _FIELDS.values()}))
     base = base.and_where("m.relay_id IS NOT NULL")  # the runs with a relay, as the join to it
     cols = ", ".join(["m.history_id AS id", "m.started_us AS t", "m.relay_id AS rid", "m.facet_id AS fid",
-                      "m.model_id AS mid"])
+                      "m.model_id AS mid", "m.watch_id AS wid"])
 
     def values(key: str) -> tuple[Any, ...]:
         value = getattr(q, _FIELDS[key])
@@ -603,6 +650,8 @@ def filter_options(params: Any) -> dict[str, Any]:
             on_r[key] = (f"rid IN (SELECT id FROM relay_group WHERE relay_key IN ({marks(len(vs))}))", vs)
         elif key == "model":
             on_r[key] = (f"mid IN (SELECT id FROM model_group WHERE model_key IN ({marks(len(vs))}))", vs)
+        elif key == "watch":
+            on_r[key] = ("wid = ?", vs)
         else:
             column = run_row.COLUMNS[key]
             on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
@@ -611,7 +660,7 @@ def filter_options(params: Any) -> dict[str, Any]:
              if v is not None]
     if times:
         on_r[":time"] = (" AND ".join(c for c, _ in times), tuple(a for _, args in times for a in args))
-    flags = [k for k in on_r if k not in on_c]  # relay, model, time
+    flags = [k for k in on_r if k not in on_c]  # relay, model, watch, time
     on_c.update({k: (f"k{i}", ()) for i, k in enumerate(flags)})
 
     def where(conds: Mapping[str, tuple[str, tuple[Any, ...]]], *skip: str) -> tuple[str, list[Any]]:
@@ -642,6 +691,9 @@ def filter_options(params: Any) -> dict[str, Any]:
     branch("SELECT 'model', g.model_key, NULL, NULL, NULL, s.n"
            " FROM (SELECT mid, COUNT(*) AS n FROM r{w} GROUP BY mid) s JOIN model_group g ON g.id = s.mid",
            on_r, "model")
+    branch("SELECT 'watch', s.wid, NULL, NULL, NULL, s.n"
+           " FROM (SELECT wid, COUNT(*) AS n FROM r{w} GROUP BY wid) s WHERE s.wid IS NOT NULL",
+           on_r, "watch")
     branch("SELECT ':span', MIN(t0), MAX(t1), NULL, NULL, 0 FROM c{w}", on_c, ":time")
     branch("SELECT ':runs', NULL, NULL, NULL, NULL, COALESCE(SUM(n), 0) FROM c{w}", on_c)
     # a dimension key is listed once one selected run has it (in run order: usually the first)
@@ -651,6 +703,7 @@ def filter_options(params: Any) -> dict[str, Any]:
     rows = conn.execute(ctes + " UNION ALL ".join(branches), args).fetchall()
     # what History calls each relay (a relay of no knowledge-base entry: its host)
     labels = history_api.relay_labels(conn)
+    names = watch_labels([int(r[1]) for r in rows if r[0] == "watch"])
 
     out: dict[str, Any] = {"filters": q.canonical(), "keys": list(OPTION_KEYS)}
     lists: dict[str, list[dict[str, Any]]] = {k: [] for k in OPTION_KEYS}
@@ -666,6 +719,11 @@ def filter_options(params: Any) -> dict[str, Any]:
             label = labels.get(str(value)) or history_api.host_of(str(value))
             lists[key].append({"value": str(value), "label": label, "kind": str(b), "in_kb": bool(c),
                                "runs": int(n)})
+        elif key == "watch":
+            name = names.get(int(value))
+            lists[key].append({"value": str(int(value)), "runs": int(n),
+                               **({"label": name} if name is not None else
+                                  {"label": deleted_watch_label(int(value)), "deleted": True})})
         else:
             lists[key].append({"value": str(value), "runs": int(n)})
     for key, items in lists.items():

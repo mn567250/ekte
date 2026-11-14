@@ -22,28 +22,50 @@ from ekte.web.analytics_widgets import (
 )
 from ekte.web.query import QueryError
 from tests.test_analytics import OPENAI, OTHER, RELAY, T0, _detectors, _embed_report, _report
-from tests.test_query import _save, data, seeded  # noqa: F401  (fixtures)
+from tests.test_query import _bench_module, _save, data, seeded  # noqa: F401  (fixtures)
 
 pytest.importorskip("fastapi")
+
+# The benchmark fixture's "now": relative ranges resolve against it, so the
+# cases are deterministic.
+END = _bench_module().END
+
+
+def _at_end(params):
+    """``params`` with the range resolved at :data:`END`, as the endpoint's
+    ``prepare`` resolves it at the clock."""
+    return analytics_widgets.resolve_params(params, now=END)
+
 
 # Every endpoint, with parameters that exercise it (also the benchmark's cases).
 WIDGET_CASES = [
     ("filters/options", filter_options, {"surface": "chat"}),
     ("filters/options, filtered", filter_options, {"exec": "manual", "risk": "clean"}),
+    ("filters/options, watch", filter_options, {"watch": "7"}),
     ("summary, 30d", widget_summary, {"from": "2026-10-01T00:00:00Z", "to": "2026-10-31T00:00:00Z"}),
     ("summary, all", widget_summary, {}),
-    ("series score, day", widget_series, {"trend.tz": "Europe/Berlin"}),
-    ("series score, day, forecast", widget_series, {"trend.tz": "Europe/Berlin", "trend.ahead": "7"}),
+    ("summary, watch", widget_summary, {"watch": "7"}),
+    ("series score, day", widget_series, {"tz": "Europe/Berlin"}),
+    ("series score, day, watch", widget_series, {"tz": "Europe/Berlin", "watch": "7"}),
+    ("series score, day, forecast", widget_series, {"tz": "Europe/Berlin", "trend.ahead": "7"}),
     ("series error_rate, week", widget_series, {"trend.metric": "error_rate", "trend.bucket": "week",
                                                 "group": "model"}),
     ("heatmap latency", widget_heatmap, {"heat.metric": "latency_p50", "heat.block": "2",
-                                         "heat.tz": "Asia/Shanghai"}),
+                                         "tz": "Asia/Shanghai"}),
     ("leaderboard, by relay", widget_leaderboard, {"surface": "chat"}),
     ("leaderboard, relay x model", widget_leaderboard, {"board.by": "relay_model"}),
     ("breakdown", widget_breakdown, {"breakdown.metric": ["relay_overhead", "network_rtt"]}),
-    ("errors, day", widget_errors, {"errors.tz": "Europe/Berlin"}),
+    ("errors, day", widget_errors, {"tz": "Europe/Berlin"}),
     ("errors, dow_hour by model", widget_errors, {"errors.bucket": "dow_hour", "group": "model"}),
     ("integrity", widget_integrity, {}),
+    # relative ranges (#152): a day range from local midnight in tz, 365 days, an exact 24 h
+    ("summary, range 30d Berlin", widget_summary, _at_end({"range": "30d", "tz": "Europe/Berlin"})),
+    ("series score, range 30d Berlin", widget_series, _at_end({"range": "30d", "tz": "Europe/Berlin"})),
+    ("errors, range 30d Berlin", widget_errors, _at_end({"range": "30d", "tz": "Europe/Berlin"})),
+    ("summary, range 365d", widget_summary, _at_end({"range": "365d"})),
+    ("leaderboard, range 365d", widget_leaderboard, _at_end({"range": "365d"})),
+    ("summary, range 24h", widget_summary, _at_end({"range": "24h"})),
+    ("series score, hour, range 24h", widget_series, _at_end({"range": "24h", "trend.bucket": "hour"})),
 ]
 PATHS = {
     filter_options: "/api/filters/options", widget_summary: "/api/analytics/summary",
@@ -201,7 +223,7 @@ def test_summary_on_a_non_chat_surface_keeps_the_slots(data, client):  # noqa: F
 # series and heatmap
 # --------------------------------------------------------------------------- #
 def test_series_keys_groups_buckets_and_families(seeded, client):  # noqa: F811
-    out = _get(client, "/api/analytics/series", [("trend.metric", "score"), ("trend.tz", "Europe/Berlin"),
+    out = _get(client, "/api/analytics/series", [("trend.metric", "score"), ("tz", "Europe/Berlin"),
                                                  ("trend.key", "cheap-gpt"), ("trend.key", OTHER)])
     assert [s["key"] for s in out["series"]] == ["cheap-gpt", OTHER] and out["tz"] == "Europe/Berlin"
     point = out["series"][0]["points"][0]
@@ -233,7 +255,7 @@ def test_series_forecast(data, client):  # noqa: F811
         for k in range(8):
             _save(T0 + timedelta(days=day, hours=2 * k), base_url=RELAY,
                   ttft=float(300 + 10 * day + (k - 4) * 5))
-    base = {"trend.metric": "ttft_p50", "trend.tz": "Europe/Berlin"}
+    base = {"trend.metric": "ttft_p50", "tz": "Europe/Berlin"}
     without = _get(client, "/api/analytics/series", base)
     assert without["series"] and all(s["forecast"] is None for s in without["series"])
     assert all(s["forecast"] is None
@@ -264,7 +286,7 @@ def test_series_forecast(data, client):  # noqa: F811
 
 
 def test_heatmap(seeded, client):  # noqa: F811
-    out = _get(client, "/api/analytics/heatmap", {"heat.block": "6", "heat.tz": "UTC"})
+    out = _get(client, "/api/analytics/heatmap", {"heat.block": "6", "tz": "UTC"})
     assert out["bucket"] == "dow_hour" and out["group"] == "all" and len(out["series"]) == 1
     cells = out["series"][0]["points"]
     assert out["series"][0]["runs"] == 60 and all(c["hours"] == 6 and c["family"] for c in cells)
@@ -367,7 +389,7 @@ def test_errors_classify_like_the_outcome_model(data, client):  # noqa: F811
         if rec["endpoint"] == "target" and (o := errorclass.outcome(rec)) is not None:
             expected[o] += 1
     assert expected == TRICKY_COUNTS
-    out = _get(client, "/api/analytics/errors", {"errors.run": str(rid), "errors.tz": "Europe/Berlin"})
+    out = _get(client, "/api/analytics/errors", {"errors.run": str(rid), "tz": "Europe/Berlin"})
     assert out["classes"] == list(errorclass.OUTCOMES)
     totals = out["totals"]
     assert totals["counts"] == TRICKY_COUNTS and totals["requests"] == 12 and totals["judged"] == 8
@@ -433,7 +455,7 @@ def test_errors_groups_buckets_filters_and_coverage(seeded, client):  # noqa: F8
     assert empty["runs"] == 0 and empty["coverage"] is None and empty["groups"] == empty["buckets"] == []
     assert empty["totals"]["success_rate"] is None
     for params, message in [({"errors.bucket": "month"}, "errors.bucket must be one of"),
-                            ({"errors.tz": "Nowhere/x"}, "unknown time zone"),
+                            ({"tz": "Nowhere/x"}, "unknown time zone"),
                             ({"errors.run": "x"}, "errors.run must be a run id")]:
         assert message in _get(client, "/api/analytics/errors", params, 400)["error"]
 
@@ -496,8 +518,10 @@ def test_filter_options_count_every_key_under_the_other_filters(seeded, client):
     out = _get(client, "/api/filters/options")
     assert out["runs"] == 60 and out["surface_default"] == "chat" and out["keys"] == list(
         analytics_widgets.OPTION_KEYS)
+    monitor_runs = {o["value"]: o["runs"] for o in out["exec"]}["monitor"]
     for key in out["keys"]:
-        assert sum(o["runs"] for o in out[key]) == 60, key
+        # watch lists the monitors' runs only (a run started by hand has no monitor)
+        assert sum(o["runs"] for o in out[key]) == (monitor_runs if key == "watch" else 60), key
     relays = {o["value"]: o for o in out["relay"]}
     assert relays["cheap-gpt"]["label"] == "Cheap GPT" and relays["cheap-gpt"]["in_kb"] is True
     assert relays[OTHER]["in_kb"] is False and relays["openai"]["runs"] == 15
@@ -510,7 +534,6 @@ def test_filter_options_count_every_key_under_the_other_filters(seeded, client):
     sel = _get(client, "/api/filters/options", {"relay": "cheap-gpt", "exec": "monitor"})
     assert {o["value"] for o in sel["relay"]} == {o["value"] for o in out["relay"]}
     assert {o["value"] for o in sel["exec"]} == {"manual", "monitor"}
-    monitor_runs = {o["value"]: o["runs"] for o in out["exec"]}["monitor"]
     assert sum(o["runs"] for o in sel["model"]) == sel["runs"] < monitor_runs
     # from / to narrow the counts but not the span
     window = _get(client, "/api/filters/options", {"from": (T0 + timedelta(days=50)).isoformat(),
@@ -533,6 +556,57 @@ def test_filter_options_name_relays_as_history_does(data, client):  # noqa: F811
     assert labels == {g["key"]: g["relay"]["label"] for g in groups["groups"]}
 
 
+def test_watch_selects_exactly_one_monitor(data, client):  # noqa: F811
+    """Two monitors with the same relay, model and suite (they differ only in
+    stream mode): watch=<a> is a's runs on History and Analytics, its options
+    name the monitors, and a deleted monitor's runs stay filterable."""
+    from ekte.web import watches
+
+    cfg = {"base_url": RELAY, "model": "model-a", "suite": "quick"}
+    a = watches.create({**cfg, "name": "Alpha"})
+    b = watches.create({**cfg, "name": "Beta", "performance_streaming": False})
+    runs = {w: [_save(T0 + timedelta(hours=i), watch_id=w, base_url=RELAY, model="model-a", suite="quick")
+                for i in range(n)] for w, n in ((a, 3), (b, 2), (None, 1))}
+    for w, n in ((a, 3), (b, 2)):
+        p = {"watch": str(w)}
+        assert _get(client, "/api/history/groups", {**p, "trend.metrics": "score"})["total_runs"] == n
+        page = _get(client, "/api/history/runs", {**p, "group": "all", "group.key": "(all)"})
+        assert sorted(r["id"] for r in page["rows"]) == runs[w] and {r["watch_id"] for r in page["rows"]} == {w}
+        assert _get(client, "/api/analytics/summary", p)["runs"] == n
+        series = _get(client, "/api/analytics/series", {**p, "group": "all"})["series"]
+        assert sum(pt["runs"] for s in series for pt in s["points"]) == n
+    out = _get(client, "/api/filters/options")
+    # AND with the other filters
+    [relay] = [o["value"] for o in out["relay"]]
+    assert _get(client, "/api/analytics/summary", {"watch": str(a), "exec": "manual"})["runs"] == 0
+    assert _get(client, "/api/analytics/summary", {"watch": str(a), "relay": relay})["runs"] == 3
+    assert out["watch"] == [{"value": str(a), "runs": 3, "label": "Alpha"},
+                            {"value": str(b), "runs": 2, "label": "Beta"}]
+    # counted under the other filters but its own: the sibling stays
+    assert _get(client, "/api/filters/options", {"watch": str(a)})["watch"] == out["watch"]
+    assert _get(client, "/api/filters/options", {"exec": "manual"})["watch"] == []
+
+    etag = client.get("/api/filters/options").headers["etag"]
+    watches.delete(b)  # history stays as it was: the monitors' data version gives a new key
+    again = client.get("/api/filters/options", headers={"If-None-Match": etag})
+    assert again.status_code == 200 and again.headers["etag"] != etag
+    gone = {o["value"]: o for o in again.json()["watch"]}[str(b)]
+    assert gone == {"value": str(b), "runs": 2, "label": f"Deleted monitor #{b}", "deleted": True}
+    assert _get(client, "/api/analytics/summary", {"watch": str(b)})["runs"] == 2  # still filterable
+
+
+@pytest.mark.parametrize("path", ["/api/history/groups", "/api/history/runs", *sorted(PATHS.values())])
+@pytest.mark.parametrize("value", ["0", "-1", "abc", ["1", "2"]])
+def test_watch_rejects_anything_but_one_monitor_id(seeded, client, path, value):  # noqa: F811
+    # (with the widget keys each endpoint needs, so only watch can be wrong)
+    extra = {"/api/history/groups": {"trend.metrics": "score"},
+             "/api/history/runs": {"group": "all", "group.key": "(all)"},
+             "/api/analytics/breakdown": {"breakdown.metric": "score"}}.get(path, {})
+    assert _get(client, path, {**extra, "watch": "1"})  # a valid id answers
+    error = _get(client, path, {**extra, "watch": value}, 400)["error"]
+    assert "watch" in error
+
+
 def test_filter_options_surfaces(data, client):  # noqa: F811
     history.save(_embed_report(T0))
     _save(T0, base_url=OPENAI)
@@ -549,11 +623,97 @@ def test_resolve_params_bounds_open_ranges():
     now = datetime(2026, 6, 1, 12, 0, 30, tzinfo=UTC)
     pairs = dict(analytics_widgets.resolve_params({"from": "2026-05-01", "trend.metric": "score"}, now=now))
     assert pairs["to"] == "2026-06-01T12:01:00.000000+00:00" and pairs["trend.metric"] == "score"
-    assert dict(analytics_widgets.resolve_params({"range": "7d"}, now=now))["from"] == \
-        "2026-05-25T12:01:00.000000+00:00"
+    # a day range starts at local midnight and has no end; 24h is exact
+    week = dict(analytics_widgets.resolve_params({"range": "7d"}, now=now))
+    assert week["from"] == "2026-05-26T00:00:00.000000+00:00" and "to" not in week and week["range"] == "7d"
+    berlin = dict(analytics_widgets.resolve_params({"range": "7d", "tz": "Europe/Berlin"}, now=now))
+    assert berlin["from"] == "2026-05-25T22:00:00.000000+00:00" and berlin["tz"] == "Europe/Berlin"
+    day = dict(analytics_widgets.resolve_params({"range": "24h"}, now=now))
+    assert day.pop(analytics_widgets.WATCHES_KEY).isdigit()  # the monitors' data version (#155)
+    assert day == {"from": "2026-05-31T12:01:00.000000+00:00", "to": "2026-06-01T12:01:00.000000+00:00",
+                   "group": "relay"}
     assert "to" not in dict(analytics_widgets.resolve_params({}, now=now))
     with pytest.raises(QueryError):
         analytics_widgets.widget_summary(analytics_widgets.resolve_params({"from": "x"}, now=now))
+
+
+def _freeze(monkeypatch, clock):
+    """The query core's clock reads ``clock[0]`` (an aware datetime)."""
+    from ekte.web import query
+
+    class Frozen(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return clock[0].astimezone(tz) if tz else clock[0]
+
+    monkeypatch.setattr(query, "datetime", Frozen)
+
+
+def test_a_day_range_keeps_its_etag_all_day(seeded, client, monkeypatch):  # noqa: F811
+    """range=30d gives the same ETag minutes apart and a new one at the
+    viewer's next midnight; 24h stays exact (a new ETag every minute)."""
+    clock = [datetime(2026, 9, 10, 12, 0, 10, tzinfo=UTC)]
+    _freeze(monkeypatch, clock)
+    params = {"range": "30d", "tz": "Europe/Berlin", "trend.metric": "score"}
+    first = client.get("/api/analytics/series", params=params)
+    assert first.status_code == 200
+    body = first.json()
+    assert body["from"] == "2026-08-11T22:00:00.000000+00:00" and body["to"] is None  # Aug 12, 00:00 Berlin
+    assert body["tz"] == "Europe/Berlin"  # the shared tz buckets the trend
+    clock[0] += timedelta(minutes=1)
+    again = client.get("/api/analytics/series", params=params, headers={"If-None-Match": first.headers["etag"]})
+    assert again.status_code == 304 and again.headers["etag"] == first.headers["etag"]
+    clock[0] = datetime(2026, 9, 10, 21, 59, tzinfo=UTC)  # 23:59 in Berlin
+    assert client.get("/api/analytics/series", params=params).headers["etag"] == first.headers["etag"]
+    clock[0] = datetime(2026, 9, 10, 22, 0, tzinfo=UTC)  # the next local midnight
+    later = client.get("/api/analytics/series", params=params)
+    assert later.headers["etag"] != first.headers["etag"]
+    assert later.json()["from"] == "2026-08-12T22:00:00.000000+00:00"
+
+    hours = {"range": "24h"}
+    a = client.get("/api/analytics/summary", params=hours)
+    clock[0] += timedelta(minutes=1)
+    b = client.get("/api/analytics/summary", params=hours)
+    assert a.headers["etag"] != b.headers["etag"]
+    assert b.json()["to"] == "2026-09-10T22:01:00.000000+00:00"
+    assert b.json()["from"] == "2026-09-09T22:01:00.000000+00:00"
+
+
+def test_the_summary_of_a_day_range_compares_the_days_before(seeded, client, monkeypatch):  # noqa: F811
+    clock = [datetime(2026, 9, 10, 12, 0, tzinfo=UTC)]
+    _freeze(monkeypatch, clock)
+    out = _get(client, "/api/analytics/summary", {"range": "30d", "tz": "Europe/Berlin"})
+    assert out["from"] == "2026-08-11T22:00:00.000000+00:00" and out["to"] is None
+    # the 30 calendar days before: Jul 13 - Aug 12 (Berlin)
+    assert out["previous"] == {"from": "2026-07-12T22:00:00.000000+00:00",
+                               "to": "2026-08-11T22:00:00.000000+00:00"}
+    conn = history.query_connection()
+    q = analytics_widgets.query.parse_query
+    now_runs = analytics_widgets.query.count_runs(conn, q({"from": out["from"]}))
+    then_runs = analytics_widgets.query.count_runs(conn, q(out["previous"]))
+    tiles = {t["id"]: t for t in out["tiles"]}
+    assert tiles["runs"]["value"] == now_runs and tiles["runs"]["previous"] == then_runs
+    assert now_runs and then_runs
+    # across the change from summer time: 30 calendar days, not 30 x 24 h
+    clock[0] = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
+    out = _get(client, "/api/analytics/summary", {"range": "30d", "tz": "Europe/Berlin"})
+    assert out["from"] == "2026-10-11T22:00:00.000000+00:00"  # Oct 12, 00:00 CEST
+    assert out["previous"] == {"from": "2026-09-11T22:00:00.000000+00:00", "to": out["from"]}
+
+
+def test_the_widgets_zone_is_the_shared_tz(seeded):  # noqa: F811
+    shared = {"tz": "America/Los_Angeles"}
+    assert widget_series(shared)["tz"] == "America/Los_Angeles"
+    assert widget_heatmap(shared)["tz"] == "America/Los_Angeles"
+    assert widget_errors(shared)["tz"] == "America/Los_Angeles"
+    assert widget_series({})["tz"] == "UTC"
+    with pytest.raises(QueryError, match="unknown time zone"):
+        widget_series({"tz": "Nowhere/Land"})
+    # the widgets' own zone keys went with #161: the top-level tz replaced them
+    for widget, key in ((widget_series, "trend.tz"), (widget_heatmap, "heat.tz"), (widget_errors, "errors.tz")):
+        with pytest.raises(QueryError, match="unknown parameter"):
+            widget(shared | {key: "Asia/Tokyo"})
+
 
 
 def test_a_saved_run_drops_the_cached_answers(seeded, client):  # noqa: F811
@@ -579,7 +739,7 @@ def test_the_default_surface_is_counted_once_per_selection(seeded, monkeypatch):
     monkeypatch.setattr(query, "default_surface", counted)
     analytics_widgets.SURFACE_CACHE.clear()
     for name, fn, params in WIDGET_CASES:
-        if fn is not filter_options and not {"surface", "from"} & set(params):
+        if fn is not filter_options and not {"surface", "from", "watch"} & set(dict(params)):
             assert fn(params)["surface"] == "chat", name
     # each of them selects every run (group, bucket and widget keys select none)
     assert len(calls) == 1
@@ -606,6 +766,8 @@ def test_benchmark_20k_runs_under_budget(bench_data):
     history.query_connection()
     results = {name: bench_report.measure(lambda fn=fn, params=params: fn(params))
                for name, fn, params in WIDGET_CASES}
+    # GET /api/metrics, the registry every page loads (#161: every component endpoint has a case)
+    results["metrics"] = bench_report.measure(metrics.catalogue)
     slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
     bench_report.record("analytics_widgets", results, budget)
     assert not slow, f"p95 over {budget} ms: {slow}"

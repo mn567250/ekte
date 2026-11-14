@@ -7,6 +7,7 @@ localStorage fallback, and widget fetching (superseded requests aborted, ETag
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -32,13 +33,14 @@ body(F).then((out) => console.log(JSON.stringify(out === undefined ? null : out)
 """
 
 ALL = ["q", "range", "surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk",
-       "min_score", "exec", "group"]
+       "min_score", "exec", "watch", "group", "state", "alerting"]
 
 
-def run(body: str) -> Any:
+def run(body: str, tz: str | None = None) -> Any:
+    env = None if tz is None else {**os.environ, "TZ": tz}
     out = run_subprocess(
         ["node", "-e", _JS, str(STATIC), body],
-        capture_output=True, text=True, encoding="utf-8", check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True, env=env,
     ).stdout
     return json.loads(out)
 
@@ -59,7 +61,8 @@ def parse(search: str, fields: list[str] | None = None) -> dict[str, Any]:
     ("range=7d", {"range": "7d"}),
     ("range=24h", {"range": "24h"}),
     ("range=12d", {}),  # not a preset
-    ("from=2026-01-01&to=2026-02-01T12:30:00Z", {"from": "2026-01-01", "to": "2026-02-01T12:30:00Z"}),
+    # from / to without range: a custom range, not the 30d default over them
+    ("from=2026-01-01&to=2026-02-01T12:30:00Z", {"from": "2026-01-01", "to": "2026-02-01T12:30:00Z", "range": ""}),
     ("from=yesterday", {}),
     ("range=30d&from=2026-01-01", {"range": "30d"}),  # range wins over from / to
     ("surface=embedding", {"surface": "embedding"}),
@@ -88,6 +91,14 @@ def parse(search: str, fields: list[str] | None = None) -> dict[str, Any]:
     ("min_score=abc", {}),
     ("exec=monitor", {"exec": "monitor"}),
     ("exec=adhoc", {}),  # the old value
+    ("watch=12", {"watch": "12"}),  # a monitor id
+    ("watch=0", {}),  # not one (the server would answer 400)
+    ("watch=-1", {}),
+    ("watch=-", {}),  # no "(unknown)": a run started by hand has exec=manual
+    ("watch=abc", {}),
+    ("watch=1.5", {}),
+    ("watch=012", {}),  # one spelling (the server's)
+    ("watch=3&watch=4", {"watch": "3"}),  # not repeatable: the first
     ("group=model", {"group": "model"}),
     ("group=relay_model", {"group": "relay_model"}),
     ("group=", {}),  # the default, never "none"
@@ -110,7 +121,7 @@ def test_parse_drops_keys_the_page_does_not_show():
     assert parse("risk=high&relay=a&q=x", ["relay"]) == {"relay": ["a"]}
     # from / to come with range
     assert parse("from=2026-01-01", ["relay"]) == {}
-    assert parse("from=2026-01-01", ["range"]) == {"from": "2026-01-01"}
+    assert parse("from=2026-01-01", ["range"]) == {"from": "2026-01-01", "range": ""}
 
 
 # --------------------------------------------------------------------------- #
@@ -119,16 +130,19 @@ def test_parse_drops_keys_the_page_does_not_show():
 FULL = {
     "q": "relay x", "range": "", "from": "2026-01-01", "to": "2026-02-01", "surface": "rerank",
     "relay": ["a", "-"], "model": ["m1"], "suite": "-", "mode": "check", "api": "anthropic", "stream": "both",
-    "detect": "manual", "risk": "clean", "min_score": "55", "exec": "manual", "group": "all",
+    "detect": "manual", "risk": "clean", "min_score": "55", "exec": "manual", "watch": "12",
+    "group": "all",
 }
 
 
 def test_every_key_round_trips():
     qs = run(f"return F.serialise({js(FULL)}, {{}}, {js(ALL)});")
-    assert qs == ("q=relay+x&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=-&model=m1&suite=-"
-                  "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&group=all")
+    # range "" (all time, custom from / to) differs from the schema's 30d: "range="
+    assert qs == ("q=relay+x&range=&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=-&model=m1&suite=-"
+                  "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&watch=12"
+                  "&group=all")
     back = parse(qs)
-    assert back == {k: v for k, v in FULL.items() if k != "range"}
+    assert back == FULL
 
 
 def test_defaults_are_left_out():
@@ -204,6 +218,168 @@ def test_storage_that_throws_or_is_missing_falls_back_to_the_defaults():
 
 
 # --------------------------------------------------------------------------- #
+# remembered filters: shared across pages (default) or per page (#154)
+# --------------------------------------------------------------------------- #
+_PAGES = _STORE + """
+const HIST = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score",
+              "range", "exec"];
+const ANA = ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "group"];
+const page = (name, fields, defaults) => ({ page: name, fields, defaults: defaults || {} });
+const hist = page("history", HIST), ana = page("analytics", ANA, { range: "30d" });
+const mon = page("monitors", ["q", "surface", "relay", "model", "suite", "api", "stream"]);
+// a page's filter change, as create().set() records it
+const use = (p, search, store) => F.remember(p.page, F.initial(search, Object.assign({ storage: store }, p)).state,
+                                              p.fields, p.defaults, store);
+const open = (p, search, store) => F.initial(search, Object.assign({ storage: store }, p));
+"""
+
+
+def test_shared_mode_is_the_default_and_carries_relay_between_pages():
+    got = run(_PAGES + """
+      const s = mem({});
+      const before = F.scope(s);
+      use(hist, "?relay=a&risk=high&range=7d", s);
+      return [before, open(ana, "", s), JSON.parse(s.getItem("ekte.v2.filters.shared"))];
+    """)
+    assert got[0] == "shared"
+    assert got[1]["source"] == "storage"
+    st = got[1]["state"]
+    assert st["relay"] == ["a"] and st["range"] == "7d" and st["group"] == "relay"
+    assert "risk" not in st  # Analytics does not show risk
+    # every shared key History shows, as shown; never the search text
+    assert got[2]["relay"] == ["a"] and got[2]["risk"] == "high" and got[2]["range"] == "7d"
+    assert got[2]["surface"] == "" and got[2]["model"] == [] and "q" not in got[2]
+
+
+def test_per_page_mode_keeps_pages_apart():
+    got = run(_PAGES + """
+      const s = mem({});
+      F.setScope("page", s);
+      use(ana, "?relay=b", s);
+      use(hist, "?relay=a", s);
+      return [F.scope(s), open(ana, "", s), open(hist, "", s), s.getItem("ekte.v2.filters.shared")];
+    """)
+    assert got[0] == "page"
+    assert got[1]["state"]["relay"] == ["b"] and got[1]["source"] == "storage"
+    assert got[2]["state"]["relay"] == ["a"]
+    assert got[3] is None  # per page writes no shared memory
+
+
+def test_a_page_with_a_subset_of_fields_leaves_the_other_shared_keys_untouched():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?relay=a&range=90d&risk=low", s);
+      use(mon, "?relay=c&stream=both", s);     // no range, no risk on this page
+      return [JSON.parse(s.getItem("ekte.v2.filters.shared")), open(hist, "", s).state];
+    """)
+    assert got[0]["relay"] == ["c"] and got[0]["stream"] == "both"
+    assert got[0]["range"] == "90d" and got[0]["risk"] == "low"
+    assert got[1]["range"] == "90d" and got[1]["risk"] == "low" and got[1]["relay"] == ["c"]
+
+
+def test_values_cross_as_shown_whatever_each_pages_default():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?range=", s);                                   // all time: History's default
+      const allTime = open(ana, "", s).state;
+      use(hist, "?from=2026-01-01&to=2026-02-01", s);            // a custom range
+      const custom = open(ana, "", s).state;
+      use(ana, "?range=30d&surface=chat", s);                    // Analytics' default range
+      return [allTime, custom, open(hist, "", s).state];
+    """)
+    assert got[0]["range"] == ""
+    assert (got[1]["range"], got[1]["from"], got[1]["to"]) == ("", "2026-01-01", "2026-02-01")
+    assert got[2]["range"] == "30d" and got[2]["surface"] == "chat"
+
+
+def test_search_text_never_crosses_pages():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?q=gpt&relay=a", s);
+      const shared = JSON.parse(s.getItem("ekte.v2.filters.shared"));
+      const m = open(mon, "", s).state;
+      use(mon, "?q=claude&relay=a", s);
+      return [shared, m, open(hist, "", s).state.q, open(mon, "", s).state.q];
+    """)
+    assert "q" not in got[0]
+    assert got[1]["q"] == "" and got[1]["relay"] == ["a"]
+    assert got[2] == "gpt" and got[3] == "claude"
+
+
+def test_the_url_wins_in_both_modes():
+    got = run(_PAGES + """
+      const out = [];
+      for (const mode of ["shared", "page"]) {
+        const s = mem({});
+        F.setScope(mode, s);
+        use(hist, "?relay=a", s);
+        use(ana, "?relay=a", s);
+        out.push(open(ana, "?stream=both", s));
+      }
+      return out;
+    """)
+    for one in got:
+        assert one["source"] == "url"
+        assert one["state"]["relay"] == [] and one["state"]["stream"] == "both"
+
+
+def test_turning_sharing_on_writes_the_view_and_off_copies_nothing():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?relay=a", s);
+      F.setScope("page", s);
+      const shared = s.getItem("ekte.v2.filters.shared");
+      use(hist, "?relay=b", s);                                  // per page: shared memory untouched
+      const off = s.getItem("ekte.v2.filters.shared");
+      const st = open(ana, "?relay=z&range=7d", s).state;
+      F.setScope("shared", s, { state: st, fields: ana.fields });
+      return [shared === off, JSON.parse(off).relay, JSON.parse(s.getItem("ekte.v2.filters.shared")),
+              open(hist, "", s).state];
+    """)
+    assert got[0] is True and got[1] == ["a"]  # turning it off copied nothing
+    assert got[2]["relay"] == ["z"] and got[2]["range"] == "7d" and got[2]["group"] == "relay"
+    assert got[2]["mode"] == ""  # a key Analytics does not show: History's, unchanged
+    assert got[3]["relay"] == ["z"] and got[3]["range"] == "7d"
+
+
+def test_shared_mode_without_a_shared_memory_reads_the_pages_own():
+    got = run(_PAGES + """
+      const s = mem({ "ekte.v2.filters.analytics": "relay=old" });
+      return open(ana, "", s);
+    """)
+    assert got["source"] == "storage" and got["state"]["relay"] == ["old"]
+
+
+def test_invalid_or_foreign_shared_memory_is_dropped():
+    got = run(_PAGES + """
+      return [
+        open(ana, "", mem({ "ekte.v2.filters.shared": "{not json" })),
+        open(ana, "", mem({ "ekte.v2.filters.shared": '{"range":"12d","surface":"video","group":"model","q":"x"}' })),
+        open(ana, "", mem({ "ekte.v2.filters.shared": "[1,2]", "ekte.v2.filters.scope": "bogus" })),
+      ];
+    """)
+    assert got[0]["source"] == got[2]["source"] == "defaults"
+    # the valid key applies, the invalid ones and the page-specific q do not
+    assert got[1]["source"] == "storage"
+    for g in got:
+        assert g["state"]["range"] == "30d" and g["state"]["surface"] == ""
+    assert got[1]["state"]["group"] == "model" and "q" not in got[1]["state"]
+
+
+def test_throwing_storage_is_harmless_for_every_helper():
+    got = run(_PAGES + """
+      const partly = { getItem: (k) => { if (k === "ekte.v2.filters.shared") throw new Error("x"); return null; },
+                       setItem() { throw new Error("full"); } };
+      F.remember("history", { relay: ["a"] }, ["relay"], {}, throwing);
+      F.remember("history", { relay: ["a"] }, ["relay"], {}, partly);
+      return [F.scope(throwing), F.setScope("page", throwing, { state: {}, fields: [] }),
+              F.setScope("shared", throwing, { state: { relay: ["a"] }, fields: ["relay"] }),
+              open(ana, "", throwing).source, open(ana, "", partly).source, open(hist, "?relay=x", throwing).state.relay];
+    """)
+    assert got == ["shared", "page", "shared", "defaults", "defaults", ["x"]]
+
+
+# --------------------------------------------------------------------------- #
 # fetching
 # --------------------------------------------------------------------------- #
 # a fetch stub: each call is recorded; `respond(url, init)` decides, and a
@@ -214,7 +390,9 @@ let respond = null;
 const res = (status, body, etag) => ({ status, ok: status >= 200 && status < 300,
   headers: { get: (h) => (h === "ETag" ? etag || null : null) }, json: async () => body });
 global.fetch = (url, init) => {
-  calls.push({ url, inm: (init.headers || {})["If-None-Match"] || null });
+  calls.push({ url, inm: (init.headers || {})["If-None-Match"] || null, init: {
+    headers: init.headers, credentials: init.credentials, cache: init.cache === undefined ? null : init.cache,
+    signal: !!init.signal } });
   return new Promise((resolve, reject) => {
     const abort = () => { const e = new Error("aborted"); e.name = "AbortError"; reject(e); };
     if (init.signal) { if (init.signal.aborted) return abort(); init.signal.addEventListener("abort", abort); }
@@ -226,25 +404,26 @@ const tick = () => new Promise((r) => setTimeout(r, 5));
 """
 
 
-def test_etag_is_sent_and_a_304_reuses_the_copy():
+def test_a_plain_fetch_on_the_browser_cache_keeps_no_copy():
+    """fetchWidget leaves revalidation to the browser's HTTP cache (the
+    server's ETag + no-cache): the default cache mode, no If-None-Match of
+    its own, and every answer, a stored one included, comes from fetch."""
     got = run(_FETCH + """
       let n = 0;
-      respond = (url, init) => {
-        n += 1;
-        if (init.headers["If-None-Match"] === '"v1"') return res(304, null, '"v1"');
-        return res(200, { url, n }, url.includes("nocache") ? null : '"v1"');
-      };
+      respond = (url) => { n += 1; return res(200, { url, n }, '"v1"'); };
       const a = await F.fetchWidget("/api/x?range=7d");
-      const b = await F.fetchWidget("/api/x?range=7d");      // 304: the same data
-      const c = await F.fetchWidget("/api/x?range=30d");     // another URL: no ETag of its own yet
-      const d = await F.fetchWidget("/api/nocache");
-      const e = await F.fetchWidget("/api/nocache");         // no ETag given: never conditional
-      return { a, b, c, d, e, calls };
+      const b = await F.fetchWidget("/api/x?range=7d");   // the browser revalidates; a 304 arrives as a 200
+      const ctl = new AbortController();
+      const c = await F.fetchWidget("/api/x?range=30d", { signal: ctl.signal });
+      return { a, b, c, calls };
     """)
-    assert got["a"] == got["b"] == {"url": "/api/x?range=7d", "n": 1}
+    assert got["a"] == {"url": "/api/x?range=7d", "n": 1}
+    assert got["b"] == {"url": "/api/x?range=7d", "n": 2}
     assert got["c"] == {"url": "/api/x?range=30d", "n": 3}
-    assert [c["inm"] for c in got["calls"]] == [None, '"v1"', None, None, None]
-    assert got["e"]["n"] == 5
+    assert [c["inm"] for c in got["calls"]] == [None, None, None]
+    assert [c["init"] for c in got["calls"]] == [
+        {"headers": {"Accept": "application/json"}, "credentials": "same-origin", "cache": None,
+         "signal": s} for s in (False, False, True)]
 
 
 def test_an_error_status_rejects_with_the_server_message():
@@ -308,3 +487,163 @@ def test_no_metric_logic_in_the_module():
     src = re.sub(r"/\*.*?\*/|^\s*//.*$", "", src, flags=re.S | re.M)  # the code, not its comments
     for word in ("median", "percentile", "grade", "score >", "Math.round", "success_rate", "error_rate"):
         assert word not in src, word
+
+
+# --------------------------------------------------------------------------- #
+# the viewer's time zone and the shared default range (#152)
+# --------------------------------------------------------------------------- #
+def test_the_default_range_is_30d_once_in_the_schema():
+    assert run("return F.FIELDS.range.def;") == "30d"
+    # every page starts on it without a page default, and "range=" is all time
+    o = '{ fields: ["range", "relay"], defaults: {}, page: "history", storage: null }'
+    got = run(f"return [F.initial('', {o}), F.initial('?range=', {o})];")
+    assert got[0]["state"]["range"] == "30d" and got[1]["state"]["range"] == ""
+    assert run(f"return F.serialise({{range: '30d', relay: []}}, {{}}, {js(['range', 'relay'])});") == ""
+    assert run(f"return F.serialise({{range: '', relay: []}}, {{}}, {js(['range', 'relay'])});") == "range="
+    # all time sends no range to the widgets
+    assert run(f"return F.params({{range: '', from: '', to: ''}}, {js(['range'])}, null);") == ""
+
+
+def test_widget_params_carry_the_viewers_zone_and_links_do_not():
+    state = {"range": "30d", "from": "", "to": "", "relay": ["a"], "trend.metric": "score"}
+    fields = ["range", "relay"]
+    got = run(f"""
+      const zone = F.viewerZone();
+      return {{ zone, widget: F.params({js(state)}, {js(fields)}, "trend", zone),
+                plain: F.params({js(state)}, {js(fields)}, "trend"),
+                link: F.serialise({js(state)}, {{}}, {js(fields)}),
+                parsed: F.parse("?range=7d&tz=Asia/Tokyo&trend.tz=x", {js(fields)}) }};
+    """, tz="Europe/Berlin")
+    assert got["zone"] == "Europe/Berlin"
+    assert got["widget"] == "range=30d&relay=a&trend.metric=score&tz=Europe%2FBerlin"
+    assert "tz=" not in got["plain"] and "tz" not in got["link"]
+    # a tz in a page URL is not a filter of the page: dropped, never written back
+    assert "tz" not in got["parsed"] and got["parsed"]["range"] == "7d"
+    assert run("return F.viewerZone();", tz="America/Los_Angeles") == "America/Los_Angeles"
+    # the page instance's widgetParams() is params() with the viewer's zone
+    src = (STATIC / "filters.js").read_text(encoding="utf-8")
+    assert "function widgetParams(ns) { return params(st, fields, ns, viewerZone()); }" in src
+
+
+def test_a_change_on_history_keeps_the_common_default_range():
+    """Both pages default to 30d (#152): sharing History's default range as
+    shown leaves Analytics on 30d, not on all time."""
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?relay=a", s);
+      return [JSON.parse(s.getItem("ekte.v2.filters.shared")).range, open(ana, "", s).state.range];
+    """)
+    assert got == ["30d", "30d"]
+
+
+# --------------------------------------------------------------------------- #
+# the page registry and the link builder (#159)
+# --------------------------------------------------------------------------- #
+def test_pages_hold_the_field_matrix():
+    pages = run("return F.PAGES;")
+    assert pages == {
+        "history": ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk",
+                    "min_score", "range", "exec", "watch"],
+        "analytics": ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
+        "watches": ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"],
+    }
+    assert all(k in ALL for keys in pages.values() for k in keys)
+    # the pages create their panels from the registry, with no list of their own
+    for page, name in (("history", "FLD"), ("analytics", "FIELDS"), ("watches", "FLD")):
+        src = (STATIC / f"{page}.html").read_text(encoding="utf-8")
+        assert f"var {name} = window.EkteFilters.PAGES.{page}.slice();" in src
+
+
+def href(page: str, state: dict[str, Any], extra: dict[str, Any] | None = None) -> str:
+    return run(f"return F.href({js(page)}, {js(state)}, {js(extra)});")
+
+
+HISTORY_STATE = {
+    "q": "gpt", "surface": "chat", "relay": ["a"], "model": [], "suite": "", "mode": "check", "api": "",
+    "detect": "auto", "stream": "", "risk": "high", "min_score": "80", "range": "7d", "from": "", "to": "",
+    "exec": "monitor", "watch": "", "runs.focus": "12", "groups.sort": "-score", "trend.metrics": "score",
+}
+
+
+def test_href_keeps_only_the_target_pages_keys():
+    # History-only keys (q, mode, detect, risk, min_score), widget keys and tz are dropped
+    assert href("analytics", {**HISTORY_STATE, "tz": "Europe/Berlin", "tab": "trends"}) == \
+        "/analytics?range=7d&surface=chat&relay=a&exec=monitor"
+    assert href("history", {"range": "30d", "group": "model", "tab": "trends", "trend.metric": "score"}) == \
+        "/history?range=30d"
+    # Monitors has no range: none is written
+    assert href("watches", HISTORY_STATE) == "/watches?q=gpt&surface=chat&relay=a"
+    assert href("watches", {}) == "/watches"
+    assert run("try { F.href('kb', {}); return 'no error'; } catch (e) { return e.message; }") == \
+        "EkteFilters: unknown page kb"
+
+
+def test_href_writes_the_range_explicitly():
+    assert href("analytics", {"range": "30d"}) == "/analytics?range=30d"  # also the target's default
+    assert href("analytics", {"range": "", "from": "", "to": ""}) == "/analytics?range="  # all time
+    assert href("analytics", {"range": "", "from": "2026-01-01", "to": "2026-02-01"}) == \
+        "/analytics?range=&from=2026-01-01&to=2026-02-01"
+    # from / to go only with a custom range; no range in the source: none in the link
+    assert href("analytics", {"range": "24h", "from": "2026-01-01"}) == "/analytics?range=24h"
+    assert href("analytics", {"relay": ["a"]}) == "/analytics?relay=a"
+    # an invalid range is dropped rather than turned into all time
+    assert href("analytics", {"range": "12d"}) == "/analytics"
+    # the link opens the same filters on the target
+    st = run("return F.parse(F.href('analytics', {range: '', from: '2026-01-01', to: ''}).split('?')[1], "
+             f"{js(['range', 'relay'])});")
+    assert st == {"range": "", "from": "2026-01-01"}
+
+
+def test_href_repeats_relay_and_model_and_encodes_values():
+    got = href("analytics", {"relay": ["https://a.example/v1?x=1&y=2", "-", "b|c"], "model": ["m 1", "-"]})
+    assert got == ("/analytics?relay=https%3A%2F%2Fa.example%2Fv1%3Fx%3D1%26y%3D2&relay=-&relay=b%7Cc"
+                   "&model=m+1&model=-")
+    back = run(f"return F.parse({js(got.split('?')[1])}, {js(ALL)});")
+    assert back == {"relay": ["https://a.example/v1?x=1&y=2", "-", "b|c"], "model": ["m 1", "-"]}
+    # "-" only where the schema accepts "(unknown)"
+    assert href("analytics", {"suite": "-", "surface": "-"}) == "/analytics?suite=-"
+
+
+def test_href_extra_keys():
+    # filter keys of the target replace the state's (a History group's relay and model)
+    got = href("analytics", HISTORY_STATE, {"relay": ["key|1"], "model": ["-"], "tab": "overview"})
+    assert got == "/analytics?range=7d&surface=chat&relay=key%7C1&model=-&exec=monitor&tab=overview"
+    # widget and view keys come only from extra, sorted; null / tz / other pages' keys are left out
+    got = href("history", {"range": "7d", "runs.focus": "1"},
+               {"runs.focus": 42, "groups.sort": "-time", "tab": None, "tz": "UTC", "group": "model"})
+    assert got == "/history?range=7d&groups.sort=-time&runs.focus=42"
+    # an extra range replaces a custom one
+    assert href("analytics", {"range": "", "from": "2026-01-01"}, {"range": "90d"}) == "/analytics?range=90d"
+
+
+# --------------------------------------------------------------------------- #
+# the Monitors page's own keys (#160)
+# --------------------------------------------------------------------------- #
+MONITORS = ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"]
+
+
+def test_monitor_keys_parse_and_stay_on_their_page():
+    assert parse("state=paused&alerting=yes", MONITORS) == {"state": "paused", "alerting": "yes"}
+    # not the server's values (a running monitor is live state, not a filter): dropped
+    assert parse("state=running&alerting=maybe", MONITORS) == {}
+    # History does not show them
+    assert parse("state=paused&relay=a", run("return F.PAGES.history;")) == {"relay": ["a"]}
+    assert run("return [F.FIELDS.state.page, F.FIELDS.alerting.page];") == [True, True]
+    # links: only to the Monitors page
+    st = {"relay": ["a"], "state": "draft", "alerting": "no"}
+    assert href("watches", st) == "/watches?relay=a&state=draft&alerting=no"
+    assert href("history", st) == "/history?relay=a"
+    assert href("analytics", st) == "/analytics?relay=a"
+
+
+def test_monitor_keys_never_enter_the_shared_memory():
+    got = run(_PAGES + """
+      const s = mem({});
+      const mons = page("watches", F.PAGES.watches);
+      use(mons, "?relay=a&state=paused&alerting=yes", s);
+      const shared = JSON.parse(s.getItem("ekte.v2.filters.shared"));
+      return [shared, open(hist, "", s).state, open(mons, "", s).state];
+    """)
+    assert got[0]["relay"] == ["a"] and not {"state", "alerting", "q"} & set(got[0])
+    assert got[1]["relay"] == ["a"] and "state" not in got[1]
+    assert (got[2]["state"], got[2]["alerting"], got[2]["relay"]) == ("paused", "yes", ["a"])

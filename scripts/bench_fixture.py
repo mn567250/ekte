@@ -8,7 +8,12 @@ and a year of start times into the history database of ``--data-dir`` (or
 analytics extraction leaves them, so nothing needs backfilling. Every run has
 ``--requests`` target requests (default 100) with an outcome mix like real
 runs (mostly successes, a few 429s, relay errors and network failures).
-Deterministic for a ``--seed``.
+Deterministic for a ``--seed``. It also writes ``--monitors`` monitors
+(default 200; ``--watches`` is the old name) into ``watches.db``, over the
+same relays and models, with mixed states, thresholds and last risks.
+:data:`WATCH_SHARE` of the runs belong to monitors (:data:`WATCH_IDS`, ids of
+those monitors, and :data:`DELETED_WATCHES` ids no monitor has: deleted ones,
+whose runs stay).
 
 With ``--bench`` it then times :func:`ekte.web.query.aggregate`,
 :func:`~ekte.web.query.series` and :func:`~ekte.web.query.page_runs` and
@@ -40,6 +45,16 @@ MODELS = ("gpt-4o", "gpt-4o-mini", "claude-sonnet", "claude-haiku", "gemini-pro"
 SUITES = ("standard", "quick", "deep")
 APIS = ("openai", "anthropic", "responses")
 STREAMS = ("stream", "non_stream", "both")
+# the share of runs started by a monitor, and the monitors they spread over:
+# the first WATCHES - DELETED_WATCHES of the ones build_watches() writes (ids
+# from 1 in a new watches.db), and DELETED_WATCHES ids no monitor has
+WATCH_SHARE = 0.2
+WATCHES = 40
+DELETED_WATCHES = 4
+WATCH_IDS = (*range(1, WATCHES - DELETED_WATCHES + 1),
+             *range(100_001, 100_001 + DELETED_WATCHES))
+# the monitor the watch=<id> cases select
+WATCH = 7
 # bytes of each run's report_json
 REPORT_BYTES = 16_000
 # outcome -> weight per request (success dominates, as in real runs)
@@ -80,12 +95,71 @@ def _kb_hash(rng: random.Random, started: datetime) -> str | None:
     return f"kb{(started - _SINCE) // KB_EVERY}"
 
 
+# monitor states of the fixture (ekte/web/watches_api.py): active, paused,
+# draft (scheduled from History: no interval, never run, not enabled)
+MONITOR_STATES = {"active": 0.7, "paused": 0.2, "draft": 0.1}
+# alert thresholds and last risks (None: not run yet, or no result)
+THRESHOLDS = {"low": 0.2, "medium": 0.6, "high": 0.2}
+LAST_RISKS = {"clean": 0.5, "low": 0.15, "medium": 0.12, "high": 0.08, "inconclusive": 0.05, None: 0.1}
+# a run window on some monitors (weekdays, office hours)
+WINDOW = '{"tz": "Europe/Berlin", "days": [0, 1, 2, 3, 4], "start": "08:00", "end": "18:00"}'
+
+
+def build_watches(watches: int = 200, relays: int = 50, seed: int = 0) -> int:
+    """Write ``watches`` monitors into ``$EKTE_DATA_DIR``'s ``watches.db``
+    (adding to what is there), straight into the table as
+    :func:`ekte.web.watches.create` leaves it, spread over the relays and
+    models of the runs, with mixed states (:data:`MONITOR_STATES`), alert
+    thresholds and last risks; deterministic for ``seed``. In a new
+    ``watches.db`` their ids start at 1, so the first ones are the monitors
+    of :data:`WATCH_IDS` (never drafts: they have runs). Returns the number
+    written. Their API keys are ``env:`` references (no secret)."""
+    from ekte import datadir
+    from ekte.web import watches as store
+
+    rng = random.Random(seed + 1)
+    t_end = END.timestamp()
+    rows = []
+    for i in range(watches):
+        r = rng.randrange(relays)
+        model = MODELS[rng.randrange(len(MODELS))]
+        state = rng.choices(list(MONITOR_STATES), list(MONITOR_STATES.values()))[0]
+        if state == "draft" and i < WATCHES - DELETED_WATCHES:
+            state = "paused"  # it owns runs (WATCH_IDS): it has run, so it is set up
+        alert_on = rng.choices(list(THRESHOLDS), list(THRESHOLDS.values()))[0]
+        surface = rng.choices(("chat", "embedding", "rerank"), (0.9, 0.07, 0.03))[0]
+        draft = state == "draft"
+        risk = None if draft else rng.choices(list(LAST_RISKS), list(LAST_RISKS.values()))[0]
+        rows.append((
+            f"monitor {i:03d}", f"https://relay-{r:02d}.example/v1",
+            "" if draft else "env:EKTE_BENCH_KEY", model, model,
+            APIS[rng.randrange(len(APIS))] if rng.random() < 0.3 else "auto",
+            SUITES[rng.randrange(len(SUITES))],
+            None if draft else rng.choice((1800, 3600, 21600, 86400)), alert_on, "[]",
+            int(state == "active"), t_end - 86400 * 30,
+            None if draft else t_end - rng.randrange(86400), risk,
+            None if risk is None else round(rng.uniform(40, 100), 1), surface,
+            int(rng.random() < 0.8), 1, i + 1 if draft else None,
+            WINDOW if not draft and rng.random() < 0.1 else None,
+        ))
+    with datadir.connect("watches.db", store.MIGRATIONS) as conn:
+        conn.executemany(
+            "INSERT INTO watches (name, base_url, api_key, model, claimed_model, api, suite,"
+            " interval_sec, alert_on, webhooks, enabled, created_ts, last_run_ts, last_risk,"
+            " last_score, surface, performance_streaming, evidence, source_report_id, run_window)"
+            f" VALUES ({', '.join('?' * 20)})", rows)
+        conn.execute(store._BUMP_SQL)
+    return watches
+
+
 def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int = 0,
-          report_bytes: int = REPORT_BYTES) -> int:
+          report_bytes: int = REPORT_BYTES, watches: int = 200) -> int:
     """Write the fixture into ``$EKTE_DATA_DIR``'s ``history.db`` (adding to
-    what is there); returns the number of runs written. ``report_bytes``: the
-    size of each stored report (real ones, request records split off, are
-    15-50 kB, so most of a run's row lives in overflow pages)."""
+    what is there), and ``watches`` monitors into its ``watches.db``
+    (:func:`build_watches`); returns the number of runs written.
+    ``report_bytes``: the size of each stored report (real ones, request
+    records split off, are 15-50 kB, so most of a run's row lives in overflow
+    pages)."""
     from ekte import datadir
     from ekte.knowledge.relays import normalize_url
     from ekte.perf.outcomes import from_counts
@@ -111,7 +185,7 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
                                (0.6, 0.2, 0.1, 0.05, 0.05))[0]
             rating = "A" if score >= 90 else "B" if score >= 80 else "C" if score >= 70 else \
                 "D" if score >= 60 else "F"
-            watch = rng.randrange(1, 6) if rng.random() < 0.3 else None
+            watch = WATCH_IDS[rng.randrange(WATCHES)] if rng.random() < WATCH_SHARE else None
             chat = surface == "chat"
             latency = rng.lognormvariate(6.5, 0.4) * speed[r]
             ttft = rng.lognormvariate(5.8, 0.4) * speed[r] if chat else None
@@ -153,6 +227,8 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
         conn.executemany("INSERT INTO history_outcomes VALUES (?, ?, ?, ?)", o_rows)
         conn.executemany("INSERT INTO history_dimensions VALUES (?, ?, ?, ?, ?, ?)", d_rows)
         conn.execute(history._BUMP_SQL)
+    if watches:
+        build_watches(watches, relays, seed)
     return runs
 
 
@@ -189,6 +265,21 @@ def _time(fn: Callable[[], Any], repeat: int) -> tuple[float, float]:
     return statistics.median(t), p95(t)
 
 
+def history_cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
+    """History's status and report detail (GET /api/history/status and
+    /api/history/{rid}, with and without ``trend=1``): the functions behind
+    the endpoints, on the newest run. Timed by tests/test_history_api.py."""
+    from ekte.web import history
+    from ekte.web.server import history_report
+
+    rid = int(conn.execute("SELECT MAX(id) FROM history").fetchone()[0] or 0)
+    return {
+        "history status": lambda c: history.status(),
+        "history report": lambda c: history_report(rid),
+        "history report, trend=1": lambda c: history_report(rid, trend=True),
+    }
+
+
 def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
     """The benchmarked calls, by name: each takes a query connection."""
     from ekte.web import query
@@ -196,6 +287,11 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
     deep = [_after(conn, query.Query(), "-time", 49)]
     every = query.Query()
     chat = query.Query(surface="chat")
+    watched = query.Query(surface="chat", watch=WATCH)
+    # relative ranges resolve at the fixture's END, so the cases are deterministic
+    berlin30 = query.parse_query({"range": "30d", "tz": "Europe/Berlin", "surface": "chat"}, now=END)
+    year = query.parse_query({"range": "365d", "surface": "chat"}, now=END)
+    day = query.parse_query({"range": "24h", "surface": "chat"}, now=END)
     kpis = ("score", "risk_high_share", "success_rate", "error_rate", "rate_limited_rate",
             "latency_p50", "ttft_p50", "decode_tps", "billing_ratio_prompt",
             "billing_ratio_completion")
@@ -217,6 +313,19 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
         "page_runs score, filtered": lambda c: query.page_runs(
             c, query.parse_query({"surface": "chat", "risk": "clean"}), "score"),
         "page_runs -grade": lambda c: query.page_runs(c, every, "-grade"),
+        # relative ranges (#152): a day range from local midnight in tz, 365 days, an exact 24 h
+        "aggregate range 30d Berlin, by relay": lambda c: query.aggregate(c, berlin30, kpis, "relay"),
+        "series score, day, range 30d Berlin": lambda c: query.series(c, berlin30, "score", "relay",
+                                                                       "day", "Europe/Berlin"),
+        "aggregate range 365d, by relay x model": lambda c: query.aggregate(c, year, kpis, "relay_model"),
+        "page_runs -time, range 365d": lambda c: query.page_runs(c, year, "-time"),
+        "aggregate range 24h, by relay": lambda c: query.aggregate(c, day, kpis, "relay"),
+        "series score, hour, range 24h": lambda c: query.series(c, day, "score", "relay", "hour"),
+        # one monitor's runs (#155)
+        "aggregate kpis, watch": lambda c: query.aggregate(c, watched, kpis, "all"),
+        "series score, day, watch": lambda c: query.series(c, watched, "score", "relay", "day",
+                                                           "Europe/Berlin"),
+        "page_runs -time, watch": lambda c: query.page_runs(c, watched.replace(surface=None), "-time"),
     }
 
 
@@ -246,12 +355,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--report-bytes", type=int, default=REPORT_BYTES,
                         help="size of each stored report")
+    parser.add_argument("--monitors", "--watches", dest="monitors", type=int, default=200,
+                        help="monitors in watches.db (mixed states, thresholds and last risks)")
     parser.add_argument("--bench", action="store_true", help="time the query core afterwards")
     args = parser.parse_args(argv)
     if args.data_dir is not None:
         os.environ["EKTE_DATA_DIR"] = str(args.data_dir)
     t0 = time.perf_counter()
-    n = build(args.runs, args.relays, args.requests, args.seed, args.report_bytes)
+    n = build(args.runs, args.relays, args.requests, args.seed, args.report_bytes, args.monitors)
     print(f"wrote {n} runs in {time.perf_counter() - t0:.1f} s")
     if args.bench:
         for name, (p50, p95) in bench().items():

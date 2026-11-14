@@ -101,10 +101,10 @@
     - spinbutton "Min. score"
     - text: Period
     - combobox "Period":
-      - option "All time" [selected]
+      - option "All time"
       - option "Last 24 hours"
       - option "Last 7 days"
-      - option "Last 30 days"
+      - option "Last 30 days" [selected]
       - option "Last 90 days"
       - option "Last 365 days"
       - option "Custom range"
@@ -113,6 +113,10 @@
       - option "All" [selected]
       - option "Manual (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "All" [selected]
+      - option "gpt-4o (4)"
     - group "Trends":
       - text: Trends 2 of at most 2 selected
       - button "Score" [pressed]
@@ -122,6 +126,8 @@
       - button "Decode speed p50" [disabled]
       - button "Error rate" [disabled]
     - text: Showing 15 of 15 audits
+    - checkbox "Keep filters across pages" [checked]
+    - text: Keep filters across pages
     - status
     - button "Copy link to this view"
   - status
@@ -134,7 +140,14 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay Example Relay Score
+    - text: Relay Example Relay
+    - 'link "Open in Analytics: model-a · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Monitors for this relay and model
+    - text: Score
     - 'img "Score trend across 7 audits: from 70 to 82, rising."'
     - text: 82 Latency p50
     - 'img "Latency p50 trend across 7 audits: from <duration> to <duration>, falling."'
@@ -178,7 +191,14 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Score
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "Open in Analytics: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Monitors for this relay and model
+    - text: Score
     - 'img "Score trend across 4 audits: from 58 to 64, rising."'
     - text: 64 Latency p50
     - 'img "Latency p50 trend across 4 audits: from <duration> to <duration>, falling."'
@@ -207,7 +227,14 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay Example Relay Score
+    - text: Relay Example Relay
+    - 'link "Open in Analytics: model-b · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Monitors for this relay and model
+    - text: Score
     - 'img "Score trend across 2 audits: from 89 to 91, rising."'
     - text: 91 Latency p50
     - 'img "Latency p50 trend across 2 audits: from <duration> to <duration>, falling."'
@@ -226,7 +253,14 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Score 72 Latency p50 <duration>
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "Open in Analytics: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Monitors for this relay and model
+    - text: Score 72 Latency p50 <duration>
     - list:
       - listitem:
         - button "Sep 27, 2026, 10:02 AM Mostly trustworthy Score 72 Grade D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -307,7 +341,14 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: Relay 127.0.0.1:9099 Score 53 Latency p50 no data
+    - text: Relay 127.0.0.1:9099
+    - 'link "Open in Analytics: gpt-4o · 127.0.0.1:9099"':
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: Open in Analytics
+    - 'link "Monitors for this relay and model: gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Monitors for this relay and model
+    - text: Score 53 Latency p50 no data
     - list:
       - listitem:
         - button "Sep 27, 2026, 7:47 AM Bait-and-switch Score 53 Grade F check · standard"
@@ -318,7 +359,7 @@
           - text: Delete this history entry?
           - button "Delete"
           - button "Cancel"
-  - text: "Saved audits: 15"
+  - text: Showing 15 of 15 audits
   - button "Clear history"
   - status
 - contentinfo:

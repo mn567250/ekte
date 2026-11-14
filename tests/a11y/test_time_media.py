@@ -13,10 +13,11 @@ visit states only a running app reaches, all without network access:
   (checks done, one running, live performance records), so the scan view with
   its radar, blinking check icon, ticking clock and live chart stays up.
 * ``audit-jobs``: the audit page's "Running" tab (v2/jobs.js) with a running
-  and a queued background audit (``/api/jobs`` answered by a route), so the
-  page polls every 2 s. (This list used to be History's "In progress".)
-* ``monitors-running``: Monitors with the monitor running (spinner, progress,
-  polling every 2 s).
+  and a queued background audit (``/api/jobs`` answered by a route); the
+  list reads it on load and on the change signal (no polling, #161), and the
+  running row has no event stream here. (This list used to be History's "In progress".)
+* ``monitors-running``: Monitors with the monitor running (spinner, progress
+  from /api/jobs; no polling, #160).
 * ``history-charts``: History with three runs of one relay (grade and decode speed
   sparklines) whose report carries a ``performance`` block built by
   ``ekte.perf.build_performance`` (timeline chart, legend, meters); the seeded
@@ -212,13 +213,20 @@ def _route_audit_jobs(page: Page) -> None:
 
 
 def _route_monitors_running(page: Page) -> None:
-    def watches(route: Route) -> None:
+    # every monitor runs at 40 %: the live state is in /api/jobs (#158), as
+    # the job monitor-<id> of a running monitor
+    def jobs(route: Route) -> None:
         if route.request.method != "GET":
             return route.continue_()
-        rows = route.fetch().json()
-        _fulfill_json(route, [dict(w, running=True, progress=40) for w in rows])
+        answer = route.fetch().json()
+        base = route.request.url.split("/api/", 1)[0]
+        rows = route.request.frame.page.request.get(base + "/api/watches").json()
+        answer["jobs"] = [*answer.get("jobs", []), *(
+            {"id": f"monitor-{w['id']}", "kind": "monitor", "watch_id": w["id"], "name": w.get("name"),
+             "status": "running", "progress": 40, "done": 2, "total": 5} for w in rows)]
+        _fulfill_json(route, answer)
 
-    page.route(re.compile(r"/api/watches$"), _quiet(watches))
+    page.route(re.compile(r"/api/jobs$"), _quiet(jobs))
 
 
 def open_state(
@@ -258,6 +266,10 @@ def open_state(
         reload_needed = True
     if reload_needed:
         page.goto(open_page.base_url + path, wait_until="load")
+        if page_id == "audit-jobs":
+            # only the hash changed: no new document, and the list reads
+            # /api/jobs on load, not on a timer (#161)
+            page.reload(wait_until="load")
         settle(page)
     if page_id == "audit-running":
         page.wait_for_function("() => typeof window.__a11yPush === 'function'")

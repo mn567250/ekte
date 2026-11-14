@@ -92,6 +92,10 @@
       - option "Todos" [selected]
       - option "Manual (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "Todos" [selected]
+      - option "gpt-4o (4)"
     - text: Agrupar por
     - combobox "Agrupar por":
       - option "Relay" [selected]
@@ -99,6 +103,8 @@
       - option "Relay × modelo"
       - option "Todos"
     - text: 15 execuções correspondem a estes filtros.
+    - checkbox "Manter os filtros entre páginas" [checked]
+    - text: Manter os filtros entre páginas
     - status
     - button "Copiar a ligação para esta vista"
   - tablist "Vistas da análise":
@@ -113,7 +119,7 @@
       - tab "Classificação"
     - tabpanel "Números-chave":
       - heading "Números-chave" [level=2]
-      - paragraph: 01/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (02/08/2026 – 01/09/2026).
+      - paragraph: 02/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (03/08/2026 – 01/09/2026).
       - list "Números-chave":
         - listitem: Execuções 15 em subida +15
         - listitem: Relays 3 em subida +3

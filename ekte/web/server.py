@@ -10,6 +10,9 @@ Endpoints:
                              page at the root, keeping the query string
                              (deprecated, removed in 1.0.0)
   GET  /api/health          {ok, version}
+  GET  /api/version         the change signal {data, live}: opaque tokens that
+                            change with the history-backed data, and with the
+                            jobs, monitor runs and monitor settings; ETag, 304
   GET  /api/kb               providers (base URLs, saved relays) and their models
   POST /api/kb/relays        save a relay {name, base_url} in kb.db
   GET  /api/kb/profiles      models, providers and relays (complete sets, sources,
@@ -22,8 +25,10 @@ Endpoints:
   POST /api/models           list a relay's /models (connection check + model ids)
   POST /api/jobs             queue an audit (any surface: chat, embedding, rerank)
                              as a background job; it runs on whatever page is open
-  GET  /api/jobs             queued and running audits (and running monitors),
-                             recently finished ones too, with progress
+  GET  /api/jobs             queued and running audits (and running monitors:
+                             id monitor-<id>, watch_id, status queued|running,
+                             progress), recently finished ones too, with progress
+  GET  /api/jobs/{id}        one job
   GET  /api/jobs/{id}/events the job's events as SSE: the log so far, then live
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
@@ -41,7 +46,13 @@ Endpoints:
   DELETE /api/history/{id}, /api/history   delete one run, or all of them
   POST /api/history/{id}/rescore   re-score a run from its evidence (a job)
   GET  /api/v1/history/{id}/evidence[/exchanges|/export]   a run's evidence
-  GET, POST /api/watches; POST /api/watches/from-history/{id};
+  GET  /api/watches          the monitors, filtered (q, surface, relay, model,
+                             suite, api, stream, state, alerting) and cached;
+                             no live run state (that is /api/jobs)
+  GET  /api/watches/options  the values of each monitor filter key, counted
+                             in monitors under the other filters
+                             (ekte/web/watches_api.py)
+  POST /api/watches; POST /api/watches/from-history/{id};
   PATCH, DELETE /api/watches/{id}; POST /api/watches/{id}/run|cancel
                              the monitors
   GET  /api/metrics          the metric registry: ids, units, formats, label
@@ -85,14 +96,28 @@ relay text scrubbed), so nothing secret crosses to the browser.
 Every audit runs as a job (ekte/web/jobs.py): audits of the same relay are
 queued one after another so they never skew each other's measurements;
 different relays run in parallel. A job is detached from the page that queued it.
+
+The pages follow one pattern (#150; docs/dev/web-server.md, docs/dev/ui.md).
+Every GET a page component uses (metrics, filter options, the Analytics
+widgets, History's groups, runs, status and report detail, the monitors and
+their options) is cached (ekte/web/cache.py: ETag, Cache-Control: no-cache,
+304 while the data is unchanged) and takes the shared filter keys of
+ekte/web/query.py (watch=<id> included) plus tz, the viewer's time zone, which
+places day ranges (today and the N - 1 days before, from local midnight) and
+every time bucket. Nothing is polled on a timer but GET /api/version (every
+10 s while a tab is visible, static/v2/live.js): a changed `data` token makes
+the pages refetch their cached URLs, a changed `live` token makes them read
+/api/jobs again, and a running job's progress follows /api/jobs/{id}/events.
 """
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import logging
+import secrets
 import time
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -274,6 +299,38 @@ _running_watches: dict[int, dict[str, Any]] = {}
 _run_finish_seq = 0
 _watch_finished_at: dict[int, int] = {}
 
+# This process in the `live` token of GET /api/version: a restarted server
+# counts its live changes from 0 again, and must never repeat a token of the
+# process before it.
+_BOOT_ID = secrets.token_hex(8)
+
+
+def _token(*parts: Any) -> str:
+    """An opaque token of ``parts`` (clients only compare tokens for equality)."""
+    raw = json.dumps(parts, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
+
+
+def version_tokens() -> tuple[str, str]:
+    """The ``data`` and ``live`` tokens of ``GET /api/version``.
+
+    ``data`` is derived from what keys the history-backed widget caches
+    (:func:`ekte.web.cache.cache_key`, keep the two in step): the history data
+    version, the knowledge-base fingerprint, ``EXTRACT_VERSION`` and the
+    database. ``live`` from the
+    in-process live counter (:func:`ekte.web.jobs.live_version`: a job or a
+    monitor run queued, started or ended; the master key unlocked or locked)
+    and the watches data version (:func:`ekte.web.watches.data_version`). Two
+    primary-key lookups; no table is scanned. Blocking (SQLite): call it off
+    the loop.
+    """
+    from ekte.web import analytics_store, cache, history, watches
+
+    data = _token(history.data_version(), cache.kb_version(), analytics_store.EXTRACT_VERSION,
+                  str(history._db_path()))
+    live = _token(_BOOT_ID, jobs.live_version(), watches.data_version())
+    return data, live
+
 # Intervals (minutes) a monitor can be scheduled at: never more often than one
 # run takes, rounded up to one of these, and at most once every 24 h.
 _INTERVAL_STEPS_MIN = (5, 10, 15, 20, 30, 60, 120, 180, 240, 360, 480, 720, 1440)
@@ -374,6 +431,7 @@ async def _run_one_watch(row: dict[str, Any], *, scheduled: bool = False) -> Non
     job.created = state["since"]
     state["job"] = job
     _running_watches[wid] = state
+    jobs.bump_live()  # the monitor shows as running (or waiting for its relay)
     outcome, error = "done", None
     try:
         task = asyncio.create_task(_run_one_watch_inner(row, state, scheduled=scheduled))
@@ -396,6 +454,7 @@ async def _run_one_watch(row: dict[str, Any], *, scheduled: bool = False) -> Non
         job.close(outcome, error)
         _running_watches.pop(wid, None)
         _note_watch_finished(wid)
+        jobs.bump_live()  # the monitor no longer shows as running
 
 
 def _note_watch_finished(wid: int) -> None:
@@ -635,19 +694,12 @@ async def _run_one_watch_inner(
 
 
 def _risk_meets(risk: str | None, threshold: str) -> bool:
-    """True when ``risk`` is at or above the ``threshold`` risk level."""
-    from ekte.models import RiskLevel
+    """True when ``risk`` is at or above the ``threshold`` risk level
+    (:func:`ekte.web.watches.risk_meets`, which ``/api/watches`` reports as
+    ``alerting``)."""
+    from ekte.web import watches
 
-    order = {
-        RiskLevel.CLEAN.value: 0,
-        RiskLevel.INCONCLUSIVE.value: 1,
-        RiskLevel.LOW.value: 2,
-        RiskLevel.MEDIUM.value: 3,
-        RiskLevel.HIGH.value: 4,
-    }
-    if not risk:
-        return False
-    return order.get(risk, 0) >= order.get(threshold, order[RiskLevel.MEDIUM.value])
+    return watches.risk_meets(risk, threshold)
 
 
 # Runs the scheduler started, keyed by watch id: an entry exists from the
@@ -829,6 +881,42 @@ def _kb_error_response(exc: Exception) -> JSONResponse:
     )
 
 
+class _ReportNotFound(LookupError):
+    """No saved report with this id (answered 404, never cached)."""
+
+
+def history_report(rid: int, trend: bool = False) -> dict[str, Any] | None:
+    """What ``GET /api/history/{rid}`` answers: the saved report as stored, or
+    ``None``; with ``trend`` each request's running medians and their p25–p75
+    bands for the performance chart, the failure class of each failed request
+    of a run saved before classes were recorded, and the run's History trend
+    values (``history_trends``)."""
+    from ekte.web import history
+
+    report = history.get(rid)
+    if report is None:
+        return None
+    perf = report.get("performance") if trend else None
+    if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
+        attach_trends(perf["requests"])
+        # failure classes of a run saved before they were recorded
+        errorclass.attach_classes(perf["requests"])
+    if trend:
+        # the run's History trend values, from the same per-run SQL as the
+        # groups' trends (a group of this run alone shows exactly these)
+        from ekte.web import history_api
+
+        report["history_trends"] = history_api.run_trends(history.query_connection(), rid)
+    return report
+
+
+def _found(rid: int, trend: bool) -> dict[str, Any]:
+    report = history_report(rid, trend)
+    if report is None:
+        raise _ReportNotFound(rid)
+    return report
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ekte",
@@ -846,6 +934,18 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     async def health() -> Any:
         return {"ok": True, "version": __version__, "name": "ekte"}
+
+    @app.get("/api/version")
+    def version(request: Request) -> Any:
+        """The change signal every open page polls (docs/dev/web-server.md)."""
+        from ekte.web import cache
+
+        data, live = version_tokens()
+        etag = cache.etag_of(f"{data}:{live}")
+        headers = {"ETag": etag, "Cache-Control": cache.NO_CACHE}
+        if cache.etag_matches(request.headers.get("if-none-match"), etag):
+            return Response(status_code=304, headers=headers)
+        return JSONResponse({"data": data, "live": live}, headers=headers)
 
     # ----- the web UI ---------------------------------------------------- #
     def _add_page(path: str) -> None:
@@ -1381,36 +1481,37 @@ def create_app() -> FastAPI:
 
         return history_api.runs(history.query_connection(), params)
 
+    # The history as a whole and one saved report: cached like the widgets
+    # (keyed on the data version, which every save, rescore and delete bumps),
+    # so the browser revalidates them with If-None-Match.
     @app.get("/api/history/status")
-    def history_status() -> Any:
+    @_cached("history.status", prepare=lambda params: [])  # takes no parameters
+    def history_status(params: Any) -> Any:
         """The history as a whole, for the pages' notices (history.status)."""
         from ekte.web import history
 
-        return JSONResponse(history.status())
+        return history.status()
+
+    # Saved reports can be large: a small cache of their own, so a few opened
+    # reports never push the widgets' answers out of the shared one.
+    from ekte.web.cache import ResponseCache as _ResponseCache
+
+    report_cache = _ResponseCache(16)
 
     @app.get("/api/history/{rid}")
-    def history_get(rid: int, trend: int = 0) -> Any:
+    def history_get(request: Request, rid: int, trend: int = 0) -> Response:
         """A saved report as stored; ``trend=1`` (the pages that show it) adds
         each request's running medians and their p25–p75 bands for the
         performance chart, and the failure class of each failed request of a
-        run saved before classes were recorded."""
-        from ekte.web import history
-
-        report = history.get(rid)
-        if report is None:
+        run saved before classes were recorded. Cached per run and ``trend``
+        (other parameters are ignored)."""
+        want = [("trend", "1")] if trend else []
+        handler = _cached(f"history.report.{rid}", cache=report_cache,
+                          prepare=lambda params: want)(lambda params: _found(rid, bool(trend)))
+        try:
+            return handler(request)
+        except _ReportNotFound:
             return JSONResponse({"error": "not found"}, status_code=404)
-        perf = report.get("performance") if trend else None
-        if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
-            attach_trends(perf["requests"])
-            # failure classes of a run saved before they were recorded
-            errorclass.attach_classes(perf["requests"])
-        if trend:
-            # the run's History trend values, from the same per-run SQL as the
-            # groups' trends (a group of this run alone shows exactly these)
-            from ekte.web import history_api
-
-            report["history_trends"] = history_api.run_trends(history.query_connection(), rid)
-        return JSONResponse(report)
 
     # ----- Evidence: a saved run's raw request/response pairs ------------- #
     def _evidence_of(rid: int) -> tuple[Any, dict[str, Any] | None]:
@@ -1612,59 +1713,27 @@ def create_app() -> FastAPI:
         _widget_route(_path, _name)
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
-    def _watch_rows() -> list[dict[str, Any]]:
-        """The stored watches with their schedule floor, protocol and KB drift.
+    # The list and its filter options (ekte/web/watches_api.py): filtered on
+    # the server, cached on the watches data version like the widgets. Live
+    # run state (running, queued, progress) is not part of them: /api/jobs.
+    def _watches_params(params: Any) -> Any:
+        from ekte.web import watches_api
 
-        Blocking (SQLite + knowledge base load): runs in a worker thread.
-        Touches no loop-owned state; live run state is added on the loop.
-        """
-        from ekte.knowledge import load_knowledge_base
-        from ekte.web import watches
-        from ekte.web.analytics import RelayResolver
-
-        # list_all() never returns api_key, so this is safe to send to the browser.
-        rows = watches.list_all()
-        now_ts = time.time()
-        # the relay its runs are grouped under: the `relay=` key of the
-        # monitor's "Open in history" link (the shared URL schema)
-        resolver = RelayResolver() if rows else None
-        for row in rows:
-            row["relay_key"] = resolver.resolve(row).key if resolver else None
-        # Flag pinned profiles that differ from what the knowledge base resolves now.
-        try:
-            kb = load_knowledge_base(copy=False) if rows else None  # read-only
-        except Exception:
-            kb = None
-        for row in rows:
-            row["min_interval_sec"] = _min_interval_sec(row.get("run_duration_sec"))
-            win = runwindow.parse(row.get("run_window"))
-            row["in_window"] = runwindow.in_window(win, now_ts)
-            row["next_window_ts"] = runwindow.next_window_start(win, now_ts)
-            row.update(_watch_protocol(row))
-            row["kb_current_hash"] = None
-            row["kb_changed"] = False
-            if kb is None:
-                continue
-            try:
-                current = _watch_knowledge(row, kb).get("profile_hash")
-            except Exception:
-                continue
-            row["kb_current_hash"] = current
-            pinned_hash = (row.get("kb") or {}).get("profile_hash")
-            row["kb_changed"] = bool(pinned_hash and pinned_hash != current)
-        return rows
+        return watches_api.resolve_params(params)
 
     @app.get("/api/watches")
-    async def watches_list() -> Any:
-        rows = await asyncio.to_thread(_watch_rows)
-        # Live run state belongs to the event loop: read it here, not in the thread.
-        for row in rows:
-            state = _running_watches.get(int(row["id"]))
-            row["running"] = state is not None
-            # waiting for its relay: another audit is using it
-            row["queued"] = state is not None and not state.get("started")
-            row["progress"] = _watch_progress(state) if state is not None else None
-        return JSONResponse(rows)
+    @cached_endpoint("watches.list", errors=(AnalyticsError,), prepare=_watches_params)
+    def watches_list(params: Any) -> Any:
+        from ekte.web import watches_api
+
+        return watches_api.list_watches(params)
+
+    @app.get("/api/watches/options")
+    @cached_endpoint("watches.options", errors=(AnalyticsError,), prepare=_watches_params)
+    def watches_options(params: Any) -> Any:
+        from ekte.web import watches_api
+
+        return watches_api.options(params)
 
     @app.post("/api/watches")
     async def watches_create(request: Request) -> Any:
@@ -1979,9 +2048,13 @@ def create_app() -> FastAPI:
         from ekte.web.masterkey import VaultError
 
         try:
-            return _secret_json(fn(*args))
+            payload = fn(*args)
         except VaultError as exc:
             return _secret_json({"error": str(exc)}, status_code=exc.status)
+        # entering or forgetting the master key changes the monitors' key
+        # status without writing watches.db: tell the pages (live token)
+        jobs.bump_live()
+        return _secret_json(payload)
 
     @app.get("/api/secret")
     def secret_status() -> Any:

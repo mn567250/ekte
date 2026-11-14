@@ -82,9 +82,13 @@
   .group:not(:has(.panel:not([hidden]))) { content-visibility: auto; contain-intrinsic-size: auto var(--gh, 1300px); }
   .gtitle { flex: 1 1 220px; min-width: 0; }
   .gtitle h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.3px; margin: 0; overflow-wrap: anywhere; }
-  .gtitle .gu { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
+  .gtitle .gu { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 4px; min-width: 0; }
   .gtitle .gu .gk { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
   .gtitle .gu .gn { font-size: 13px; font-weight: 600; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
+  /* the group's links to Analytics and to its monitors, after the relay name */
+  .gtitle .gu .glink { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-size: 12.5px; font-weight: 700; color: var(--primary); text-decoration: none; }
+  .gtitle .gu .glink:hover { text-decoration: underline; }
+  .gtitle .gu .glink .zicon { width: 13px; height: 13px; }
   /* group trends (one or two of score, grade, latency p50, TTFT p50, decode
      speed p50, error rate: GET /api/metrics history_trends). Every tile has
      a fixed size that depends only on its metric, never on its values or on
@@ -266,6 +270,10 @@
     <div class="znote" id="note" hidden></div>
 
     <section class="card filters" id="filters" hidden></section>
+    <p class="sr-only" id="live" role="status"></p>
+    <!-- new runs since the list was loaded (live.js): a notice that offers to
+         show them; not a live region itself (#live announces it once) -->
+    <div class="znote" id="fresh" hidden></div>
 
     <section class="card hist" id="hist" tabindex="-1" aria-busy="true">
       <div class="state loading" data-en="Loading history…">Loading history…</div>
@@ -283,6 +291,7 @@
 <script src="/static/filters.js"></script>
 <script src="/static/trendpick.js"></script>
 <script src="/static/report.js"></script>
+<script src="/static/live.js"></script>
 <script>
 (function () {
   "use strict";
@@ -306,8 +315,8 @@
   var RISKI = { clean: "check", low: "warning", medium: "warning", high: "x", inconclusive: "info" };
 
   var host = $("#hist"), fbar = $("#filters");
-  // the shared filters this page shows (ekte/web/query.py schema)
-  var FLD = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec"];
+  // the shared filters this page shows (ekte/web/query.py schema; filters.js PAGES)
+  var FLD = window.EkteFilters.PAGES.history.slice();
   var DEF_TRENDS = "score,latency_p50", DEF_SORT = "-time", SORTS = ["time", "risk", "score", "grade"];
   var FOCUS = "runs.focus";
   var cat = null; // GET /api/metrics: { byId, order, max, grades, labels }
@@ -353,19 +362,96 @@
 
   function onChange(st, changed) {
     var filters = changed.some(function (k) { return FLD.indexOf(k) >= 0 || k === "from" || k === "to"; });
-    if (filters && st[FOCUS]) F.set({ "runs.focus": null }); // a filtered list starts at its top
+    // a filtered list starts at its top, unless the page changed the filters to show the focused run
+    if (filters && !keepFocus) {
+      reveal.widened = null;
+      if (st[FOCUS]) F.set({ "runs.focus": null });
+    }
+    if (note.focus && (filters && !keepFocus || String(F.state()[FOCUS] || "") !== note.focus.id)) {
+      note.focus = null;
+      paintNote();
+    }
     if (filters || changed.indexOf("groups.sort") >= 0) load();
     else if (changed.indexOf("trend.metrics") >= 0) reloadTrends();
   }
 
   // any shared filter in the URL (the URL is the view)
-  function isFiltered() {
+  // a filter key in the URL
+  function urlFiltered() {
     var parsed = window.EkteFilters.parse(location.search, FLD, []);
     return Object.keys(parsed).some(function (k) { return k.indexOf(".") < 0; });
   }
+  // the list is a part of the history: a filter in the URL, or a range (the
+  // default range, the last 30 days, too)
+  function isFiltered() { return urlFiltered() || !!window.EkteFilters.state().range; }
+  // runs are saved, maybe outside the filters (from /api/history/status)
+  function anySaved() { return !!(note.status && note.status.runs > 0); }
   function focusRun() {
     var v = F.state()[FOCUS];
     return v != null && /^\d+$/.test(String(v)) ? String(v) : null;
+  }
+
+  /* ---------------- a focused run outside the filters ---------------- */
+  // The server says whether the focused run is outside the filters, and which
+  // ones leave it out (focus.outside, by_range_only, excluded_by). When only
+  // the range does, the range widens to the run's day; otherwise a notice
+  // offers to clear the filters that leave it out. The focus stays.
+  var keepFocus = false; // the page itself changes the filters: the focus stays
+  var reveal = { widened: null, move: null }; // the run the range widened for; the run to move focus to
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  // 00:00 of the run's day in the viewer's zone, with its UTC offset (a bare
+  // YYYY-MM-DD "from" is read as UTC midnight; where the zone skips midnight,
+  // the moment the day begins); "" without a start time (all time)
+  function dayStart(iso) {
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d)) return "";
+    var m = new Date(d.getFullYear(), d.getMonth(), d.getDate()), off = -m.getTimezoneOffset();
+    var sign = off < 0 ? "-" : "+";
+    off = Math.abs(off);
+    return m.getFullYear() + "-" + pad2(m.getMonth() + 1) + "-" + pad2(m.getDate()) +
+      "T" + pad2(m.getHours()) + ":" + pad2(m.getMinutes()) + ":00" +
+      sign + pad2(Math.floor(off / 60)) + ":" + pad2(off % 60);
+  }
+  // the filters patch that brings the run in: excluded_by cleared, the range
+  // from the run's day (no end)
+  function showPatch(fo) {
+    var patch = {};
+    (fo.excluded_by || []).forEach(function (k) {
+      if (k === "range") { patch.range = ""; patch.from = dayStart(fo.started_at); patch.to = ""; }
+      else if (FLD.indexOf(k) >= 0) patch[k] = null;
+    });
+    return patch;
+  }
+  // the page's own change: quiet (the page notice says it), not remembered as
+  // the viewer's filters; the keys that changed
+  function applyFocusPatch(patch) {
+    keepFocus = true;
+    try { return F.set(patch, { render: true, quiet: true, remember: false }); } finally { keepFocus = false; }
+  }
+  // the groups' answer names the focused run outside the filters: true when
+  // the range widens (a new load is under way)
+  function outsideFocus(focus, fo) {
+    if (!focus || !fo || !fo.outside) {
+      if (note.focus && (note.focus.kind !== "widened" || note.focus.id !== focus)) { note.focus = null; paintNote(); }
+      return false;
+    }
+    if (fo.by_range_only && reveal.widened !== focus) {
+      reveal.widened = focus;
+      note.focus = { kind: "widened", id: focus };
+      paintNote();
+      applyFocusPatch(showPatch(fo));
+      return true;
+    }
+    note.focus = { kind: "outside", id: focus, fo: fo };
+    paintNote();
+    return false;
+  }
+  function showFocused() {
+    var nf = note.focus;
+    if (!nf || nf.kind !== "outside") return;
+    reveal.move = nf.id;
+    if (!applyFocusPatch(showPatch(nf.fo)).length) { reveal.move = null; return; } // nothing to clear: the notice stays
+    if (note.focus === nf) { note.focus = null; paintNote(); }
   }
   function sortValue() {
     var v = String(F.state()["groups.sort"] || DEF_SORT);
@@ -490,11 +576,19 @@
   // the first page of groups and the first page of rows of each open group,
   // drawn at once
   function load() {
-    var sig = fresh(), focus = focusRun();
+    var sig = fresh(), focus = focusRun(), drawn = false;
+    loading = true;
+    clearNewRuns(); // this load shows them
+    // the data version, answered before the list is asked for: the list holds
+    // at least that data (a 304 while nothing changed)
+    var shown = null, shows = window.EkteLive && window.EkteLive.version
+      ? window.EkteLive.version().then(function (v) { shown = v && v.data; }, function () { /* none: every change checks */ })
+      : Promise.resolve();
     host.setAttribute("aria-busy", "true");
     loadNote();
-    return get(groupsUrl({ focus: focus }), sig)
+    return shows.then(function () { return get(groupsUrl({ focus: focus }), sig); })
       .then(function (data) {
+        if (sig.aborted || outsideFocus(focus, data.focus)) return; // widened: a new load is under way
         var keep = state.nextIdx;
         state.nextIdx = 0;
         var groups = (data.groups || []).map(fromServer);
@@ -512,10 +606,14 @@
           groups.forEach(function (g) { (g.rows || []).forEach(function (r) { state.rows[String(r.id)] = r; }); });
           state.error = null;
           render();
-          if (focus && data.focus) {
+          drawn = true;
+          if (focus && data.focus && data.focus.found) {
             var row = document.getElementById("r-" + focus);
             if (row && row.scrollIntoView) row.scrollIntoView({ block: "center" });
+            // "Show it": the notice's button is gone, so focus moves to the run
+            if (row && reveal.move === focus) row.focus();
           }
+          reveal.move = null;
         });
       })
       .catch(function (e) {
@@ -526,9 +624,99 @@
       .then(function () {
         if (sig.aborted) return;
         host.setAttribute("aria-busy", "false");
-        fbar.hidden = state.error != null || (!state.totalRuns && !isFiltered());
+        fbar.hidden = state.error != null || (!state.totalRuns && !urlFiltered() && !anySaved());
+        loading = false;
+        // the version of the list drawn now; none when this load drew nothing
+        // (a focused run outside the filters that no widening could bring in)
+        newRuns.shown = drawn ? shown : null;
+        if (newRuns.again) { newRuns.again = false; checkNewRuns(); } // a change during this load
       });
   }
+
+  /* ---------------- new runs (live.js) ---------------- */
+  // A run saved, rescored or deleted anywhere (ekte:data). The list never
+  // reloads by itself: the groups' answer for the current filters
+  // (groups.limit=1, a cached URL) gives the server's total_runs, and N = that
+  // total - the total shown. A notice above the list says "N new runs"
+  // (N > 0) or "History changed" and offers to load the list again. It is
+  // announced once through #live; a later change updates N in place, quietly.
+  // Any load of the list (a filter change too) removes it.
+  var loading = false;
+  var newRuns = { n: null, ctl: null, again: false, shown: null }; // shown: the data version the list holds
+  var freshBox = $("#fresh"), liveBox = $("#live"), sayT = null, said = null;
+  function say(msg) {
+    clearTimeout(sayT);
+    liveBox.textContent = "";
+    sayT = setTimeout(function () { liveBox.textContent = said = msg; }, 60);
+  }
+  // the notice is gone: its announcement too, unless already replaced
+  function unsay() {
+    clearTimeout(sayT);
+    if (said != null && liveBox.textContent === said) liveBox.textContent = "";
+    said = null;
+  }
+  function newRunsTitle(n) {
+    if (n > 0) return n === 1 ? T("1 次新检测", "1 new run") : Tf("{n} 次新检测", "{n} new runs", { n: n });
+    return T("检测历史已变化", "History changed");
+  }
+  function paintNewRuns(announce) {
+    var n = newRuns.n;
+    if (n == null) { window.EkteNotice.show(freshBox, null); return; }
+    var title = newRunsTitle(n);
+    window.EkteNotice.show(freshBox, {
+      level: "info", icon: n > 0 ? "plus" : "info", title: title,
+      detail: n > 0 ? T("在此列表加载之后保存。", "Saved since this list was loaded.")
+        : T("此列表加载之后有检测被更改或删除。", "Runs were changed or deleted since this list was loaded."),
+      actions: [{ act: "show", label: n > 0 ? T("显示", "Show") : T("刷新", "Refresh"), primary: true }],
+    });
+    // not a live region: #live says it once, a new N is not announced again
+    freshBox.removeAttribute("role");
+    if (announce) {
+      say(title + ". " + (n > 0 ? T("用列表上方的“显示”按钮查看。", "Use the Show button above the list.")
+        : T("用列表上方的“刷新”按钮重新加载。", "Use the Refresh button above the list.")));
+    }
+  }
+  function clearNewRuns() {
+    if (newRuns.ctl) newRuns.ctl.abort();
+    newRuns.ctl = null;
+    newRuns.again = false;
+    if (newRuns.n != null) { newRuns.n = null; paintNewRuns(false); unsay(); }
+  }
+  // the groups' answer for the current filters, for its total_runs only: one
+  // group (with its trends: the endpoint always computes them)
+  function totalUrl() { return groupsUrl({ limit: 1 }); }
+  // ev: the ekte:data event (detail.after: the new data version); none after a load
+  function checkNewRuns(ev) {
+    if (!state.groups || state.error != null) return;
+    if (loading) { newRuns.again = true; return; } // the load under way may show it already
+    var last = window.EkteLive && window.EkteLive.tokens ? window.EkteLive.tokens() : null;
+    var now = ev && ev.detail ? ev.detail.after : last && last.data;
+    if (now != null && now === newRuns.shown) return; // the list holds this data (a delete on this page)
+    if (newRuns.ctl) newRuns.ctl.abort();
+    var ctl = newRuns.ctl = new AbortController();
+    get(totalUrl(), ctl.signal).then(function (data) {
+      if (ctl.signal.aborted) return;
+      newRuns.ctl = null;
+      var first = newRuns.n == null;
+      newRuns.n = (data.total_runs || 0) - state.totalRuns;
+      paintNewRuns(first);
+    }, function () { /* silent: the next change asks again */ });
+  }
+  window.addEventListener("ekte:data", checkNewRuns);
+  window.addEventListener("ekte:lang", function () { paintNewRuns(false); });
+  // "Show": the list loads again with the focused run and the collapsed
+  // groups kept; focus moves to the focused run, else the first one
+  freshBox.addEventListener("click", function (e) {
+    if (!e.target.closest('[data-note-act="show"]')) return;
+    var had = freshBox.contains(document.activeElement);
+    if (had) host.focus({ preventScroll: true }); // the button goes away
+    load().then(function () {
+      if (!had || document.activeElement !== host) return;
+      var f = focusRun(), row = f ? document.getElementById("r-" + f) : null;
+      row = row || host.querySelector(".row .rmain");
+      if (row) row.focus();
+    });
+  });
 
   // a new trend selection: the trends of the groups already shown, in place
   function reloadTrends() {
@@ -553,7 +741,7 @@
   // critical: the history cannot be read; warning: monitor runs are paused
   // (master key locked) and / or older runs are still being processed;
   // info: how many runs, where and since when
-  var note = { status: null, err: false, locked: false };
+  var note = { status: null, err: false, locked: false, focus: null }; // focus: the focused run outside the filters
   function paintNote() {
     var n = null, s = note.status;
     if (note.err || state.error != null) {
@@ -586,15 +774,33 @@
           detail: T("你运行的每次检测都会保存在这里，仅在本机。", "Every audit you run is saved here, on this machine only.") };
       }
     }
+    // the focused run outside the filters comes before the counts and warnings (folded into it)
+    var nf = note.focus;
+    if (nf && !(n && n.level === "critical")) {
+      var fn = nf.kind === "widened"
+        ? { level: "info", title: Tf("已扩大时间范围以显示运行 #{id}", "Range widened to show run #{id}", { id: nf.id }) }
+        : { level: "info", title: Tf("运行 #{id} 不符合当前筛选条件", "Run #{id} doesn't match the current filters", { id: nf.id }),
+          actions: [{ act: "showfocus", label: T("显示它", "Show it"), primary: true }] };
+      if (n && n.level === "warning") {
+        fn.level = "warning";
+        fn.items = [[n.title + ": "].concat(n.detail)].concat(n.items || []);
+        fn.actions = (fn.actions || []).concat(n.actions || []);
+      }
+      n = fn;
+    }
     window.EkteNotice.show($("#note"), n);
   }
   function loadNote() {
-    var st = fetch("/api/history/status").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+    var st = window.EkteFilters.fetchWidget("/api/history/status");
     var mk = fetch("/api/secret").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
     return Promise.all([st, mk])
       .then(function (res) { note.status = res[0]; note.locked = !!(res[1] && res[1].state === "locked"); note.err = false; },
         function () { note.err = true; })
-      .then(function () { paintNote(); syncCounts(); });
+      .then(function () {
+        paintNote(); syncCounts();
+        // an empty range over saved runs: "no match", not "no audits yet"
+        if (state.groups && !state.totalRuns && anySaved()) { fbar.hidden = false; render(); }
+      });
   }
   $("#note").addEventListener("click", function (e) {
     var b = e.target.closest("[data-note-act]");
@@ -602,6 +808,7 @@
     var act = b.getAttribute("data-note-act");
     if (act === "retry") load();
     else if (act === "unlock") location.href = "/watches";
+    else if (act === "showfocus") showFocused();
   });
   window.addEventListener("ekte:lang", paintNote);
 
@@ -624,7 +831,7 @@
     if (state.open != null && !state.rows[String(state.open)]) state.open = null;
     if (state.confirm != null && state.confirm !== "all" && !state.rows[String(state.confirm)]) state.confirm = null;
     if (!state.totalRuns) {
-      host.innerHTML = isFiltered()
+      host.innerHTML = urlFiltered() || anySaved()
         ? '<div class="nomatch"><p>' + esc(T("没有符合筛选条件的检测记录。", "No audits match these filters.")) +
           '</p><button type="button" class="btn sm" id="nmreset">' + esc(T("重置筛选", "Reset filters")) + "</button></div>"
         : '<div class="empty-box"><div class="ic">' + ico("folder") + "</div><p>" +
@@ -699,9 +906,37 @@
       '<h2 id="' + hid + '"><button type="button" class="gtog" data-gkey="' + esc(g.key) + '" aria-expanded="' + !shut + '" aria-controls="gb' + gi + '" title="' +
       esc(T("声称模型", "Claimed model")) + '">' + ico("chevronDown") + '<span class="t">' + esc(groupName(g)) + "</span></button></h2>" +
       '<div class="gu"><span class="gk">' + esc(g.relay && g.relay.kind === "provider" ? T("厂商", "Provider") : T("中转站", "Relay")) + "</span>" +
-      '<span class="gn" id="' + hid + 'u" title="' + esc(g.urls.join("\n")) + '">' + esc(relayName(g)) + "</span></div></div>" +
+      '<span class="gn" id="' + hid + 'u" title="' + esc(g.urls.join("\n")) + '">' + esc(relayName(g)) + "</span>" +
+      analyticsLinkHTML(g) + "</div></div>" +
       trendHTML(g) + "</div>" +
       '<div class="gbody" id="gb' + gi + '"' + (shut ? " hidden" : "") + ">" + gbodyHTML(g) + "</div></section>";
+  }
+  // "Open in Analytics": this group's relay and model with the current
+  // filters Analytics shows; named by model AND relay, as every group has
+  // one. The values are the server's: the group key is "<relay key>|<model
+  // key>" (relay_model), whose parts are what the relay / model filters
+  // match, "(unknown)" included; "-" only if the server sent no relay.
+  function analyticsLinkHTML(g) {
+    var rel = g.relay ? g.relay.key : null;
+    var model = rel != null && g.key.indexOf(rel + "|") === 0 ? g.key.slice(rel.length + 1) : g.claimed_model;
+    var link = window.EkteFilters.href("analytics", F.state(), {
+      relay: [rel != null ? rel : window.EkteFilters.UNKNOWN],
+      model: [model || window.EkteFilters.UNKNOWN],
+      tab: "overview",
+    });
+    var name = Tf("在分析中打开：{model} · {relay}", "Open in Analytics: {model} · {relay}", { model: groupName(g), relay: relayName(g) });
+    // and the monitors of this relay and model (the Monitors page's keys of
+    // the current filters, its own state / alerting never come along)
+    // (not History's search: it searches runs, and stays on each page)
+    var mons = window.EkteFilters.href("watches", Object.assign(F.state(), { q: null }), {
+      relay: [rel != null ? rel : window.EkteFilters.UNKNOWN],
+      model: [model || window.EkteFilters.UNKNOWN],
+    });
+    var monName = Tf("此中转站和模型的监控：{model} · {relay}", "Monitors for this relay and model: {model} · {relay}", { model: groupName(g), relay: relayName(g) });
+    return '<a class="glink" href="' + esc(link) + '" aria-label="' + esc(name) + '">' +
+      esc(T("在分析中打开", "Open in Analytics")) + ico("arrowRight") + "</a>" +
+      '<a class="glink" href="' + esc(mons) + '" aria-label="' + esc(monName) + '">' +
+      esc(T("此中转站和模型的监控", "Monitors for this relay and model")) + ico("arrowRight") + "</a>";
   }
   function gbodyHTML(g) {
     return '<ul class="rows">' + (g.rows || []).map(rowHTML).join("") + "</ul>" + moreHTML(g);
@@ -1058,18 +1293,14 @@
 
   function fetchReport(panel, id) {
     panel.innerHTML = '<div class="state loading">' + esc(T("加载报告…", "Loading report…")) + "</div>";
-    fetch("/api/history/" + encodeURIComponent(id) + "?trend=1")
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
+    window.EkteFilters.fetchWidget("/api/history/" + encodeURIComponent(id) + "?trend=1")
       .then(function (rep) {
         state.reports[id] = rep;
         if (panel.isConnected) mount(panel, rep);
       })
       .catch(function (e) {
         if (panel.isConnected)
-          panel.innerHTML = '<div class="errbox">' + esc(T("无法加载这份报告：", "Could not load this report: ")) + esc(String((e && e.message) || e)) + "</div>";
+          panel.innerHTML = '<div class="errbox">' + esc(T("无法加载这份报告：", "Could not load this report: ")) + esc(EKTE_LANG.server(String((e && e.message) || e))) + "</div>";
       });
   }
 

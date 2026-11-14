@@ -166,7 +166,32 @@ le permet pas) : le lien rouvre exactement cette vue. Le panneau de filtres est
 le même sur **Historique**, **Surveillances** et **Analyses** : fermé, il indique combien de
 filtres sont actifs et les nomme sur une ligne (p. ex. « 30 derniers jours ·
 standard · Streaming · Example Relay »), si bien qu'une vue partagée dit ce
-qu'elle montre.
+qu'elle montre. **Historique** et **Analyses** s'ouvrent sur les 30
+derniers jours : aujourd'hui et les 29 jours précédents, depuis minuit dans
+votre fuseau horaire (**Toute la période** montre toutes les exécutions). Un
+lien partagé garde la période, pas les dates : chacun la voit dans son propre
+fuseau horaire.
+
+**Filtres d’une page à l’autre, mises à jour en direct et liens.** Les filtres
+choisis sont mémorisés entre **Historique**, **Analyses** et **Surveillances**
+: un relais choisi sur une page l’est déjà sur la suivante, et les filtres
+propres à une page (comme le risque dans l’Historique) restent à cette page.
+Désactivez **Conserver les filtres d’une page à l’autre**, au pied du panneau
+des filtres, pour donner à chaque page ses propres filtres. Les filtres d’un
+lien l’emportent toujours sur les filtres mémorisés. Une page ouverte remarque
+d’elle-même les nouvelles données : tant que l’onglet est visible, elle
+demande toutes les 10 secondes si quelque chose a changé (un onglet masqué ne
+demande rien). **Analyses** se met alors à jour sur place, discrètement ;
+l’**Historique** garde sa liste et affiche « 1 nouvelle exécution » (ou « N
+nouvelles exécutions ») avec **Afficher**, ou « L’historique a changé » avec
+**Actualiser** ; **Surveillances** suit en direct la progression d’un moniteur
+en cours. Les pages se lient entre elles avec les filtres déjà remplis :
+**Ouvrir dans Analyses** sur chaque groupe de l’Historique et chaque moniteur,
+**Ouvrir dans l’historique** et **Depuis l’exécution #n** sur un moniteur
+(tous deux ouvrent exactement cette exécution, même si elle est plus ancienne
+que la période affichée par l’Historique), **Moniteurs de ce relais et de ce
+modèle** sur un groupe de l’Historique, et **Moniteurs pour ces filtres** dans
+le panneau des filtres d’Analyses.
 
 **Taux de succès, d’erreur, de 429 et de requêtes perturbées.** Chaque requête qu’ekte envoie au relais pendant une exécution a exactement un résultat : un succès, une erreur du relais (délai dépassé en attendant le relais, réponse 5xx ou 4xx, ou autre réponse défectueuse), une limitation de débit (HTTP 429) ou un échec qui n’a jamais atteint le relais (le réseau entre vous et le relais, ou ekte lui-même). Les tentatives répétées comptent une fois. Le relais n’est jugé que sur les requêtes qui l’ont atteint : le **taux de succès**, le **taux d’erreur** et le **taux de 429** sont les succès, les erreurs du relais et les limitations divisés par ces requêtes, et totalisent toujours 100 %. La **part perturbée** est la part de toutes les requêtes qui ont échoué avant le relais : elle dit à quel point on peut se fier à l’exécution elle-même, pas si le relais est bon ; si elle est élevée, relancez l’audit. Sur plusieurs exécutions, les taux sont cumulés (toutes les requêtes ensemble), si bien qu’une mauvaise exécution parmi de nombreuses bonnes reste visible (neuf exécutions à 0 % et une à 40 % donnent environ 4 %, pas 0 %) ; scores, latences, vitesses et ratios de facturation sont la médiane des exécutions. Historique, Analyses et le rapport affichent les mêmes chiffres pour les mêmes exécutions, et une seule exécution affiche exactement les valeurs de son rapport. Le contrôle de fiabilité du rapport a son propre taux (« Taux de succès du contrôle de fiabilité »), qui ne sert qu’au score.
 
