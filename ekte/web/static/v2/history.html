@@ -668,9 +668,9 @@
       detail: n > 0 ? T("在此列表加载之后保存。", "Saved since this list was loaded.")
         : T("此列表加载之后有检测被更改或删除。", "Runs were changed or deleted since this list was loaded."),
       actions: [{ act: "show", label: n > 0 ? T("显示", "Show") : T("刷新", "Refresh"), primary: true }],
+      // not a live region: #live says it once, a new N is not announced again
+      role: false,
     });
-    // not a live region: #live says it once, a new N is not announced again
-    freshBox.removeAttribute("role");
     if (announce) {
       say(title + ". " + (n > 0 ? T("用列表上方的“显示”按钮查看。", "Use the Show button above the list.")
         : T("用列表上方的“刷新”按钮重新加载。", "Use the Refresh button above the list.")));

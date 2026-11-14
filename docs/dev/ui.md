@@ -14,9 +14,13 @@ scripts use `var(--…)` only, never a literal color.
 Every v2 page but Accessibility has one **page notice** right under its hero
 (`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
 in `ekte.css`): `EkteNotice.show(el, {level, title, detail, items, actions})`
-with the level `info`, `success`, `warning` or `critical` setting tint, border
-and icon (critical is `role="alert"`, the others `role="status"`; showing the
-same notice again changes nothing). The page picks the most important message
+with the level `info`, `success`, `warning` or `critical` (`error` is the same
+as `critical`) setting tint, border and icon. The role follows the importance
+(`EkteNotice.roleFor`, #193): critical is `role="alert"`, so it is announced
+at once; the others are `role="status"`, announced politely; `role: false`
+sets no role, for a notice the page announces itself (History's new-runs
+notice). Showing the same notice again changes nothing, so a notice redrawn
+on every poll is announced once, until it says something new. The page picks the most important message
 and lists the others in `items`. Audit: server unreachable / audits running /
 the newest saved run / runs locally; History: history unreadable / monitor
 runs paused (master key locked) or older runs still processed / run count;
@@ -237,9 +241,10 @@ URLs only on an event.
   refresh waits for it. An empty page ("no audits yet") starts quietly with its
   first saved run.
 - **History**, on `ekte:data`: the list never reloads by itself. The page asks
-  the groups' answer for the current filters with `groups.limit=1` (a cached
-  URL) and reads `total_runs`; N is that total minus the total shown. A notice
-  above the list (`#fresh`, drawn by `notice.js` but no live region itself)
+  the groups' answer for the current filters with `groups.limit=1` and no
+  `trend.*` key (a cached URL; the server computes no trend, #194) and reads
+  `total_runs`; N is that total minus the total shown. A notice above the list
+  (`#fresh`, drawn by `notice.js` with `role: false`: no live region itself)
   says "N new runs" with **Show** (N > 0) or "History changed" with
   **Refresh**. It is announced once, politely, through `#live`; a further
   change while it is shown updates N in place without a new announcement. The
