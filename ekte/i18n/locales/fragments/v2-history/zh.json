@@ -1,7 +1,10 @@
 {
  "strings": {
   "All": "全部",
+  "Range widened to show run #{id}": "已扩大时间范围以显示运行 #{id}",
+  "Run #{id} doesn't match the current filters": "运行 #{id} 不符合当前筛选条件",
   "Search": "搜索",
+  "Show it": "显示它",
   "Trends": "趋势"
  }
 }

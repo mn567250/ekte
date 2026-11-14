@@ -47,6 +47,7 @@ TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_analytics_view.py": ("analytics",),
     "test_filter_memory.py": ("history", "analytics"),
     "test_history_paging.py": ("history",),
+    "test_history_focus.py": ("history",),
     "test_browser_cache.py": ("history", "analytics"),
     # the component on its own test page, and the monitors' links into History
     "test_filters_view.py": ("history", "monitors"),

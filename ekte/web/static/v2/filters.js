@@ -47,7 +47,9 @@
  *                    the viewer's time zone, which resolves day ranges and
  *                    buckets times; it is never in state() or url(), so a
  *                    shared link resolves in each viewer's own zone
- *   set(patch)       { key: value | null } (null: back to the default)
+ *   set(patch, how)  { key: value | null } (null: back to the default); how:
+ *                    { render, quiet (no announcement), remember: false (a
+ *                    change the page made, not the viewer: not stored) }
  *   reset()          every filter back to its default (widget keys stay)
  *   load(widgets)    { ns: { url, done(data), fail(err) } }: fetches them all
  *                    at once with widgetParams(ns); a newer load (and every
@@ -507,7 +509,9 @@
     function rangeText() {
       if (st.range || !(st.from || st.to)) return tr(V.range[st.range] || [st.range, st.range]);
       var to = DAY.test(st.to) ? shiftDay(st.to, -1) : st.to;
-      return (st.from || "…") + " – " + (to || "…");
+      // a local midnight with its offset (History's widened range, issue 157) reads as its day
+      var from = /^\d{4}-\d{2}-\d{2}T00:00(?::00)?[+-]/.test(st.from) ? st.from.slice(0, 10) : st.from;
+      return (from || "…") + " – " + (to || "…");
     }
     function summary() {
       return fields.filter(active).map(function (k) {
@@ -640,11 +644,14 @@
         changed.push(k);
       });
       if (changed.indexOf("range") >= 0 && st.range) { st.from = ""; st.to = ""; }
+      // dates set without a range (by the page): the select shows "Custom range"
+      if (!st.range && (st.from || st.to)) custom = true;
+      else if (st.range) custom = false;
       if (!changed.length) return changed;
       var filters = changed.some(function (k) { return own.indexOf(k) >= 0; });
       writeUrl();
       if (filters) {
-        remember(o.page, st, fields, defaults, o.storage);
+        if (how.remember !== false) remember(o.page, st, fields, defaults, o.storage);
         widgets.abort(); // a newer state: what is in flight is stale
         if (how.render) render(); else sync();
         if (!how.quiet) say(Tf("筛选已更新：{n} 项生效", "Filters updated: {n} active", { n: activeCount() }));
