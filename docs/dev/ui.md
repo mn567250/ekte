@@ -218,6 +218,25 @@ classification, a new aggregate) goes into `ekte/web/metrics.py`,
 `tests/test_metrics_e2e.py` fails when a page compares a score with a grade
 threshold, an HTTP status with a code, or defines its own median.
 
+**Pages and links between them** (#159). `EkteFilters.PAGES` lists the
+filter keys each page shows (`history`, `analytics`, `watches`: #150, design
+D); History and Analytics create their panels with `fields: PAGES[page]` and
+keep no list of their own. `EkteFilters.href(page, state, extra)` (pure,
+tested under node) builds `"/<path>?<query>"` for another page with
+`URLSearchParams`: only the target's keys (plus `from` / `to` with a custom
+range), so a key the target does not show (History's `risk` on Analytics)
+never travels silently; the source's widget and view keys and `tz` are
+dropped. `range` is written whenever the source has one, `range=` for all
+time too, so the target's default range never applies by accident. `extra`
+replaces filter keys (a group's `relay`) and appends widget and view keys
+(`{tab: "overview"}`, `{"runs.focus": 42}`). Every History group header has
+an **Open in Analytics** link: the group's relay and model as the server
+keys them (the two parts of the `relay_model` group key, `(unknown)`
+included: the values the `relay` / `model` filters match), the current
+History filters Analytics shows and
+`tab=overview`; its accessible name ("Open in Analytics: model · relay")
+names the group, so the links on one page are unique.
+
 The monitors' **Open in history** links use the schema: `surface`, `relay`
 (the watch's `relay_key` from `/api/watches`, the relay its runs are grouped
 under), `model` and `suite`, plus `#r-<run>`.

@@ -140,7 +140,11 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relé Example Relay Score
+    - text: Relé Example Relay
+    - 'link "Åpne i Analyse: model-a · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: Åpne i Analyse
+    - text: Score
     - 'img "Score-trend over 7 revisjoner: fra 70 til 82, stigende."'
     - text: 82 Forsinkelse p50
     - 'img "Forsinkelse p50-trend over 7 revisjoner: fra <duration> til <duration>, fallende."'
@@ -184,7 +188,11 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relé gateway.a-very-long-relay-hostname.example.org Score
+    - text: Relé gateway.a-very-long-relay-hostname.example.org
+    - 'link "Åpne i Analyse: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: Åpne i Analyse
+    - text: Score
     - 'img "Score-trend over 4 revisjoner: fra 58 til 64, stigende."'
     - text: 64 Forsinkelse p50
     - 'img "Forsinkelse p50-trend over 4 revisjoner: fra <duration> til <duration>, fallende."'
@@ -213,7 +221,11 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relé Example Relay Score
+    - text: Relé Example Relay
+    - 'link "Åpne i Analyse: model-b · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: Åpne i Analyse
+    - text: Score
     - 'img "Score-trend over 2 revisjoner: fra 89 til 91, stigende."'
     - text: 91 Forsinkelse p50
     - 'img "Forsinkelse p50-trend over 2 revisjoner: fra <duration> til <duration>, fallende."'
@@ -232,7 +244,11 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relé gateway.a-very-long-relay-hostname.example.org Score 72 Forsinkelse p50 <duration>
+    - text: Relé gateway.a-very-long-relay-hostname.example.org
+    - 'link "Åpne i Analyse: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: Åpne i Analyse
+    - text: Score 72 Forsinkelse p50 <duration>
     - list:
       - listitem:
         - button "27. sep. 2026, 10:02 Stort sett pålitelig Score 72 Karakter D check · standard openai · Strømming p50 <duration>" [expanded]
@@ -313,7 +329,11 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: Relé 127.0.0.1:9099 Score 53 Forsinkelse p50 ingen data
+    - text: Relé 127.0.0.1:9099
+    - 'link "Åpne i Analyse: gpt-4o · 127.0.0.1:9099"':
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: Åpne i Analyse
+    - text: Score 53 Forsinkelse p50 ingen data
     - list:
       - listitem:
         - button "27. sep. 2026, 07:47 Falsk vare Score 53 Karakter F check · standard"

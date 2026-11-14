@@ -85,6 +85,10 @@
   .gtitle .gu { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
   .gtitle .gu .gk { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
   .gtitle .gu .gn { font-size: 13px; font-weight: 600; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
+  /* the group's link to Analytics, after the relay name */
+  .gtitle .gu .glink { flex: none; display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-size: 12.5px; font-weight: 700; color: var(--primary); text-decoration: none; }
+  .gtitle .gu .glink:hover { text-decoration: underline; }
+  .gtitle .gu .glink .zicon { width: 13px; height: 13px; }
   /* group trends (one or two of score, grade, latency p50, TTFT p50, decode
      speed p50, error rate: GET /api/metrics history_trends). Every tile has
      a fixed size that depends only on its metric, never on its values or on
@@ -306,8 +310,8 @@
   var RISKI = { clean: "check", low: "warning", medium: "warning", high: "x", inconclusive: "info" };
 
   var host = $("#hist"), fbar = $("#filters");
-  // the shared filters this page shows (ekte/web/query.py schema)
-  var FLD = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec", "watch"];
+  // the shared filters this page shows (ekte/web/query.py schema; filters.js PAGES)
+  var FLD = window.EkteFilters.PAGES.history.slice();
   var DEF_TRENDS = "score,latency_p50", DEF_SORT = "-time", SORTS = ["time", "risk", "score", "grade"];
   var FOCUS = "runs.focus";
   var cat = null; // GET /api/metrics: { byId, order, max, grades, labels }
@@ -799,9 +803,27 @@
       '<h2 id="' + hid + '"><button type="button" class="gtog" data-gkey="' + esc(g.key) + '" aria-expanded="' + !shut + '" aria-controls="gb' + gi + '" title="' +
       esc(T("声称模型", "Claimed model")) + '">' + ico("chevronDown") + '<span class="t">' + esc(groupName(g)) + "</span></button></h2>" +
       '<div class="gu"><span class="gk">' + esc(g.relay && g.relay.kind === "provider" ? T("厂商", "Provider") : T("中转站", "Relay")) + "</span>" +
-      '<span class="gn" id="' + hid + 'u" title="' + esc(g.urls.join("\n")) + '">' + esc(relayName(g)) + "</span></div></div>" +
+      '<span class="gn" id="' + hid + 'u" title="' + esc(g.urls.join("\n")) + '">' + esc(relayName(g)) + "</span>" +
+      analyticsLinkHTML(g) + "</div></div>" +
       trendHTML(g) + "</div>" +
       '<div class="gbody" id="gb' + gi + '"' + (shut ? " hidden" : "") + ">" + gbodyHTML(g) + "</div></section>";
+  }
+  // "Open in Analytics": this group's relay and model with the current
+  // filters Analytics shows; named by model AND relay, as every group has
+  // one. The values are the server's: the group key is "<relay key>|<model
+  // key>" (relay_model), whose parts are what the relay / model filters
+  // match, "(unknown)" included; "-" only if the server sent no relay.
+  function analyticsLinkHTML(g) {
+    var rel = g.relay ? g.relay.key : null;
+    var model = rel != null && g.key.indexOf(rel + "|") === 0 ? g.key.slice(rel.length + 1) : g.claimed_model;
+    var link = window.EkteFilters.href("analytics", F.state(), {
+      relay: [rel != null ? rel : window.EkteFilters.UNKNOWN],
+      model: [model || window.EkteFilters.UNKNOWN],
+      tab: "overview",
+    });
+    var name = Tf("在分析中打开：{model} · {relay}", "Open in Analytics: {model} · {relay}", { model: groupName(g), relay: relayName(g) });
+    return '<a class="glink" href="' + esc(link) + '" aria-label="' + esc(name) + '">' +
+      esc(T("在分析中打开", "Open in Analytics")) + ico("arrowRight") + "</a>";
   }
   function gbodyHTML(g) {
     return '<ul class="rows">' + (g.rows || []).map(rowHTML).join("") + "</ul>" + moreHTML(g);

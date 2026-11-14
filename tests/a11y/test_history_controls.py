@@ -267,6 +267,47 @@ def test_copied_link_reproduces_the_view(open_page, history_server) -> None:
     assert_no_issues(issues, "history [en]", "link")
 
 
+@pytest.mark.bitv("9.2.4.4", "9.4.1.2")
+def test_group_opens_in_analytics(open_page, history_server) -> None:
+    """Each group's "Open in Analytics" link (a unique name: the group's model
+    and relay) opens Analytics with that relay and model plus the History
+    filters Analytics shows (surface, range); History-only keys (q) stay
+    behind (#159)."""
+    page = _history(open_page, history_server, query=TWO + "&surface=chat&range=7d&q=model-")
+    issues: list[str] = []
+    links = page.locator("#hist .group .glink")
+    names = [links.nth(i).get_attribute("aria-label") or "" for i in range(links.count())]
+    if len(names) != 2 or len(set(names)) != 2:
+        issues.append(f"the group links are not two with unique names: {names}")
+    groups = page.evaluate(
+        "() => fetch('/api/history/groups?' + window.EkteFilters.widgetParams(['groups', 'trend'])).then(r => r.json())"
+        ".then(d => d.groups.map(g => ({ relay: g.relay && g.relay.key, label: g.relay && g.relay.label, model: g.claimed_model })))"
+    )
+    first = groups[0]
+    if not all(s in names[0] for s in ("Open in Analytics", first["model"], first["label"])):
+        issues.append(f"the first link's name {names[0]!r} does not name {first}")
+    seen: list[dict[str, list[str]]] = []
+    page.context.on("request", lambda r: seen.append(parse_qs(urlparse(r.url).query, keep_blank_values=True))
+                    if urlparse(r.url).path == "/api/analytics/summary" else None)
+    want = {"relay": [first["relay"]], "model": [first["model"]], "surface": ["chat"], "range": ["7d"]}
+    link = parse_qs(urlparse(links.first.get_attribute("href") or "").query, keep_blank_values=True)
+    if link != {**want, "tab": ["overview"]}:
+        issues.append(f"the link is {link}, not {want} + tab=overview")
+    links.first.click()
+    page.wait_for_url("**/analytics?**")
+    settle(page)
+    # Analytics leaves its default tab (overview) out of its own URL
+    got = parse_qs(urlparse(page.url).query, keep_blank_values=True)
+    if got != want:
+        issues.append(f"the Analytics URL is {page.url}, not {want}")
+    st = page.evaluate("() => window.EkteFilters.state()")
+    if {k: [st[k]] if isinstance(st[k], str) else st[k] for k in want} != want or st.get("tab") != "overview":
+        issues.append(f"Analytics did not apply the group's filters on the overview: {st}")
+    if not seen or any({k: q.get(k) for k in want} != want for q in seen):
+        issues.append(f"the summary was not asked with the group's filters: {seen}")
+    assert_no_issues(issues, "history [en]", "analytics-link")
+
+
 def _groups_requests(open_page: Any, base: str, query: str) -> tuple[Page, list[dict[str, list[str]]]]:
     """History opened at ``query`` in a viewer zone of its own, and the query
     strings of its /api/history/groups requests."""

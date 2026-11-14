@@ -20,6 +20,17 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### History: open a group in Analytics ([#159](https://github.com/mn567250/ekte/issues/159), part of [#150](https://github.com/mn567250/ekte/issues/150))
+
+Every History group (relay × model) has an **Open in Analytics** link: it
+opens Analytics on the overview with that relay and model and the current
+History filters Analytics shows (period, endpoint type, suite, protocol,
+probe requests, execution, monitor). Filters Analytics does not show (search,
+mode, protocol detection, risk, min. score) are not carried over, and the
+period is always written, also "All time". `filters.js` gains one registry of
+the filter keys each page shows (`EkteFilters.PAGES`) and one link builder
+(`EkteFilters.href(page, state, extra)`) for links between the pages.
+
 ### History: a link to a run outside the filters shows it ([#157](https://github.com/mn567250/ekte/issues/157))
 
 Part of [#150](https://github.com/mn567250/ekte/issues/150). A link to one
