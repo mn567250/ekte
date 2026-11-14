@@ -129,7 +129,8 @@ same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
 | `DELETE /api/history/{id}`, `DELETE /api/history` | delete one run, or all |
 | `GET /api/v1/history` | the newest runs (public; `limit`, `perf`) |
 | `GET /api/v1/history/{id}/evidence`, `…/evidence/exchanges`, `…/evidence/export`, `POST /api/history/{id}/rescore` (`/api/v1/…`) | a run's evidence; re-score it |
-| `GET /api/watches`, `POST /api/watches`, `POST /api/watches/from-history/{id}`, `PATCH` / `DELETE /api/watches/{id}`, `POST /api/watches/{id}/run`, `POST /api/watches/{id}/cancel` | monitors |
+| `GET /api/watches`, `GET /api/watches/options` | the monitors, filtered and cached, and their filter options (see [Monitors API](#monitors-api)) |
+| `POST /api/watches`, `POST /api/watches/from-history/{id}`, `PATCH` / `DELETE /api/watches/{id}`, `POST /api/watches/{id}/run`, `POST /api/watches/{id}/cancel` | monitors |
 | `GET /api/secret`, `POST /api/secret/new`, `…/new/confirm`, `…/unlock`, `…/lock`, `…/reset`, `…/storage` | the monitors' master key |
 
 Every widget endpoint (metrics, filter options, Analytics, History groups and
@@ -242,12 +243,15 @@ pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
 synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
 reports, an ekte release every 3 weeks with an occasional one-day rollback,
 a profile change every 45 days) plus 200 monitors in `watches.db`
-(`--watches`), and prints p50 / p95 (nearest rank, 40 calls) of
+(`--monitors`, formerly `--watches`: spread over the fixture's relays and
+models, about 70 % active, 20 % paused and 10 % drafts, with mixed alert
+thresholds, last risks and a few run windows), and prints p50 / p95 (nearest rank, 40 calls) of
 `aggregate`, `series` and `page_runs`.
 
 The budget tests (marked `slow`) check that every case's p95 stays under the
 budget: `tests/test_query.py` (the query core), `tests/test_analytics_widgets.py`
-(the Analytics widgets), `tests/test_history_api.py` (the History API) and
+(the Analytics widgets), `tests/test_history_api.py` (the History API),
+`tests/test_watches_api.py` (the Monitors API) and
 `tests/test_web_version.py` (`/api/version`, 5 ms). They
 are skipped unless `EKTE_BENCH=1`; run them serially, so the timings are not
 shared with other tests:
@@ -694,6 +698,55 @@ gone. `GET /api/v1/history` is part of the public API and keeps its shape
 `ttft_p50_ms`, `decode_tps_p50`) comes from the run's `history_metrics` row,
 the one store of those values since schema version 13 dropped the copies on
 `history` (#128).
+
+## Monitors API
+
+`ekte/web/watches_api.py` answers the Monitors page in the shared pattern:
+filtered on the server, cached, no live state.
+
+- **`GET /api/watches?<keys>`**: the monitors matching the filters, newest
+  first, as a JSON list. Rows never contain an API key (`has_key` and
+  `key_status` say whether one is set) and carry no live run state. Each row
+  has `state`, `alerting`, `relay_key` and `relay_label` besides the stored
+  settings.
+- **`GET /api/watches/options?<keys>`**: `{"filters", "keys", "monitors",
+  "<key>": [{value, monitors, label?}]}` for `surface`, `relay` (with its
+  `label`), `model`, `suite`, `api`, `stream`, `state` and `alerting`.
+  Counts are **monitors**, each list under every filter but its own (as
+  `/api/filters/options` counts runs), most monitors first; `monitors` is
+  how many match every filter.
+
+| Key | A monitor matches when |
+|---|---|
+| `q` | the text is a substring (ASCII case-insensitive) of its name, base URL, relay label, claimed model, model or suite |
+| `surface` | its surface is the value |
+| `relay` | its `relay_key` (the relay its runs are grouped under) is one of the values; repeatable |
+| `model` | its claimed model, else its model (`(unknown)` without either), is one of the values; repeatable |
+| `suite`, `api`, `stream` | its suite / resolved protocol (`api_resolved`) / probe request mode (`stream_mode`) is the value; `-` for none |
+| `state` | `active` (enabled, set up), `paused` (set up, disabled) or `draft` (scheduled from History, no interval yet; the key stays optional) |
+| `alerting` | `yes`: its last run's risk is at or above its `alert_on` threshold (`watches.risk_meets`, the rule the scheduler alerts on); else `no` |
+
+The shared keys are validated by `query.parse_query` (same values and
+errors). Any other key, the run-only keys `range`, `from`, `to`, `risk`,
+`exec`, `group`, … and dotted widget keys included, is a 400
+`unknown parameter`. Filtering runs in Python over the monitor rows (bounded
+by the number of monitors, not runs); relays and knowledge-base profiles are
+resolved once per request. Budget: 50 ms p95 with 200 monitors, cold cache
+(`tests/test_watches_api.py`).
+
+**Caching.** Both go through `cached_endpoint` (ETag, `Cache-Control:
+no-cache`, 304). Besides the history data version and the knowledge-base
+relay version, `watches_api.resolve_params` (the `prepare`) adds a token of
+what else the rows depend on: `watches.data_version()` (a monitor created,
+edited, deleted or run), the master key held and the keys held in memory
+(`key_status`), the audit knowledge base (`kb_changed`), the phase of every
+run window (`in_window`, `next_window_ts`) and the server process.
+
+**Live state** (running, queued, progress) is `GET /api/jobs`: a running
+monitor is the job `monitor-<id>` with `kind: "monitor"`, `watch_id`,
+`status` (`queued` while it waits for its relay, then `running`),
+`progress` (percent, `null` while queued), `done`, `total`, `current` and
+`waiting_for`. The Monitors page reads both and merges them by `watch_id`.
 
 ## HTTP API v1
 

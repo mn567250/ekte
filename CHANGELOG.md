@@ -46,6 +46,29 @@ the page sets dates itself.
   "key"}` for a run on the page (was `{"id", "key"}`), and
   `{"id", "found": false}` instead of `null` for one that is not.
 
+### Web UI: Monitors API: filtered, cached list and its filter options ([#158](https://github.com/mn567250/ekte/issues/158), part of [#150](https://github.com/mn567250/ekte/issues/150))
+
+`GET /api/watches` takes the monitor keys of the shared URL schema (`q`,
+`surface`, `relay`, `model`, `suite`, `api`, `stream`) plus `state`
+(`active`, `paused`, `draft`) and `alerting` (`yes`, `no`), validated like
+History and Analytics; any other key, `range` and `risk` included, is a 400
+`unknown parameter`. Every row now carries `state`, `alerting` (the last
+run's risk at or above the monitor's threshold, the scheduler's own rule),
+`relay_key` and `relay_label`. The new `GET /api/watches/options` lists the
+values of each key with how many monitors have them under the other filters.
+Both are cached with an `ETag` and answer `304` until a monitor is created,
+edited, deleted or finishes a run (or its key status or run window phase
+changes). `scripts/bench_fixture.py` takes `--monitors` (the old `--watches`
+still works) and writes monitors with mixed states, thresholds and last
+risks; both endpoints answer in under 50 ms p95 with 200 monitors.
+
+#### Breaking changes
+
+- **`GET /api/watches`** no longer returns the live fields `running`,
+  `queued` and `progress`: they are in `GET /api/jobs` (job
+  `monitor-<id>`, `watch_id`, `status` `queued` or `running`, `progress`).
+  The Monitors page reads them from there.
+
 ### Web UI: widget answers kept by the browser ([#153](https://github.com/mn567250/ekte/issues/153))
 
 History and Analytics leave their answers to the browser's HTTP cache, so a

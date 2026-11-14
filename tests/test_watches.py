@@ -352,12 +352,23 @@ def test_running_watch_is_flagged_and_rejects_run_now(tmp_path, monkeypatch, cli
     from ekte.web import server, watches
 
     wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "gpt-4o"})
+    live = ("running", "queued", "progress")
+
+    def monitor_jobs() -> list:
+        return [j for j in client.get("/api/jobs").json()["jobs"] if j.get("watch_id") == wid]
+
     w = client.get("/api/watches").json()[0]
-    assert w["running"] is False and w["progress"] is None
+    assert not set(live) & set(w) and monitor_jobs() == []
     server._running_watches[wid] = {"total": 4, "done": 1}
     try:
-        w = client.get("/api/watches").json()[0]
-        assert w["running"] is True and w["progress"] == 25
+        # queued (waiting for its relay): listed by /api/jobs, without progress
+        [job] = monitor_jobs()
+        assert job["id"] == f"monitor-{wid}" and job["status"] == "queued" and job["progress"] is None
+        server._running_watches[wid]["started"] = True
+        [job] = monitor_jobs()
+        assert job["status"] == "running" and job["progress"] == 25
+        # the list itself never carries the live state
+        assert not set(live) & set(client.get("/api/watches").json()[0])
         assert client.post(f"/api/watches/{wid}/run").status_code == 409
     finally:
         server._running_watches.pop(wid, None)
