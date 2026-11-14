@@ -25,8 +25,9 @@ Endpoints:
   POST /api/models           list a relay's /models (connection check + model ids)
   POST /api/jobs             queue an audit (any surface: chat, embedding, rerank)
                              as a background job; it runs on whatever page is open
-  GET  /api/jobs             queued and running audits (and running monitors),
-                             recently finished ones too, with progress
+  GET  /api/jobs             queued and running audits (and running monitors:
+                             id monitor-<id>, watch_id, status queued|running,
+                             progress), recently finished ones too, with progress
   GET  /api/jobs/{id}/events the job's events as SSE: the log so far, then live
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
@@ -44,7 +45,13 @@ Endpoints:
   DELETE /api/history/{id}, /api/history   delete one run, or all of them
   POST /api/history/{id}/rescore   re-score a run from its evidence (a job)
   GET  /api/v1/history/{id}/evidence[/exchanges|/export]   a run's evidence
-  GET, POST /api/watches; POST /api/watches/from-history/{id};
+  GET  /api/watches          the monitors, filtered (q, surface, relay, model,
+                             suite, api, stream, state, alerting) and cached;
+                             no live run state (that is /api/jobs)
+  GET  /api/watches/options  the values of each monitor filter key, counted
+                             in monitors under the other filters
+                             (ekte/web/watches_api.py)
+  POST /api/watches; POST /api/watches/from-history/{id};
   PATCH, DELETE /api/watches/{id}; POST /api/watches/{id}/run|cancel
                              the monitors
   GET  /api/metrics          the metric registry: ids, units, formats, label
@@ -674,19 +681,12 @@ async def _run_one_watch_inner(
 
 
 def _risk_meets(risk: str | None, threshold: str) -> bool:
-    """True when ``risk`` is at or above the ``threshold`` risk level."""
-    from ekte.models import RiskLevel
+    """True when ``risk`` is at or above the ``threshold`` risk level
+    (:func:`ekte.web.watches.risk_meets`, which ``/api/watches`` reports as
+    ``alerting``)."""
+    from ekte.web import watches
 
-    order = {
-        RiskLevel.CLEAN.value: 0,
-        RiskLevel.INCONCLUSIVE.value: 1,
-        RiskLevel.LOW.value: 2,
-        RiskLevel.MEDIUM.value: 3,
-        RiskLevel.HIGH.value: 4,
-    }
-    if not risk:
-        return False
-    return order.get(risk, 0) >= order.get(threshold, order[RiskLevel.MEDIUM.value])
+    return watches.risk_meets(risk, threshold)
 
 
 # Runs the scheduler started, keyed by watch id: an entry exists from the
@@ -1700,59 +1700,27 @@ def create_app() -> FastAPI:
         _widget_route(_path, _name)
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
-    def _watch_rows() -> list[dict[str, Any]]:
-        """The stored watches with their schedule floor, protocol and KB drift.
+    # The list and its filter options (ekte/web/watches_api.py): filtered on
+    # the server, cached on the watches data version like the widgets. Live
+    # run state (running, queued, progress) is not part of them: /api/jobs.
+    def _watches_params(params: Any) -> Any:
+        from ekte.web import watches_api
 
-        Blocking (SQLite + knowledge base load): runs in a worker thread.
-        Touches no loop-owned state; live run state is added on the loop.
-        """
-        from ekte.knowledge import load_knowledge_base
-        from ekte.web import watches
-        from ekte.web.analytics import RelayResolver
-
-        # list_all() never returns api_key, so this is safe to send to the browser.
-        rows = watches.list_all()
-        now_ts = time.time()
-        # the relay its runs are grouped under: the `relay=` key of the
-        # monitor's "Open in history" link (the shared URL schema)
-        resolver = RelayResolver() if rows else None
-        for row in rows:
-            row["relay_key"] = resolver.resolve(row).key if resolver else None
-        # Flag pinned profiles that differ from what the knowledge base resolves now.
-        try:
-            kb = load_knowledge_base(copy=False) if rows else None  # read-only
-        except Exception:
-            kb = None
-        for row in rows:
-            row["min_interval_sec"] = _min_interval_sec(row.get("run_duration_sec"))
-            win = runwindow.parse(row.get("run_window"))
-            row["in_window"] = runwindow.in_window(win, now_ts)
-            row["next_window_ts"] = runwindow.next_window_start(win, now_ts)
-            row.update(_watch_protocol(row))
-            row["kb_current_hash"] = None
-            row["kb_changed"] = False
-            if kb is None:
-                continue
-            try:
-                current = _watch_knowledge(row, kb).get("profile_hash")
-            except Exception:
-                continue
-            row["kb_current_hash"] = current
-            pinned_hash = (row.get("kb") or {}).get("profile_hash")
-            row["kb_changed"] = bool(pinned_hash and pinned_hash != current)
-        return rows
+        return watches_api.resolve_params(params)
 
     @app.get("/api/watches")
-    async def watches_list() -> Any:
-        rows = await asyncio.to_thread(_watch_rows)
-        # Live run state belongs to the event loop: read it here, not in the thread.
-        for row in rows:
-            state = _running_watches.get(int(row["id"]))
-            row["running"] = state is not None
-            # waiting for its relay: another audit is using it
-            row["queued"] = state is not None and not state.get("started")
-            row["progress"] = _watch_progress(state) if state is not None else None
-        return JSONResponse(rows)
+    @cached_endpoint("watches.list", errors=(AnalyticsError,), prepare=_watches_params)
+    def watches_list(params: Any) -> Any:
+        from ekte.web import watches_api
+
+        return watches_api.list_watches(params)
+
+    @app.get("/api/watches/options")
+    @cached_endpoint("watches.options", errors=(AnalyticsError,), prepare=_watches_params)
+    def watches_options(params: Any) -> Any:
+        from ekte.web import watches_api
+
+        return watches_api.options(params)
 
     @app.post("/api/watches")
     async def watches_create(request: Request) -> Any:

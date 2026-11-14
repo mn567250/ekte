@@ -8,8 +8,9 @@ and a year of start times into the history database of ``--data-dir`` (or
 analytics extraction leaves them, so nothing needs backfilling. Every run has
 ``--requests`` target requests (default 100) with an outcome mix like real
 runs (mostly successes, a few 429s, relay errors and network failures).
-Deterministic for a ``--seed``. It also writes ``--watches`` monitors
-(default 200) into ``watches.db``, over the same relays and models.
+Deterministic for a ``--seed``. It also writes ``--monitors`` monitors
+(default 200; ``--watches`` is the old name) into ``watches.db``, over the
+same relays and models, with mixed states, thresholds and last risks.
 :data:`WATCH_SHARE` of the runs belong to monitors (:data:`WATCH_IDS`, ids of
 those monitors, and :data:`DELETED_WATCHES` ids no monitor has: deleted ones,
 whose runs stay).
@@ -94,11 +95,25 @@ def _kb_hash(rng: random.Random, started: datetime) -> str | None:
     return f"kb{(started - _SINCE) // KB_EVERY}"
 
 
+# monitor states of the fixture (ekte/web/watches_api.py): active, paused,
+# draft (scheduled from History: no interval, never run, not enabled)
+MONITOR_STATES = {"active": 0.7, "paused": 0.2, "draft": 0.1}
+# alert thresholds and last risks (None: not run yet, or no result)
+THRESHOLDS = {"low": 0.2, "medium": 0.6, "high": 0.2}
+LAST_RISKS = {"clean": 0.5, "low": 0.15, "medium": 0.12, "high": 0.08, "inconclusive": 0.05, None: 0.1}
+# a run window on some monitors (weekdays, office hours)
+WINDOW = '{"tz": "Europe/Berlin", "days": [0, 1, 2, 3, 4], "start": "08:00", "end": "18:00"}'
+
+
 def build_watches(watches: int = 200, relays: int = 50, seed: int = 0) -> int:
     """Write ``watches`` monitors into ``$EKTE_DATA_DIR``'s ``watches.db``
     (adding to what is there), straight into the table as
-    :func:`ekte.web.watches.create` leaves it, with a last run each; returns
-    the number written. Their API keys are ``env:`` references (no secret)."""
+    :func:`ekte.web.watches.create` leaves it, spread over the relays and
+    models of the runs, with mixed states (:data:`MONITOR_STATES`), alert
+    thresholds and last risks; deterministic for ``seed``. In a new
+    ``watches.db`` their ids start at 1, so the first ones are the monitors
+    of :data:`WATCH_IDS` (never drafts: they have runs). Returns the number
+    written. Their API keys are ``env:`` references (no secret)."""
     from ekte import datadir
     from ekte.web import watches as store
 
@@ -108,19 +123,31 @@ def build_watches(watches: int = 200, relays: int = 50, seed: int = 0) -> int:
     for i in range(watches):
         r = rng.randrange(relays)
         model = MODELS[rng.randrange(len(MODELS))]
-        risk = rng.choices(("clean", "low", "medium", "high"), (0.6, 0.2, 0.15, 0.05))[0]
+        state = rng.choices(list(MONITOR_STATES), list(MONITOR_STATES.values()))[0]
+        if state == "draft" and i < WATCHES - DELETED_WATCHES:
+            state = "paused"  # it owns runs (WATCH_IDS): it has run, so it is set up
+        alert_on = rng.choices(list(THRESHOLDS), list(THRESHOLDS.values()))[0]
+        surface = rng.choices(("chat", "embedding", "rerank"), (0.9, 0.07, 0.03))[0]
+        draft = state == "draft"
+        risk = None if draft else rng.choices(list(LAST_RISKS), list(LAST_RISKS.values()))[0]
         rows.append((
-            f"monitor {i:03d}", f"https://relay-{r:02d}.example/v1", "env:EKTE_BENCH_KEY", model,
-            model, "auto", "standard", rng.choice((1800, 3600, 21600, 86400)), "medium", "[]",
-            int(rng.random() < 0.8), t_end - 86400 * 30, t_end - rng.randrange(86400), risk,
-            round(rng.uniform(40, 100), 1), "chat", 1, 1,
+            f"monitor {i:03d}", f"https://relay-{r:02d}.example/v1",
+            "" if draft else "env:EKTE_BENCH_KEY", model, model,
+            APIS[rng.randrange(len(APIS))] if rng.random() < 0.3 else "auto",
+            SUITES[rng.randrange(len(SUITES))],
+            None if draft else rng.choice((1800, 3600, 21600, 86400)), alert_on, "[]",
+            int(state == "active"), t_end - 86400 * 30,
+            None if draft else t_end - rng.randrange(86400), risk,
+            None if risk is None else round(rng.uniform(40, 100), 1), surface,
+            int(rng.random() < 0.8), 1, i + 1 if draft else None,
+            WINDOW if not draft and rng.random() < 0.1 else None,
         ))
     with datadir.connect("watches.db", store.MIGRATIONS) as conn:
         conn.executemany(
             "INSERT INTO watches (name, base_url, api_key, model, claimed_model, api, suite,"
             " interval_sec, alert_on, webhooks, enabled, created_ts, last_run_ts, last_risk,"
-            " last_score, surface, performance_streaming, evidence)"
-            f" VALUES ({', '.join('?' * 18)})", rows)
+            " last_score, surface, performance_streaming, evidence, source_report_id, run_window)"
+            f" VALUES ({', '.join('?' * 20)})", rows)
         conn.execute(store._BUMP_SQL)
     return watches
 
@@ -328,13 +355,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--report-bytes", type=int, default=REPORT_BYTES,
                         help="size of each stored report")
-    parser.add_argument("--watches", type=int, default=200, help="monitors in watches.db")
+    parser.add_argument("--monitors", "--watches", dest="monitors", type=int, default=200,
+                        help="monitors in watches.db (mixed states, thresholds and last risks)")
     parser.add_argument("--bench", action="store_true", help="time the query core afterwards")
     args = parser.parse_args(argv)
     if args.data_dir is not None:
         os.environ["EKTE_DATA_DIR"] = str(args.data_dir)
     t0 = time.perf_counter()
-    n = build(args.runs, args.relays, args.requests, args.seed, args.report_bytes, args.watches)
+    n = build(args.runs, args.relays, args.requests, args.seed, args.report_bytes, args.monitors)
     print(f"wrote {n} runs in {time.perf_counter() - t0:.1f} s")
     if args.bench:
         for name, (p50, p95) in bench().items():

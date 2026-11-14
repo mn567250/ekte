@@ -49,6 +49,7 @@ TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_browser_cache.py": ("history", "analytics"),
     # the component on its own test page, and the monitors' links into History
     "test_filters_view.py": ("history", "monitors"),
+    "test_watches_live.py": ("monitors",),  # a running monitor's progress (from /api/jobs)
     "test_flows.py::test_audit_flow": ("audit",),
     "test_flows.py::test_failing_audit_flow": ("audit",),
     "test_flows.py::test_monitor_flow": ("history", "monitors"),  # starts on History
