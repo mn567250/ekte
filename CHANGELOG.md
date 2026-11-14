@@ -124,6 +124,14 @@ reload. Steps [#151](https://github.com/mn567250/ekte/issues/151) to
   endpoints, History's status and report detail, `watch=` and the day
   ranges. Every case stays under its budget on the 20k-run fixture.
 
+#### Fixed
+
+- **A custom date range starts at local midnight** (#192). A bare date in
+  `from` / `to` (`YYYY-MM-DD`, as the date picker writes it) is now 00:00 of
+  that day in the viewer's time zone (`tz`), as the day presets are, instead
+  of 00:00 UTC; times without an offset are still UTC and times with one are
+  kept as given.
+
 ### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
 
 A monitor can have a run window, for example Mon–Fri, 07:00–19:00,
