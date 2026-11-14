@@ -356,6 +356,20 @@ how many saved runs it re-extracts.
 
 ### Fixed
 
+- **A page notice's role follows its importance**
+  ([#193](https://github.com/mn567250/ekte/issues/193)). `EkteNotice.show`
+  (`notice.js`) now takes the role from one pure choice, `EkteNotice.roleFor`:
+  a critical notice (`error` is treated as `critical`) is `role="alert"`, so
+  assistive technology announces it at once, and every other notice is
+  `role="status"`, announced politely. A new `role: false` option sets no
+  role. History's new-runs notice uses it in place of removing the role after
+  drawing, because the page announces that notice once through its own live
+  region (#156). The rule "announced once, never on every poll" stays: the
+  role is part of the notice's signature, so a notice redrawn unchanged
+  changes nothing. New a11y tests check every page with a notice (Audit,
+  History, Analytics, Knowledge, Monitors): a critical notice is an alert, any
+  other is a status, and neither changes when it is repainted.
+
 - **History's new-runs check no longer computes a trend it never uses**
   ([#194](https://github.com/mn567250/ekte/issues/194)). When a run is saved
   elsewhere, History counts the new runs from `/api/history/groups` with

@@ -135,6 +135,7 @@ def test_analytics_updates_in_place_and_keeps_focus(browser: Browser, own_server
         ctx.close()
 
 
+@pytest.mark.bitv("9.4.1.3")
 def test_history_shows_new_runs_notice_once(browser: Browser, own_server: EkteProc) -> None:
     ctx = _context(browser, own_server.url)
     try:
@@ -166,6 +167,7 @@ def test_history_shows_new_runs_notice_once(browser: Browser, own_server: EktePr
         page.wait_for_function("() => document.querySelector('#fresh b').textContent === '2 new runs'", timeout=WITHIN_MS)
         settle(page)
         assert page.evaluate("() => window.__a11yLive") == ["1 new run. Use the Show button above the list."]
+        assert fresh.get_attribute("role") is None  # notice.js role: false (#193), also when redrawn
         assert rows.count() == 1
         # Show: the list loads again, the notice goes, focus moves to the newest run
         button.focus()
