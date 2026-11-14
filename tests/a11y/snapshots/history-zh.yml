@@ -140,7 +140,11 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: 中转站 Example Relay 健康分
+    - text: 中转站 Example Relay
+    - link "在分析中打开：model-a · Example Relay":
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: 在分析中打开
+    - text: 健康分
     - img "健康分趋势（7 次检测）：从 70 到 82，上升。"
     - text: 82 延迟 p50
     - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>，下降。"
@@ -184,7 +188,11 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: 中转站 gateway.a-very-long-relay-hostname.example.org 健康分
+    - text: 中转站 gateway.a-very-long-relay-hostname.example.org
+    - link "在分析中打开：model-a · gateway.a-very-long-relay-hostname.example.org":
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: 在分析中打开
+    - text: 健康分
     - img "健康分趋势（4 次检测）：从 58 到 64，上升。"
     - text: 64 延迟 p50
     - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>，下降。"
@@ -213,7 +221,11 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: 中转站 Example Relay 健康分
+    - text: 中转站 Example Relay
+    - link "在分析中打开：model-b · Example Relay":
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: 在分析中打开
+    - text: 健康分
     - img "健康分趋势（2 次检测）：从 89 到 91，上升。"
     - text: 91 延迟 p50
     - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>，下降。"
@@ -232,7 +244,11 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: 中转站 gateway.a-very-long-relay-hostname.example.org 健康分 72 延迟 p50 <duration>
+    - text: 中转站 gateway.a-very-long-relay-hostname.example.org
+    - link "在分析中打开：model-b · gateway.a-very-long-relay-hostname.example.org":
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: 在分析中打开
+    - text: 健康分 72 延迟 p50 <duration>
     - list:
       - listitem:
         - button "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>" [expanded]
@@ -313,7 +329,11 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: 中转站 127.0.0.1:9099 健康分 53 延迟 p50 无数据
+    - text: 中转站 127.0.0.1:9099
+    - link "在分析中打开：gpt-4o · 127.0.0.1:9099":
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: 在分析中打开
+    - text: 健康分 53 延迟 p50 无数据
     - list:
       - listitem:
         - button "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard"

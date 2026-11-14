@@ -140,7 +140,11 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay Example Relay Score
+    - text: Relay Example Relay
+    - 'link "In Analyse öffnen: model-a · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: In Analyse öffnen
+    - text: Score
     - 'img "Score-Verlauf über 7 Prüfungen: von 70 auf 82, steigend."'
     - text: 82 Latenz p50
     - 'img "Latenz p50-Verlauf über 7 Prüfungen: von <duration> auf <duration>, fallend."'
@@ -184,7 +188,11 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Score
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "In Analyse öffnen: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: In Analyse öffnen
+    - text: Score
     - 'img "Score-Verlauf über 4 Prüfungen: von 58 auf 64, steigend."'
     - text: 64 Latenz p50
     - 'img "Latenz p50-Verlauf über 4 Prüfungen: von <duration> auf <duration>, fallend."'
@@ -213,7 +221,11 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay Example Relay Score
+    - text: Relay Example Relay
+    - 'link "In Analyse öffnen: model-b · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: In Analyse öffnen
+    - text: Score
     - 'img "Score-Verlauf über 2 Prüfungen: von 89 auf 91, steigend."'
     - text: 91 Latenz p50
     - 'img "Latenz p50-Verlauf über 2 Prüfungen: von <duration> auf <duration>, fallend."'
@@ -232,7 +244,11 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Score 72 Latenz p50 <duration>
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "In Analyse öffnen: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: In Analyse öffnen
+    - text: Score 72 Latenz p50 <duration>
     - list:
       - listitem:
         - button "27.09.2026, 10:02 Weitgehend vertrauenswürdig Score 72 Note D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -313,7 +329,11 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: Relay 127.0.0.1:9099 Score 53 Latenz p50 keine Daten
+    - text: Relay 127.0.0.1:9099
+    - 'link "In Analyse öffnen: gpt-4o · 127.0.0.1:9099"':
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: In Analyse öffnen
+    - text: Score 53 Latenz p50 keine Daten
     - list:
       - listitem:
         - button "27.09.2026, 07:47 Etikettenschwindel Score 53 Note F check · standard"

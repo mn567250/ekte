@@ -140,7 +140,11 @@
   - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay Example Relay Punteggio
+    - text: Relay Example Relay
+    - 'link "Apri in Analisi: model-a · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
+      - text: Apri in Analisi
+    - text: Punteggio
     - 'img "Andamento di Punteggio su 7 audit: da 70 a 82, in crescita."'
     - text: 82 Latenza p50
     - 'img "Andamento di Latenza p50 su 7 audit: da <duration> a <duration>, in calo."'
@@ -184,7 +188,11 @@
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Punteggio
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "Apri in Analisi: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
+      - text: Apri in Analisi
+    - text: Punteggio
     - 'img "Andamento di Punteggio su 4 audit: da 58 a 64, in crescita."'
     - text: 64 Latenza p50
     - 'img "Andamento di Latenza p50 su 4 audit: da <duration> a <duration>, in calo."'
@@ -213,7 +221,11 @@
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay Example Relay Punteggio
+    - text: Relay Example Relay
+    - 'link "Apri in Analisi: model-b · Example Relay"':
+      - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
+      - text: Apri in Analisi
+    - text: Punteggio
     - 'img "Andamento di Punteggio su 2 audit: da 89 a 91, in crescita."'
     - text: 91 Latenza p50
     - 'img "Andamento di Latenza p50 su 2 audit: da <duration> a <duration>, in calo."'
@@ -232,7 +244,11 @@
   - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - text: Relay gateway.a-very-long-relay-hostname.example.org Punteggio 72 Latenza p50 <duration>
+    - text: Relay gateway.a-very-long-relay-hostname.example.org
+    - 'link "Apri in Analisi: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
+      - text: Apri in Analisi
+    - text: Punteggio 72 Latenza p50 <duration>
     - list:
       - listitem:
         - button "27 set 2026, 10:02 Per lo più affidabile Punteggio 72 Voto D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -313,7 +329,11 @@
   - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - text: Relay 127.0.0.1:9099 Punteggio 53 Latenza p50 nessun dato
+    - text: Relay 127.0.0.1:9099
+    - 'link "Apri in Analisi: gpt-4o · 127.0.0.1:9099"':
+      - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
+      - text: Apri in Analisi
+    - text: Punteggio 53 Latenza p50 nessun dato
     - list:
       - listitem:
         - button "27 set 2026, 07:47 Merce non conforme Punteggio 53 Voto F check · standard"
