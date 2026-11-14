@@ -17,8 +17,20 @@
  *                        of queued/running runs and of rows shown
  *   opts.onFinish()      called when a run that was active is no longer
  *                        (finished, failed or cancelled), e.g. to reload a list
- * Returns { refresh(), rows() }: refresh() polls now (returns a promise),
- * rows() the rows currently shown.
+ *   opts.poll: false     no polling and no first request: the page hands in
+ *                        the jobs itself with set() (the Monitors page, which
+ *                        reads /api/jobs on the change signal and follows each
+ *                        run's event stream, issue 160)
+ * Returns { refresh(), rows(), set(jobs) }: refresh() polls now (returns a
+ * promise), rows() the rows currently shown, set(jobs) shows the jobs of a
+ * /api/jobs answer (its `jobs` list) as if a poll had returned them.
+ *
+ * EkteJobs.progress(): a run's progress from its event stream
+ * (/api/jobs/<id>/events), counted as the server counts it for /api/jobs
+ * (ekte/web/jobs.py track_progress / progress_pct): add(event) folds one
+ * event in, pct() is the percent done (0-99), status() "queued" | "running"
+ * | "done" | null (no status event yet), known() whether a "start" event
+ * gave the number of checks. Pure, tested under node.
  */
 (function () {
   "use strict";
@@ -62,8 +74,10 @@
     // msg: per-run notes (a function, so it follows the language)
     var st = { rows: [], timer: null, due: false, active: {}, msg: {}, busy: null };
 
+    var polls = opts.poll !== false;
     function schedule() {
       clearTimeout(st.timer);
+      if (!polls) return;
       st.timer = setTimeout(poll, Object.keys(st.active).length ? ACTIVE_MS : IDLE_MS);
     }
     function poll() {
@@ -72,8 +86,22 @@
       else refresh();
     }
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden && st.due) refresh();
+      if (polls && !document.hidden && st.due) refresh();
     });
+
+    // the jobs of one /api/jobs answer
+    function apply(all) {
+      var rows = (all || []).filter(mine);
+      var now = {}, finished = false;
+      rows.forEach(function (j) { if (isActive(j)) now[j.id] = true; });
+      Object.keys(st.active).forEach(function (id) { if (!now[id]) finished = true; });
+      st.active = now;
+      // failed runs never reach History: keep them; cancelled and
+      // finished ones go
+      st.rows = rows.filter(function (j) { return isActive(j) || j.status === "error"; });
+      render();
+      if (finished && opts.onFinish) opts.onFinish();
+    }
 
     function refresh() {
       if (st.busy) return st.busy;
@@ -82,19 +110,7 @@
       st.due = false;
       st.busy = fetch("/api/jobs")
         .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) {
-          if (!d) return;
-          var rows = (d.jobs || []).filter(mine);
-          var now = {}, finished = false;
-          rows.forEach(function (j) { if (isActive(j)) now[j.id] = true; });
-          Object.keys(st.active).forEach(function (id) { if (!now[id]) finished = true; });
-          st.active = now;
-          // failed runs never reach History: keep them; cancelled and
-          // finished ones go
-          st.rows = rows.filter(function (j) { return isActive(j) || j.status === "error"; });
-          render();
-          if (finished && opts.onFinish) opts.onFinish();
-        })
+        .then(function (d) { if (d) apply(d.jobs); })
         .catch(function () {})
         .then(function () { st.busy = null; schedule(); });
       return st.busy;
@@ -173,9 +189,40 @@
     });
     window.addEventListener("ekte:lang", render);
 
-    refresh();
-    return { refresh: refresh, rows: function () { return st.rows.slice(); } };
+    if (polls) refresh();
+    return { refresh: refresh, rows: function () { return st.rows.slice(); }, set: apply };
   }
 
-  window.EkteJobs = { init: init };
+  // the performance probes (ekte/web/jobs.py _PROBES)
+  var PROBES = ["performance", "performance.embed", "performance.rerank"];
+  function progress() {
+    var c = { total: 0, done: 0, planned: 0, probeDone: 0, current: null, status: null };
+    return {
+      add: function (ev) {
+        if (!ev || typeof ev !== "object") return;
+        var t = ev.type;
+        if (t === "queued" || t === "running" || t === "done") c.status = t;
+        else if (t === "start") { c.total = Number(ev.total) || 0; c.planned = Number(ev.probe_requests) || 0; }
+        else if (t === "detector_start") c.current = ev.id;
+        else if (t === "detector_done") { c.done = (Number(ev.index) || 0) + 1; c.current = null; }
+        else if (t === "requests") {
+          // request_done records, batched by the stream
+          (ev.records || []).forEach(function (r) {
+            if (r && PROBES.indexOf(r.detector) >= 0 && r.endpoint === "target") c.probeDone++;
+          });
+        }
+      },
+      pct: function () {
+        if (!c.total) return 0;
+        var done = c.done;
+        if (PROBES.indexOf(c.current) >= 0 && c.planned) done += Math.min(c.probeDone / c.planned, 1);
+        return Math.max(0, Math.min(99, Math.floor(done * 100 / c.total)));
+      },
+      status: function () { return c.status; },
+      // the run's size is known (a "start" event was seen)
+      known: function () { return c.total > 0; },
+    };
+  }
+
+  window.EkteJobs = { init: init, progress: progress };
 })();

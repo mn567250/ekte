@@ -85,6 +85,7 @@
   .mon-last b { color: var(--ink); }
   .mon-last a { font-weight: 700; font-size: 12.5px; text-decoration: none; }
   .mon-last a:hover { text-decoration: underline; }
+  .mon-last a .zicon { width: 13px; height: 13px; margin-left: 3px; vertical-align: -2px; }
   .mon-msg { margin-top: 10px; font-size: 13px; font-weight: 600; line-height: 1.45; }
   .mon-msg:empty { display: none; }
   .mon-msg.ok { color: var(--success); }
@@ -154,14 +155,6 @@
   .mtog .zicon { width: 16px; height: 16px; flex: none; color: var(--ink-muted); transition: transform 0.2s; }
   .mtog[aria-expanded="false"] .zicon { transform: rotate(-90deg); }
   .mon-meta[hidden], .mon-act[hidden], .setup[hidden] { display: none; }
-  /* filter fields (inside the shared panel above the card, filterpanel.css) */
-  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; }
-  .fgrid .fq { grid-column: 1 / -1; }
-  @media (min-width: 700px) { .fgrid .fq { grid-column: auto; } }
-  .fgrid label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .fgrid label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
-  .fgrid .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
-  .fgrid select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
   .mon-tools { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
   .mon-tools[hidden] { display: none; }
   .mon-tools .linkbtn { font-size: 12.5px; font-weight: 600; }
@@ -221,7 +214,7 @@
     <!-- the master key that encrypts the stored API keys (only when they are stored) -->
     <div id="mk-bar" aria-live="polite"></div>
 
-    <!-- filters of the Configure list (filterpanel.js), above the card as on History and Knowledge -->
+    <!-- the shared filter panel (filters.js), above the card as on History and Analytics; the filters live in the URL query string -->
     <section class="card filters" id="filters" hidden></section>
 
     <div class="card card-pad tab-card">
@@ -254,6 +247,8 @@
 <script src="/static/masterkey.js"></script>
 <script src="/static/notice.js"></script>
 <script src="/static/filterpanel.js"></script>
+<script src="/static/filters.js"></script>
+<script src="/static/live.js"></script>
 <script src="/static/nav.js"></script>
 <script>
 (function () {
@@ -338,12 +333,12 @@
   var ui = {};
   function st(id) { return ui[id] || (ui[id] = { vals: {}, errs: {} }); }
 
-  // A watch scheduled from a history run starts without an interval, so it
-  // needs one before it runs. The key is optional, exactly as on the audit page
-  // (self-hosted relays such as Ollama or LM Studio need none): history never
-  // stores it, so the setup box offers it once, but never requires it.
-  function needsInterval(w) { return w.interval_sec == null; }
-  function needsSetup(w) { return needsInterval(w); }
+  // A draft (the server's state: scheduled from a history run, no interval
+  // yet) needs its interval before it runs. The key is optional, exactly as on
+  // the audit page (self-hosted relays such as Ollama or LM Studio need none):
+  // history never stores it, so the setup box offers it once, but never
+  // requires it.
+  function isDraft(w) { return w.state === "draft"; }
 
   function minutesOf(raw) {
     raw = String(raw == null ? "" : raw).trim();
@@ -401,10 +396,15 @@
   }
 
   // ---- card pieces -------------------------------------------------------- //
-  function isRunning(w) { return !!(w.running || st(w.id).running); }
+  // live run state: /api/jobs (job monitor-<id>), its progress from the
+  // run's event stream (see "live run state" below)
+  function jobOf(w) { return live.jobs[w.id] || null; }
+  function isRunning(w) { return !!(jobOf(w) || st(w.id).running); }
+  function isQueued(w) { var j = jobOf(w); return !!j && j.status === "queued"; }
+  function pctOf(w) { var j = jobOf(w); return Math.max(0, Math.min(100, Number(j && j.progress) || 0)); }
   function badge(w) {
     if (isRunning(w)) return '<span class="badge sky"><span class="spin">' + icon("refresh") + "</span> " + esc(T("运行中", "Running")) + "</span>";
-    if (needsSetup(w)) return '<span class="badge warn">' + esc(T("待设置", "Needs setup")) + "</span>";
+    if (isDraft(w)) return '<span class="badge warn">' + esc(T("待设置", "Needs setup")) + "</span>";
     if (w.last_risk) {
       return '<span class="badge ' + (RISK_CLASS[w.last_risk] || "grey") + '">' + esc(riskLabel(w.last_risk)) + "</span>";
     }
@@ -469,7 +469,7 @@
 
   function setupBox(w, s) {
     var fields = "";
-    if (needsInterval(w)) {
+    if (isDraft(w)) {
       fields += '<div><label class="lab" for="iv-' + w.id + '">' + esc(T("检测间隔", "Check interval")) + "</label>" + intervalInput(w, s) + "</div>";
     }
     if (w.source_report_id != null && !w.has_key) {
@@ -485,7 +485,7 @@
   }
 
   function intervalCell(w, s) {
-    if (needsInterval(w)) return esc(T("未设置", "Not set"));
+    if (isDraft(w)) return esc(T("未设置", "Not set"));
     if (s.edit === "interval") return '<form class="edit" data-id="' + w.id + '" novalidate>' + intervalInput(w, s, true) + saveCancel("interval", w.id) + "</form>";
     return esc(fmtEvery(w.interval_sec)) + linkBtn("edit-interval", w.id, T("修改检测间隔", "Change check interval"));
   }
@@ -559,7 +559,7 @@
     } catch (e) { return fmtTime(ts); }
   }
   function outsideWindow(w) {
-    return !!w.run_window && w.in_window === false && w.enabled && !needsSetup(w);
+    return !!w.run_window && w.in_window === false && w.enabled && !isDraft(w);
   }
   function windowCell(w, s) {
     if (s.edit === "window") return '<form class="edit rw" data-id="' + w.id + '" novalidate>' + windowInput(w, s) + saveCancel("window", w.id) + "</form>";
@@ -678,17 +678,34 @@
     return out;
   }
 
-  // History link filtered to this monitor's runs, in the shared URL schema
-  // (filters.js; docs/dev/web-server.md "Query core"): its surface, its
-  // relay (the server's relay_key: the relay its runs are grouped under, so
-  // two servers on one host, different ports, stay apart), claimed model and
-  // suite. The fragment points at the run.
-  function historyHref(w, reportId) {
-    // range= (all time): the run may be older than History's default range
-    var q = new URLSearchParams([["range", ""]]);
-    [["surface", w.surface || "chat"], ["relay", w.relay_key || ""], ["model", w.claimed_model || w.model || ""],
-      ["suite", w.suite || ""]].forEach(function (p) { if (p[1]) q.append(p[0], p[1]); });
-    return "/history?" + q.toString() + "#r-" + reportId;
+  // Links to this monitor's runs (EkteFilters.href, filters.js): watch=<id>
+  // plus what describes the monitor, as the server sends it: its surface, its
+  // relay (relay_key: the relay its runs are grouped under, so two servers on
+  // one host, different ports, stay apart), claimed model (else model;
+  // "(unknown)" without either, as the server matches it) and suite.
+  var UNKNOWN_KEY = "(unknown)";
+  function monFilters(w) {
+    return { watch: String(w.id), surface: w.surface || "chat", relay: [w.relay_key || UNKNOWN_KEY],
+      model: [w.claimed_model || w.model || UNKNOWN_KEY], suite: w.suite || null };
+  }
+  // History focused on one run: History widens its range when the run is
+  // older than it (issue 157), so the run is found whatever its age. The run the
+  // monitor was made from (own: false) is not one of the monitor's runs, so
+  // that link leaves out watch=<id>, which would exclude it.
+  function historyHref(w, reportId, own) {
+    var f = monFilters(w);
+    if (own === false) delete f.watch;
+    return window.EkteFilters.href("history", f, { "runs.focus": String(reportId) });
+  }
+  function analyticsHref(w) {
+    return window.EkteFilters.href("analytics", Object.assign(monFilters(w), {
+      stream: w.stream_mode || null, api: w.api_resolved || null, exec: "monitor",
+    }), { tab: "overview" });
+  }
+  // the visible text plus the monitor's name: every card's links have a name of their own
+  function cardLink(href, text, name, cls) {
+    return '<a' + (cls ? ' class="' + cls + '"' : "") + ' href="' + esc(href) + '" aria-label="' +
+      esc(Tf("{link}：{name}", "{link}: {name}", { link: text, name: name })) + '">' + esc(text) + icon("arrowRight") + "</a>";
   }
 
   // Wire protocol: a forced one, or what "auto" detects for this endpoint.
@@ -740,7 +757,7 @@
   function card(w) {
     var s = st(w.id);
     var name = w.name || "watch";
-    var draft = needsSetup(w);
+    var draft = isDraft(w);
     var embed = w.surface === "embedding";
     // embeddings and rerank (any non-chat surface) do not stream: no streaming mode to show
     var tool = !isChat(w);
@@ -755,11 +772,12 @@
       lastParts.push("<span>" + esc(T("评分", "Score")) + " <b>" + esc(fmtScore(w.last_score)) + "</b>/100</span>");
     }
     if (w.last_report_id != null) {
-      lastParts.push('<a href="' + esc(historyHref(w, w.last_report_id)) + '">' + esc(T("在检测历史中查看", "Open in history")) + " →</a>");
+      lastParts.push(cardLink(historyHref(w, w.last_report_id), T("在检测历史中打开", "Open in History"), name, "ml-last"));
     }
     if (w.source_report_id != null) {
-      lastParts.push('<a href="' + esc(historyHref(w, w.source_report_id)) + '">' + esc(Tf("来自运行 #{n}", "From run #{n}", { n: w.source_report_id })) + " →</a>");
+      lastParts.push(cardLink(historyHref(w, w.source_report_id, false), Tf("来自运行 #{n}", "From run #{n}", { n: w.source_report_id }), name, "ml-source"));
     }
+    lastParts.push(cardLink(analyticsHref(w), T("在分析中打开", "Open in Analytics"), name, "ml-analytics"));
     var running = isRunning(w);
     if (!running) s.stopping = false;
     var waiting = !running && !draft && w.enabled;
@@ -782,7 +800,7 @@
         (outsideWindow(w) && !running ? '<p class="hint mon-act-note">' + esc(T("立即运行不受运行时段限制。", "Run now ignores the run window.")) + "</p>" : "");
     }
     var stateLine = running
-      ? '<span>' + esc(T("状态", "Status")) + ': <b>' + esc(w.queued
+      ? '<span>' + esc(T("状态", "Status")) + ': <b>' + esc(isQueued(w)
           ? T("排队中：等待该中转站上的另一项检测结束", "Queued: waiting for another audit of this relay to finish")
           : T("正在运行", "Running now")) + "</b></span>"
       : waiting ? '<span>' + esc(T("状态", "Status")) + ': <b>' + esc(T("等待下次计划运行", "Waiting for next scheduled run")) + "</b></span>" : "";
@@ -796,7 +814,7 @@
           : Tf("下次运行：约 {when}", "Next run: about {when}", { when: fmtWhen(nextTs, w.run_window.tz) })) + "</span>");
       }
     }
-    var pct = Math.max(0, Math.min(100, Number(w.progress) || 0));
+    var pct = pctOf(w);
     var progress = running
       ? '<div class="mon-prog"><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"' +
         ' aria-label="' + esc(Tf("{name} 的运行进度", "Progress of {name}", { name: name })) + '"><span style="width:' + pct + '%"></span></div>' +
@@ -856,7 +874,7 @@
   }
 
   // ---- collapsed cards (per viewer; storage may be missing or throw) ------- //
-  var CKEY = "ekte.v2.monitors.collapsed", FKEY = "ekte.v2.monitors.filters", OKEY = "ekte.v2.monitors.filtersOpen";
+  var CKEY = "ekte.v2.monitors.collapsed";
   function loadJSON(k, dflt) {
     try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v && typeof v === "object" ? v : dflt; } catch (e) { return dflt; }
   }
@@ -888,134 +906,51 @@
   }
   $("mall").addEventListener("click", function () {
     var shut = this.getAttribute("data-all") === "collapse";
-    (watches || []).filter(matches).forEach(function (w) { setShut(w.id, shut); });
+    (watches || []).forEach(function (w) { setShut(w.id, shut); });
     saveJSON(CKEY, collapsed);
     render();
   });
 
-  // ---- filters (filterpanel.js) ------------------------------------------- //
-  var FDEF = { q: "", status: "", risk: "", surface: "", host: "", suite: "" };
-  var F = (function () {
-    var f = Object.assign({}, FDEF), saved = loadJSON(FKEY, {});
-    Object.keys(FDEF).forEach(function (k) { if (typeof saved[k] === "string") f[k] = saved[k]; });
-    return f;
-  })();
-  function saveFilters() { saveJSON(FKEY, F); }
-  var STATUS = {
-    running: ["运行中", "Running"], active: ["启用中", "Enabled"], paused: ["已暂停", "Paused"], setup: ["待设置", "Needs setup"],
-  };
-  function statusOf(w) { return isRunning(w) ? "running" : needsSetup(w) ? "setup" : w.enabled ? "active" : "paused"; }
-  function riskOf(w) { return w.last_risk || "none"; }
-  function surfaceOf(w) { return isChat(w) ? "chat" : w.surface; }
-  function hostOf(w) {
-    try { return new URL(w.base_url).host; } catch (e) { return w.base_url || ""; }
-  }
-  function suiteOf(w) { return w.suite || "standard"; }
-  function riskName(v) { return v === "none" ? T("尚无结果", "No result yet") : riskLabel(v); }
-  function surfaceName(v) { var m = SURFACE[v]; return m ? T(m[0], m[1]) : v; }
-  function matches(w) {
-    if (F.status && statusOf(w) !== F.status) return false;
-    if (F.risk && riskOf(w) !== F.risk) return false;
-    if (F.surface && surfaceOf(w) !== F.surface) return false;
-    if (F.host && hostOf(w) !== F.host) return false;
-    if (F.suite && suiteOf(w) !== F.suite) return false;
-    var q = F.q.trim().toLowerCase();
-    if (q && [w.name, w.base_url, w.model, w.claimed_model, w.suite].join(" ").toLowerCase().indexOf(q) < 0) return false;
-    return true;
-  }
-  // the values that exist (in a fixed order where there is one); the current
-  // pick stays listed even when no monitor has it any more
-  function distinct(fn, cur, order) {
-    var seen = {};
-    (watches || []).forEach(function (w) { seen[fn(w)] = 1; });
-    if (cur) seen[cur] = 1;
-    var vals = Object.keys(seen).filter(Boolean);
-    return order ? order.filter(function (v) { return seen[v]; }).concat(vals.filter(function (v) { return order.indexOf(v) < 0; }).sort())
-      : vals.sort(function (a, b) { return a.localeCompare(b); });
-  }
-  function filterOpts() {
-    return {
-      status: distinct(statusOf, F.status, ["running", "active", "paused", "setup"]).map(function (v) {
-        return { v: v, t: STATUS[v] ? T(STATUS[v][0], STATUS[v][1]) : v };
-      }),
-      risk: distinct(riskOf, F.risk, ["high", "medium", "low", "clean", "inconclusive", "none"]).map(function (v) { return { v: v, t: riskName(v) }; }),
-      surface: distinct(surfaceOf, F.surface, ["chat", "embedding", "rerank"]).map(function (v) { return { v: v, t: surfaceName(v) }; }),
-      host: distinct(hostOf, F.host).map(function (v) { return { v: v, t: v }; }),
-      suite: distinct(suiteOf, F.suite).map(function (v) { return { v: v, t: v }; }),
-    };
-  }
-  var FLABEL = {
-    status: ["状态", "Status"], risk: ["上次风险", "Last risk"], surface: ["接口类型", "Endpoint type"],
-    host: ["中转站 / 厂商", "Relay / provider"], suite: ["套件", "Suite"],
-  };
-  function selectHTML(k, list) {
-    return '<label><span>' + esc(T(FLABEL[k][0], FLABEL[k][1])) + '</span><select class="in" data-f="' + k + '">' +
-      '<option value="">' + esc(T("全部", "All")) + "</option>" +
-      list.map(function (o) {
-        return '<option value="' + esc(o.v) + '"' + (o.v === F[k] ? " selected" : "") + ">" + esc(o.t) + "</option>";
-      }).join("") + "</select></label>";
-  }
-  function activeCount() {
-    return Object.keys(FDEF).filter(function (k) { return F[k].trim() !== FDEF[k]; }).length;
-  }
-  function filterSummary() {
-    var o = filterOpts(), out = [];
-    if (F.q.trim()) out.push(Tf("{label}：{value}", "{label}: {value}", { label: T("搜索", "Search"), value: F.q.trim() }));
-    Object.keys(FLABEL).forEach(function (k) {
-      if (!F[k]) return;
-      var hit = o[k].filter(function (x) { return x.v === F[k]; })[0];
-      out.push(Tf("{label}：{value}", "{label}: {value}", { label: T(FLABEL[k][0], FLABEL[k][1]), value: hit ? hit.t : F[k] }));
-    });
-    return out;
-  }
-  var fpanel = window.EkteFilterPanel.create($("filters"), {
-    storeKey: OKEY,
-    onReset: function () {
-      F = Object.assign({}, FDEF);
-      saveFilters();
-      filtersKey = null;
-      render();
+  // ---- filters (filters.js: the shared panel, the URL query string) ------- //
+  // The monitor keys of the shared schema (PAGES.watches); the server filters
+  // (GET /api/watches) and counts the options in monitors
+  // (GET /api/watches/options). state / alerting are this page's own keys,
+  // never shared with History or Analytics.
+  var FLD = window.EkteFilters.PAGES.watches.slice();
+  var F = window.EkteFilters.create({
+    section: $("filters"),
+    page: "watches",
+    fields: FLD,
+    optionsUrl: "/api/watches/options",
+    foot: function () { return '<span id="fcount">' + esc(countText()) + "</span>"; },
+    onChange: function (state, changed) {
+      var filters = changed.some(function (k) { return FLD.indexOf(k) >= 0; });
+      if (filters) load();
     },
   });
-  // The panel is rebuilt only when its options change (a poll re-renders the
-  // list every 2 s while a monitor runs; rebuilding then would cut into typing)
-  var filtersKey = null;
-  function paintFilters() {
-    var sec = $("filters");
-    if (!watches || !watches.length) {
-      sec.hidden = true;
-      sec.innerHTML = "";
-      filtersKey = null;
-      return;
-    }
-    var o = filterOpts(), key = JSON.stringify(o);
-    if (key !== filtersKey) {
-      filtersKey = key;
-      fpanel.render({
-        count: activeCount(), summary: filterSummary(),
-        body: '<div class="fgrid">' +
-          '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(F.q) +
-          '" placeholder="' + esc(T("名称、中转站、模型…", "Name, relay, model…")) + '" autocomplete="off" /></label>' +
-          Object.keys(FLABEL).map(function (k) { return selectHTML(k, o[k]); }).join("") + "</div>",
-        foot: '<span id="fcount" aria-live="polite"></span>',
-      });
-    } else {
-      fpanel.sync({ count: activeCount(), summary: filterSummary() });
-    }
-    var shown = watches.filter(matches).length, fc = $("fcount");
-    var text = Tf("显示 {n}/{total} 个监控", "Showing {n} of {total} monitors", { n: shown, total: watches.length });
-    if (fc && fc.textContent !== text) fc.textContent = text;
+  $("filters").hidden = false;
+  function filtering() {
+    var stt = F.state();
+    return FLD.some(function (k) {
+      var v = stt[k];
+      return Array.isArray(v) ? v.length > 0 : v != null && String(v).trim() !== "";
+    });
   }
-  function onFilter(ev) {
-    var k = ev.target.getAttribute("data-f");
-    // a text field fires "change" again on blur: only react to real changes
-    if (!k || !(k in F) || F[k] === String(ev.target.value)) return;
-    F[k] = String(ev.target.value);
-    saveFilters();
-    render();
+  function clearFilters(how) {
+    var patch = {};
+    FLD.forEach(function (k) { patch[k] = null; });
+    F.set(patch, Object.assign({ render: true }, how || {}));
   }
-  $("filters").addEventListener("input", onFilter);
-  $("filters").addEventListener("change", onFilter);
+  function countText() {
+    if (!watches) return "";
+    var n = watches.length;
+    return n === 1 ? T("1 个监控符合筛选条件。", "1 monitor matches these filters.")
+      : Tf("{n} 个监控符合筛选条件。", "{n} monitors match these filters.", { n: n });
+  }
+  function paintFoot() {
+    var el = $("fcount");
+    if (el) el.textContent = countText();
+  }
 
   var flashId = null, focusSetup = false;
   function render() {
@@ -1028,37 +963,28 @@
     if (!watches) return;
     var n = watches.length;
     $("count").textContent = n ? (n === 1 ? T("共 1 项", "1 monitor") : Tf("共 {n} 项", "{n} monitors", { n: n })) : "";
-    // a deep-linked monitor is never hidden by the filters
-    if (flashId != null && byId(flashId) && !matches(byId(flashId))) {
-      F = Object.assign({}, FDEF);
-      saveFilters();
-      filtersKey = null;
-    }
-    paintFilters();
+    paintFoot();
     if (flashId != null && collapsed[flashId]) {
       delete collapsed[flashId];
       saveJSON(CKEY, collapsed);
     }
-    var shown = watches.filter(matches);
-    paintTools(shown);
-    if (!n) {
-      list.innerHTML =
-        '<div class="empty boxed">' + icon("bell") +
-        "<p>" + esc(T("还没有任何监控。", "No monitors yet.")) + "</p>" +
-        '<p><a href="/history">' + esc(T("在检测历史中选择一次运行，设为监控 →", "Pick a run in History and schedule it as a monitor →")) + "</a></p></div>";
-      return;
-    }
+    paintTools(watches);
     // keep focus on the same control across a re-render
     var a = document.activeElement, keep = null, caret = null;
     if (a && list.contains(a) && a.getAttribute("data-act")) {
       keep = [a.getAttribute("data-act"), a.getAttribute("data-id")];
       try { caret = a.selectionStart; } catch (e) { caret = null; }
     }
-    if (!shown.length) {
-      list.innerHTML = '<div class="empty boxed nomatch"><p>' + esc(T("没有符合筛选条件的监控。", "No monitor matches the filters.")) + "</p>" +
-        '<button type="button" class="btn sm" data-act="freset">' + esc(T("重置筛选", "Reset filters")) + "</button></div>";
+    if (!n && filtering()) {
+      list.innerHTML = '<div class="empty boxed nomatch"><p>' + esc(T("没有符合这些筛选条件的监控。", "No monitors match these filters.")) + "</p>" +
+        '<button type="button" class="btn sm" data-act="freset">' + esc(T("清除筛选", "Clear filters")) + "</button></div>";
+    } else if (!n) {
+      list.innerHTML =
+        '<div class="empty boxed">' + icon("bell") +
+        "<p>" + esc(T("还没有任何监控。", "No monitors yet.")) + "</p>" +
+        '<p><a href="/history">' + esc(T("在检测历史中选择一次运行，设为监控 →", "Pick a run in History and schedule it as a monitor →")) + "</a></p></div>";
     } else {
-      list.innerHTML = shown.map(card).join("");
+      list.innerHTML = watches.map(card).join("");
     }
     if (window.EkteSecret) window.EkteSecret.enhance(list);
     if (keep) {
@@ -1086,62 +1012,123 @@
       focusSetup = false;
     }
   }
-
-  // Runs started by the scheduler (or another tab) finish without the page
-  // knowing, so refresh while any monitor is running. Paused while the tab is
-  // hidden: a poll that comes due then is only marked (pollDue) and runs as
-  // soon as the tab is visible again.
-  var pollTimer = null, pollDue = false;
-  function schedulePoll() {
-    clearTimeout(pollTimer);
-    pollTimer = null;
-    pollDue = false;
-    if ((watches || []).some(isRunning)) pollTimer = setTimeout(poll, 2000);
+  // a deep-linked monitor (#w-<id>) is never hidden by the filters: they are
+  // cleared for this view (the remembered filters stay), and the list reloads
+  function revealFlash() {
+    if (flashId == null || byId(flashId) || !filtering()) return false;
+    clearFilters({ remember: false, quiet: true });
+    return true;
   }
-  function poll() {
-    pollTimer = null;
-    if (document.hidden) pollDue = true;
-    else load();
-  }
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && pollDue) {
-      pollDue = false;
-      load();
-    }
-  });
 
-  // The list carries no live state: which monitors run, wait for their relay
-  // and how far along they are comes from /api/jobs (job id monitor-<id>).
-  // Jobs first: a run that is no longer listed there has already saved its
-  // result, so the list read after it shows that result.
+  // ---- live run state ----------------------------------------------------- //
+  // The list (/api/watches) carries no live state and is fetched only when it
+  // may have changed: on a filter change, after a change made here, and when
+  // the change signal (live.js: GET /api/version every 10 s while the tab is
+  // visible) says a run started or ended or a monitor changed (ekte:live).
+  // Which monitors run or wait for their relay comes from /api/jobs, read at
+  // the same moments; how far a run is comes from its event stream
+  // (/api/jobs/monitor-<id>/events), opened for every queued or running
+  // monitor and closed when the run ends. A stream that fails is closed: the
+  // next ekte:live reads /api/jobs again. Nothing is polled on a timer.
+  var live = { jobs: {}, all: [], streams: {} };
+  var jobsList = null; // the Running tab (jobs.js), fed from here
   function getJSON(url) {
-    return fetch(url).then(function (r) {
+    return fetch(url, { credentials: "same-origin" }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     });
   }
+  function isActiveJob(j) { return j.status === "queued" || j.status === "running"; }
+  function readJobs() {
+    return getJSON("/api/jobs").then(function (d) {
+      live.all = (d && d.jobs) || [];
+      var map = {};
+      live.all.forEach(function (j) {
+        if (j.kind === "monitor" && j.watch_id != null && isActiveJob(j)) map[j.watch_id] = j;
+      });
+      live.jobs = map;
+      syncStreams();
+      if (jobsList) jobsList.set(live.all);
+    });
+  }
+  function syncStreams() {
+    Object.keys(live.streams).forEach(function (wid) { if (!live.jobs[wid]) closeStream(wid); });
+    Object.keys(live.jobs).forEach(function (wid) { if (!live.streams[wid]) openStream(wid); });
+  }
+  function closeStream(wid) {
+    var s = live.streams[wid];
+    if (!s) return;
+    try { s.es.close(); } catch (e) { /* closed */ }
+    delete live.streams[wid];
+  }
+  function openStream(wid) {
+    if (typeof EventSource !== "function") return;
+    var es;
+    try { es = new EventSource("/api/jobs/monitor-" + encodeURIComponent(wid) + "/events"); } catch (e) { return; }
+    var s = live.streams[wid] = { es: es, prog: window.EkteJobs.progress() };
+    es.onmessage = function (m) {
+      if (live.streams[wid] !== s) return;
+      var ev;
+      try { ev = JSON.parse(m.data); } catch (e) { return; }
+      s.prog.add(ev);
+      if (ev && ev.type === "done") {
+        // the run ended: the change signal reloads the list (ask it now)
+        closeStream(wid);
+        if (window.EkteLive && window.EkteLive.poll) window.EkteLive.poll(); else load();
+        return;
+      }
+      onProgress(wid, s.prog);
+    };
+    // no reconnect, no fallback polling: the next ekte:live reads /api/jobs
+    es.onerror = function () { if (live.streams[wid] === s) closeStream(wid); };
+  }
+  // one stream event: the card's progress in place (typing and focus stay),
+  // the whole card when the run went from queued to running
+  function onProgress(wid, prog) {
+    var j = live.jobs[wid];
+    if (!j) return;
+    var status = prog.status(), was = j.status;
+    if (status === "running" || status === "queued") j.status = status;
+    var pct = prog.pct();
+    if (prog.known()) j.progress = pct;
+    if (jobsList) jobsList.set(live.all);
+    if (j.status !== was) { render(); return; }
+    var card = document.getElementById("w-" + wid);
+    var bar = card && card.querySelector('.mon-prog [role="progressbar"]');
+    if (!bar) return;
+    var v = String(pctOf({ id: wid }));
+    if (bar.getAttribute("aria-valuenow") === v) return;
+    bar.setAttribute("aria-valuenow", v);
+    bar.firstChild.style.width = v + "%";
+    card.querySelector(".mon-prog b").textContent = v + "%";
+  }
+  // a run started or ended, a monitor changed (its key too: the notice's counts)
+  window.addEventListener("ekte:live", function () { load(); loadSecret(); });
+
+  // Jobs first: a run that is no longer listed there has already saved its
+  // result, so the list read after it shows that result. A newer load (a
+  // filter change) drops the list still on its way.
+  var listCtl = null;
+  function isAbort(e) { return e && (e.name === "AbortError" || e.code === 20); }
   function load() {
-    var jobs;
-    return getJSON("/api/jobs")
-      .then(function (j) { jobs = j; return getJSON("/api/watches"); })
+    if (listCtl) listCtl.abort();
+    var ctl = listCtl = new AbortController();
+    return readJobs().catch(function () { /* the list still loads */ })
+      .then(function () {
+        if (ctl.signal.aborted) return null;
+        return window.EkteFilters.fetchWidget("/api/watches?" + F.widgetParams(), { signal: ctl.signal });
+      })
       .then(function (rows) {
-        var live = {};
-        ((jobs && jobs.jobs) || []).forEach(function (j) {
-          if (j.kind === "monitor" && j.watch_id != null) live[j.watch_id] = j;
-        });
+        if (ctl.signal.aborted) return;
         watches = Array.isArray(rows) ? rows : [];
-        watches.forEach(function (w) {
-          var j = live[w.id];
-          w.running = !!j;
-          w.queued = !!j && j.status === "queued";
-          w.progress = j ? j.progress : null;
-        });
         loadErr = false;
+        if (revealFlash()) return; // the filter change loads again
         render();
         paintNote();
-        schedulePoll();
+        if (pendingShowKey) { pendingShowKey = false; showKey(); }
       })
-      .catch(function () {
+      .catch(function (e) {
+        if (ctl.signal.aborted || isAbort(e)) return;
         loadErr = true;
         render();
         paintNote();
@@ -1204,7 +1191,7 @@
     if (!w) return;
     var body = { enabled: true }, first = null;
     s.errs = {};
-    if (needsInterval(w)) {
+    if (isDraft(w)) {
       s.errs.interval = checkInterval(s.vals.interval);
       if (s.errs.interval) first = first || "f-interval";
       else body.interval_sec = minutesOf(s.vals.interval) * 60;
@@ -1311,11 +1298,8 @@
     if (!t) return;
     var id = t.getAttribute("data-id"), act = t.getAttribute("data-act");
     if (act === "freset") {
-      F = Object.assign({}, FDEF);
-      saveFilters();
-      filtersKey = null;
-      render();
-      fpanel.focusStart();
+      clearFilters();
+      F.panel.focusStart();
       return;
     }
     var s = st(id);
@@ -1359,8 +1343,9 @@
       s.msg = null;
       render();
       focusAct("stop", id);
-      // pick up the server's progress soon; polling carries on from there
-      setTimeout(load, 500);
+      // the run's job and event stream, once the server has it (one read,
+      // not a poll: the change signal and the stream carry on from there)
+      setTimeout(function () { readJobs().then(render, function () { /* next ekte:live */ }); }, 500);
       withKey(function () { return fetch("/api/watches/" + id + "/run", { method: "POST" }); })
         .then(function (r) {
           return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, status: r.status, body: j }; });
@@ -1550,8 +1535,17 @@
     c = c || {};
     return (c.encrypted || 0) + (c.locked || 0) + (c.plain || 0);
   }
+  // over every monitor (the server's counts), not only the ones the filters show
   function countOf(status) {
+    var c = ks.st && ks.st.counts;
+    if (c && typeof c[status] === "number") return c[status];
     return (watches || []).filter(function (w) { return w.key_status === status; }).length;
+  }
+  var pendingShowKey = false;
+  function showKey() {
+    var w = (watches || []).filter(function (x) { return x.key_status === "missing" || x.key_status === "unreadable"; })[0];
+    if (w) location.hash = "#w-" + w.id;
+    return !!w;
   }
   function loadSecret() {
     return fetch("/api/secret")
@@ -1717,8 +1711,12 @@
     else if (act === "unlock" && window.EkteMasterKey) {
       window.EkteMasterKey.ensure().then(function (ok) { if (ok) { load(); loadSecret(); } });
     } else if (act === "show-key") {
-      var w = (watches || []).filter(function (x) { return x.key_status === "missing" || x.key_status === "unreadable"; })[0];
-      if (w) location.hash = "#w-" + w.id;
+      // the first monitor that waits for its key; one the filters hide shows
+      // after they are cleared for this view (the next load picks it)
+      if (!showKey() && filtering()) {
+        pendingShowKey = true;
+        clearFilters({ remember: false, quiet: true });
+      }
     }
   });
   window.addEventListener("ekte:masterkey", function () { loadSecret(); });
@@ -1735,24 +1733,24 @@
     tabs.select("configure", false, true);
     flashId = h[1];
     focusSetup = true;
-    render();
+    if (!revealFlash()) render();
   });
-  window.EkteJobs.init($("jobs"), {
+  // the Running tab: the jobs this page reads (no polling of its own)
+  jobsList = window.EkteJobs.init($("jobs"), {
     kind: "monitor",
+    poll: false,
     onChange: function (active, rows) {
       // the tab stays selectable while nothing runs: the panel says so;
       // the count names the active runs
       $("jobs-empty").hidden = rows > 0;
       $("run-count").textContent = active > 0 ? String(active) : "";
     },
-    // a finished run changes the monitor's last-run status
-    onFinish: function () { load(); },
   });
 
   $("lock-icon").innerHTML = icon("lock");
   if (window.EkteMasterKey) window.EkteMasterKey.mountBar($("mk-bar"), function () { load(); loadSecret(); });
   // language switch: re-render everything in place
-  window.addEventListener("ekte:lang", function () { filtersKey = null; render(); paintStorage(); paintNote(); });
+  window.addEventListener("ekte:lang", function () { render(); paintStorage(); paintNote(); });
   load();
   loadSecret();
 })();

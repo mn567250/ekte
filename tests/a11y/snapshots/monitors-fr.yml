@@ -54,27 +54,51 @@
     - button "Filtres" [expanded]
     - text: Rechercher
     - searchbox "Rechercher"
-    - text: Statut
-    - combobox "Statut":
-      - option "Tous" [selected]
-      - option "À configurer"
-    - text: Dernier risque
-    - combobox "Dernier risque":
-      - option "Tous" [selected]
-      - option "Pas encore de résultat"
     - text: Type de point d'accès
     - combobox "Type de point d'accès":
       - option "Tous" [selected]
-      - option "Chat"
-    - text: Relais / fournisseur
-    - combobox "Relais / fournisseur":
-      - option "Tous" [selected]
-      - option "127.0.0.1:9099"
+      - option "Chat (1)"
+      - option "Embeddings"
+      - option "Reclassement"
+    - group "Relais / fournisseur":
+      - text: Relais / fournisseur
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Modèle annoncé":
+      - text: Modèle annoncé
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Tous" [selected]
-      - option "standard"
-    - text: 1 surveillance(s) affichée(s) sur 1
+      - option "standard (1)"
+    - text: Protocole
+    - combobox "Protocole":
+      - option "Tous" [selected]
+      - option "openai (1)"
+    - text: Requêtes de sonde
+    - combobox "Requêtes de sonde":
+      - option "Tous" [selected]
+      - option "Streaming (1)"
+      - option "Sans streaming"
+      - option "Streaming + sans streaming"
+    - text: Statut
+    - combobox "Statut":
+      - option "Tous" [selected]
+      - option "Activée"
+      - option "En pause"
+      - option "À configurer (1)"
+    - text: En alerte
+    - combobox "En alerte":
+      - option "Tous" [selected]
+      - option "Au seuil d’alerte ou au-dessus"
+      - option "Sous le seuil d’alerte (1)"
+    - text: 1 moniteur correspond à ces filtres.
+    - checkbox "Conserver les filtres d’une page à l’autre" [checked]
+    - text: Conserver les filtres d’une page à l’autre
+    - status
+    - button "Copier le lien vers cette vue"
+  - status
   - tablist "Vues des moniteurs":
     - tab "Configurer" [selected]
     - tab "En cours"
@@ -138,8 +162,12 @@
         - combobox "Requêtes/réponses brutes — gpt-4o":
           - option "Conserver" [selected]
           - option "Ne pas conserver"
-      - 'link "Depuis l’exécution #1 →"':
-        - /url: /history?range=&surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+      - 'link "Depuis l’exécution #1 : gpt-4o"':
+        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&runs.focus=1
+        - text: "Depuis l’exécution #1"
+      - 'link "Ouvrir dans Analyses : gpt-4o"':
+        - /url: /analytics?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&api=openai&stream=stream&exec=monitor&watch=1&tab=overview
+        - text: Ouvrir dans Analyses
       - form "Terminez la configuration pour l’activer":
         - heading "Terminez la configuration pour l’activer" [level=4]
         - paragraph: La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.

@@ -925,8 +925,17 @@
       tab: "overview",
     });
     var name = Tf("在分析中打开：{model} · {relay}", "Open in Analytics: {model} · {relay}", { model: groupName(g), relay: relayName(g) });
+    // and the monitors of this relay and model (the Monitors page's keys of
+    // the current filters, its own state / alerting never come along)
+    var mons = window.EkteFilters.href("watches", F.state(), {
+      relay: [rel != null ? rel : window.EkteFilters.UNKNOWN],
+      model: [model || window.EkteFilters.UNKNOWN],
+    });
+    var monName = Tf("此中转站和模型的监控：{model} · {relay}", "Monitors for this relay and model: {model} · {relay}", { model: groupName(g), relay: relayName(g) });
     return '<a class="glink" href="' + esc(link) + '" aria-label="' + esc(name) + '">' +
-      esc(T("在分析中打开", "Open in Analytics")) + ico("arrowRight") + "</a>";
+      esc(T("在分析中打开", "Open in Analytics")) + ico("arrowRight") + "</a>" +
+      '<a class="glink" href="' + esc(mons) + '" aria-label="' + esc(monName) + '">' +
+      esc(T("此中转站和模型的监控", "Monitors for this relay and model")) + ico("arrowRight") + "</a>";
   }
   function gbodyHTML(g) {
     return '<ul class="rows">' + (g.rows || []).map(rowHTML).join("") + "</ul>" + moreHTML(g);

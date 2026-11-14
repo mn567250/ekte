@@ -54,27 +54,51 @@
     - button "Filtre" [expanded]
     - text: Søk
     - searchbox "Søk"
-    - text: Status
-    - combobox "Status":
-      - option "Alle" [selected]
-      - option "Må settes opp"
-    - text: Siste risiko
-    - combobox "Siste risiko":
-      - option "Alle" [selected]
-      - option "Ikke noe resultat ennå"
     - text: Type endepunkt
     - combobox "Type endepunkt":
       - option "Alle" [selected]
-      - option "Chat"
-    - text: Relé / leverandør
-    - combobox "Relé / leverandør":
-      - option "Alle" [selected]
-      - option "127.0.0.1:9099"
+      - option "Chat (1)"
+      - option "Embeddinger"
+      - option "Rerank"
+    - group "Relé / leverandør":
+      - text: Relé / leverandør
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Oppgitt modell":
+      - text: Oppgitt modell
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Testsett
     - combobox "Testsett":
       - option "Alle" [selected]
-      - option "standard"
-    - text: Viser 1 av 1 overvåkinger
+      - option "standard (1)"
+    - text: Protokoll
+    - combobox "Protokoll":
+      - option "Alle" [selected]
+      - option "openai (1)"
+    - text: Probeforespørsler
+    - combobox "Probeforespørsler":
+      - option "Alle" [selected]
+      - option "Strømming (1)"
+      - option "Uten strømming"
+      - option "Med + uten strømming"
+    - text: Status
+    - combobox "Status":
+      - option "Alle" [selected]
+      - option "Aktivert"
+      - option "Satt på pause"
+      - option "Må settes opp (1)"
+    - text: Varsler
+    - combobox "Varsler":
+      - option "Alle" [selected]
+      - option "På eller over varslingsterskelen"
+      - option "Under varslingsterskelen (1)"
+    - text: 1 monitor samsvarer med disse filtrene.
+    - checkbox "Behold filtre på tvers av sider" [checked]
+    - text: Behold filtre på tvers av sider
+    - status
+    - button "Kopier lenke til denne visningen"
+  - status
   - tablist "Overvåkingsvisninger":
     - tab "Konfigurer" [selected]
     - tab "Kjører"
@@ -138,8 +162,12 @@
         - combobox "Rå forespørsler/svar — gpt-4o":
           - option "Behold" [selected]
           - option "Ikke behold"
-      - 'link "Fra kjøring #1 →"':
-        - /url: /history?range=&surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+      - 'link "Fra kjøring #1: gpt-4o"':
+        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&runs.focus=1
+        - text: "Fra kjøring #1"
+      - 'link "Åpne i Analyse: gpt-4o"':
+        - /url: /analytics?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&api=openai&stream=stream&exec=monitor&watch=1&tab=overview
+        - text: Åpne i Analyse
       - form "Fullfør oppsettet for å slå den på":
         - heading "Fullfør oppsettet for å slå den på" [level=4]
         - paragraph: Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den.

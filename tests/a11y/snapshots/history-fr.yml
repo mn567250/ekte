@@ -144,6 +144,9 @@
     - 'link "Ouvrir dans Analyses : model-a · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
       - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Moniteurs de ce relais et de ce modèle
     - text: Score
     - 'img "Tendance Score sur 7 audits : de 70 à 82, en hausse."'
     - text: 82 Latence p50
@@ -192,6 +195,9 @@
     - 'link "Ouvrir dans Analyses : model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
       - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Moniteurs de ce relais et de ce modèle
     - text: Score
     - 'img "Tendance Score sur 4 audits : de 58 à 64, en hausse."'
     - text: 64 Latence p50
@@ -225,6 +231,9 @@
     - 'link "Ouvrir dans Analyses : model-b · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
       - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Moniteurs de ce relais et de ce modèle
     - text: Score
     - 'img "Tendance Score sur 2 audits : de 89 à 91, en hausse."'
     - text: 91 Latence p50
@@ -248,6 +257,9 @@
     - 'link "Ouvrir dans Analyses : model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
       - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Moniteurs de ce relais et de ce modèle
     - text: Score 72 Latence p50 <duration>
     - list:
       - listitem:
@@ -333,6 +345,9 @@
     - 'link "Ouvrir dans Analyses : gpt-4o · 127.0.0.1:9099"':
       - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
       - text: Ouvrir dans Analyses
+    - 'link "Moniteurs de ce relais et de ce modèle : gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Moniteurs de ce relais et de ce modèle
     - text: Score 53 Latence p50 aucune donnée
     - list:
       - listitem:

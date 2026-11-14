@@ -54,27 +54,51 @@
     - button "Filters" [expanded]
     - text: Search
     - searchbox "Search"
-    - text: Status
-    - combobox "Status":
-      - option "All" [selected]
-      - option "Needs setup"
-    - text: Last risk
-    - combobox "Last risk":
-      - option "All" [selected]
-      - option "No result yet"
     - text: Endpoint type
     - combobox "Endpoint type":
       - option "All" [selected]
-      - option "Chat"
-    - text: Relay / provider
-    - combobox "Relay / provider":
-      - option "All" [selected]
-      - option "127.0.0.1:9099"
+      - option "Chat (1)"
+      - option "Embeddings"
+      - option "Reranking"
+    - group "Relay / provider":
+      - text: Relay / provider
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Claimed model":
+      - text: Claimed model
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "All" [selected]
-      - option "standard"
-    - text: Showing 1 of 1 monitors
+      - option "standard (1)"
+    - text: Protocol
+    - combobox "Protocol":
+      - option "All" [selected]
+      - option "openai (1)"
+    - text: Probe requests
+    - combobox "Probe requests":
+      - option "All" [selected]
+      - option "Streaming (1)"
+      - option "Non-streaming"
+      - option "Streaming + non-streaming"
+    - text: Status
+    - combobox "Status":
+      - option "All" [selected]
+      - option "Enabled"
+      - option "Paused"
+      - option "Needs setup (1)"
+    - text: Alerting
+    - combobox "Alerting":
+      - option "All" [selected]
+      - option "At or above its alert threshold"
+      - option "Below its alert threshold (1)"
+    - text: 1 monitor matches these filters.
+    - checkbox "Keep filters across pages" [checked]
+    - text: Keep filters across pages
+    - status
+    - button "Copy link to this view"
+  - status
   - tablist "Monitor views":
     - tab "Configure" [selected]
     - tab "Running"
@@ -138,8 +162,12 @@
         - combobox "Raw requests/responses — gpt-4o":
           - option "Keep" [selected]
           - option "Don't keep"
-      - 'link "From run #1 →"':
-        - /url: /history?range=&surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+      - 'link "From run #1: gpt-4o"':
+        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&runs.focus=1
+        - text: "From run #1"
+      - 'link "Open in Analytics: gpt-4o"':
+        - /url: /analytics?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&api=openai&stream=stream&exec=monitor&watch=1&tab=overview
+        - text: Open in Analytics
       - form "Finish setup to switch it on":
         - heading "Finish setup to switch it on" [level=4]
         - paragraph: The configuration comes from the run in History. Set how often it runs, then activate it.

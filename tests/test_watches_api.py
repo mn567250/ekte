@@ -157,6 +157,23 @@ def test_unknown_and_run_only_keys_are_refused(client, mixed):
         assert r.status_code == 400 and msg in r.json()["error"], (bad, r.text)
 
 
+def test_tz_is_accepted_validated_and_ignored(client, mixed):
+    """Every widget request of the pages carries tz (EkteFilters.widgetParams):
+    accepted, validated like query.py does, and not part of the answer or key."""
+    plain = client.get("/api/watches?state=active")
+    berlin = client.get("/api/watches?state=active&tz=Europe/Berlin")
+    assert berlin.status_code == 200, berlin.text
+    assert berlin.json() == plain.json()
+    assert berlin.headers["etag"] == plain.headers["etag"]
+    opts = client.get("/api/watches/options?tz=Europe/Berlin")
+    assert opts.status_code == 200, opts.text
+    assert "tz" not in opts.json()["filters"]
+    for path in ("/api/watches", "/api/watches/options"):
+        r = client.get(f"{path}?tz=Bad/Zone")
+        assert r.status_code == 400 and "time zone" in r.json()["error"], (path, r.text)
+        assert client.get(f"{path}?tz=UTC&tz=UTC").status_code == 400, path
+
+
 def test_rows_never_contain_keys_or_live_state(client, data):
     _watch(api_key="sk-secret-do-not-leak")
     r = client.get("/api/watches")
@@ -306,10 +323,16 @@ def test_the_monitors_page_reads_live_state_from_jobs():
     html = (Path(server.__file__).parent / "static" / "v2" / "watches.html").read_text(encoding="utf-8")
     body = html[html.index("  function load() {"):]
     body = body[:body.index("\n  }\n")]
+    jobs = html[html.index("  function readJobs() {"):]
+    jobs = jobs[:jobs.index("\n  }\n")]
     # jobs first: a run no longer listed there has saved its result already
-    assert '"/api/jobs"' in body and '"/api/watches"' in body
-    assert body.index('"/api/jobs"') < body.index('"/api/watches"')
-    assert "w.progress = j ? j.progress : null" in body
+    assert '"/api/jobs"' in jobs and '"/api/watches?"' in body
+    assert body.index("readJobs()") < body.index('"/api/watches?"')
+    # the list through the browser cache, with the filters; progress from the
+    # job event streams (#160), no polling
+    assert "EkteFilters.fetchWidget(" in body and "F.widgetParams()" in body
+    assert 'new EventSource("/api/jobs/monitor-"' in html
+    assert "schedulePoll" not in html and "setInterval" not in html
 
 
 def test_the_endpoints_are_listed_in_the_server_docstring_and_the_docs():

@@ -727,7 +727,10 @@ filtered on the server, cached, no live state.
 | `alerting` | `yes`: its last run's risk is at or above its `alert_on` threshold (`watches.risk_meets`, the rule the scheduler alerts on); else `no` |
 
 The shared keys are validated by `query.parse_query` (same values and
-errors). Any other key, the run-only keys `range`, `from`, `to`, `risk`,
+errors). `tz`, which every widget request of the pages carries
+(`EkteFilters.widgetParams()`), is validated the same way (an unknown zone is
+a 400) but filters nothing and is not part of the cache key (#160). Any other
+key, the run-only keys `range`, `from`, `to`, `risk`,
 `exec`, `group`, … and dotted widget keys included, is a 400
 `unknown parameter`. Filtering runs in Python over the monitor rows (bounded
 by the number of monitors, not runs); relays and knowledge-base profiles are
