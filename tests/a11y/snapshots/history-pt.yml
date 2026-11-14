@@ -126,6 +126,8 @@
       - button "Velocidade de descodificação p50" [disabled]
       - button "Taxa de erros" [disabled]
     - text: A mostrar 15 de 15 auditorias
+    - checkbox "Manter os filtros entre páginas" [checked]
+    - text: Manter os filtros entre páginas
     - status
     - button "Copiar a ligação para esta vista"
   - status

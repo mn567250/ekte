@@ -45,11 +45,13 @@ PAGES_ENV = "EKTE_A11Y_PAGES"
 TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_history_controls.py": ("history",),
     "test_analytics_view.py": ("analytics",),
+    "test_filter_memory.py": ("history", "analytics"),
     "test_history_paging.py": ("history",),
     "test_browser_cache.py": ("history", "analytics"),
     "test_live_refresh.py": ("history", "analytics"),
     # the component on its own test page, and the monitors' links into History
     "test_filters_view.py": ("history", "monitors"),
+    "test_watches_live.py": ("monitors",),  # a running monitor's progress (from /api/jobs)
     "test_flows.py::test_audit_flow": ("audit",),
     "test_flows.py::test_failing_audit_flow": ("audit",),
     "test_flows.py::test_monitor_flow": ("history", "monitors"),  # starts on History

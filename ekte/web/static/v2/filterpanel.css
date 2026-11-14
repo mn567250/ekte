@@ -38,6 +38,8 @@
 .ekf-opt input { flex: none; margin: 0; width: 16px; height: 16px; }
 .ekf-n { color: var(--ink-muted); }
 .ekf-share { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+.ekf-scope { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; cursor: pointer; }
+.ekf-scope input { flex: none; margin: 0; width: 16px; height: 16px; }
 .ekf-sharefb { flex: 1 0 100%; }
 .ekf-sharefb[hidden] { display: none; }
 .ekf-sharefb .in { font-family: var(--mono); font-size: 12.5px; padding: 8px 11px; border-radius: 10px; }

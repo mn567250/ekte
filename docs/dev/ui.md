@@ -160,9 +160,27 @@ the module.
 - `state()` is the parsed view; `widgetParams(ns)` the query string a widget
   sends, unchanged: the shared filters with a value plus its `ns.*` keys
   (`EkteFilters.state()` / `.widgetParams()` ask the page's instance).
-- **localStorage is only a fallback**: the page's last filters
-  (`ekte.v2.filters.<page>`) apply when the URL has no filter key, and are then
-  written into the URL; every access is wrapped in try/catch.
+- **localStorage is only a fallback** (#154): the remembered filters apply when
+  the URL has no filter key of the page (the URL always wins), and are then
+  written into the URL; every access is wrapped in try/catch. Two memories:
+  `ekte.v2.filters.shared` (JSON `{key: value}` of the shared keys, values at
+  the page's default left out) and `ekte.v2.filters.<page>` (the page's own
+  last filters, a query string, written in both modes). The per-viewer
+  preference `ekte.v2.filters.scope` is `"shared"` (default) or `"page"`,
+  set by **Keep filters across pages**, a checkbox in the panel's foot on
+  every page with `page` (never part of the URL).
+  - Shared: a page takes the keys it shows from the shared memory, and the
+    keys flagged `page: true` in `FIELDS` (`q`: search text belongs to one
+    list) from its own. A change merges only the keys the page shows into the
+    shared memory, so a page without `range` never erases another's. With no
+    shared memory yet, the page's own memory applies.
+  - Per page: everything comes from the page's own memory.
+  - Turning the checkbox on leaves the view as it is and writes its shared
+    keys into the shared memory; turning it off copies nothing.
+  - Pure helpers, tested under node with an injected `storage`:
+    `initial(search, {fields, defaults, page, storage})`,
+    `remember(page, state, fields, defaults, storage)`, `scope(storage)`,
+    `setScope(value, storage, {state, fields, defaults})`.
 - `load({ns: {url, done, fail}})` fetches every widget at once through
   `EkteFilters.fetchWidget(url, {signal})`: a plain `fetch` (default cache
   mode, `credentials: "same-origin"`, `Accept: application/json`) that keeps

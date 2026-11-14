@@ -126,6 +126,8 @@
       - button "Decode speed p50" [disabled]
       - button "Error rate" [disabled]
     - text: Showing 15 of 15 audits
+    - checkbox "Keep filters across pages" [checked]
+    - text: Keep filters across pages
     - status
     - button "Copy link to this view"
   - status
