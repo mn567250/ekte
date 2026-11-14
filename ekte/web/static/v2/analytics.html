@@ -343,6 +343,7 @@
 <script src="/static/filterpanel.js"></script>
 <script src="/static/filters.js"></script>
 <script src="/static/tabs.js"></script>
+<script src="/static/live.js"></script>
 <script>
 (function () {
   "use strict";
@@ -515,17 +516,28 @@
   // The filter options (/api/filters/options) under the current filters:
   // the panel's choices, the relay names and the picker lists.
   var optCtl = null;
-  function loadOptions() {
+  // quiet: new data in the same view (live.js); the filter panel is left as
+  // it is while it has the focus (an open list stays open), the count changes
+  function loadOptions(quiet) {
+    quiet = quiet === true;
     if (optCtl) optCtl.abort();
     var ctl = optCtl = new AbortController();
     return getJSON(wurl("/api/filters/options"), ctl.signal).then(function (o) {
       if (ctl.signal.aborted) return;
       state.opts = o;
-      F.setOptions(o);
+      optsLater = quiet && $("#filters").contains(document.activeElement);
+      if (!optsLater) F.setOptions(o);
       paintFoot();
-      paintNote();
-    }, function (e) { if (!isAbort(e)) paintFoot(); });
+      paintNote(quiet);
+    }, function (e) { if (!isAbort(e) && !quiet) paintFoot(); });
   }
+  // options held back while the panel had the focus: applied when it leaves
+  var optsLater = false;
+  $("#filters").addEventListener("focusout", function (ev) {
+    if (!optsLater || $("#filters").contains(ev.relatedTarget)) return;
+    optsLater = false;
+    F.setOptions(state.opts);
+  });
   // the panel foot's count (also drawn by every re-render of the panel)
   function footText() {
     var o = state.opts;
@@ -547,23 +559,62 @@
   // from p.data (also on a language switch). A panel is stale until loaded
   // with the current filters; each has its own AbortController, so a newer
   // load (or any filter change) drops the answers still on their way.
+  // A quiet load (p.quiet: new data in the same view, from live.js) leaves
+  // the panel as it is until the answers are in, then redraws it still (no
+  // motion, focus kept); a failed quiet load keeps what is shown.
+  // p.busy: a load the viewer asked for is under way; new data meanwhile
+  // (p.redo) loads again quietly once it is done
   function panelLoad(p, urls) {
     if (p.ctl) p.ctl.abort();
-    var ctl = p.ctl = new AbortController();
-    busy("#" + p.id, true);
+    var ctl = p.ctl = new AbortController(), quiet = !!p.quiet, failed = false;
+    p.quiet = false;
+    p.redo = false;
+    p.busy = !quiet;
+    if (!quiet) busy("#" + p.id, true);
     return Promise.all(urls.map(function (u) { return u ? getJSON(u, ctl.signal) : null; })).then(function (d) {
       if (ctl.signal.aborted) return;
       p.data = d;
       p.err = null;
     }, function (e) {
       if (ctl.signal.aborted || isAbort(e)) return;
+      if (quiet) { failed = true; return; }
       p.data = null;
       p.err = errText(e);
     }).then(function () {
-      if (ctl.signal.aborted) return;
-      steady("#" + p.id, p.render);
+      if (ctl.signal.aborted || failed) return;
+      p.busy = false;
+      if (quiet) stillRender(p);
+      else steady("#" + p.id, p.render);
       busy("#" + p.id, false);
+      if (p.redo) liveLoad(p);
     });
+  }
+  // a redraw from new data in the same view: no motion (state.still), and the
+  // panel's focused control focused again in the new markup
+  function stillRender(p) {
+    var box = $("#" + p.id), key = focusKeyIn(box, document.activeElement);
+    state.still = true;
+    try { steady("#" + p.id, p.render); } finally { state.still = false; }
+    if (key && !box.contains(document.activeElement)) {
+      var el = key.sel ? box.querySelector(key.sel) : focusables(box)[key.at];
+      if (el && !el.disabled) el.focus({ preventScroll: true });
+    }
+  }
+  var FOCUS_KEYS = ["data-v", "data-key", "data-tog", "data-lb", "data-lbsort", "data-kv"];
+  function focusables(box) {
+    return Array.prototype.slice.call(box.querySelectorAll("button, a[href], select, input, textarea, [tabindex]"));
+  }
+  // what finds a panel's focused element again after a redraw: its id, a
+  // control attribute, else its place among the panel's focusable elements
+  function focusKeyIn(box, el) {
+    if (!el || el === box || !box.contains(el)) return null;
+    if (el.id) return { sel: "#" + CSS.escape(el.id) };
+    for (var i = 0; i < FOCUS_KEYS.length; i++) {
+      var v = el.getAttribute(FOCUS_KEYS[i]);
+      if (v != null) return { sel: "[" + FOCUS_KEYS[i] + '="' + CSS.escape(v) + '"]' };
+    }
+    var at = focusables(box).indexOf(el);
+    return at >= 0 ? { at: at } : null;
   }
   function errBox(prefix, msg) {
     return '<div class="errbox" role="alert">' + esc(prefix) + esc(msg) + "</div>";
@@ -618,7 +669,7 @@
   // critical: the data cannot be loaded; warning: older runs not processed
   // yet and / or runs with an estimated start time; info: what it is based on
   var note = { status: null, err: false };
-  function paintNote() {
+  function paintNote(quiet) {
     var n = null, s = note.status, o = state.opts;
     if (note.err) {
       n = { level: "critical", title: T("无法加载分析数据", "Analytics could not be loaded"),
@@ -651,7 +702,12 @@
           detail: T("可以放宽或重置筛选条件。", "Widen or reset the filters.") };
       }
     }
-    window.EkteNotice.show($("#note"), n);
+    // a quiet repaint (new data in the same view, live.js) is not announced:
+    // the region stays off until the next repaint of a change the viewer made
+    var box = $("#note");
+    if (quiet === true) box.setAttribute("aria-live", "off");
+    else box.removeAttribute("aria-live");
+    window.EkteNotice.show(box, n);
   }
   function loadStatus() {
     return window.EkteFilters.fetchWidget("/api/history/status")
@@ -1583,7 +1639,7 @@
 
   // every panel is stale; answers still on their way are for the old view
   function invalidate() {
-    PANELS.forEach(function (p) { p.stale = true; if (p.ctl) p.ctl.abort(); });
+    PANELS.forEach(function (p) { p.stale = true; p.busy = p.redo = false; if (p.ctl) p.ctl.abort(); });
   }
   // a metric the shown surface does not measure falls back to the default
   function fitSurface() {
@@ -1604,14 +1660,69 @@
     redrawCharts();
     return Promise.all(loads);
   }
-  function refresh() {
+  // quiet: the first load after a run landed on an empty page (live.js), unannounced
+  var inflight = null; // the refresh() under way
+  function refresh(quiet) {
     invalidate();
-    say(T("正在加载分析…", "Loading analytics…"));
-    return Promise.all([loadOptions(), activate()]).then(function () {
+    if (quiet !== true) say(T("正在加载分析…", "Loading analytics…"));
+    var r = inflight = Promise.all([loadOptions(quiet), activate()]).then(function () {
+      if (quiet === true) return;
       var s = PANEL.kpi.data && PANEL.kpi.data[0];
       say(s && tab() === "overview" && sub("overview") === "kpi" ? Tf("已更新：此范围内 {n} 次检测。", "Updated: {n} runs in this range.", { n: s.runs }) : T("已更新。", "Updated."));
     });
+    r.then(done, done);
+    function done() {
+      if (inflight !== r) return;
+      inflight = null;
+      if (liveAgain) { liveAgain = false; onData(); }
+    }
+    return r;
   }
+
+  /* ---------------- new data (live.js) ---------------- */
+  // A run saved, rescored or deleted anywhere (ekte:data): the loaded panels
+  // load again with the same view, in place and quietly (no motion, no
+  // announcement; focus, scroll, open tables and sub-tabs stay). The shown
+  // panels load now, the others when their tab is shown. A filter change
+  // aborts it (each panel's AbortController); during a filter change's own
+  // load, it waits for that load to end.
+  var liveAgain = false, starting = false;
+  // a panel's quiet load (p.quiet is read when its load starts; billing on a
+  // surface without billing draws without panelLoad, so it is reset here too)
+  function liveLoad(p) {
+    p.redo = false;
+    p.quiet = true;
+    p.load(p);
+    p.quiet = false;
+  }
+  function onData() {
+    if (!booted) {
+      // "no audits yet": the first saved run starts the page (once)
+      if (note.status && !note.status.runs && !note.err && !starting) {
+        starting = true;
+        window.EkteFilters.fetchWidget("/api/history/status").then(function (d) {
+          if (booted || !d || !d.runs) return;
+          note.status = d;
+          return boot(true);
+        }).then(function () { starting = false; }, function () { starting = false; /* the next change asks again */ });
+      }
+      return;
+    }
+    if (inflight) { liveAgain = true; return; }
+    window.EkteFilters.fetchWidget("/api/history/status").then(function (d) {
+      note.status = d;
+      paintNote(true);
+    }, function () { /* keep what is shown */ });
+    loadOptions(true);
+    var t = tab();
+    PANELS.forEach(function (p) {
+      if (!p.loaded || p.stale) return;
+      if (p.tab !== t || (p.sub && sub(t) !== p.sub)) { p.stale = true; return; }
+      if (p.busy) { p.redo = true; return; } // the viewer's own load first
+      liveLoad(p);
+    });
+  }
+  window.addEventListener("ekte:data", onData);
   // filters.js reports every change of the URL state
   var muted = false;
   function quietly(patch) {
@@ -1694,9 +1805,11 @@
       if (st.current() !== sub(t)) st.select(sub(t), false, true);
     });
   }
-  function boot() {
+  // quiet: started by the first saved run (live.js), unannounced
+  function boot(quiet) {
+    quiet = quiet === true;
     $("#empty").hidden = true;
-    say(T("正在加载分析…", "Loading analytics…"));
+    if (!quiet) say(T("正在加载分析…", "Loading analytics…"));
     return Promise.all([
       getJSON("/api/metrics").then(function (c) { cat = c; catById = {}; c.metrics.forEach(function (m) { catById[m.id] = m; }); }),
       loadStatus(),
@@ -1706,7 +1819,7 @@
       if (!tabs) initTabs();
       booted = true;
       if (S("surface")) fitSurface();
-      return refresh();
+      return refresh(quiet);
     }).catch(function (e) {
       note.err = true;
       paintNote();

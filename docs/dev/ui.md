@@ -183,6 +183,50 @@ the module.
 - `EkteFilters.keyed(key, labels)` reads an i18n key such as `metric.score`,
   falling back to `GET /api/metrics`' `labels` (English has no keyed strings).
 
+**Live refresh** (`v2/live.js`, `window.EkteLive`, #156; History and
+Analytics load it). One poller per tab (a second copy of the script changes
+nothing) asks `GET /api/version` every 10 s while
+`document.visibilityState` is `visible`, and once as soon as the tab is shown
+again; a hidden tab sends nothing. It is a plain `fetch`, so the browser
+revalidates by `ETag` and an unchanged answer is a `304`. When a token
+changes it dispatches `ekte:data` (a history write from any process, the CLI
+included) and / or `ekte:live` (a job or monitor run started or ended,
+monitor settings changed) on `window`, with `detail: {before, after}`; the
+first answer is only the baseline. Errors are silent and the next tick asks
+again. `EkteLive.start()` / `stop()` / `poll()` / `tokens()` are for tests;
+`EkteLive.version()` asks once without touching the baseline. The scheduling
+logic is `EkteLive.createPoller(env)`, pure (clock, request, visibility and
+events passed in) and tested under node (`tests/test_web_v2_live_js.py`). No
+page polls a data endpoint on a fixed interval: they refetch their own cached
+URLs only on an event.
+
+- **Analytics**, on `ekte:data`: the panels already loaded load again with the
+  same view, in place and quietly. The shown ones load now, the others are
+  marked stale and load when their tab is shown. `p.quiet` makes `panelLoad`
+  keep the panel until the answers are in and redraw it through
+  `stillRender()`: `state.still` (no count-up, no chart entry motion),
+  `steady()` (the scroll position) and the panel's focused control focused
+  again (by id, control attribute or place). Open tables and sub-tabs are URL
+  keys, so they stay. Nothing is announced: `#live` is left alone and the page
+  notice is repainted with `aria-live="off"` until the next change the viewer
+  makes. The filter options update too, but not the panel while it has the
+  focus. A failed quiet load keeps what is shown. A filter change aborts it
+  (each panel's `AbortController`); during a filter change's own load the
+  refresh waits for it. An empty page ("no audits yet") starts quietly with its
+  first saved run.
+- **History**, on `ekte:data`: the list never reloads by itself. The page asks
+  the groups' answer for the current filters with `groups.limit=1` (a cached
+  URL) and reads `total_runs`; N is that total minus the total shown. A notice
+  above the list (`#fresh`, drawn by `notice.js` but no live region itself)
+  says "N new runs" with **Show** (N > 0) or "History changed" with
+  **Refresh**. It is announced once, politely, through `#live`; a further
+  change while it is shown updates N in place without a new announcement. The
+  button loads the list again (the focused run and collapsed groups kept) and
+  moves focus to the focused run, else the first one. Any load of the list (a
+  filter or sort change too) removes the notice. Each load notes the data
+  version it shows (`EkteLive.version()`, asked before the list), so a change
+  the page made itself (a delete) raises no notice.
+
 **No business logic in pages.** History and Analytics (and every page that
 shows metrics) draw what the server sends; they compute no metric, grade,
 colour family, delta direction, outcome class, filter, grouping or order of

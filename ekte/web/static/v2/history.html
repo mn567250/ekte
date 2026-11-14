@@ -266,6 +266,10 @@
     <div class="znote" id="note" hidden></div>
 
     <section class="card filters" id="filters" hidden></section>
+    <p class="sr-only" id="live" role="status"></p>
+    <!-- new runs since the list was loaded (live.js): a notice that offers to
+         show them; not a live region itself (#live announces it once) -->
+    <div class="znote" id="fresh" hidden></div>
 
     <section class="card hist" id="hist" tabindex="-1" aria-busy="true">
       <div class="state loading" data-en="Loading history…">Loading history…</div>
@@ -283,6 +287,7 @@
 <script src="/static/filters.js"></script>
 <script src="/static/trendpick.js"></script>
 <script src="/static/report.js"></script>
+<script src="/static/live.js"></script>
 <script>
 (function () {
   "use strict";
@@ -497,9 +502,16 @@
   // drawn at once
   function load() {
     var sig = fresh(), focus = focusRun();
+    loading = true;
+    clearNewRuns(); // this load shows them
+    // the data version, answered before the list is asked for: the list holds
+    // at least that data (a 304 while nothing changed)
+    var shown = null, shows = window.EkteLive && window.EkteLive.version
+      ? window.EkteLive.version().then(function (v) { shown = v && v.data; }, function () { /* none: every change checks */ })
+      : Promise.resolve();
     host.setAttribute("aria-busy", "true");
     loadNote();
-    return get(groupsUrl({ focus: focus }), sig)
+    return shows.then(function () { return get(groupsUrl({ focus: focus }), sig); })
       .then(function (data) {
         var keep = state.nextIdx;
         state.nextIdx = 0;
@@ -533,8 +545,96 @@
         if (sig.aborted) return;
         host.setAttribute("aria-busy", "false");
         fbar.hidden = state.error != null || (!state.totalRuns && !urlFiltered() && !anySaved());
+        loading = false;
+        newRuns.shown = state.error == null ? shown : null;
+        if (newRuns.again) { newRuns.again = false; checkNewRuns(); } // a change during this load
       });
   }
+
+  /* ---------------- new runs (live.js) ---------------- */
+  // A run saved, rescored or deleted anywhere (ekte:data). The list never
+  // reloads by itself: the groups' answer for the current filters
+  // (groups.limit=1, a cached URL) gives the server's total_runs, and N = that
+  // total - the total shown. A notice above the list says "N new runs"
+  // (N > 0) or "History changed" and offers to load the list again. It is
+  // announced once through #live; a later change updates N in place, quietly.
+  // Any load of the list (a filter change too) removes it.
+  var loading = false;
+  var newRuns = { n: null, ctl: null, again: false, shown: null }; // shown: the data version the list holds
+  var freshBox = $("#fresh"), liveBox = $("#live"), sayT = null, said = null;
+  function say(msg) {
+    clearTimeout(sayT);
+    liveBox.textContent = "";
+    sayT = setTimeout(function () { liveBox.textContent = said = msg; }, 60);
+  }
+  // the notice is gone: its announcement too, unless already replaced
+  function unsay() {
+    clearTimeout(sayT);
+    if (said != null && liveBox.textContent === said) liveBox.textContent = "";
+    said = null;
+  }
+  function newRunsTitle(n) {
+    if (n > 0) return n === 1 ? T("1 次新检测", "1 new run") : Tf("{n} 次新检测", "{n} new runs", { n: n });
+    return T("检测历史已变化", "History changed");
+  }
+  function paintNewRuns(announce) {
+    var n = newRuns.n;
+    if (n == null) { window.EkteNotice.show(freshBox, null); return; }
+    var title = newRunsTitle(n);
+    window.EkteNotice.show(freshBox, {
+      level: "info", icon: n > 0 ? "plus" : "info", title: title,
+      detail: n > 0 ? T("在此列表加载之后保存。", "Saved since this list was loaded.")
+        : T("此列表加载之后有检测被更改或删除。", "Runs were changed or deleted since this list was loaded."),
+      actions: [{ act: "show", label: n > 0 ? T("显示", "Show") : T("刷新", "Refresh"), primary: true }],
+    });
+    // not a live region: #live says it once, a new N is not announced again
+    freshBox.removeAttribute("role");
+    if (announce) {
+      say(title + ". " + (n > 0 ? T("用列表上方的“显示”按钮查看。", "Use the Show button above the list.")
+        : T("用列表上方的“刷新”按钮重新加载。", "Use the Refresh button above the list.")));
+    }
+  }
+  function clearNewRuns() {
+    if (newRuns.ctl) newRuns.ctl.abort();
+    newRuns.ctl = null;
+    newRuns.again = false;
+    if (newRuns.n != null) { newRuns.n = null; paintNewRuns(false); unsay(); }
+  }
+  // the groups' answer for the current filters, for its total_runs only: one
+  // group (with its trends: the endpoint always computes them)
+  function totalUrl() { return groupsUrl({ limit: 1 }); }
+  // ev: the ekte:data event (detail.after: the new data version); none after a load
+  function checkNewRuns(ev) {
+    if (!state.groups || state.error != null) return;
+    if (loading) { newRuns.again = true; return; } // the load under way may show it already
+    var last = window.EkteLive && window.EkteLive.tokens ? window.EkteLive.tokens() : null;
+    var now = ev && ev.detail ? ev.detail.after : last && last.data;
+    if (now != null && now === newRuns.shown) return; // the list holds this data (a delete on this page)
+    if (newRuns.ctl) newRuns.ctl.abort();
+    var ctl = newRuns.ctl = new AbortController();
+    get(totalUrl(), ctl.signal).then(function (data) {
+      if (ctl.signal.aborted) return;
+      newRuns.ctl = null;
+      var first = newRuns.n == null;
+      newRuns.n = (data.total_runs || 0) - state.totalRuns;
+      paintNewRuns(first);
+    }, function () { /* silent: the next change asks again */ });
+  }
+  window.addEventListener("ekte:data", checkNewRuns);
+  window.addEventListener("ekte:lang", function () { paintNewRuns(false); });
+  // "Show": the list loads again with the focused run and the collapsed
+  // groups kept; focus moves to the focused run, else the first one
+  freshBox.addEventListener("click", function (e) {
+    if (!e.target.closest('[data-note-act="show"]')) return;
+    var had = freshBox.contains(document.activeElement);
+    if (had) host.focus({ preventScroll: true }); // the button goes away
+    load().then(function () {
+      if (!had || document.activeElement !== host) return;
+      var f = focusRun(), row = f ? document.getElementById("r-" + f) : null;
+      row = row || host.querySelector(".row .rmain");
+      if (row) row.focus();
+    });
+  });
 
   // a new trend selection: the trends of the groups already shown, in place
   function reloadTrends() {

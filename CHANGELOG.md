@@ -20,6 +20,19 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: live refresh on History and Analytics ([#156](https://github.com/mn567250/ekte/issues/156))
+
+Part of [#150](https://github.com/mn567250/ekte/issues/150). A run saved
+while History or Analytics is open (from the web UI, a monitor or the CLI) now
+shows up without a reload. A new script, `static/live.js` (`window.EkteLive`),
+asks `GET /api/version` every 10 s while the tab is visible (not at all while
+it is hidden, once when it is shown again) and tells the page when the data
+changed. Analytics then updates its panels in place, quietly: no animation,
+no announcement, focus, scroll position, open tables and sub-tabs kept.
+History keeps its list and shows a notice above it, "N new runs" with a
+**Show** button (or "History changed" with **Refresh**), announced once to
+screen readers.
+
 ### Web UI: widget answers kept by the browser ([#153](https://github.com/mn567250/ekte/issues/153))
 
 History and Analytics leave their answers to the browser's HTTP cache, so a

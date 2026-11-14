@@ -1,0 +1,13 @@
+{
+ "strings": {
+  "1 new run": "1 ny kjøring",
+  "{n} new runs": "{n} nye kjøringer",
+  "History changed": "Historikken er endret",
+  "Saved since this list was loaded.": "Lagret etter at denne listen ble lastet.",
+  "Runs were changed or deleted since this list was loaded.": "Kjøringer er endret eller slettet etter at denne listen ble lastet.",
+  "Show": "Vis",
+  "Refresh": "Oppdater",
+  "Use the Show button above the list.": "Bruk Vis-knappen over listen.",
+  "Use the Refresh button above the list.": "Bruk Oppdater-knappen over listen."
+ }
+}
