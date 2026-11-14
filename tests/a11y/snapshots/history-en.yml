@@ -144,6 +144,9 @@
     - 'link "Open in Analytics: model-a · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
       - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Monitors for this relay and model
     - text: Score
     - 'img "Score trend across 7 audits: from 70 to 82, rising."'
     - text: 82 Latency p50
@@ -192,6 +195,9 @@
     - 'link "Open in Analytics: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
       - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Monitors for this relay and model
     - text: Score
     - 'img "Score trend across 4 audits: from 58 to 64, rising."'
     - text: 64 Latency p50
@@ -225,6 +231,9 @@
     - 'link "Open in Analytics: model-b · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
       - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Monitors for this relay and model
     - text: Score
     - 'img "Score trend across 2 audits: from 89 to 91, rising."'
     - text: 91 Latency p50
@@ -248,6 +257,9 @@
     - 'link "Open in Analytics: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
       - text: Open in Analytics
+    - 'link "Monitors for this relay and model: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Monitors for this relay and model
     - text: Score 72 Latency p50 <duration>
     - list:
       - listitem:
@@ -333,6 +345,9 @@
     - 'link "Open in Analytics: gpt-4o · 127.0.0.1:9099"':
       - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
       - text: Open in Analytics
+    - 'link "Monitors for this relay and model: gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Monitors for this relay and model
     - text: Score 53 Latency p50 no data
     - list:
       - listitem:

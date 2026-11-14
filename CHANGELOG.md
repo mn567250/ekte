@@ -20,6 +20,33 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: Monitors joins the shared filter pattern ([#160](https://github.com/mn567250/ekte/issues/160), part of [#150](https://github.com/mn567250/ekte/issues/150))
+
+The Monitors page now has the same filter panel as History and Analytics:
+search, endpoint type, relay, claimed model, suite, protocol and probe
+requests, plus **Status** (enabled, paused, needs setup) and **Alerting**,
+which stay on the Monitors page. The filters are in the URL, so a filtered
+view can be shared and survives a reload, and the relay and model you pick are
+remembered across pages like the other filters. The server filters the list
+and the options count monitors. The list is fetched when it may have
+changed (a filter change, a run starting or ending, a monitor edited), not
+every 2 s while a monitor runs; a running monitor's progress follows its live
+event stream. "No monitors match these filters" now comes with **Clear
+filters**.
+
+New links between the pages: each monitor has **Open in Analytics** (its
+own runs) next to **Open in History** and **From run #n**, which now open the
+exact run even when it is older than History's period. Each History group has
+**Monitors for this relay and model**, and the Analytics filter panel offers
+**Monitors for these filters** once a relay or model is chosen.
+
+- **Breaking (URL):** monitor links to History use `runs.focus=<id>` and the
+  default period instead of `range=` and `#r-<id>`; the old saved Monitors
+  filters (`ekte.v2.monitors.filters`) are no longer read.
+- `GET /api/watches` and `GET /api/watches/options` accept `tz` (the viewer's
+  time zone every page request carries) and ignore it; an unknown zone is
+  still a 400.
+
 ### Web UI: live refresh on History and Analytics ([#156](https://github.com/mn567250/ekte/issues/156))
 
 Part of [#150](https://github.com/mn567250/ekte/issues/150). A run saved

@@ -3,7 +3,8 @@
 Standard library only (``http.server`` in a thread): the web app under test
 talks to it like to any relay, so an audit, the embedding check and the rerank
 check run end to end without touching the internet. ``fail=True`` makes every
-endpoint answer HTTP 500, for the failure paths.
+endpoint answer HTTP 500, for the failure paths; ``delay`` (seconds) holds
+every POST that long, so a run lasts long enough to watch it.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import hashlib
 import json
 import math
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
@@ -74,6 +76,8 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         body = self._body()
+        if self.server.delay:
+            time.sleep(self.server.delay)
         if self.server.fail:
             return self._json(500, {"error": {"message": "relay is down", "type": "server_error"}})
         path = self.path.rstrip("/")
@@ -131,14 +135,16 @@ class _Handler(BaseHTTPRequestHandler):
 class _Server(ThreadingHTTPServer):
     daemon_threads = True
     fail = False
+    delay = 0.0
 
 
 class FakeRelay:
     """``with FakeRelay() as relay: relay.url`` -> ``http://127.0.0.1:<port>/v1``."""
 
-    def __init__(self, fail: bool = False) -> None:
+    def __init__(self, fail: bool = False, delay: float = 0.0) -> None:
         self.httpd = _Server(("127.0.0.1", 0), _Handler)
         self.httpd.fail = fail
+        self.httpd.delay = delay
         self.url = f"http://127.0.0.1:{self.httpd.server_address[1]}/v1"
         self._thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
 

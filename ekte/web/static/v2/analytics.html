@@ -547,6 +547,16 @@
   function paintFoot() {
     var el = $("#fcount");
     if (el) el.textContent = footText();
+    var mon = $("#fmon");
+    if (mon) mon.innerHTML = monitorsLinkHTML();
+  }
+  // "Monitors for these filters": the Monitors page with the current filters
+  // it shows, offered once a relay or model is chosen
+  function monitorsLinkHTML() {
+    var st = F ? F.state() : {};
+    if (!((st.relay || []).length || (st.model || []).length)) return "";
+    return '<a class="linkbtn" href="' + esc(window.EkteFilters.href("watches", st)) + '">' +
+      esc(T("这些筛选条件的监控", "Monitors for these filters")) + " →</a>";
   }
   function relayName(key) {
     var x = ((state.opts && state.opts.relay) || []).filter(function (r) { return r.value === key; })[0];
@@ -1770,7 +1780,7 @@
   F = window.EkteFilters.create({
     section: $("#filters"), page: "analytics", fields: FIELDS, defaults: DEFAULTS, optionsUrl: false,
     viewKeys: ["tab", "os", "ts", "rs"], live: live,
-    foot: function () { return '<span id="fcount">' + esc(footText()) + "</span>"; }, onChange: onChange,
+    foot: function () { return '<span id="fcount">' + esc(footText()) + '</span> <span id="fmon">' + monitorsLinkHTML() + "</span>"; }, onChange: onChange,
   });
   $("#filters").hidden = false;
   var resizeT = null;

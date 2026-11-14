@@ -1,0 +1,16 @@
+{
+ "strings": {
+  "1 monitor matches these filters.": "1 monitor corrisponde a questi filtri.",
+  "{n} monitors match these filters.": "{n} monitor corrispondono a questi filtri.",
+  "No monitors match these filters.": "Nessun monitor corrisponde a questi filtri.",
+  "Clear filters": "Cancella filtri",
+  "Open in History": "Apri nella cronologia",
+  "{link}: {name}": "{link}: {name}",
+  "Monitors for this relay and model": "Monitor di questo relay e modello",
+  "Monitors for this relay and model: {model} · {relay}": "Monitor di questo relay e modello: {model} · {relay}",
+  "Monitors for these filters": "Monitor per questi filtri",
+  "Alerting": "In allerta",
+  "At or above its alert threshold": "Pari o sopra la soglia di allerta",
+  "Below its alert threshold": "Sotto la soglia di allerta"
+ }
+}

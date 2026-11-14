@@ -144,6 +144,9 @@
     - 'link "Åpne i Analyse: model-a · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
       - text: Åpne i Analyse
+    - 'link "Monitorer for denne reléen og modellen: model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Monitorer for denne reléen og modellen
     - text: Score
     - 'img "Score-trend over 7 revisjoner: fra 70 til 82, stigende."'
     - text: 82 Forsinkelse p50
@@ -192,6 +195,9 @@
     - 'link "Åpne i Analyse: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
       - text: Åpne i Analyse
+    - 'link "Monitorer for denne reléen og modellen: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Monitorer for denne reléen og modellen
     - text: Score
     - 'img "Score-trend over 4 revisjoner: fra 58 til 64, stigende."'
     - text: 64 Forsinkelse p50
@@ -225,6 +231,9 @@
     - 'link "Åpne i Analyse: model-b · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
       - text: Åpne i Analyse
+    - 'link "Monitorer for denne reléen og modellen: model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Monitorer for denne reléen og modellen
     - text: Score
     - 'img "Score-trend over 2 revisjoner: fra 89 til 91, stigende."'
     - text: 91 Forsinkelse p50
@@ -248,6 +257,9 @@
     - 'link "Åpne i Analyse: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
       - text: Åpne i Analyse
+    - 'link "Monitorer for denne reléen og modellen: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Monitorer for denne reléen og modellen
     - text: Score 72 Forsinkelse p50 <duration>
     - list:
       - listitem:
@@ -333,6 +345,9 @@
     - 'link "Åpne i Analyse: gpt-4o · 127.0.0.1:9099"':
       - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
       - text: Åpne i Analyse
+    - 'link "Monitorer for denne reléen og modellen: gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Monitorer for denne reléen og modellen
     - text: Score 53 Forsinkelse p50 ingen data
     - list:
       - listitem:

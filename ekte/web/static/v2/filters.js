@@ -72,6 +72,7 @@
  *   state, extra) -> "/<path>?<query>", a link to that page with only its keys.
  *
  * /api/filters/options (issue 123) is read as { "<key>": [{ value, label?, runs? }] }
+ * (/api/watches/options: monitors? in place of runs?)
  * for the keys of FIELDS ("-" is "(unknown)"), requested with the shared
  * filters; a key it does not list keeps its fixed options. A watch option
  * with deleted: true is a monitor that no longer exists ("Deleted monitor #<id>").
@@ -92,6 +93,7 @@
     mode: ["模式", "Mode"], api: ["协议", "Protocol"], stream: ["探测请求", "Probe requests"],
     detect: ["协议识别", "Protocol detection"], risk: ["风险", "Risk"], min_score: ["最低健康分", "Min. score"],
     exec: ["执行方式", "Execution"], watch: ["监控", "Monitor"], group: ["分组", "Group by"],
+    state: ["状态", "Status"], alerting: ["告警", "Alerting"],
     from: ["开始日期", "Start date"], to: ["结束日期", "End date"],
   };
   var V = {
@@ -103,6 +105,8 @@
     detect: { auto: ["自动识别", "auto-detected"], manual: ["手动指定", "set manually"] },
     exec: { manual: ["手动", "Manual"], monitor: ["监控", "Monitor"] },
     group: { relay: ["中转站", "Relay"], model: ["模型", "Model"], relay_model: ["中转站 × 模型", "Relay × model"], all: ["全部", "All"] },
+    state: { active: ["启用中", "Enabled"], paused: ["已暂停", "Paused"], draft: ["待设置", "Needs setup"] },
+    alerting: { yes: ["达到告警阈值", "At or above its alert threshold"], no: ["低于告警阈值", "Below its alert threshold"] },
   };
 
   /* The URL schema of ekte/web/query.py, in the order fields are shown and
@@ -128,6 +132,9 @@
     exec: { kind: "select", def: "", values: ["manual", "monitor"] },
     watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,18}$/ },
     group: { kind: "select", def: "relay", values: ["relay", "model", "relay_model", "all"], required: true },
+    // Monitors only (ekte/web/watches_api.py): the server decides both per monitor
+    state: { kind: "select", def: "", values: ["active", "paused", "draft"], page: true },
+    alerting: { kind: "select", def: "", values: ["yes", "no"], page: true },
   };
   var ORDER = Object.keys(FIELDS);
 
@@ -391,7 +398,7 @@
   var PAGES = {
     history: ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec", "watch"],
     analytics: ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
-    watches: ["q", "surface", "relay", "model", "suite", "api", "stream"],
+    watches: ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"],
   };
   var PATHS = { history: "/history", analytics: "/analytics", watches: "/watches" };
 
@@ -588,8 +595,10 @@
       if (f.values) f.values.forEach(function (v) { add(v); });
       (server || []).forEach(function (x) {
         if (x.value === UNKNOWN && !f.unknown) return;
-        if (seen[x.value]) out[seen[x.value] - 1].runs = x.runs;
-        else add(x.value, x.runs);
+        // runs (/api/filters/options) or monitors (/api/watches/options)
+        var n = x.runs != null ? x.runs : x.monitors;
+        if (seen[x.value]) out[seen[x.value] - 1].runs = n;
+        else add(x.value, n);
       });
       [].concat(st[k]).forEach(function (v) { add(v); });
       // "(unknown)" when the server lists it, or there is no list to ask

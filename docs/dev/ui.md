@@ -141,8 +141,8 @@ and `aria-disabled`, with one on that one is, and a "2 / 2" hint next to the
 label (the group's description, in words for screen readers) counts them.
 
 **Shared filters and URL state** (`v2/filters.js`, `window.EkteFilters`, #125;
-History (#127) and Analytics (#126) use it, Monitors and Knowledge keep
-their own fields). One module owns the filter fields, the view state and widget
+History (#127), Analytics (#126) and Monitors (#160) use it, Knowledge keeps
+its own fields). One module owns the filter fields, the view state and widget
 fetching, inside the `filterpanel.js` frame; it holds no metric logic.
 `EkteFilters.create({section, fields, defaults, page, onChange, optionsUrl, foot, extra, live})`
 (`foot`: HTML or a function returning it, `extra()`: the page's own controls
@@ -281,9 +281,42 @@ History filters Analytics shows and
 `tab=overview`; its accessible name ("Open in Analytics: model · relay")
 names the group, so the links on one page are unique.
 
-The monitors' **Open in history** links use the schema: `surface`, `relay`
-(the watch's `relay_key` from `/api/watches`, the relay its runs are grouped
-under), `model` and `suite`, plus `#r-<run>`.
+**Monitors** (`v2/watches.html`, #160) is the third page of the pattern. Its
+panel is `EkteFilters.create({page: "watches", fields: PAGES.watches,
+optionsUrl: "/api/watches/options"})`: the monitor keys `q`, `surface`,
+`relay`, `model`, `suite`, `api`, `stream` plus its own `state`
+(`active` / `paused` / `draft`) and `alerting` (`yes` / `no`), flagged
+`page: true` in `FIELDS` so they are remembered per page and never shared;
+the options count monitors (`monitors` in place of `runs`). The filters are
+the URL query string; `#w-<id>` links still open a monitor, and clear the
+filters for that view (not in the remembered filters) when they hide it.
+The list is one cached URL, `EkteFilters.fetchWidget("/api/watches?" +
+widgetParams())`, fetched on load, on every filter change, after a change
+made on the page and on `ekte:live` (`v2/live.js`); cards show the server's
+`state` and `alerting`. "No monitors match these filters" (with **Clear
+filters**) and "No monitors yet" are two empty states. Live state is not in
+the list: on the same occasions the page reads `GET /api/jobs` and opens an
+`EventSource` on `/api/jobs/monitor-<id>/events` for every queued or running
+monitor; `EkteJobs.progress()` (`v2/jobs.js`, tested under node) counts the
+progress from its events as the server does for `/api/jobs`, and the card's
+bar is updated in place. The stream is closed when the run ends (`done`:
+the page asks `EkteLive.poll()`, whose `ekte:live` reloads the list) or
+fails (the next `ekte:live` reads `/api/jobs` again). The Running tab is
+`EkteJobs.init(list, {poll: false})`, fed with the same jobs through `set()`.
+Nothing on the page is polled on a timer.
+
+Links from a monitor card, all `EkteFilters.href`, named "<link>: <monitor
+name>": **Open in Analytics** (`watch=<id>`, `surface`, `relay` = its
+`relay_key`, `model` = claimed model else model, `suite`, `stream`, `api`,
+`exec=monitor`, `tab=overview`), **Open in History** (the last run:
+`watch=<id>`, `surface`, `relay`, `model`, `suite`, `runs.focus=<report>`)
+and **From run #n** (the same without `watch`, since the run the monitor
+was made from is not one of its runs). History widens its range to a focused
+run outside it (#157), so both find the run whatever its age. Links to
+Monitors: every History group header has **Monitors for this relay and
+model** beside **Open in Analytics** ("Monitors for this relay and model:
+model · relay"), and the Analytics panel's foot has **Monitors for these
+filters** once a relay or model is chosen.
 
 **Translation convention.** The pages are written in English
 (`<html lang="en">`); every translatable element carries the same English
