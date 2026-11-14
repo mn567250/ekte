@@ -392,7 +392,8 @@ The values present for each filter key, counted under the current filters
 ```
 
 `value` is spelled as the URL takes it (`-` = none; relays and models use
-`(unknown)`, their group key); a relay's `label` is what History calls it
+`(unknown)`, their group key, which the filter panel also writes for its
+"(unknown)" option; `-` in a URL is read as it, #191); a relay's `label` is what History calls it
 (`history_api.relay_labels`: its knowledge-base name, else the host of its
 URL); a monitor's (`watch`) is its name, read from `watches.db` once per
 request, or, for a monitor that no longer exists, `Deleted monitor #<id>`
