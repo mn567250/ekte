@@ -48,8 +48,8 @@ TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_filter_memory.py": ("history", "analytics"),
     "test_history_paging.py": ("history",),
     "test_history_focus.py": ("history",),
-    "test_browser_cache.py": ("history", "analytics"),
-    "test_live_refresh.py": ("history", "analytics"),
+    "test_browser_cache.py": ("history", "analytics", "monitors"),
+    "test_live_refresh.py": ("audit", "history", "analytics", "monitors", "kb"),
     # the component on its own test page, and the monitors' links into History
     "test_filters_view.py": ("history", "monitors"),
     "test_watches_live.py": ("monitors",),  # a running monitor's progress (from /api/jobs)
