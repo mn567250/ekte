@@ -177,7 +177,7 @@ FILTER_KEYS: dict[str, str | None] = {
     "start": "range", "end": "range", "range": "range", "surface": "surface",
     "relays": "relay", "models": "model", "suite": "suite", "mode": "mode", "api": "api",
     "stream": "stream", "detect": "detect", "risk": "risk", "min_score": "min_score",
-    "exec": "exec", "text": "q", "group": None, "tz": None,
+    "exec": "exec", "watch": "watch", "text": "q", "group": None, "tz": None,
 }
 
 

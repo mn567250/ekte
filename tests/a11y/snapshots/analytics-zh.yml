@@ -92,6 +92,10 @@
       - option "全部" [selected]
       - option "手动 (11)"
       - option "监控 (4)"
+    - text: 监控
+    - combobox "监控":
+      - option "全部" [selected]
+      - option "gpt-4o (4)"
     - text: 分组
     - combobox "分组":
       - option "中转站" [selected]

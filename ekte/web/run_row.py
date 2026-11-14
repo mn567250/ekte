@@ -28,7 +28,9 @@ copied onto the run's ``history_metrics`` row (``m``) as a number,
   ``kb_profile_id`` — the ekte version and knowledge-base profile (NULL for
   none) in ``run_version`` / ``run_kb_profile``, for where they change in a
   series (:data:`CHANGES`); ``model_in_kb`` — 1 when the run's model is in
-  the knowledge base.
+  the knowledge base; ``watch_id`` — the monitor that ran it
+  (``history.watch_id``, NULL for a run started by hand), for the ``watch``
+  filter.
   These lookup tables (:class:`Lookup`) number each distinct value once;
   rows no run uses any more are harmless.
 
@@ -137,6 +139,7 @@ RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
     "started_us": ("INTEGER", "CAST(strftime('%s', substr(m.started_at, 1, 19)) AS INTEGER) * 1000000"
                               " + CAST(substr(m.started_at, 21, 6) AS INTEGER)"),
     "model_in_kb": ("INTEGER", "m.kb_model_id IS NOT NULL"),
+    "watch_id": ("INTEGER", "h.watch_id"),
     "score": ("REAL", "h.score"),
     "grade_value": ("INTEGER", grade_value_sql("h.rating")),
     "risk_value": ("INTEGER", _RISK_SQL),
@@ -258,7 +261,8 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
     them current, and fill them for the runs already saved (a migration
     step). Idempotent and cheap once done: when every trigger is as defined
     here, the columns are current and nothing is rewritten. Creates
-    :data:`INDEXES`."""
+    :data:`INDEXES` (again when their columns changed, so the covering index
+    holds every column of the run row)."""
     from ekte.knowledge.snapshot import add_link_columns
 
     triggers = _trigger_sql()
@@ -277,4 +281,9 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
         for statement in _refresh_sql("history_metrics.history_id", "TRUE").rstrip(";").split("; "):
             conn.execute(statement)
     for name, cols in INDEXES.items():
+        # an index made before a column was added to the run row covers less
+        # than it should: made again
+        have = [r[2] for r in conn.execute(f"PRAGMA index_info({name})")]
+        if have and have != cols.split(", "):
+            conn.execute(f"DROP INDEX {name}")
         conn.execute(f"CREATE INDEX IF NOT EXISTS {name} ON history_metrics ({cols})")

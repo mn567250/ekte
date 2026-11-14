@@ -168,8 +168,14 @@ the module.
   (`ekte.v2.filters.<page>`) apply when the URL has no filter key, and are then
   written into the URL; every access is wrapped in try/catch.
 - `load({ns: {url, done, fail}})` fetches every widget at once through
-  `EkteFilters.fetchWidget(url, {signal})`, which sends `If-None-Match` with the
-  ETag last seen for that URL (in memory) and answers a 304 from that copy. A
+  `EkteFilters.fetchWidget(url, {signal})`: a plain `fetch` (default cache
+  mode, `credentials: "same-origin"`, `Accept: application/json`) that keeps
+  no copy of its own. The server's `ETag` + `Cache-Control: no-cache` make the
+  browser's HTTP cache hold every answer, across reloads and pages, and
+  revalidate it on each use; a `304` reaches the page as a `200` with the
+  stored body. An error status rejects with an `Error` carrying `.status` and
+  the server's message. History's status and report detail
+  (`/api/history/status`, `/api/history/{id}?trend=1`) load through it too. A
   newer load or any filter change aborts the requests in flight
   (`AbortController`); `fail` gets one widget's error, never an abort.
 - **Copy link to this view** sits in the panel's foot on every page using the
