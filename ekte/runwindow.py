@@ -166,7 +166,8 @@ def next_window_start(w: RunWindow | None, ts: float) -> float | None:
     if w is None:
         return None
     local = _local(w, ts)
-    base = ts - local.minute * 60 - local.second - local.microsecond / 1e6
+    # whole seconds: a fractional `ts` must not leave the result a hair before the hour
+    base = float(int(ts) - local.minute * 60 - local.second)
     prev = in_window(w, base)
     for i in range(1, _SEARCH_HOURS + 1):
         t = base + i * 3600

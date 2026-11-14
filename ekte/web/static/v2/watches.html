@@ -111,18 +111,36 @@
   .mon-meta dd .link.icon-only { padding: 6px; line-height: 0; vertical-align: middle; margin-block: -6px; }
   .mon-meta dd .link.icon-only .zicon { width: 16px; height: 16px; }
   /* run window editor */
-  .mon-meta dd .edit.rw { max-width: 560px; }
+  .mon-meta dd .edit.rw { max-width: 560px; gap: 16px; margin-top: 8px; }
   .rw fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-  .rw legend, .rw .lab { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); padding: 0; margin-bottom: 4px; }
-  .rw-times { display: flex; flex-wrap: wrap; gap: 10px; }
-  .rw-times > div { min-width: 0; flex: 1 1 120px; }
-  .rw-times > div.tz { flex-basis: 220px; }
+  /* field labels inside the editor: sentence case, so they don't compete with the card's uppercase field names */
+  .rw .sub { display: block; font-size: 12px; font-weight: 700; color: var(--ink-muted); padding: 0; margin: 0 0 6px; }
+  .rw .seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 520px) { .rw .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .rw .seg button { min-width: 0; padding: 9px 8px; }
+  .rw .ferr { margin-top: 8px; }
+  @media (max-width: 520px) { .rw .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); } .rw .chips button { padding-inline: 4px; white-space: nowrap; } }
+  .rw-times { display: grid; grid-template-columns: 8.5rem 8.5rem minmax(0, 1fr); gap: 12px; align-items: end; }
+  @media (max-width: 520px) { .rw-times { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rw-times > .tz { grid-column: 1 / -1; } }
   .rw-times select.in { width: 100%; }
-  .rw-prev { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; width: 100%; }
-  .rw-prev i { aspect-ratio: 1; border-radius: 2px; background: var(--sunken); outline: 1px solid var(--line); outline-offset: -1px; }
-  .rw-prev i.on { background: var(--primary); outline: 0; }
-  @media (forced-colors: active) { .rw-prev { display: none; } }
-  .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; margin: 0; }
+  .rw-times + .hint { margin-top: -8px; }
+  /* the week at a glance: purely visual (aria-hidden), the coverage line below says the same in text */
+  .rw-week { background: var(--sunken); border-radius: 12px; padding: 12px 12px 10px; display: grid; gap: 3px; }
+  .rw-row { display: grid; grid-template-columns: 2.4rem repeat(24, minmax(0, 1fr)); gap: 2px; align-items: center; }
+  .rw-row > b { font-size: 11px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rw-row > span { font-size: 10.5px; color: var(--ink-muted); font-variant-numeric: tabular-nums; grid-column: span 6; }
+  .rw-row > i { height: 12px; border-radius: 3px; background: var(--line); }
+  .rw-row > i.on { background: var(--primary); }
+  .rw-row > i.now { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .rw-key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 11px; color: var(--ink-muted); }
+  .rw-key span { display: inline-flex; align-items: center; gap: 5px; }
+  .rw-key i { width: 12px; height: 8px; border-radius: 2px; background: var(--line); }
+  .rw-key i.on { background: var(--primary); }
+  .rw-key i.now { background: transparent; outline: 2px solid var(--ink); outline-offset: -2px; height: 10px; }
+  @media (forced-colors: active) { .rw-week { display: none; } }
+  .rw-cov { margin: -8px 0 0; font-size: 12.5px; color: var(--ink); line-height: 1.45; }
+  .rw-cov b { font-variant-numeric: tabular-nums; }
+  .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; margin: 0; }
   .rw-note .zicon { flex: none; width: 16px; height: 16px; margin-top: 1px; }
   .rw-note.warn { background: var(--warning-tint); color: var(--warning); }
   .rw-note.info { background: var(--info-tint); color: var(--info); }
@@ -564,61 +582,101 @@
   function windowCell(w, s) {
     if (s.edit === "window") return '<form class="edit rw" data-id="' + w.id + '" novalidate>' + windowInput(w, s) + saveCancel("window", w.id) + "</form>";
     var r = w.run_window;
-    return (r ? esc(winSummary(r)) + '<span class="aside">' + esc(r.tz) + "</span>" : esc(T("始终", "Always"))) +
-      linkBtn("edit-window", w.id, T("修改运行时段", "Change run window"));
+    // summary and pencil on one line, like the other fields; the zone underneath
+    return (r ? esc(winSummary(r)) : esc(T("始终", "Always"))) + linkBtn("edit-window", w.id, T("修改运行时段", "Change run window")) +
+      (r ? '<span class="aside">' + esc(r.tz) + "</span>" : "");
+  }
+  // the weekday (0 = Monday) and hour it is now in the window's zone
+  function nowIn(tz) {
+    try {
+      var parts = new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", hourCycle: "h23", timeZone: tz }).formatToParts(new Date());
+      var get = function (t) { return (parts.filter(function (p) { return p.type === t; })[0] || {}).value; };
+      return { day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(get("weekday")), hour: parseInt(get("hour"), 10) % 24 };
+    } catch (e) { return null; }
+  }
+  // runs a week: each open stretch starts with a run, then one per interval
+  function winRuns(win, interval) {
+    var every = Math.max(1, (interval || 3600) / 3600), runs = 0, run = 0, first = -1;
+    for (var i = 0; i < 168; i++) if (!winOn(win, Math.floor(i / 24), i % 24)) { first = i; break; }
+    if (first < 0) return Math.round(168 / every);
+    for (var k = 1; k <= 168; k++) {
+      var j = (first + k) % 168, on = winOn(win, Math.floor(j / 24), j % 24);
+      if (on) run++;
+      if ((!on || k === 168) && run) { runs += Math.ceil(run / every); run = 0; }
+    }
+    return runs;
+  }
+  // fills {name} placeholders of an already escaped template with markup
+  function fill(tpl, vals) {
+    Object.keys(vals).forEach(function (k) { tpl = tpl.split("{" + k + "}").join(String(vals[k])); });
+    return tpl;
   }
   function windowInput(w, s) {
     var v = s.vals.win || (s.vals.win = winDraft(w)), id = w.id;
     var presets = [["always", T("始终", "Always")], ["weekdays", T("工作日", "Weekdays")],
       ["weekdays7", T("工作日 07–19", "Weekdays 07–19")], ["custom", T("自定义", "Custom")]];
-    var html = '<div><span class="lab" id="rwpl-' + id + '">' + esc(T("预设", "Presets")) + '</span>' +
-      '<div class="seg" role="group" aria-labelledby="rwpl-' + id + '">' +
+    var html = '<div class="seg" role="group" aria-label="' + esc(T("预设", "Presets")) + '">' +
       presets.map(function (p) {
         return '<button type="button" data-act="win-preset" data-v="' + p[0] + '" data-id="' + id + '" aria-pressed="' + (v.preset === p[0]) + '"' +
           (v.preset === p[0] ? ' data-wf="' + id + '"' : "") + ">" + esc(p[1]) + "</button>";
-      }).join("") + "</div></div>";
+      }).join("") + "</div>";
     var errTxt = s.errs.window;
-    if (v.preset !== "always") {
-      html += '<fieldset' + (errTxt ? ' aria-invalid="true"' : "") + ' aria-describedby="rwe-' + id + '"><legend>' + esc(T("日期", "Days")) + '</legend><div class="chips">' +
-        WIN_ALL.map(function (d) {
-          return '<button type="button" data-act="win-day" data-v="' + d + '" data-id="' + id + '" aria-pressed="' + (v.days.indexOf(d) >= 0) + '"' +
-            (d === 0 ? ' data-we="' + id + '"' : "") + ">" + esc(dayName(d)) + "</button>";
-        }).join("") + "</div></fieldset>";
-      var hours = function (from, to, sel, act, label) {
-        var o = "";
-        for (var h = from; h <= to; h++) o += '<option value="' + h + '"' + (h === sel ? " selected" : "") + ">" + pad2(h) + ":00</option>";
-        return '<div><label class="lab" for="rw-' + act + "-" + id + '">' + esc(label) + '</label><select class="in" id="rw-' + act + "-" + id +
-          '" data-act="w-' + act + '" data-id="' + id + '">' + o + "</select></div>";
-      };
-      var browser = browserTz();
-      html += '<div class="rw-times">' + hours(0, 23, v.start, "start", T("从", "From")) + hours(1, 24, v.end, "end", T("到", "To")) +
-        '<div class="tz"><label class="lab" for="rw-tz-' + id + '">' + esc(T("时区", "Time zone")) + '</label><select class="in" id="rw-tz-' + id +
-        '" data-act="w-tz" data-id="' + id + '">' + tzList(v.tz).map(function (z) {
-          return '<option value="' + esc(z) + '"' + (z === v.tz ? " selected" : "") + ">" + esc(z) + (z === browser ? " " + T("（此浏览器）", "(this browser)") : "") + "</option>";
-        }).join("") + "</select></div></div>";
-      if (v.end <= v.start) {
-        html += '<p class="hint">' + esc(T("跨夜时段：于次日清晨结束，并归属于开始的那一天。", "Overnight window: it ends the next morning and belongs to the day it starts on.")) + "</p>";
+    if (v.preset === "always") {
+      return html + '<p class="hint" style="margin:-8px 0 0">' + esc(T("监控按检测间隔全天候运行。", "The monitor runs at its check interval at any time of day.")) + "</p>";
+    }
+    html += '<fieldset' + (errTxt ? ' aria-invalid="true"' : "") + ' aria-describedby="rwe-' + id + '"><legend class="sub">' + esc(T("日期", "Days")) + '</legend><div class="chips">' +
+      WIN_ALL.map(function (d) {
+        return '<button type="button" data-act="win-day" data-v="' + d + '" data-id="' + id + '" aria-pressed="' + (v.days.indexOf(d) >= 0) + '"' +
+          (d === 0 ? ' data-we="' + id + '"' : "") + ">" + esc(dayName(d)) + "</button>";
+      }).join("") + "</div>" + err("rwe-" + id, errTxt ? function () { return errTxt(); } : null) + "</fieldset>";
+    var hours = function (from, to, sel, act, label) {
+      var o = "";
+      for (var h = from; h <= to; h++) {
+        var t = pad2(h) + ":00";
+        if (act === "end" && h <= v.start) t += " (+1)"; // ends the next day; the hint below spells it out
+        o += '<option value="' + h + '"' + (h === sel ? " selected" : "") + ">" + esc(t) + "</option>";
       }
+      return '<div><label class="sub" for="rw-' + act + "-" + id + '">' + esc(label) + '</label><select class="in" id="rw-' + act + "-" + id +
+        '" data-act="w-' + act + '" data-id="' + id + '">' + o + "</select></div>";
+    };
+    var browser = browserTz();
+    html += '<div class="rw-times">' + hours(0, 23, v.start, "start", T("从", "From")) + hours(1, 24, v.end, "end", T("到", "To")) +
+      '<div class="tz"><label class="sub" for="rw-tz-' + id + '">' + esc(T("时区", "Time zone")) + '</label><select class="in" id="rw-tz-' + id +
+      '" data-act="w-tz" data-id="' + id + '">' + tzList(v.tz).map(function (z) {
+        return '<option value="' + esc(z) + '"' + (z === v.tz ? " selected" : "") + ">" + esc(z) + (z === browser ? " " + T("（此浏览器）", "(this browser)") : "") + "</option>";
+      }).join("") + "</select></div></div>";
+    if (v.end <= v.start) {
+      html += '<p class="hint">' + esc(T("跨夜时段：于次日清晨结束，并归属于开始的那一天。", "Overnight window: it ends the next morning and belongs to the day it starts on.")) + "</p>";
     }
-    html += err("rwe-" + id, errTxt ? function () { return errTxt(); } : null);
-    var hrs = v.preset === "always" ? 168 : winHours(v);
-    if (v.preset !== "always" && v.days.length) {
-      var cells = "";
-      for (var d = 0; d < 7; d++) for (var h = 0; h < 24; h++) cells += winOn(v, d, h) ? '<i class="on"></i>' : "<i></i>";
-      html += '<div class="rw-prev" aria-hidden="true">' + cells + "</div>";
+    if (!v.days.length) return html;
+    var hrs = winHours(v), now = nowIn(v.tz);
+    // the week: hour ticks on top, one row per day
+    var week = '<div class="rw-row"><span style="grid-column:2 / span 6">00</span><span>06</span><span>12</span><span>18</span></div>';
+    for (var d = 0; d < 7; d++) {
+      week += '<div class="rw-row"><b>' + esc(dayName(d)) + "</b>";
+      for (var h = 0; h < 24; h++) {
+        var cls = (winOn(v, d, h) ? "on" : "") + (now && now.day === d && now.hour === h ? " now" : "");
+        week += cls ? '<i class="' + cls.trim() + '"></i>' : "<i></i>";
+      }
+      week += "</div>";
     }
-    html += '<p class="hint">' + esc(hrs >= 168
-      ? T("每周 168 小时全部检测。", "Checked all 168 hours a week.")
-      : Tf("每周检测 {h} / 168 小时 · 约 {h} 次运行和证据文件，而不是 168 次（−{pct} %）。",
-          "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).",
-          { h: hrs, pct: Math.round((168 - hrs) / 168 * 100) })) + "</p>";
+    week += '<div class="rw-key"><span><i class="on"></i>' + esc(T("运行", "Runs")) + "</span><span><i></i>" + esc(T("不运行", "Doesn't run")) +
+      "</span>" + (now ? '<span><i class="now"></i>' + esc(T("现在", "Now")) + "</span>" : "") + "</div>";
+    html += '<div class="rw-week" aria-hidden="true">' + week + "</div>";
+    var all = Math.round(168 * 3600 / (w.interval_sec || 3600)), runs = winRuns(v, w.interval_sec);
+    html += '<p class="rw-cov">' + (hrs >= 168
+      ? esc(T("每周 168 小时全部检测。", "Checked all 168 hours a week."))
+      : fill(esc(T("每周 {h} / 168 小时 · 约 {runs} 次运行，而不是 {all} 次（−{pct} %）。",
+          "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).")),
+          { h: "<b>" + hrs + "</b>", runs: "<b>" + runs + "</b>", all: all, pct: Math.max(0, Math.round((all - runs) / all * 100)) })) + "</p>";
     if (hrs > 0 && hrs < 168) {
       html += '<p class="rw-note warn">' + icon("warning") + "<span><b>" + esc(Tf("每周有 {n} 小时不检测。", "{n} h a week are not checked.", { n: 168 - hrs })) + "</b> " +
         esc(T("中转站可能恰好在这些时段换用其他模型，且其规律可以被摸清。", "A relay could serve another model in exactly these hours, and its pattern can be learned.")) + "</span></p>";
       if (w.interval_sec && w.interval_sec > winLongest(v) * 3600) {
         html += '<p class="rw-note info">' + icon("info") + "<span>" +
-          esc(T("检测间隔长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
-            "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.")) + "</span></p>";
+          esc(Tf("检测间隔（{every}）长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
+            "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.",
+            { every: fmtEvery(w.interval_sec) })) + "</span></p>";
       }
     }
     return html;

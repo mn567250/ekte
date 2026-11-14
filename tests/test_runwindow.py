@@ -143,3 +143,9 @@ def test_malformed_reads_as_always(bad):
 def test_parse_json_string():
     w = rw.parse('{"tz": "UTC", "days": [0], "start": "07:00", "end": "19:00"}')
     assert w is not None and w.days == frozenset({0})
+
+
+def test_next_window_start_is_on_the_hour_for_a_fractional_now():
+    w = win(WEEKDAYS, "07:00", "19:00")
+    got = rw.next_window_start(w, ts(2026, 11, 14, 21, 45) + 0.123456)
+    assert got == ts(2026, 11, 16, 7) and got == int(got)
