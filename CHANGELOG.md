@@ -131,6 +131,12 @@ reload. Steps [#151](https://github.com/mn567250/ekte/issues/151) to
   that day in the viewer's time zone (`tz`), as the day presets are, instead
   of 00:00 UTC; times without an offset are still UTC and times with one are
   kept as given.
+- **The "(unknown)" relay and model filter matches runs** (#191). `relay=-`
+  and `model=-` now select the runs without a relay URL or without a claimed
+  model (the stored `(unknown)`), on History, Analytics and
+  `GET /api/watches`, as `-` already did for the other keys. `-` and
+  `(unknown)` are one value with one cache key, and the filter panel shows and
+  selects one "(unknown)" option for both.
 
 ### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
 
