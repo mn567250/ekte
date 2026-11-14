@@ -1,0 +1,13 @@
+{
+ "strings": {
+  "1 new run": "1 new run",
+  "{n} new runs": "{n} new runs",
+  "History changed": "History changed",
+  "Saved since this list was loaded.": "Saved since this list was loaded.",
+  "Runs were changed or deleted since this list was loaded.": "Runs were changed or deleted since this list was loaded.",
+  "Show": "Show",
+  "Refresh": "Refresh",
+  "Use the Show button above the list.": "Use the Show button above the list.",
+  "Use the Refresh button above the list.": "Use the Refresh button above the list."
+ }
+}

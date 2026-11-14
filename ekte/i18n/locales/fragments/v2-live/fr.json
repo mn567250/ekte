@@ -1,0 +1,13 @@
+{
+ "strings": {
+  "1 new run": "1 nouvelle exécution",
+  "{n} new runs": "{n} nouvelles exécutions",
+  "History changed": "L’historique a changé",
+  "Saved since this list was loaded.": "Enregistrée depuis le chargement de cette liste.",
+  "Runs were changed or deleted since this list was loaded.": "Des exécutions ont été modifiées ou supprimées depuis le chargement de cette liste.",
+  "Show": "Afficher",
+  "Refresh": "Actualiser",
+  "Use the Show button above the list.": "Utilisez le bouton Afficher au-dessus de la liste.",
+  "Use the Refresh button above the list.": "Utilisez le bouton Actualiser au-dessus de la liste."
+ }
+}
