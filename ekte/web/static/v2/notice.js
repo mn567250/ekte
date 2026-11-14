@@ -13,12 +13,20 @@
  *       items:   optional [segments lists], a list under the detail (the
  *                lower-severity messages folded into this one),
  *       actions: optional [{ act, label, primary }]: buttons carrying
- *                data-note-act="<act>"; the page handles their clicks }
+ *                data-note-act="<act>"; the page handles their clicks,
+ *       role:    optional; false: no role at all, for a notice the page
+ *                announces itself (History's new-runs notice says it once
+ *                through its own live region) }
  *
  * The level sets the colour and the icon; the words say the same, so colour
- * never carries the meaning alone. A critical notice is role="alert", any
- * other role="status". Showing the same notice again changes nothing, so a
- * screen reader does not hear it twice.
+ * never carries the meaning alone. "error" is the same as "critical"; an
+ * unknown level is "info". The role follows the importance (roleFor): a
+ * critical notice is role="alert" (announced at once), any other
+ * role="status" (announced politely). Showing the same notice again changes
+ * nothing, so a screen reader does not hear it twice: a page that redraws
+ * its notice on every poll announces it only when it says something new.
+ *
+ * Pure helpers (tested under node): levelOf(level), roleFor(n).
  */
 (function () {
   "use strict";
@@ -36,6 +44,17 @@
     }).join("");
   }
 
+  // the level drawn: "error" is critical, an unknown level info
+  function levelOf(level) {
+    if (level === "error") return "critical";
+    return Object.prototype.hasOwnProperty.call(ICON, level) ? level : "info";
+  }
+  // the notice's role: alert for critical, status otherwise, none with role: false
+  function roleFor(n) {
+    if (!n || n.role === false) return null;
+    return levelOf(n.level) === "critical" ? "alert" : "status";
+  }
+
   function show(el, n) {
     if (!el) return;
     if (!n) {
@@ -44,7 +63,7 @@
       el.innerHTML = "";
       return;
     }
-    var level = ICON[n.level] ? n.level : "info";
+    var level = levelOf(n.level), role = roleFor(n);
     var ico = window.ekteIcon ? window.ekteIcon(n.icon || ICON[level], { size: 18 }) : "";
     var html = '<span class="ico">' + ico + "</span>" +
       '<div class="txt"><b>' + esc(n.title) + "</b>" + (n.detail ? ' <span class="meta">' + seg(n.detail) + "</span>" : "") +
@@ -53,14 +72,15 @@
       (n.actions && n.actions.length ? '<div class="act">' + n.actions.map(function (a) {
         return '<button type="button" class="btn sm' + (a.primary ? " pri" : "") + '" data-note-act="' + esc(a.act) + '">' + esc(a.label) + "</button>";
       }).join("") + "</div>" : "");
-    var sig = level + "|" + html;
+    var sig = level + "|" + (role || "") + "|" + html;
     if (el.getAttribute("data-sig") === sig && !el.hidden) return;
     el.setAttribute("data-sig", sig);
     el.className = "znote " + level;
-    el.setAttribute("role", level === "critical" ? "alert" : "status");
+    if (role) el.setAttribute("role", role);
+    else el.removeAttribute("role");
     el.innerHTML = html;
     el.hidden = false;
   }
 
-  window.EkteNotice = { show: show };
+  window.EkteNotice = { show: show, levelOf: levelOf, roleFor: roleFor };
 })();
