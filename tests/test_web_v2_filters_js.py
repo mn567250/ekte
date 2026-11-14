@@ -33,7 +33,7 @@ body(F).then((out) => console.log(JSON.stringify(out === undefined ? null : out)
 """
 
 ALL = ["q", "range", "surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk",
-       "min_score", "exec", "group"]
+       "min_score", "exec", "watch", "group"]
 
 
 def run(body: str, tz: str | None = None) -> Any:
@@ -91,6 +91,14 @@ def parse(search: str, fields: list[str] | None = None) -> dict[str, Any]:
     ("min_score=abc", {}),
     ("exec=monitor", {"exec": "monitor"}),
     ("exec=adhoc", {}),  # the old value
+    ("watch=12", {"watch": "12"}),  # a monitor id
+    ("watch=0", {}),  # not one (the server would answer 400)
+    ("watch=-1", {}),
+    ("watch=-", {}),  # no "(unknown)": a run started by hand has exec=manual
+    ("watch=abc", {}),
+    ("watch=1.5", {}),
+    ("watch=012", {}),  # one spelling (the server's)
+    ("watch=3&watch=4", {"watch": "3"}),  # not repeatable: the first
     ("group=model", {"group": "model"}),
     ("group=relay_model", {"group": "relay_model"}),
     ("group=", {}),  # the default, never "none"
@@ -122,7 +130,8 @@ def test_parse_drops_keys_the_page_does_not_show():
 FULL = {
     "q": "relay x", "range": "", "from": "2026-01-01", "to": "2026-02-01", "surface": "rerank",
     "relay": ["a", "-"], "model": ["m1"], "suite": "-", "mode": "check", "api": "anthropic", "stream": "both",
-    "detect": "manual", "risk": "clean", "min_score": "55", "exec": "manual", "group": "all",
+    "detect": "manual", "risk": "clean", "min_score": "55", "exec": "manual", "watch": "12",
+    "group": "all",
 }
 
 
@@ -130,7 +139,8 @@ def test_every_key_round_trips():
     qs = run(f"return F.serialise({js(FULL)}, {{}}, {js(ALL)});")
     # range "" (all time, custom from / to) differs from the schema's 30d: "range="
     assert qs == ("q=relay+x&range=&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=-&model=m1&suite=-"
-                  "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&group=all")
+                  "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&watch=12"
+                  "&group=all")
     back = parse(qs)
     assert back == FULL
 
@@ -380,7 +390,9 @@ let respond = null;
 const res = (status, body, etag) => ({ status, ok: status >= 200 && status < 300,
   headers: { get: (h) => (h === "ETag" ? etag || null : null) }, json: async () => body });
 global.fetch = (url, init) => {
-  calls.push({ url, inm: (init.headers || {})["If-None-Match"] || null });
+  calls.push({ url, inm: (init.headers || {})["If-None-Match"] || null, init: {
+    headers: init.headers, credentials: init.credentials, cache: init.cache === undefined ? null : init.cache,
+    signal: !!init.signal } });
   return new Promise((resolve, reject) => {
     const abort = () => { const e = new Error("aborted"); e.name = "AbortError"; reject(e); };
     if (init.signal) { if (init.signal.aborted) return abort(); init.signal.addEventListener("abort", abort); }
@@ -392,25 +404,26 @@ const tick = () => new Promise((r) => setTimeout(r, 5));
 """
 
 
-def test_etag_is_sent_and_a_304_reuses_the_copy():
+def test_a_plain_fetch_on_the_browser_cache_keeps_no_copy():
+    """fetchWidget leaves revalidation to the browser's HTTP cache (the
+    server's ETag + no-cache): the default cache mode, no If-None-Match of
+    its own, and every answer, a stored one included, comes from fetch."""
     got = run(_FETCH + """
       let n = 0;
-      respond = (url, init) => {
-        n += 1;
-        if (init.headers["If-None-Match"] === '"v1"') return res(304, null, '"v1"');
-        return res(200, { url, n }, url.includes("nocache") ? null : '"v1"');
-      };
+      respond = (url) => { n += 1; return res(200, { url, n }, '"v1"'); };
       const a = await F.fetchWidget("/api/x?range=7d");
-      const b = await F.fetchWidget("/api/x?range=7d");      // 304: the same data
-      const c = await F.fetchWidget("/api/x?range=30d");     // another URL: no ETag of its own yet
-      const d = await F.fetchWidget("/api/nocache");
-      const e = await F.fetchWidget("/api/nocache");         // no ETag given: never conditional
-      return { a, b, c, d, e, calls };
+      const b = await F.fetchWidget("/api/x?range=7d");   // the browser revalidates; a 304 arrives as a 200
+      const ctl = new AbortController();
+      const c = await F.fetchWidget("/api/x?range=30d", { signal: ctl.signal });
+      return { a, b, c, calls };
     """)
-    assert got["a"] == got["b"] == {"url": "/api/x?range=7d", "n": 1}
+    assert got["a"] == {"url": "/api/x?range=7d", "n": 1}
+    assert got["b"] == {"url": "/api/x?range=7d", "n": 2}
     assert got["c"] == {"url": "/api/x?range=30d", "n": 3}
-    assert [c["inm"] for c in got["calls"]] == [None, '"v1"', None, None, None]
-    assert got["e"]["n"] == 5
+    assert [c["inm"] for c in got["calls"]] == [None, None, None]
+    assert [c["init"] for c in got["calls"]] == [
+        {"headers": {"Accept": "application/json"}, "credentials": "same-origin", "cache": None,
+         "signal": s} for s in (False, False, True)]
 
 
 def test_an_error_status_rejects_with_the_server_message():

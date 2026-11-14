@@ -113,6 +113,10 @@
       - option "Tutti" [selected]
       - option "Manuale (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "Tutti" [selected]
+      - option "gpt-4o (4)"
     - group "Andamenti":
       - text: Andamenti 2 selezionati su un massimo di 2
       - button "Punteggio" [pressed]

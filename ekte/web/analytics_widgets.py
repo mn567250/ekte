@@ -159,13 +159,24 @@ def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[st
     (``range`` resolved; a day range to its first local midnight with no
     ``to``, so its key changes once a day), and a custom ``from`` without
     ``to`` bounded at now (the next whole minute), so every answer is cached
-    under an absolute range."""
+    under an absolute range. :data:`WATCHES_KEY` carries the monitors' data
+    version (:func:`ekte.web.watches.data_version`, one primary-key read): the
+    filter options name monitors (:func:`watch_labels`), so a renamed or
+    deleted monitor gives them a new cache key and ETag."""
+    from ekte.web import watches
+
     pairs = query.resolve_params(params, now=now)
     keys = {k for k, _ in pairs}
     if "from" in keys and "to" not in keys and "range" not in keys:
         # rounded up to the next whole minute, as range=: a minute's requests share an answer
         pairs.append(("to", analytics_store.format_ts(query._ceil_minute((now or datetime.now(UTC)).astimezone(UTC)))))
+    pairs = [(k, v) for k, v in pairs if k != WATCHES_KEY]  # (never the client's)
+    pairs.append((WATCHES_KEY, str(watches.data_version())))
     return pairs
+
+
+WATCHES_KEY = "options.watches"
+"""The key :func:`resolve_params` adds (dotted: no endpoint's parser reads it)."""
 
 
 # --------------------------------------------------------------------------- #
@@ -565,9 +576,29 @@ def widget_integrity(params: Any) -> dict[str, Any]:
 # field each sets.
 _FIELDS: dict[str, str] = {
     "surface": "surface", "relay": "relays", "model": "models",
-    **{k: k for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
+    **{k: k for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec", "watch")},
 }
 OPTION_KEYS = tuple(_FIELDS)
+
+
+def deleted_watch_label(wid: int) -> str:
+    """The label of a monitor that no longer exists (English: the page
+    translates it, as the ``deleted`` option says)."""
+    return f"Deleted monitor #{wid}"
+
+
+def watch_labels(ids: Iterable[int]) -> dict[int, str]:
+    """Monitor id -> its name, for the ``ids`` that still exist (one read of
+    ``watches.db``: monitors are few). A monitor without a name is ``#<id>``."""
+    from ekte import datadir
+    from ekte.web import watches
+
+    wanted = set(ids)
+    if not wanted:
+        return {}
+    conn = datadir.read_connection("watches.db", watches.MIGRATIONS)
+    return {int(wid): str(name or f"#{wid}") for wid, name in conn.execute("SELECT id, name FROM watches")
+            if int(wid) in wanted}
 
 
 def filter_options(params: Any) -> dict[str, Any]:
@@ -577,7 +608,11 @@ def filter_options(params: Any) -> dict[str, Any]:
     except the key itself (a selected value and its siblings never
     disappear). ``relay`` values carry their ``label`` (as History names
     the relay, :func:`ekte.web.history_api.relay_labels`: a relay of no
-    knowledge-base entry by its host), ``kind`` and ``in_kb``; ``span`` is the first and last run time under every filter
+    knowledge-base entry by its host), ``kind`` and ``in_kb``; ``watch``
+    values (monitor ids, as integers) their monitor's ``label``, read from
+    ``watches.db`` once (:func:`watch_labels`), and ``deleted: true`` for a
+    monitor that no longer exists (labelled ``Deleted monitor #<id>``, which
+    the page translates); ``span`` is the first and last run time under every filter
     but ``from`` / ``to``; ``dimensions`` the dimension keys of the selected
     runs (for ``dim:<key>`` metrics). Unlike the widgets no surface is
     defaulted: ``surface_default`` names the one they would use.
@@ -597,7 +632,7 @@ def filter_options(params: Any) -> dict[str, Any]:
         start=None, end=None, **{f: () if f in ("relays", "models") else None for f in _FIELDS.values()}))
     base = base.and_where("m.relay_id IS NOT NULL")  # the runs with a relay, as the join to it
     cols = ", ".join(["m.history_id AS id", "m.started_us AS t", "m.relay_id AS rid", "m.facet_id AS fid",
-                      "m.model_id AS mid"])
+                      "m.model_id AS mid", "m.watch_id AS wid"])
 
     def values(key: str) -> tuple[Any, ...]:
         value = getattr(q, _FIELDS[key])
@@ -616,6 +651,8 @@ def filter_options(params: Any) -> dict[str, Any]:
             on_r[key] = (f"rid IN (SELECT id FROM relay_group WHERE relay_key IN ({marks(len(vs))}))", vs)
         elif key == "model":
             on_r[key] = (f"mid IN (SELECT id FROM model_group WHERE model_key IN ({marks(len(vs))}))", vs)
+        elif key == "watch":
+            on_r[key] = ("wid = ?", vs)
         else:
             column = run_row.COLUMNS[key]
             on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
@@ -624,7 +661,7 @@ def filter_options(params: Any) -> dict[str, Any]:
              if v is not None]
     if times:
         on_r[":time"] = (" AND ".join(c for c, _ in times), tuple(a for _, args in times for a in args))
-    flags = [k for k in on_r if k not in on_c]  # relay, model, time
+    flags = [k for k in on_r if k not in on_c]  # relay, model, watch, time
     on_c.update({k: (f"k{i}", ()) for i, k in enumerate(flags)})
 
     def where(conds: Mapping[str, tuple[str, tuple[Any, ...]]], *skip: str) -> tuple[str, list[Any]]:
@@ -655,6 +692,9 @@ def filter_options(params: Any) -> dict[str, Any]:
     branch("SELECT 'model', g.model_key, NULL, NULL, NULL, s.n"
            " FROM (SELECT mid, COUNT(*) AS n FROM r{w} GROUP BY mid) s JOIN model_group g ON g.id = s.mid",
            on_r, "model")
+    branch("SELECT 'watch', s.wid, NULL, NULL, NULL, s.n"
+           " FROM (SELECT wid, COUNT(*) AS n FROM r{w} GROUP BY wid) s WHERE s.wid IS NOT NULL",
+           on_r, "watch")
     branch("SELECT ':span', MIN(t0), MAX(t1), NULL, NULL, 0 FROM c{w}", on_c, ":time")
     branch("SELECT ':runs', NULL, NULL, NULL, NULL, COALESCE(SUM(n), 0) FROM c{w}", on_c)
     # a dimension key is listed once one selected run has it (in run order: usually the first)
@@ -664,6 +704,7 @@ def filter_options(params: Any) -> dict[str, Any]:
     rows = conn.execute(ctes + " UNION ALL ".join(branches), args).fetchall()
     # what History calls each relay (a relay of no knowledge-base entry: its host)
     labels = history_api.relay_labels(conn)
+    names = watch_labels([int(r[1]) for r in rows if r[0] == "watch"])
 
     out: dict[str, Any] = {"filters": q.canonical(), "keys": list(OPTION_KEYS)}
     lists: dict[str, list[dict[str, Any]]] = {k: [] for k in OPTION_KEYS}
@@ -679,6 +720,11 @@ def filter_options(params: Any) -> dict[str, Any]:
             label = labels.get(str(value)) or history_api.host_of(str(value))
             lists[key].append({"value": str(value), "label": label, "kind": str(b), "in_kb": bool(c),
                                "runs": int(n)})
+        elif key == "watch":
+            name = names.get(int(value))
+            lists[key].append({"value": str(int(value)), "runs": int(n),
+                               **({"label": name} if name is not None else
+                                  {"label": deleted_watch_label(int(value)), "deleted": True})})
         else:
             lists[key].append({"value": str(value), "runs": int(n)})
     for key, items in lists.items():

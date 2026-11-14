@@ -30,6 +30,14 @@ across pages** in the filter panel's foot; the choice is remembered in the
 browser and is never part of a link. Part of
 [#150](https://github.com/mn567250/ekte/issues/150).
 
+### Web UI: widget answers kept by the browser ([#153](https://github.com/mn567250/ekte/issues/153))
+
+History and Analytics leave their answers to the browser's HTTP cache, so a
+reload or a change of page revalidates them (`304`) instead of loading them
+again. `GET /api/history/status` and the report detail `GET /api/history/{id}`
+(also with `?trend=1`) are now cached with an `ETag` like the widget
+endpoints.
+
 ### Day ranges from local midnight, viewer time zone, one `30d` default ([#152](https://github.com/mn567250/ekte/issues/152))
 
 Part of [#150](https://github.com/mn567250/ekte/issues/150). Day ranges
@@ -69,6 +77,18 @@ when the master key is entered or locked. The answer carries an `ETag` and
 version 5), bumped in the same transaction as every write that changes the
 monitor list; `ekte.web.watches.data_version()` reads it.
 `scripts/bench_fixture.py` also writes 200 monitors (`--watches`).
+
+### History and Analytics: the runs of one monitor ([#155](https://github.com/mn567250/ekte/issues/155), part of [#150](https://github.com/mn567250/ekte/issues/150))
+
+A new run filter, **Monitor** (`watch=<id>` in the URL and every History and
+Analytics endpoint), selects the runs of exactly one monitor. Until now only
+`exec=monitor` (all monitors) or relay + model + suite were available, which
+merged monitors that share those settings. It combines with the other filters,
+accepts one positive integer and answers anything else with `400`.
+`GET /api/filters/options` lists `watch` with each monitor's name and run
+count; the runs of a deleted monitor stay filterable, as "Deleted monitor
+#<id>". History's database schema 16 copies each run's monitor onto its run
+row (filled in for the runs already saved when ekte starts).
 
 ### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
 

@@ -57,10 +57,10 @@
  *   url()            the link to this view; copyLink() puts it on the clipboard
  *   render(), setOptions(options), panel (the EkteFilterPanel)
  * EkteFilters.state() / .widgetParams(ns): the same on the page's instance.
- * EkteFilters.fetchWidget(url, { signal }) -> Promise of the JSON: sends
- *   If-None-Match with the ETag last seen for that URL (kept in memory) and
- *   answers a 304 from that copy; an error status rejects with an Error that
- *   has .status and the server's message.
+ * EkteFilters.fetchWidget(url, { signal }) -> Promise of the JSON: a plain
+ *   fetch on the browser's HTTP cache (the server's ETag + no-cache make the
+ *   browser revalidate; a 304 arrives as a 200 with the stored body); an error
+ *   status rejects with an Error that has .status and the server's message.
  * EkteFilters.keyed(key, labels): the text of an i18n key ("metric.score"),
  *   falling back to labels[key] (GET /api/metrics `labels`), then the key.
  * Pure helpers (tested under node): parse, serialise, params, initial,
@@ -69,7 +69,8 @@
  *
  * /api/filters/options (issue 123) is read as { "<key>": [{ value, label?, runs? }] }
  * for the keys of FIELDS ("-" is "(unknown)"), requested with the shared
- * filters; a key it does not list keeps its fixed options.
+ * filters; a key it does not list keeps its fixed options. A watch option
+ * with deleted: true is a monitor that no longer exists ("Deleted monitor #<id>").
  */
 (function () {
   "use strict";
@@ -86,7 +87,7 @@
     relay: ["中转站 / 厂商", "Relay / provider"], model: ["声称模型", "Claimed model"], suite: ["套件", "Suite"],
     mode: ["模式", "Mode"], api: ["协议", "Protocol"], stream: ["探测请求", "Probe requests"],
     detect: ["协议识别", "Protocol detection"], risk: ["风险", "Risk"], min_score: ["最低健康分", "Min. score"],
-    exec: ["执行方式", "Execution"], group: ["分组", "Group by"],
+    exec: ["执行方式", "Execution"], watch: ["监控", "Monitor"], group: ["分组", "Group by"],
     from: ["开始日期", "Start date"], to: ["结束日期", "End date"],
   };
   var V = {
@@ -103,7 +104,8 @@
   /* The URL schema of ekte/web/query.py, in the order fields are shown and
    * keys are written. kind: text | range | select | multi | number;
    * values: the fixed choices (null: free, listed by the options endpoint);
-   * unknown: "-" ("(unknown)") is a valid value; def: the schema default
+   * unknown: "-" ("(unknown)") is a valid value; pattern: what a free value
+   * must look like (watch: a monitor id); def: the schema default
    * (range: the last 30 days on every page; "range=" is all time);
    * page: always remembered per page, never shared ("remembered filters"). */
   var FIELDS = {
@@ -120,6 +122,7 @@
     risk: { kind: "select", def: "", values: ["clean", "low", "medium", "high", "inconclusive"] },
     min_score: { kind: "number", def: "" },
     exec: { kind: "select", def: "", values: ["manual", "monitor"] },
+    watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,18}$/ },
     group: { kind: "select", def: "relay", values: ["relay", "model", "relay_model", "all"], required: true },
   };
   var ORDER = Object.keys(FIELDS);
@@ -168,6 +171,7 @@
     }
     if (f.kind === "text" || f.kind === "multi") return v;
     if (v === UNKNOWN) return f.unknown ? v : undefined;
+    if (f.pattern && !f.pattern.test(v)) return undefined;
     return !f.values || f.values.indexOf(v) >= 0 ? v : undefined;
   }
 
@@ -376,19 +380,15 @@
   }
 
   /* ---------------- fetching ---------------- */
-  var etags = new Map(); // url -> { etag, data }, newest last
-  var MAX_ETAGS = 200;
-
+  /* A plain fetch in the default cache mode: the server answers with an ETag
+   * and Cache-Control: no-cache, so the browser's HTTP cache keeps the answer
+   * (across reloads and pages) and revalidates it on every use; a 304 reaches
+   * the page as a 200 with the stored body. No copy is kept here. */
   function fetchWidget(url, o) {
     o = o || {};
-    var hit = etags.get(url), headers = { Accept: "application/json" };
-    if (hit) headers["If-None-Match"] = hit.etag;
-    return fetch(url, { signal: o.signal, headers: headers, credentials: "same-origin" }).then(function (r) {
-      if (r.status === 304 && hit) {
-        etags.delete(url);
-        etags.set(url, hit);
-        return hit.data;
-      }
+    return fetch(url, {
+      signal: o.signal, credentials: "same-origin", headers: { Accept: "application/json" },
+    }).then(function (r) {
       if (!r.ok) {
         return r.json().catch(function () { return {}; }).then(function (body) {
           var err = new Error((body && body.error) || "HTTP " + r.status);
@@ -396,15 +396,7 @@
           throw err;
         });
       }
-      return r.json().then(function (data) {
-        var tag = r.headers && r.headers.get ? r.headers.get("ETag") : null;
-        etags.delete(url);
-        if (tag) {
-          etags.set(url, { etag: tag, data: data });
-          if (etags.size > MAX_ETAGS) etags.delete(etags.keys().next().value);
-        }
-        return data;
-      });
+      return r.json();
     });
   }
 
@@ -458,7 +450,11 @@
     if (key === "risk") return window.EKTE_I18N && EKTE_I18N.label ? EKTE_I18N.label("RISK_LEVEL", v) : v;
     if (V[key] && V[key][v]) return tr(V[key][v]);
     var o = opts && opts[key];
-    if (o) for (var i = 0; i < o.length; i++) if (o[i].value === v && o[i].label) return o[i].label;
+    if (o) for (var i = 0; i < o.length; i++) if (o[i].value === v && o[i].label) {
+      // a monitor that no longer exists (watch): the server's English label, translated here
+      if (o[i].deleted) return Tf("已删除的监控 #{id}", "Deleted monitor #{id}", { id: v });
+      return o[i].label;
+    }
     return v;
   }
   function num(n) { return window.EKTE_LANG && EKTE_LANG.numFmt ? EKTE_LANG.numFmt().format(n) : String(n); }
