@@ -41,10 +41,11 @@ Key                           Values
                               default zone of the widgets' time buckets. Selects no runs
 ``surface``                   ``chat``, ``embedding``, ``rerank`` (a NULL surface reads as
                               chat); empty: every surface
-``relay``                     a relay key (``relay_map.relay_key``; ``(unknown)`` for runs
-                              without a URL); repeatable
-``model``                     a claimed model (``(unknown)`` for runs without one);
-                              repeatable
+``relay``                     a relay key (``relay_map.relay_key``; ``(unknown)``, or ``-``,
+                              for runs without a URL); repeatable
+``model``                     a claimed model (``(unknown)``, or ``-``, for runs without
+                              one); repeatable. For both, ``-`` is read as the stored
+                              ``(unknown)``: :meth:`Query.canonical` writes ``(unknown)``
 ``suite``, ``mode``, ``api``  the exact stored value, or ``-`` for none
 ``stream``                    the exact ``stream_mode`` (``stream``, ``non_stream``,
                               ``both``), or ``-`` for none
@@ -115,7 +116,7 @@ from ekte.config import SURFACES
 from ekte.models import RiskLevel
 from ekte.scoring import GRADE_SCALE
 from ekte.web import analytics, analytics_store, run_row
-from ekte.web.analytics import ALL_KEY, GROUPS, MIN_RUNS, AnalyticsError, Metric
+from ekte.web.analytics import ALL_KEY, GROUPS, MIN_RUNS, UNKNOWN_RELAY, AnalyticsError, Metric
 from ekte.web.relay_map import GROUP_JOIN_SQL
 
 __all__ = [
@@ -165,7 +166,8 @@ class Query:
     """Parsed, validated filters (see the module docstring for each key).
 
     ``suite``, ``mode``, ``api`` and ``stream`` hold :data:`UNKNOWN` for "no
-    value"; ``relays`` / ``models`` are sorted and unique. ``range`` is set
+    value"; ``relays`` / ``models`` are sorted and unique and hold the stored
+    ``(unknown)`` key for it (``-`` in the URL is read as that). ``range`` is set
     for a day range only (:data:`DAY_RANGES`; ``start`` is its first local
     midnight in ``tz``, ``end`` None); an hour range is resolved into
     ``start`` / ``end``. Build one with :func:`parse_query`, change one with
@@ -334,6 +336,14 @@ def previous_days(start: datetime, days: int, zone: tzinfo) -> datetime:
     return day_start(start.astimezone(zone).date() - timedelta(days=days), zone)
 
 
+def _keys(values: Iterable[str]) -> tuple[str, ...]:
+    """``relay`` / ``model`` values, sorted and unique, :data:`UNKNOWN` read as
+    the stored ``(unknown)`` key (:data:`ekte.web.analytics.UNKNOWN_RELAY`):
+    the runs without a relay URL / claimed model, so ``-`` and ``(unknown)``
+    are one value (and one cache key)."""
+    return tuple(sorted({UNKNOWN_RELAY if v == UNKNOWN else v for v in values}))
+
+
 def parse_query(params: Params, *, now: datetime | None = None) -> Query:
     """Validate request parameters into a :class:`Query` (raises
     :class:`QueryError` naming the key); ``now`` (default: the clock)
@@ -388,8 +398,8 @@ def parse_query(params: Params, *, now: datetime | None = None) -> Query:
     return Query(
         start=start, end=end,
         surface=_choice("surface", single.get("surface"), SURFACES),
-        relays=tuple(sorted(multi["relay"])),
-        models=tuple(sorted(multi["model"])),
+        relays=_keys(multi["relay"]),
+        models=_keys(multi["model"]),
         suite=single.get("suite"), mode=single.get("mode"), api=single.get("api"),
         stream=single.get("stream"),
         detect=_choice("detect", single.get("detect"), (*DETECTS, UNKNOWN)),
