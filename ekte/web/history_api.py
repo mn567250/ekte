@@ -218,12 +218,15 @@ def _focus_outside(conn: sqlite3.Connection, q: Query, rid: int) -> dict[str, An
             "by_range_only": excluded == ["range"], "excluded_by": excluded}
 
 
-def trend_metrics(values: Sequence[str] | None) -> list[Metric]:
+def trend_metrics(values: Sequence[str] | None, *, optional: bool = False) -> list[Metric]:
     """``trend.metrics`` (repeated or comma-separated ids): 1 to
     :data:`~ekte.web.metrics.MAX_TRENDS` distinct ids of
-    :data:`~ekte.web.metrics.HISTORY_TRENDS`, returned in that (button) order."""
+    :data:`~ekte.web.metrics.HISTORY_TRENDS`, returned in that (button) order.
+    ``optional``: no ids (the key absent or empty) is ``[]``, not an error."""
     ids = [part.strip() for v in values or () for part in v.split(",") if part.strip()]
     allowed = ", ".join(HISTORY_TRENDS)
+    if optional and not ids:
+        return []
     if not 1 <= len(ids) <= MAX_TRENDS:
         raise QueryError(f"trend.metrics must name 1 to {MAX_TRENDS} of {allowed}")
     for mid in ids:
@@ -537,13 +540,15 @@ def _heads(conn: sqlite3.Connection, sel: RunSelection, group: str, order: _Orde
 
 def groups(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
     """``GET /api/history/groups``: one page of groups (see
-    ``docs/dev/web-server.md`` for the shape)."""
+    ``docs/dev/web-server.md`` for the shape). Without ``trend.metrics``
+    (absent or empty) no trend is computed: each group's ``trends`` is
+    ``{}`` (History's new-runs count, #194, reads only ``total_runs``)."""
     q, widget = parse_widget("groups", params)
     sort, name, desc = _sort(_one(widget, "groups.sort"), "groups.sort")
     limit = _limit(_one(widget, "groups.limit"), "groups.limit")
     focus = _focus(_one(widget, "groups.focus"), "groups.focus")
     after = _one(widget, "groups.after")
-    wanted = trend_metrics(widget.get("trend.metrics"))
+    wanted = trend_metrics(widget.get("trend.metrics"), optional=True)
     sel = query.select_runs(q)
     order = _Order(name, desc)
     heads = _heads(conn, sel, q.group, order)
@@ -583,12 +588,13 @@ def _describe(conn: sqlite3.Connection, q: Query, sel: RunSelection,
     key_of = {g: h.key for h in page for g in h.gids}
     if q.group != "all":
         sel = sel.and_where(f"{gid} IN ({', '.join('?' * len(key_of))})", *key_of)
-    vals = ", ".join(f"{_run_value_sql(m)} AS v{i}" for i, m in enumerate(wanted))
+    # no trend: only each group's newest run (its summary row)
+    vals = "".join(f", {_run_value_sql(m)} AS v{i}" for i, m in enumerate(wanted))
     cur = conn.execute(
-        f"SELECT g, id, {', '.join(f'v{i}' for i in range(len(wanted)))} FROM ("
-        f"SELECT {gid} AS g, m.history_id AS id, {vals},"
+        f"SELECT g, id{''.join(f', v{i}' for i in range(len(wanted)))} FROM ("
+        f"SELECT {gid} AS g, m.history_id AS id{vals},"
         f" ROW_NUMBER() OVER (PARTITION BY {gid} ORDER BY {_NEWEST}) AS rn {sel.sql})"
-        f" WHERE rn <= {POINTS} ORDER BY g, rn DESC", sel.args)
+        f" WHERE rn <= {POINTS if wanted else 1} ORDER BY g, rn DESC", sel.args)
     points: dict[str, list[list[float]]] = {h.key: [[] for _ in wanted] for h in page}
     latest: dict[str, int] = {}
     for g, rid, *values in cur.fetchall():
