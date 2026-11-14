@@ -45,6 +45,7 @@ PAGES_ENV = "EKTE_A11Y_PAGES"
 TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_history_controls.py": ("history",),
     "test_analytics_view.py": ("analytics",),
+    "test_filter_memory.py": ("history", "analytics"),
     "test_history_paging.py": ("history",),
     "test_history_focus.py": ("history",),
     "test_browser_cache.py": ("history", "analytics"),

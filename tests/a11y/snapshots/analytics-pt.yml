@@ -103,6 +103,8 @@
       - option "Relay × modelo"
       - option "Todos"
     - text: 15 execuções correspondem a estes filtros.
+    - checkbox "Manter os filtros entre páginas" [checked]
+    - text: Manter os filtros entre páginas
     - status
     - button "Copiar a ligação para esta vista"
   - tablist "Vistas da análise":
