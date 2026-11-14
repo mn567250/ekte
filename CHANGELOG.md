@@ -356,6 +356,17 @@ how many saved runs it re-extracts.
 
 ### Fixed
 
+- **History's new-runs check no longer computes a trend it never uses**
+  ([#194](https://github.com/mn567250/ekte/issues/194)). When a run is saved
+  elsewhere, History counts the new runs from `/api/history/groups` with
+  `groups.limit=1`, reading only `total_runs`; the request carried the page's
+  `trend.metrics`, so the server computed one group's trend on every data
+  change in every open History tab. `/api/history/groups` now accepts a
+  request without `trend.metrics` (absent or empty) and then computes no
+  trend (`trend_metrics: []`, each group's `trends: {}`); the count request
+  sends no `trend.*` key and stays a cached URL (ETag, 304). The list request
+  computes its trends as before. New budget case: "groups new-runs count".
+
 - **A proxy that refuses the tunnel to the relay is kept as evidence and named
   for what it says** ([#175](https://github.com/mn567250/ekte/issues/175)).
   Behind an HTTPS proxy, a `CONNECT` the proxy answered with an error left only
