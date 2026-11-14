@@ -683,7 +683,7 @@
     if (newRuns.n != null) { newRuns.n = null; paintNewRuns(false); unsay(); }
   }
   // the groups' answer for the current filters, for its total_runs only: one
-  // group and no trend.* keys, so the server computes no trend (#194)
+  // group and no trend.* keys, so the server computes no trend (issue 194)
   function totalUrl() {
     return "/api/history/groups?" + qs(F.widgetParams(), kv("groups.limit", 1));
   }
