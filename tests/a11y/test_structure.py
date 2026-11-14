@@ -280,6 +280,17 @@ IDENTIFY_JS = """
       if (!key) for (const a of el.attributes) {
         if (a.name.startsWith('data-') && !NOT.test(a.name) && /^[a-z][a-z_-]*$/i.test(a.value)) { key = `[${a.name}=${a.value}]`; break; }
       }
+      // one option of a choice (a filter's relay / model checkbox): its value
+      // is part of what it does, so "relay = a" and "relay = b" are two
+      // controls, compared only with the same option on other pages
+      let count = null;
+      if (key && key.startsWith('[') && el.matches('input[type=checkbox][value], input[type=radio][value]')) {
+        key += `[value=${el.value}]`;
+        // the option's count (filters.js .ekf-n: matching runs or monitors) is
+        // the data's state, not the control's identification
+        const n = el.closest('label') && el.closest('label').querySelector('.ekf-n');
+        count = n ? n.textContent.replace(/\\s+/g, ' ').trim() : null;
+      }
       if (!key && el.id && !/\\d/.test(el.id)) key = '#' + el.id;
       if (!key && typeof el.className === 'string') {
         const cls = el.className.trim().split(/\\s+/).filter(c => c && !STYLE.test(c)).sort();
@@ -289,7 +300,8 @@ IDENTIFY_JS = """
       const lm = el.closest('nav, header, footer, main, aside, dialog, [role=dialog], [role=navigation], [role=banner], [role=contentinfo]');
       const where = lm ? (lm.getAttribute('role') || lm.tagName.toLowerCase()) : 'page';
       const vn = axe.utils.getNodeFromTree(el);
-      const name = (vn ? axe.commons.text.accessibleTextVirtual(vn) : '').replace(/\\s+/g, ' ').trim();
+      let name = (vn ? axe.commons.text.accessibleTextVirtual(vn) : '').replace(/\\s+/g, ' ').trim();
+      if (count && name.endsWith(count)) name = name.slice(0, -count.length).trim();
       const role = (vn && axe.commons.aria.getRole(vn)) || el.tagName.toLowerCase();
       out.push({ key: `${key} in ${where}`, role, name });
     }
@@ -310,7 +322,10 @@ def test_consistent_identification(open_page, lang: str) -> None:
     landmark; one page may use several (the logo and the "Audit" link both go
     to /, the audit form has two model pickers). Two pages clash when they
     share no (role, name) for the same function: the same thing is called
-    differently."""
+    differently. An option of a choice (a filter checkbox) is one function per
+    value: "relay a" on History is compared with "relay a" on Monitors, by
+    its label without the option's count (how many runs or monitors match is
+    the data's state, not the control's name)."""
     found: dict[str, dict[str, set[tuple[str, str]]]] = {}
     for page_id, path in PAGES.items():
         page = open_page(path, lang)
