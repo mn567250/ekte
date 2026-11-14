@@ -151,6 +151,23 @@ days: today and the 29 days before it, from midnight in your time zone (**All
 time** shows every run). A shared link keeps the period, not the dates: each
 viewer sees it in their own time zone.
 
+**Filters across pages, live updates and links.** The filters you choose are
+remembered across **History**, **Analytics** and **Monitors**: a relay picked
+on one page is already chosen on the next, and each page keeps the filters
+only it has (such as the risk on History) for itself. Switch off **Keep
+filters across pages** at the foot of the filter panel to give each page its
+own filters. The filters of a link always win over the remembered ones. An
+open page notices new data by itself: while the tab is visible it asks every
+10 seconds whether anything changed (a hidden tab asks nothing). **Analytics**
+then updates in place, quietly; **History** keeps its list and shows "1 new
+run" (or "N new runs") with **Show**, or "History changed" with **Refresh**;
+**Monitors** follows the progress of a running monitor live. The pages link to
+each other with the filters filled in: **Open in Analytics** on every History
+group and every monitor, **Open in History** and **From run #n** on a monitor
+(both open that exact run, also when it is older than the period History
+shows), **Monitors for this relay and model** on a History group, and
+**Monitors for these filters** in the filter panel of Analytics.
+
 **Success, error, 429 and impaired rates.** Every request ekte sent to the
 relay during a run has exactly one outcome: a success, a relay error (a
 timeout while waiting for the relay, a 5xx or 4xx answer, or another broken

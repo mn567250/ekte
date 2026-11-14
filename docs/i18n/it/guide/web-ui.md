@@ -168,6 +168,26 @@ giorni: oggi e i 29 giorni precedenti, dalla mezzanotte del tuo fuso orario
 (**Tutto il periodo** mostra ogni esecuzione). Un link condiviso conserva il
 periodo, non le date: ognuno lo vede nel proprio fuso orario.
 
+**Filtri tra le pagine, aggiornamenti dal vivo e link.** I filtri scelti
+vengono ricordati tra **Cronologia**, **Analisi** e **Monitor**: un relay
+scelto in una pagina è già selezionato nella successiva, e i filtri che ha
+solo una pagina (come il rischio nella Cronologia) restano a quella pagina.
+Disattiva **Mantieni i filtri tra le pagine**, in fondo al pannello dei
+filtri, per dare a ogni pagina filtri propri. I filtri di un link hanno sempre
+la precedenza su quelli ricordati. Una pagina aperta si accorge da sola dei
+nuovi dati: finché la scheda è visibile, chiede ogni 10 secondi se qualcosa è
+cambiato (una scheda nascosta non chiede nulla). **Analisi** si aggiorna
+allora sul posto, senza avvisi; la **Cronologia** mantiene il suo elenco e
+mostra «1 nuova esecuzione» (o «N nuove esecuzioni») con **Mostra**, oppure
+«Cronologia cambiata» con **Aggiorna**; **Monitor** segue dal vivo
+l’avanzamento di un monitor in esecuzione. Le pagine si collegano tra loro con
+i filtri già compilati: **Apri in Analisi** su ogni gruppo della Cronologia e
+su ogni monitor, **Apri nella cronologia** e **Dall’esecuzione #n** su un
+monitor (entrambi aprono proprio quell’esecuzione, anche se è più vecchia del
+periodo mostrato dalla Cronologia), **Monitor di questo relay e modello** su
+un gruppo della Cronologia e **Monitor per questi filtri** nel pannello dei
+filtri di Analisi.
+
 **Tassi di successo, di errore, di 429 e di richieste compromesse.** Ogni richiesta che ekte invia al relay durante un'esecuzione ha esattamente un esito: un successo, un errore del relay (un timeout in attesa del relay, una risposta 5xx o 4xx o un'altra risposta difettosa), un limite di frequenza (HTTP 429) o un errore che non ha mai raggiunto il relay (la rete tra te e il relay, o ekte stesso). I tentativi ripetuti contano una volta. Il relay è giudicato solo sulle richieste che lo hanno raggiunto: il **tasso di successo**, il **tasso di errore** e il **tasso di 429** sono successi, errori del relay e limiti di frequenza divisi per quelle richieste, e sommano sempre al 100%. La **quota compromessa** è la parte di tutte le richieste fallite prima di raggiungere il relay: dice quanto ci si può fidare dell'esecuzione stessa, non quanto è buono il relay; se è alta, ripeti l'audit. Su più esecuzioni i tassi sono aggregati (tutte le richieste insieme), così un'esecuzione cattiva tra molte buone resta visibile (nove esecuzioni allo 0% e una al 40% danno circa il 4%, non lo 0%); punteggi, latenze, velocità e rapporti di fatturazione sono la mediana delle esecuzioni. Cronologia, Analisi e il report mostrano gli stessi numeri per le stesse esecuzioni, e una singola esecuzione mostra esattamente i valori del suo report. Il controllo di affidabilità del report ha un tasso proprio («Tasso di successo del controllo di affidabilità»), che conta solo per il punteggio.
 
 ## Lingue

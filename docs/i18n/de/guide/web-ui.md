@@ -172,6 +172,25 @@ Tagen: heute und die 29 Tage davor, ab Mitternacht in deiner Zeitzone
 (**Gesamter Zeitraum** zeigt jeden Lauf). Ein geteilter Link behält den
 Zeitraum, nicht die Daten: Jeder sieht ihn in seiner eigenen Zeitzone.
 
+**Filter über Seiten hinweg, Live-Aktualisierung und Links.** Die gewählten
+Filter werden zwischen **Verlauf**, **Analyse** und **Überwachung** gemerkt:
+Ein auf einer Seite gewähltes Relay ist auf der nächsten schon ausgewählt, und
+Filter, die nur eine Seite hat (etwa das Risiko im Verlauf), behält jede Seite
+für sich. Wer **Filter über Seiten hinweg behalten** unten im Filterbereich
+ausschaltet, gibt jeder Seite eigene Filter. Die Filter eines Links haben
+immer Vorrang vor den gemerkten. Eine geöffnete Seite bemerkt neue Daten
+selbst: Solange der Tab sichtbar ist, fragt sie alle 10 Sekunden, ob sich
+etwas geändert hat (ein verborgener Tab fragt gar nicht). **Analyse**
+aktualisiert sich dann still an Ort und Stelle; der **Verlauf** behält seine
+Liste und zeigt „1 neuer Lauf“ (oder „N neue Läufe“) mit **Anzeigen** oder
+„Verlauf geändert“ mit **Aktualisieren**; **Überwachung** zeigt den
+Fortschritt eines laufenden Monitors live. Die Seiten verlinken einander mit
+vorausgefüllten Filtern: **In Analyse öffnen** bei jeder Gruppe im Verlauf und
+bei jedem Monitor, **Im Verlauf öffnen** und **Aus Lauf #n** bei einem Monitor
+(beide öffnen genau diesen Lauf, auch wenn er älter ist als der Zeitraum, den
+der Verlauf zeigt), **Monitore für dieses Relay und Modell** bei einer Gruppe
+im Verlauf und **Monitore für diese Filter** im Filterbereich der Analyse.
+
 **Erfolgs-, Fehler-, 429- und Störungsquote.** Jede Anfrage, die ekte während eines Laufs an das Relay schickt, hat genau ein Ergebnis: Erfolg, Relay-Fehler (Zeitüberschreitung beim Warten auf das Relay, eine 5xx- oder 4xx-Antwort oder eine andere fehlerhafte Antwort), Ratenbegrenzung (HTTP 429) oder ein Fehler, der das Relay nie erreicht hat (das Netz zwischen Ihnen und dem Relay oder ekte selbst). Wiederholte Versuche zählen einmal. Bewertet wird das Relay nur nach den Anfragen, die es erreicht haben: **Erfolgsquote**, **Fehlerquote** und **429-Quote** sind Erfolge, Relay-Fehler bzw. Ratenbegrenzungen geteilt durch diese Anfragen und ergeben zusammen immer 100 %. Der **Störungsanteil** ist der Anteil aller Anfragen, die vor dem Relay scheiterten: Er sagt, wie weit man dem Lauf selbst trauen kann, nicht wie gut das Relay ist; ist er hoch, wiederholen Sie die Prüfung. Über mehrere Läufe werden die Quoten zusammengezählt (alle Anfragen gemeinsam), sodass ein schlechter Lauf unter vielen guten sichtbar bleibt (neun Läufe mit 0 % und einer mit 40 % ergeben etwa 4 %, nicht 0 %); Bewertungen, Latenzen, Geschwindigkeiten und Abrechnungsverhältnisse sind der Median der Läufe. Verlauf, Analysen und Bericht zeigen für dieselben Läufe dieselben Zahlen, und ein einzelner Lauf zeigt genau die Werte seines Berichts. Die Zuverlässigkeitsprüfung im Bericht hat eine eigene Quote („Erfolgsquote der Zuverlässigkeitsprüfung“), die nur in die Bewertung eingeht.
 
 ## Sprachen

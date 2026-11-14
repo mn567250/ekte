@@ -169,6 +169,26 @@ Example Relay»), así una vista compartida dice lo que muestra. **Historial** y
 conserva el periodo, no las fechas: cada persona lo ve en su propia zona
 horaria.
 
+**Filtros entre páginas, actualización en directo y enlaces.** Los filtros que
+eliges se recuerdan entre **Historial**, **Analítica** y **Monitores**: un
+relay elegido en una página ya está elegido en la siguiente, y los filtros que
+solo tiene una página (como el riesgo en el Historial) se quedan en esa
+página. Desactiva **Mantener los filtros entre páginas**, al pie del panel de
+filtros, para que cada página tenga sus propios filtros. Los filtros de un
+enlace siempre prevalecen sobre los recordados. Una página abierta detecta los
+datos nuevos por sí sola: mientras la pestaña está visible, pregunta cada 10
+segundos si algo cambió (una pestaña oculta no pregunta nada). **Analítica**
+se actualiza entonces en el sitio, sin avisos; el **Historial** conserva su
+lista y muestra «1 ejecución nueva» (o «N ejecuciones nuevas») con
+**Mostrar**, o «El historial ha cambiado» con **Actualizar**; **Monitores**
+sigue en directo el progreso de un monitor en ejecución. Las páginas se
+enlazan entre sí con los filtros ya rellenados: **Abrir en Analítica** en cada
+grupo del Historial y en cada monitor, **Abrir en el historial** y **De la
+ejecución #n** en un monitor (ambos abren exactamente esa ejecución, también
+si es más antigua que el periodo que muestra el Historial), **Monitores de
+este relay y modelo** en un grupo del Historial y **Monitores de estos
+filtros** en el panel de filtros de Analítica.
+
 **Tasas de éxito, de error, de 429 y de peticiones afectadas.** Cada petición que ekte envía al relay durante una ejecución tiene exactamente un resultado: éxito, error del relay (un tiempo de espera agotado, una respuesta 5xx o 4xx u otra respuesta defectuosa), límite de tasa (HTTP 429) o un fallo que nunca llegó al relay (la red entre usted y el relay, o el propio ekte). Los reintentos cuentan una vez. El relay se juzga solo por las peticiones que le llegaron: la **tasa de éxito**, la **tasa de error** y la **tasa de 429** son los éxitos, los errores del relay y los límites de tasa divididos entre esas peticiones, y siempre suman el 100 %. La **proporción afectada** es la parte de todas las peticiones que falló antes de llegar al relay: indica cuánto se puede confiar en la propia ejecución, no lo bueno que es el relay; si es alta, repita la auditoría. Sobre varias ejecuciones las tasas se agregan (todas las peticiones juntas), de modo que una mala ejecución entre muchas buenas sigue viéndose (nueve ejecuciones al 0 % y una al 40 % dan alrededor del 4 %, no el 0 %); puntuaciones, latencias, velocidades y ratios de facturación son la mediana de las ejecuciones. Historial, Analítica y el informe muestran las mismas cifras para las mismas ejecuciones, y una sola ejecución muestra exactamente los valores de su informe. La comprobación de fiabilidad del informe tiene su propia tasa («Tasa de éxito de la comprobación de fiabilidad»), que solo cuenta para la puntuación.
 
 ## Idiomas

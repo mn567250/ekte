@@ -28,6 +28,7 @@ Endpoints:
   GET  /api/jobs             queued and running audits (and running monitors:
                              id monitor-<id>, watch_id, status queued|running,
                              progress), recently finished ones too, with progress
+  GET  /api/jobs/{id}        one job
   GET  /api/jobs/{id}/events the job's events as SSE: the log so far, then live
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
@@ -95,6 +96,18 @@ relay text scrubbed), so nothing secret crosses to the browser.
 Every audit runs as a job (ekte/web/jobs.py): audits of the same relay are
 queued one after another so they never skew each other's measurements;
 different relays run in parallel. A job is detached from the page that queued it.
+
+The pages follow one pattern (#150; docs/dev/web-server.md, docs/dev/ui.md).
+Every GET a page component uses (metrics, filter options, the Analytics
+widgets, History's groups, runs, status and report detail, the monitors and
+their options) is cached (ekte/web/cache.py: ETag, Cache-Control: no-cache,
+304 while the data is unchanged) and takes the shared filter keys of
+ekte/web/query.py (watch=<id> included) plus tz, the viewer's time zone, which
+places day ranges (today and the N - 1 days before, from local midnight) and
+every time bucket. Nothing is polled on a timer but GET /api/version (every
+10 s while a tab is visible, static/v2/live.js): a changed `data` token makes
+the pages refetch their cached URLs, a changed `live` token makes them read
+/api/jobs again, and a running job's progress follows /api/jobs/{id}/events.
 """
 
 from __future__ import annotations

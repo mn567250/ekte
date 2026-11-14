@@ -155,7 +155,7 @@ not given; `-` means "(unknown)", i.e. the run has no value.
 |---|---|---|
 | `from`, `to` | ISO 8601 (naive = UTC) against the run's `started_at`; `to` exclusive | Analytics `from` / `to` |
 | `range` | `24h`, `7d`, `30d`, `90d`, `365d`. A **day range** (`7d` … `365d`, N days) is today plus the previous N − 1 calendar days in `tz`: `from` = 00:00 local of the first day (`zoneinfo` calendar days, so a range across a DST change is N days, not N × 24 h), no `to`. **`24h`** is exact: `to` = now rounded up to the next minute, `from` = `to` − 24 h. Not with `to`; a day range takes `from` only in its resolved form (a local midnight in `tz`, as `Query.canonical()` writes it). The pages default to `30d` (`filters.js` `FIELDS`); `range=` (empty) is all time | History `days`, Analytics range presets |
-| `tz` | the viewer's time zone, an IANA name (default `UTC`; unknown: 400). Selects no runs: it places day ranges and is the default zone of `trend.tz`, `heat.tz` and `errors.tz`. `EkteFilters.widgetParams()` sends the browser's zone with every widget request; the page URL never holds it, so a shared link resolves in each viewer's zone | the pages' `trend.tz` / `heat.tz` / `errors.tz` |
+| `tz` | the viewer's time zone, an IANA name (default `UTC`; unknown: 400). Selects no runs: it places day ranges and is the zone of every time bucket (the widgets have no zone key of their own: `trend.tz`, `heat.tz` and `errors.tz` went with [#161](https://github.com/mn567250/ekte/issues/161) and are now a 400). `EkteFilters.widgetParams()` sends the browser's zone with every widget request; the page URL never holds it, so a shared link resolves in each viewer's zone | the pages' `trend.tz` / `heat.tz` / `errors.tz` |
 | `surface` | `chat`, `embedding`, `rerank` (NULL reads as chat); empty: all surfaces | both |
 | `relay` | a relay key (`relay_map.relay_key`, `(unknown)` without URL), repeatable | both |
 | `model` | a claimed model (`(unknown)` without one), repeatable | both |
@@ -436,8 +436,8 @@ request (same denominator). The counts have `n` = runs and are always judged.
 ### `GET /api/analytics/series`
 
 One metric per group (`group`) over time: `trend.metric` (default `score`;
-`dim:<key>` too), `trend.bucket` `hour|day|week` (default `day`), `trend.tz`
-(IANA, default the shared `tz`), `trend.key` (repeatable, up to 4 series keys; default the
+`dim:<key>` too), `trend.bucket` `hour|day|week` (default `day`; buckets in the shared `tz`),
+`trend.key` (repeatable, up to 4 series keys; default the
 busiest groups). The answer is `SeriesResult.public()`: `metric`
 (`Metric.public()`), `group`, `bucket`, `tz`, `span_days`, `series` (a group
 plus `n`, `coverage`, `mixed` {suite, stream_mode, api}, `annotations`
@@ -483,7 +483,7 @@ median and p25 / p75, so the forecast joins the history); `points` are the
 The weekday × time-of-day grid of one metric: `heat.metric`, `heat.block`
 (hours per row 1, 2, 3, 4, 6), `heat.fold` (`week`, `4weeks`, `month_week`;
 falls back to `week` until the runs cover 90 / 180 days: `fold` vs
-`fold_requested`), `heat.tz` (default the shared `tz`), `heat.key` (one series key of `group`; default
+`fold_requested`), `heat.key` (one series key of `group`; default
 all selected runs as one series of group `all`). Same shape as `series` with
 `bucket: "dow_hour"`, `block`, `fold`; each point has `dow` (1 = Monday),
 `hour`, `hours` (block > 1) and `week` (folds).
@@ -510,7 +510,7 @@ read from each run's row: `history_metrics.outcome_<class>`;
 classes `success`, `rate_limited`, `relay_timeout`, `relay_5xx`, `relay_4xx`,
 `relay_other`, `network`, `local`), per group (`group`), in total and per
 time bucket of the run's start: `errors.bucket` `hour|day|week|dow_hour`
-(default `day`), `errors.block` (dow_hour), `errors.tz` (default the shared `tz`); `errors.run=<id>`
+(default `day`), `errors.block` (dow_hour), buckets in the shared `tz`; `errors.run=<id>`
 adds that run's per-minute timeline from its request records (`OUTCOME_SQL`:
 `errorclass.outcome()` in SQL over `error_class`, `error_type`, `status_code`,
 `retried`, `phase`; repeated attempts and `param_retry` never count).
