@@ -275,7 +275,7 @@ def test_group_opens_in_analytics(open_page, history_server) -> None:
     behind (#159)."""
     page = _history(open_page, history_server, query=TWO + "&surface=chat&range=7d&q=model-")
     issues: list[str] = []
-    links = page.locator("#hist .group .glink")
+    links = page.locator('#hist .group .glink[href^="/analytics"]')
     names = [links.nth(i).get_attribute("aria-label") or "" for i in range(links.count())]
     if len(names) != 2 or len(set(names)) != 2:
         issues.append(f"the group links are not two with unique names: {names}")
