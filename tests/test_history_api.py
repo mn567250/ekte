@@ -360,12 +360,36 @@ def test_one_run_trends_equal_the_group_and_the_aggregator(data, client):
 # --------------------------------------------------------------------------- #
 # Parameters
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("value", [None, "", ",", "score,grade,ttft_p50", "nope", "score,score",
-                                   "duration"])
+@pytest.mark.parametrize("value", ["score,grade,ttft_p50", "nope", "score,score", "duration"])
 def test_trend_metrics_must_be_one_or_two_trend_ids(seeded, client, value):
-    params = {} if value is None else {"trend.metrics": value}
-    r = client.get("/api/history/groups", params=params)
+    r = client.get("/api/history/groups", params={"trend.metrics": value})
     assert r.status_code == 400 and "trend.metrics" in r.json()["error"]
+
+
+@pytest.mark.parametrize("value", [None, "", ","])
+def test_groups_without_trend_keys_compute_no_trend(seeded, client, monkeypatch, value):
+    """#194: History's new-runs count (no trend.* key, or trend.metrics empty)
+    answers total_runs and the groups with no trend, and never computes one."""
+    full = history_api.groups(_conn(), {"trend.metrics": "score"})
+    calls: list[str] = []
+    real = history_api._trend
+    monkeypatch.setattr(history_api, "_trend", lambda m, *a: calls.append(m.id) or real(m, *a))
+    params = {"groups.limit": "1", **({} if value is None else {"trend.metrics": value})}
+    out = history_api.groups(_conn(), params)
+    assert calls == []
+    assert out["trend_metrics"] == [] and out["total_runs"] == full["total_runs"] > 0
+    assert out["total_groups"] == full["total_groups"]
+    [g] = out["groups"]
+    assert g["trends"] == {}
+    want = full["groups"][0]
+    assert {k: v for k, v in g.items() if k != "trends"} == {k: v for k, v in want.items() if k != "trends"}
+    # the endpoint: cached with an ETag, a 304 until a write
+    url = "/api/history/groups?groups.limit=1" + ("" if value is None else f"&trend.metrics={value}")
+    first, status = _revalidates(client, url)
+    assert first.json()["total_runs"] == full["total_runs"] and status == 304
+    _save(None, score=10.0)
+    again = client.get(url, headers={"If-None-Match": first.headers["etag"]})
+    assert again.status_code == 200 and again.json()["total_runs"] == full["total_runs"] + 1
 
 
 def test_trend_metrics_forms(seeded):
@@ -612,6 +636,8 @@ def test_benchmark_20k_runs_under_budget(bench_data, monkeypatch):
 
     cases = {
         "groups -time": lambda: history_api.groups(conn, t),
+        # History's new-runs count (#194): one group, no trend
+        "groups new-runs count": lambda: history_api.groups(conn, {"groups.limit": "1"}),
         "groups page 2": lambda: history_api.groups(conn, {**t, "groups.after": first["after"]}),
         "groups by relay, score": lambda: history_api.groups(conn, {**t, "group": "relay",
                                                                      "groups.sort": "score"}),

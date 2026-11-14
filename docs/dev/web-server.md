@@ -572,7 +572,7 @@ by host, port and path (no scheme, no trailing slash). Computed once per
 
 | Key | Values |
 |---|---|
-| `trend.metrics` | required: 1 or 2 ids of `HISTORY_TRENDS` (`score`, `grade`, `latency_p50`, `ttft_p50`, `decode_tps`, `error_rate`), comma-separated or repeated; 0, 3, a duplicate or another id is a 400. Answered in `HISTORY_TRENDS` order |
+| `trend.metrics` | 1 or 2 ids of `HISTORY_TRENDS` (`score`, `grade`, `latency_p50`, `ttft_p50`, `decode_tps`, `error_rate`), comma-separated or repeated; 3, a duplicate or another id is a 400. Answered in `HISTORY_TRENDS` order. Absent or empty: no trend is computed (`trend_metrics: []`, each group's `trends: {}`), the cheap answer History's new-runs count reads `total_runs` from (#194) |
 | `groups.sort` | see **Order** |
 | `groups.limit` | 1–200, default 20 |
 | `groups.after` | the previous page's `after` |

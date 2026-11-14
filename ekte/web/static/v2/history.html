@@ -683,8 +683,10 @@
     if (newRuns.n != null) { newRuns.n = null; paintNewRuns(false); unsay(); }
   }
   // the groups' answer for the current filters, for its total_runs only: one
-  // group (with its trends: the endpoint always computes them)
-  function totalUrl() { return groupsUrl({ limit: 1 }); }
+  // group and no trend.* keys, so the server computes no trend (issue 194)
+  function totalUrl() {
+    return "/api/history/groups?" + qs(F.widgetParams(), kv("groups.limit", 1));
+  }
   // ev: the ekte:data event (detail.after: the new data version); none after a load
   function checkNewRuns(ev) {
     if (!state.groups || state.error != null) return;

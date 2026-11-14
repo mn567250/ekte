@@ -27,6 +27,7 @@ import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Page
@@ -142,9 +143,17 @@ def test_history_shows_new_runs_notice_once(browser: Browser, own_server: EktePr
         assert rows.count() == 1
         fresh = page.locator("#fresh")
         assert fresh.is_hidden()
+        counts: list[str] = []  # the new-runs count requests (groups.limit=1)
+        page.on("request", lambda r: counts.append(r.url)
+                if "/api/history/groups" in r.url and "groups.limit=1" in r.url else None)
         _save_run(own_server.data_dir)
         fresh.wait_for(state="visible", timeout=WITHIN_MS)
         assert fresh.locator("b").inner_text() == "1 new run"
+        # #194: the count asks for no trend, so the server computes none
+        assert counts, "no new-runs count request"
+        for url in counts:
+            keys = parse_qs(urlparse(url).query)
+            assert not [k for k in keys if k.startswith("trend.")], url
         assert fresh.get_attribute("role") is None  # #live announces it, not the notice itself
         button = fresh.get_by_role("button", name="Show")
         assert button.is_visible()
