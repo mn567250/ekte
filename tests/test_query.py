@@ -218,6 +218,97 @@ def test_tz_selects_no_runs_and_is_left_out_when_utc():
     assert parse_query({"range": "7d", "from": "2026-01-01T00:00:00+01:00", "tz": "Europe/Berlin"}).days == 7
 
 
+@pytest.mark.parametrize("tz, value, local", [
+    # east of UTC: 00:00 Berlin is 23:00 / 22:00 UTC the day before
+    ("Europe/Berlin", "2026-11-01", datetime(2026, 11, 1, tzinfo=BERLIN)),
+    ("Europe/Berlin", "2026-07-01", datetime(2026, 7, 1, tzinfo=BERLIN)),
+    # west of UTC: 00:00 Los Angeles is 07:00 / 08:00 UTC the same day
+    ("America/Los_Angeles", "2026-11-01", datetime(2026, 11, 1, tzinfo=LA)),
+    ("America/Los_Angeles", "2026-01-15", datetime(2026, 1, 15, tzinfo=LA)),
+    # the day of a DST change starts at the offset in force at its midnight
+    ("Europe/Berlin", "2026-10-25", datetime(2026, 10, 25, tzinfo=BERLIN)),  # +02:00, ends +01:00
+    ("Europe/Berlin", "2026-03-29", datetime(2026, 3, 29, tzinfo=BERLIN)),  # +01:00, ends +02:00
+    ("America/Los_Angeles", "2026-03-08", datetime(2026, 3, 8, tzinfo=LA)),  # -08:00, ends -07:00
+    ("UTC", "2026-11-01", datetime(2026, 11, 1, tzinfo=UTC)),
+])
+def test_a_bare_date_is_local_midnight_in_tz(tz, value, local):
+    zone = ZoneInfo(tz)
+    end = local.date() + timedelta(days=3)
+    q = parse_query({"from": value, "to": end.isoformat(), "tz": tz})
+    assert q.start == local.astimezone(UTC)
+    assert q.start.astimezone(zone).time() == datetime.min.time()
+    # to is exclusive and read the same way: 00:00 local of that day
+    assert q.end == datetime.combine(end, datetime.min.time(), tzinfo=zone).astimezone(UTC)
+    # the cache key holds the resolved UTC bounds plus tz, and parses back to the same query
+    canon = q.canonical()
+    assert canon["from"] == query.analytics_store.format_ts(local)
+    assert canon["to"] == query.analytics_store.format_ts(q.end)
+    assert canon.get("tz") == (None if tz == "UTC" else tz) and parse_query(q.params()) == q
+
+
+def test_a_bare_date_range_across_a_dst_change_is_calendar_days():
+    # Oct 25 2026 in Berlin has 25 hours: [Oct 25, Oct 26) local is not 24 h
+    q = parse_query({"from": "2026-10-25", "to": "2026-10-26", "tz": "Europe/Berlin"})
+    assert q.end - q.start == timedelta(hours=25)
+    q = parse_query({"from": "2026-03-08", "to": "2026-03-09", "tz": "America/Los_Angeles"})
+    assert q.end - q.start == timedelta(hours=23)
+    # the same dates in two zones are two queries (two cache keys)
+    a = parse_query({"from": "2026-11-01", "tz": "Europe/Berlin"}).canonical()
+    b = parse_query({"from": "2026-11-01", "tz": "America/Los_Angeles"}).canonical()
+    assert a["from"] != b["from"] and a["tz"] != b["tz"]
+
+
+@pytest.mark.parametrize("tz", ["UTC", "Europe/Berlin", "America/Los_Angeles"])
+def test_times_and_offsets_are_kept_whatever_tz(tz):
+    cases = {
+        "2026-11-01T00:00:00+02:00": datetime(2026, 10, 31, 22, tzinfo=UTC),  # History's widened from
+        "2026-11-01T05:30:00-08:00": datetime(2026, 11, 1, 13, 30, tzinfo=UTC),
+        "2026-11-01T00:00:00Z": datetime(2026, 11, 1, tzinfo=UTC),
+        "2026-11-01T00:00": datetime(2026, 11, 1, tzinfo=UTC),  # a time without an offset: UTC
+        "2026-11-01T12:00:00.000000+00:00": datetime(2026, 11, 1, 12, tzinfo=UTC),  # canonical form
+    }
+    for value, want in cases.items():
+        assert parse_query({"from": value, "tz": tz}).start == want, value
+        assert parse_query({"to": value, "tz": tz}).end == want, value
+    # a day range takes from only as its resolved form; a bare date in tz is that form
+    assert parse_query({"range": "7d", "from": "2026-01-01", "tz": tz}).days == 7
+    if tz != "UTC":
+        with pytest.raises(QueryError, match="range cannot be combined"):
+            parse_query({"range": "7d", "from": "2026-01-01T00:00:00+00:00", "tz": tz})
+    # a date at the edge of what a datetime holds is a 400, not a crash
+    with pytest.raises(QueryError, match="from must be an ISO 8601"):
+        parse_query({"from": "0001-01-01", "tz": "Asia/Tokyo"})
+
+
+def test_a_widget_with_a_bare_date_and_tz_includes_a_run_just_after_local_midnight(data):
+    from fastapi.testclient import TestClient
+
+    from ekte.web import analytics_widgets, cache
+    from ekte.web.server import create_app
+
+    # 00:30 in Berlin on Nov 1 is Oct 31, 23:30 UTC; 23:30 in Berlin on Oct 31 is the day before
+    inside = _save(datetime(2026, 11, 1, 0, 30, tzinfo=BERLIN))
+    _save(datetime(2026, 10, 31, 23, 30, tzinfo=BERLIN))
+    cache.default_cache.clear()
+    analytics_widgets.SURFACE_CACHE.clear()
+    client = TestClient(create_app(), base_url="http://localhost")
+    params = {"from": "2026-11-01", "to": "2026-11-02", "tz": "Europe/Berlin"}
+    out = client.get("/api/analytics/summary", params=params)
+    assert out.status_code == 200, out.text
+    body = out.json()
+    assert body["runs"] == 1 and body["from"] == "2026-10-31T23:00:00.000000+00:00"
+    groups = client.get("/api/history/groups", params={**params, "trend.metrics": "score"})
+    assert groups.status_code == 200, groups.text
+    (group,) = groups.json()["groups"]
+    assert group["runs"] == 1
+    runs = client.get("/api/history/runs", params={**params, "group.key": group["key"]})
+    assert runs.status_code == 200, runs.text
+    assert [r["id"] for r in runs.json()["rows"]] == [inside]
+    # read as UTC (the old behaviour) the same dates would miss both runs: both are on Oct 31 in UTC
+    utc = client.get("/api/analytics/summary", params={**params, "tz": "UTC"}).json()
+    assert utc["runs"] == 0 and utc["from"] == "2026-11-01T00:00:00.000000+00:00"
+
+
 @pytest.mark.parametrize("params, message", [
     ({"color": "red"}, "unknown parameter 'color'"),
     ({"days": "7"}, "unknown parameter 'days'"),
