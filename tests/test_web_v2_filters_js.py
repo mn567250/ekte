@@ -534,3 +534,83 @@ def test_a_change_on_history_keeps_the_common_default_range():
       return [JSON.parse(s.getItem("ekte.v2.filters.shared")).range, open(ana, "", s).state.range];
     """)
     assert got == ["30d", "30d"]
+
+
+# --------------------------------------------------------------------------- #
+# the page registry and the link builder (#159)
+# --------------------------------------------------------------------------- #
+def test_pages_hold_the_field_matrix():
+    pages = run("return F.PAGES;")
+    assert pages == {
+        "history": ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk",
+                    "min_score", "range", "exec", "watch"],
+        "analytics": ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
+        "watches": ["q", "surface", "relay", "model", "suite", "api", "stream"],
+    }
+    assert all(k in ALL for keys in pages.values() for k in keys)
+    # the pages create their panels from the registry, with no list of their own
+    for page, name in (("history", "FLD"), ("analytics", "FIELDS")):
+        src = (STATIC / f"{page}.html").read_text(encoding="utf-8")
+        assert f"var {name} = window.EkteFilters.PAGES.{page}.slice();" in src
+
+
+def href(page: str, state: dict[str, Any], extra: dict[str, Any] | None = None) -> str:
+    return run(f"return F.href({js(page)}, {js(state)}, {js(extra)});")
+
+
+HISTORY_STATE = {
+    "q": "gpt", "surface": "chat", "relay": ["a"], "model": [], "suite": "", "mode": "check", "api": "",
+    "detect": "auto", "stream": "", "risk": "high", "min_score": "80", "range": "7d", "from": "", "to": "",
+    "exec": "monitor", "watch": "", "runs.focus": "12", "groups.sort": "-score", "trend.metrics": "score",
+}
+
+
+def test_href_keeps_only_the_target_pages_keys():
+    # History-only keys (q, mode, detect, risk, min_score), widget keys and tz are dropped
+    assert href("analytics", {**HISTORY_STATE, "tz": "Europe/Berlin", "tab": "trends"}) == \
+        "/analytics?range=7d&surface=chat&relay=a&exec=monitor"
+    assert href("history", {"range": "30d", "group": "model", "tab": "trends", "trend.metric": "score"}) == \
+        "/history?range=30d"
+    # Monitors has no range: none is written
+    assert href("watches", HISTORY_STATE) == "/watches?q=gpt&surface=chat&relay=a"
+    assert href("watches", {}) == "/watches"
+    assert run("try { F.href('kb', {}); return 'no error'; } catch (e) { return e.message; }") == \
+        "EkteFilters: unknown page kb"
+
+
+def test_href_writes_the_range_explicitly():
+    assert href("analytics", {"range": "30d"}) == "/analytics?range=30d"  # also the target's default
+    assert href("analytics", {"range": "", "from": "", "to": ""}) == "/analytics?range="  # all time
+    assert href("analytics", {"range": "", "from": "2026-01-01", "to": "2026-02-01"}) == \
+        "/analytics?range=&from=2026-01-01&to=2026-02-01"
+    # from / to go only with a custom range; no range in the source: none in the link
+    assert href("analytics", {"range": "24h", "from": "2026-01-01"}) == "/analytics?range=24h"
+    assert href("analytics", {"relay": ["a"]}) == "/analytics?relay=a"
+    # an invalid range is dropped rather than turned into all time
+    assert href("analytics", {"range": "12d"}) == "/analytics"
+    # the link opens the same filters on the target
+    st = run("return F.parse(F.href('analytics', {range: '', from: '2026-01-01', to: ''}).split('?')[1], "
+             f"{js(['range', 'relay'])});")
+    assert st == {"range": "", "from": "2026-01-01"}
+
+
+def test_href_repeats_relay_and_model_and_encodes_values():
+    got = href("analytics", {"relay": ["https://a.example/v1?x=1&y=2", "-", "b|c"], "model": ["m 1", "-"]})
+    assert got == ("/analytics?relay=https%3A%2F%2Fa.example%2Fv1%3Fx%3D1%26y%3D2&relay=-&relay=b%7Cc"
+                   "&model=m+1&model=-")
+    back = run(f"return F.parse({js(got.split('?')[1])}, {js(ALL)});")
+    assert back == {"relay": ["https://a.example/v1?x=1&y=2", "-", "b|c"], "model": ["m 1", "-"]}
+    # "-" only where the schema accepts "(unknown)"
+    assert href("analytics", {"suite": "-", "surface": "-"}) == "/analytics?suite=-"
+
+
+def test_href_extra_keys():
+    # filter keys of the target replace the state's (a History group's relay and model)
+    got = href("analytics", HISTORY_STATE, {"relay": ["key|1"], "model": ["-"], "tab": "overview"})
+    assert got == "/analytics?range=7d&surface=chat&relay=key%7C1&model=-&exec=monitor&tab=overview"
+    # widget and view keys come only from extra, sorted; null / tz / other pages' keys are left out
+    got = href("history", {"range": "7d", "runs.focus": "1"},
+               {"runs.focus": 42, "groups.sort": "-time", "tab": None, "tz": "UTC", "group": "model"})
+    assert got == "/history?range=7d&groups.sort=-time&runs.focus=42"
+    # an extra range replaces a custom one
+    assert href("analytics", {"range": "", "from": "2026-01-01"}, {"range": "90d"}) == "/analytics?range=90d"

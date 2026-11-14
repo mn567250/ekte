@@ -68,6 +68,8 @@
  * Pure helpers (tested under node): parse, serialise, params, initial,
  *   remember, scope, setScope (storage injectable), loader, viewerZone,
  *   FIELDS.
+ * EkteFilters.PAGES: the filter keys each page shows; EkteFilters.href(page,
+ *   state, extra) -> "/<path>?<query>", a link to that page with only its keys.
  *
  * /api/filters/options (issue 123) is read as { "<key>": [{ value, label?, runs? }] }
  * for the keys of FIELDS ("-" is "(unknown)"), requested with the shared
@@ -379,6 +381,57 @@
     // (setItem / getItem swallow storage errors)
     setItem(store, storeKey(page), serialise(mine, defaults, fields));
     if (scope(store) === "shared") share(state, fields, store);
+  }
+
+  /* ---------------- pages and links between them ---------------- */
+  /* The filter keys each page shows (umbrella issue 150, design D), in the
+   * order its panel shows them: a page creates its panel with fields:
+   * PAGES[page], href() keeps exactly these keys in a link to it (range
+   * brings from / to). */
+  var PAGES = {
+    history: ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec", "watch"],
+    analytics: ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
+    watches: ["q", "surface", "relay", "model", "suite", "api", "stream"],
+  };
+  var PATHS = { history: "/history", analytics: "/analytics", watches: "/watches" };
+
+  /* A link to another page with the filters of `state` that it shows:
+   * "/<path>?<query>". Keys the target does not show are dropped (the target
+   * would drop them anyway: a filter never applies without its field on
+   * screen), and so are the source's widget and view keys and tz (each viewer
+   * resolves ranges in their own zone). `range` is written
+   * whenever the source has one, also "range=" (all time), so the target's
+   * default range never applies by accident; from / to go along with a
+   * custom range. extra: { key: value } — filter keys of the target replace
+   * the state's (a group's relay), other keys (tab, runs.focus) are appended
+   * as given; null / undefined values are left out. Values are validated as
+   * in parse(); relay / model may be arrays (one key each value). */
+  function href(page, state, extra) {
+    var fields = PAGES[page];
+    if (!fields) throw new Error("EkteFilters: unknown page " + page);
+    var own = keysOf(fields), st = Object.assign({}, state || {}), rest = [];
+    extra = extra || {};
+    Object.keys(extra).forEach(function (k) {
+      if (extra[k] == null || k === "tz") return;
+      if (own.indexOf(k) >= 0) st[k] = extra[k];
+      else if (!FIELDS[k] && k !== "from" && k !== "to") rest.push(k);
+    });
+    var custom = "range" in st && !st.range;
+    var q = new URLSearchParams();
+    own.forEach(function (k) {
+      var v = st[k];
+      if (v == null || ((k === "from" || k === "to") && !custom)) return;
+      var multi = FIELDS[k] && FIELDS[k].kind === "multi";
+      var vals = [].concat(v).map(function (x) { return clean(k, x); })
+        .filter(function (x) { return x !== undefined; });
+      // all time (or a custom range): "range=", never the target's default
+      if (k === "range") { if (vals.length) q.append(k, vals[0]); return; }
+      vals = vals.filter(function (x) { return x !== ""; });
+      (multi ? vals : vals.slice(0, 1)).forEach(function (x) { q.append(k, x); });
+    });
+    rest.sort().forEach(function (k) { append(q, k, extra[k]); });
+    var qs = q.toString();
+    return PATHS[page] + (qs ? "?" + qs : "");
   }
 
   /* ---------------- fetching ---------------- */
@@ -793,5 +846,6 @@
     parse: parse, serialise: serialise, params: params, initial: initial, loader: loader, viewerZone: viewerZone,
     remember: remember, scope: scope, setScope: setScope,
     FIELDS: FIELDS, UNKNOWN: UNKNOWN,
+    PAGES: PAGES, href: href,
   };
 })();
