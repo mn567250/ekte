@@ -164,7 +164,8 @@ def test_oldest_of_2000_runs_is_reachable(open_page, history_server) -> None:
         issues.append(f"paging never reached the oldest run {rid} ({_rows(page)} rows)")
     if _rows(page) != g["runs"]:
         issues.append(f"{_rows(page)} rows shown of the group's {g['runs']}")
-    linked = open_history(open_page, history_server, f"range=&runs.focus={rid}")
+    # a link to it widens the default range to its day (#157)
+    linked = open_history(open_page, history_server, f"runs.focus={rid}")
     if not linked.locator(f"#r-{rid}").is_visible():
         issues.append(f"a link to the oldest run {rid} does not show it")
     assert_no_issues(issues, "history [en]", "reach-oldest")
