@@ -766,6 +766,8 @@ def test_benchmark_20k_runs_under_budget(bench_data):
     history.query_connection()
     results = {name: bench_report.measure(lambda fn=fn, params=params: fn(params))
                for name, fn, params in WIDGET_CASES}
+    # GET /api/metrics, the registry every page loads (#161: every component endpoint has a case)
+    results["metrics"] = bench_report.measure(metrics.catalogue)
     slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
     bench_report.record("analytics_widgets", results, budget)
     assert not slow, f"p95 over {budget} ms: {slow}"
