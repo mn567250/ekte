@@ -20,6 +20,16 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: filters remembered across pages ([#154](https://github.com/mn567250/ekte/issues/154))
+
+Filters chosen on History now follow you to Analytics (and back) through the
+navigation, when the page's link has no filters of its own; the URL always
+wins. Each page updates only the filters it shows, and the search text stays
+with its page. To keep separate filters per page, turn off **Keep filters
+across pages** in the filter panel's foot; the choice is remembered in the
+browser and is never part of a link. Part of
+[#150](https://github.com/mn567250/ekte/issues/150).
+
 ### Web UI: Monitors API: filtered, cached list and its filter options ([#158](https://github.com/mn567250/ekte/issues/158), part of [#150](https://github.com/mn567250/ekte/issues/150))
 
 `GET /api/watches` takes the monitor keys of the shared URL schema (`q`,

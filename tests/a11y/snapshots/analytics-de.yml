@@ -103,6 +103,8 @@
       - option "Relay × Modell"
       - option "Alle"
     - text: 15 Läufe entsprechen diesen Filtern.
+    - checkbox "Filter über Seiten hinweg behalten" [checked]
+    - text: Filter über Seiten hinweg behalten
     - status
     - button "Link zu dieser Ansicht kopieren"
   - tablist "Analyseansichten":
