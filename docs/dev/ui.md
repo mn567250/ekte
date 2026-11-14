@@ -35,7 +35,7 @@ cached per URL/key/protocol) → claimed model from the knowledge base
 knowledge base** (`POST /api/kb/relays`). Its pure helpers are tested under node.
 The custom suite's **Dimensions to run** chips are `v2/dimpick.js`. The
 "Running" list of background audits and running monitors (`GET /api/jobs`) is
-`v2/jobs.js` with `v2/jobs.css`, shared by the Audit and Monitors pages; neither polls it on a timer (the Audit page passes `live: true`: it reads `/api/jobs` at start and on every `ekte:live` and follows each queued or running run through `/api/jobs/<id>/events`; the Monitors page passes `poll: false` and hands in the jobs it reads itself, #161). The
+`v2/jobs.js` with `v2/jobs.css`, shared by the Audit and Monitors pages; neither polls it on a timer (the Audit page passes `live: true`: it reads `/api/jobs` at start and on every `ekte:live` and follows each running audit through `/api/jobs/<id>/events` (one connection per running audit, none for the audit the page follows itself); the Monitors page passes `poll: false` and hands in the jobs it reads itself, #161). The
 Knowledge page draws each of its three tabs with one section component,
 `v2/kbsection.js`, on top of the DOM-free helpers in `v2/kbview.js`.
 

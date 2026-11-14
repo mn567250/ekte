@@ -11,10 +11,11 @@
  * "ekte:lang" from cache. How it learns about changes depends on opts:
  *   opts.live: true      the change signal (live.js, issue 161): /api/jobs is
  *                        read once at start and again on every "ekte:live"
- *                        (a run started or ended); the progress of each
- *                        queued or running row follows its event stream
- *                        (/api/jobs/<id>/events). Nothing on a timer (the
- *                        Audit page).
+ *                        (a run started or ended) and when a run's stream
+ *                        says it is done; the progress of each running row
+ *                        follows its event stream (/api/jobs/<id>/events),
+ *                        except for opts.skip(id) (a run the page follows
+ *                        itself). Nothing on a timer (the Audit page).
  *   default              polls every 2 s while a run is active and every 5 s
  *                        otherwise; polling pauses while the tab is hidden
  *                        and catches up when it is shown again.
@@ -114,11 +115,22 @@
       if (finished && opts.onFinish) opts.onFinish();
     }
 
-    // live mode: one event stream per queued or running row; a stream that
-    // fails or ends is closed (the next ekte:live reads /api/jobs again)
+    // live mode: one event stream per running row (a queued row shows no
+    // progress; its start bumps the change signal), so at most as many
+    // connections as audits run at once (EKTE_MAX_PARALLEL_AUDITS);
+    // opts.skip(id) leaves out a run the page follows itself. EventSource
+    // reconnects by itself after a drop (the server replays the log: the
+    // count starts again); a stream the browser gives up on is closed, and
+    // the next ekte:live reads /api/jobs again. A run whose stream said
+    // "done" is not reopened by an answer from before it ended.
+    var ended = {};
     function syncStreams() {
-      Object.keys(streams).forEach(function (id) { if (!st.active[id]) closeStream(id); });
-      Object.keys(st.active).forEach(function (id) { if (!streams[id]) openStream(id); });
+      var running = {};
+      st.rows.forEach(function (j) {
+        if (j.status === "running" && !ended[j.id] && !(opts.skip && opts.skip(j.id))) running[j.id] = true;
+      });
+      Object.keys(streams).forEach(function (id) { if (!running[id]) closeStream(id); });
+      Object.keys(running).forEach(function (id) { if (!streams[id]) openStream(id); });
     }
     function closeStream(id) {
       var s = streams[id];
@@ -130,25 +142,33 @@
       if (typeof EventSource !== "function") return;
       var es;
       try { es = new EventSource("/api/jobs/" + encodeURIComponent(id) + "/events"); } catch (e) { return; }
-      var s = streams[id] = { es: es, prog: progress() };
+      var s = streams[id] = { es: es, prog: progress(), opened: false };
+      es.onopen = function () {
+        if (streams[id] !== s) return;
+        if (s.opened) s.prog = progress(); // a reconnect: the log is replayed from the start
+        s.opened = true;
+      };
       es.onmessage = function (m) {
         if (streams[id] !== s) return;
         var ev;
         try { ev = JSON.parse(m.data); } catch (e) { return; }
         s.prog.add(ev);
         if (ev && ev.type === "done") {
-          // the run ended: ask the change signal now (it reads /api/jobs)
+          // the run ended: read /api/jobs now (not only when the change signal says so)
+          ended[id] = true;
           closeStream(id);
-          if (window.EkteLive && window.EkteLive.poll) window.EkteLive.poll(); else refresh();
+          refresh();
           return;
         }
         onProgress(id, s.prog);
       };
-      es.onerror = function () { if (streams[id] === s) closeStream(id); };
+      es.onerror = function () { if (streams[id] === s && es.readyState === 2) closeStream(id); };
     }
-    // one stream event: re-render only when what a row shows changed
+    // one stream event: re-render only when what a row shows changed, at
+    // most once a frame (a replayed log arrives as a burst)
     function onProgress(id, prog) {
-      var j = st.rows.filter(function (r) { return r.id === id; })[0];
+      var j = null;
+      for (var i = 0; i < st.rows.length; i++) if (st.rows[i].id === id) { j = st.rows[i]; break; }
       if (!j) return;
       var before = [j.status, j.progress, j.done, j.total].join();
       var status = prog.status();
@@ -159,19 +179,35 @@
         j.done = c.done;
         j.total = c.total;
       }
-      if ([j.status, j.progress, j.done, j.total].join() !== before) render();
+      if ([j.status, j.progress, j.done, j.total].join() !== before) renderSoon();
+    }
+    var frame = null;
+    function renderSoon() {
+      if (typeof requestAnimationFrame !== "function") { render(); return; }
+      if (frame != null) return;
+      frame = requestAnimationFrame(function () { frame = null; render(); });
     }
 
+    // a refresh asked while one is in flight reads /api/jobs once more when
+    // it is back: that answer may predate the change it was asked for
     function refresh() {
-      if (st.busy) return st.busy;
+      if (st.busy) {
+        st.again = true;
+        return st.busy;
+      }
       clearTimeout(st.timer);
       st.timer = null;
       st.due = false;
+      st.again = false;
       st.busy = fetch("/api/jobs")
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) { if (d) apply(d.jobs); })
         .catch(function () {})
-        .then(function () { st.busy = null; schedule(); });
+        .then(function () {
+          st.busy = null;
+          if (st.again && follows) return refresh();
+          schedule();
+        });
       return st.busy;
     }
 

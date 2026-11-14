@@ -144,6 +144,42 @@ def test_live_mode_reads_jobs_on_the_change_signal_and_follows_streams():
     assert got["closed"] is True and got["rows"] == []
 
 
+def test_live_mode_streams_running_rows_only_and_rereads_after_done():
+    """No stream for a queued run or one the page follows itself; a "done"
+    reads /api/jobs at once, again after an answer that was in flight, and
+    an answer from before the end does not reopen the stream."""
+    got = run("""
+      const queue = [];
+      global.fetch = (url) => { fetched.push(url);
+        return new Promise((resolve) => queue.push(resolve)); };
+      const answer = (jobs) => queue.shift()({ ok: true, json: () => ({ jobs }) });
+      const tick = () => new Promise((r) => setImmediate(r));
+      const list = { innerHTML: "", contains: () => false, addEventListener() {}, querySelector: () => null };
+      const run = (id, status) => ({ id, kind: "audit", status, progress: 0 });
+      const j = J.init(list, { kind: "audit", live: true, skip: (id) => id === "job-3" });
+      answer([run("job-1", "running"), run("job-2", "queued"), run("job-3", "running")]);
+      await tick();
+      const opened = streams.map((s) => s.url);
+      // the change signal asks while the run ends: the stale answer comes back after "done"
+      handlers["ekte:live"].forEach((fn) => fn());
+      streams[0].onmessage({ data: JSON.stringify({ type: "done" }) });
+      const inFlight = fetched.length;
+      answer([run("job-1", "running"), run("job-2", "running")]);
+      await tick();
+      const afterStale = { streams: streams.map((s) => [s.url, s.closed]), fetched: fetched.length };
+      answer([run("job-2", "running")]);
+      await tick();
+      return { opened, inFlight, afterStale, rows: j.rows().map((r) => r.id), timers,
+               streams: streams.map((s) => [s.url, s.closed]) };
+    """)
+    assert got["opened"] == ["/api/jobs/job-1/events"]
+    assert got["inFlight"] == 2  # the done joined the refresh in flight ...
+    assert got["afterStale"]["fetched"] == 3  # ... which reads once more when it is back
+    # job-1 ended: the stale answer did not reopen its stream; job-2 now runs
+    assert got["afterStale"]["streams"] == [["/api/jobs/job-1/events", True], ["/api/jobs/job-2/events", False]]
+    assert got["rows"] == ["job-2"] and got["timers"] == []
+
+
 def test_the_audit_page_follows_the_change_signal():
     page = (STATIC / "index.html").read_text(encoding="utf-8")
     assert '<script src="/static/live.js"></script>' in page

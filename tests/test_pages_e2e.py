@@ -182,7 +182,9 @@ def test_dod_03_every_component_get_is_cached_and_a_reload_is_304(client, site):
             assert first.headers["etag"] and first.headers["cache-control"] == "no-cache", url
             again = client.get(url, headers={"If-None-Match": first.headers["etag"]})
             assert again.status_code == 304, (page, url)
-    assert "no-store" in client.get("/api/jobs").headers.get("cache-control", "no-store")
+    jobs = client.get("/api/jobs")
+    assert jobs.status_code == 200 and "etag" not in jobs.headers
+    assert "no-cache" not in jobs.headers.get("cache-control", "")
 
 
 def test_dod_04_a_day_range_keeps_its_etag_and_an_hour_range_is_exact(client, site, monkeypatch):

@@ -580,6 +580,8 @@
   var jobs = window.EkteJobs.init($("#jobs"), {
     kind: "audit",
     live: true,
+    // the audit this page follows has its own stream (follow): no second one
+    skip: function (id) { return id === jobId; },
     onChange: function (active, rows) {
       // an audit ended: the newest saved run changed
       if (active < note.active) loadNote();
