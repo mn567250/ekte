@@ -93,7 +93,7 @@
       - option "全部" [selected]
       - option "达到告警阈值"
       - option "低于告警阈值 (1)"
-    - text: 1 个监控符合筛选条件。
+    - text: 共 1 项
     - checkbox "在页面间保留筛选" [checked]
     - text: 在页面间保留筛选
     - status

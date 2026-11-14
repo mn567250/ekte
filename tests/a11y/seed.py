@@ -228,7 +228,6 @@ def seed_history_views(end: datetime) -> None:
     bench.build(**HISTORY_BULK)
 
 
-
 # --------------------------------------------------------------------------- #
 # The Monitors page's own tests (test_watches_page.py, #160)
 # --------------------------------------------------------------------------- #

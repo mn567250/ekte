@@ -93,7 +93,7 @@
       - option "Todos" [selected]
       - option "En su umbral de alerta o por encima"
       - option "Por debajo de su umbral de alerta (1)"
-    - text: 1 monitor coincide con estos filtros.
+    - text: 1 monitor
     - checkbox "Mantener los filtros entre páginas" [checked]
     - text: Mantener los filtros entre páginas
     - status

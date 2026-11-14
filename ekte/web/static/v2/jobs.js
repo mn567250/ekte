@@ -30,7 +30,8 @@
  * (ekte/web/jobs.py track_progress / progress_pct): add(event) folds one
  * event in, pct() is the percent done (0-99), status() "queued" | "running"
  * | "done" | null (no status event yet), known() whether a "start" event
- * gave the number of checks. Pure, tested under node.
+ * gave the number of checks, counts() {done, total, current} as /api/jobs
+ * lists them. Pure, tested under node.
  */
 (function () {
   "use strict";
@@ -221,6 +222,8 @@
       status: function () { return c.status; },
       // the run's size is known (a "start" event was seen)
       known: function () { return c.total > 0; },
+      // the counters /api/jobs lists beside the percent
+      counts: function () { return { done: c.done, total: c.total, current: c.current }; },
     };
   }
 

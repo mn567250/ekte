@@ -93,7 +93,7 @@
       - option "Alle" [selected]
       - option "Auf oder über der Alarmschwelle"
       - option "Unter der Alarmschwelle (1)"
-    - text: 1 Monitor entspricht diesen Filtern.
+    - text: 1 Überwachung
     - checkbox "Filter über Seiten hinweg behalten" [checked]
     - text: Filter über Seiten hinweg behalten
     - status

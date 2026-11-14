@@ -944,6 +944,7 @@
   function countText() {
     if (!watches) return "";
     var n = watches.length;
+    if (!filtering()) return n === 1 ? T("共 1 项", "1 monitor") : Tf("共 {n} 项", "{n} monitors", { n: n });
     return n === 1 ? T("1 个监控符合筛选条件。", "1 monitor matches these filters.")
       : Tf("{n} 个监控符合筛选条件。", "{n} monitors match these filters.", { n: n });
   }
@@ -1015,7 +1016,8 @@
   // a deep-linked monitor (#w-<id>) is never hidden by the filters: they are
   // cleared for this view (the remembered filters stay), and the list reloads
   function revealFlash() {
-    if (flashId == null || byId(flashId) || !filtering()) return false;
+    // (only once a list is in: before it, nothing is known to be hidden)
+    if (flashId == null || !watches || byId(flashId) || !filtering()) return false;
     clearFilters({ remember: false, quiet: true });
     return true;
   }
@@ -1051,9 +1053,12 @@
       if (jobsList) jobsList.set(live.all);
     });
   }
+  // one stream per running monitor the list shows (the filters hide the
+  // others: their cards are not drawn, the Running tab has /api/jobs)
+  function streamed(wid) { return !!live.jobs[wid] && !!byId(wid); }
   function syncStreams() {
-    Object.keys(live.streams).forEach(function (wid) { if (!live.jobs[wid]) closeStream(wid); });
-    Object.keys(live.jobs).forEach(function (wid) { if (!live.streams[wid]) openStream(wid); });
+    Object.keys(live.streams).forEach(function (wid) { if (!streamed(wid)) closeStream(wid); });
+    Object.keys(live.jobs).forEach(function (wid) { if (streamed(wid) && !live.streams[wid]) openStream(wid); });
   }
   function closeStream(wid) {
     var s = live.streams[wid];
@@ -1089,9 +1094,16 @@
     if (!j) return;
     var status = prog.status(), was = j.status;
     if (status === "running" || status === "queued") j.status = status;
-    var pct = prog.pct();
-    if (prog.known()) j.progress = pct;
-    if (jobsList) jobsList.set(live.all);
+    var before = [j.progress, j.done, j.total].join();
+    if (prog.known()) {
+      var c = prog.counts();
+      j.progress = prog.pct();
+      j.done = c.done;
+      j.total = c.total;
+      j.current = c.current;
+    }
+    // the Running tab only when its text changes (a redraw resets its buttons)
+    if (jobsList && (j.status !== was || [j.progress, j.done, j.total].join() !== before)) jobsList.set(live.all);
     if (j.status !== was) { render(); return; }
     var card = document.getElementById("w-" + wid);
     var bar = card && card.querySelector('.mon-prog [role="progressbar"]');
@@ -1123,12 +1135,14 @@
         watches = Array.isArray(rows) ? rows : [];
         loadErr = false;
         if (revealFlash()) return; // the filter change loads again
+        syncStreams(); // the running monitors this list shows
         render();
         paintNote();
         if (pendingShowKey) { pendingShowKey = false; showKey(); }
       })
       .catch(function (e) {
         if (ctl.signal.aborted || isAbort(e)) return;
+        pendingShowKey = false;
         loadErr = true;
         render();
         paintNote();

@@ -93,7 +93,7 @@
       - option "All" [selected]
       - option "At or above its alert threshold"
       - option "Below its alert threshold (1)"
-    - text: 1 monitor matches these filters.
+    - text: 1 monitor
     - checkbox "Keep filters across pages" [checked]
     - text: Keep filters across pages
     - status

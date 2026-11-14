@@ -93,7 +93,7 @@
       - option "Tutti" [selected]
       - option "Pari o sopra la soglia di allerta"
       - option "Sotto la soglia di allerta (1)"
-    - text: 1 monitor corrisponde a questi filtri.
+    - text: 1 monitor
     - checkbox "Mantieni i filtri tra le pagine" [checked]
     - text: Mantieni i filtri tra le pagine
     - status

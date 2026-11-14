@@ -93,7 +93,7 @@
       - option "Todos" [selected]
       - option "No limite de alerta ou acima"
       - option "Abaixo do limite de alerta (1)"
-    - text: 1 monitor corresponde a estes filtros.
+    - text: 1 monitor
     - checkbox "Manter os filtros entre páginas" [checked]
     - text: Manter os filtros entre páginas
     - status

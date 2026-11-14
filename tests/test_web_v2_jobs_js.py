@@ -76,7 +76,7 @@ def _server_pcts() -> list[int]:
 def test_progress_counts_as_the_server_does():
     got = run(f"""
       const p = J.progress(), out = [];
-      for (const ev of {json.dumps(EVENTS)}) {{ p.add(ev); out.push([p.pct(), p.status(), p.known()]); }}
+      for (const ev of {json.dumps(EVENTS)}) {{ p.add(ev); out.push([p.pct(), p.status(), p.known(), p.counts()]); }}
       p.add(null); p.add("x");
       return out;
     """)
@@ -84,6 +84,7 @@ def test_progress_counts_as_the_server_does():
     assert [g[1] for g in got][:3] == ["queued", "running", "running"] and got[-1][1] == "done"
     assert [g[2] for g in got][:3] == [False, False, True]
     assert max(g[0] for g in got) <= 99
+    assert got[5][3] == {"done": 1, "total": 4, "current": "performance"} and got[-1][3]["done"] == 3
 
 
 def test_poll_false_never_polls_and_shows_what_it_is_given():
