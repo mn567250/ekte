@@ -358,7 +358,15 @@
 
   function onChange(st, changed) {
     var filters = changed.some(function (k) { return FLD.indexOf(k) >= 0 || k === "from" || k === "to"; });
-    if (filters && st[FOCUS]) F.set({ "runs.focus": null }); // a filtered list starts at its top
+    // a filtered list starts at its top, unless the page changed the filters to show the focused run
+    if (filters && !keepFocus) {
+      reveal.widened = null;
+      if (st[FOCUS]) F.set({ "runs.focus": null });
+    }
+    if (note.focus && (filters && !keepFocus || String(F.state()[FOCUS] || "") !== note.focus.id)) {
+      note.focus = null;
+      paintNote();
+    }
     if (filters || changed.indexOf("groups.sort") >= 0) load();
     else if (changed.indexOf("trend.metrics") >= 0) reloadTrends();
   }
@@ -377,6 +385,69 @@
   function focusRun() {
     var v = F.state()[FOCUS];
     return v != null && /^\d+$/.test(String(v)) ? String(v) : null;
+  }
+
+  /* ---------------- a focused run outside the filters ---------------- */
+  // The server says whether the focused run is outside the filters, and which
+  // ones leave it out (focus.outside, by_range_only, excluded_by). When only
+  // the range does, the range widens to the run's day; otherwise a notice
+  // offers to clear the filters that leave it out. The focus stays.
+  var keepFocus = false; // the page itself changes the filters: the focus stays
+  var reveal = { widened: null, move: null }; // the run the range widened for; the run to move focus to
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  // 00:00 of the run's day in the viewer's zone, with its UTC offset (a bare
+  // YYYY-MM-DD "from" is read as UTC midnight; where the zone skips midnight,
+  // the moment the day begins); "" without a start time (all time)
+  function dayStart(iso) {
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d)) return "";
+    var m = new Date(d.getFullYear(), d.getMonth(), d.getDate()), off = -m.getTimezoneOffset();
+    var sign = off < 0 ? "-" : "+";
+    off = Math.abs(off);
+    return m.getFullYear() + "-" + pad2(m.getMonth() + 1) + "-" + pad2(m.getDate()) +
+      "T" + pad2(m.getHours()) + ":" + pad2(m.getMinutes()) + ":00" +
+      sign + pad2(Math.floor(off / 60)) + ":" + pad2(off % 60);
+  }
+  // the filters patch that brings the run in: excluded_by cleared, the range
+  // from the run's day (no end)
+  function showPatch(fo) {
+    var patch = {};
+    (fo.excluded_by || []).forEach(function (k) {
+      if (k === "range") { patch.range = ""; patch.from = dayStart(fo.started_at); patch.to = ""; }
+      else if (FLD.indexOf(k) >= 0) patch[k] = null;
+    });
+    return patch;
+  }
+  // the page's own change: quiet (the page notice says it), not remembered as
+  // the viewer's filters; the keys that changed
+  function applyFocusPatch(patch) {
+    keepFocus = true;
+    try { return F.set(patch, { render: true, quiet: true, remember: false }); } finally { keepFocus = false; }
+  }
+  // the groups' answer names the focused run outside the filters: true when
+  // the range widens (a new load is under way)
+  function outsideFocus(focus, fo) {
+    if (!focus || !fo || !fo.outside) {
+      if (note.focus && (note.focus.kind !== "widened" || note.focus.id !== focus)) { note.focus = null; paintNote(); }
+      return false;
+    }
+    if (fo.by_range_only && reveal.widened !== focus) {
+      reveal.widened = focus;
+      note.focus = { kind: "widened", id: focus };
+      paintNote();
+      applyFocusPatch(showPatch(fo));
+      return true;
+    }
+    note.focus = { kind: "outside", id: focus, fo: fo };
+    paintNote();
+    return false;
+  }
+  function showFocused() {
+    var nf = note.focus;
+    if (!nf || nf.kind !== "outside") return;
+    reveal.move = nf.id;
+    if (!applyFocusPatch(showPatch(nf.fo)).length) { reveal.move = null; return; } // nothing to clear: the notice stays
+    if (note.focus === nf) { note.focus = null; paintNote(); }
   }
   function sortValue() {
     var v = String(F.state()["groups.sort"] || DEF_SORT);
@@ -501,7 +572,7 @@
   // the first page of groups and the first page of rows of each open group,
   // drawn at once
   function load() {
-    var sig = fresh(), focus = focusRun();
+    var sig = fresh(), focus = focusRun(), drawn = false;
     loading = true;
     clearNewRuns(); // this load shows them
     // the data version, answered before the list is asked for: the list holds
@@ -513,6 +584,7 @@
     loadNote();
     return shows.then(function () { return get(groupsUrl({ focus: focus }), sig); })
       .then(function (data) {
+        if (sig.aborted || outsideFocus(focus, data.focus)) return; // widened: a new load is under way
         var keep = state.nextIdx;
         state.nextIdx = 0;
         var groups = (data.groups || []).map(fromServer);
@@ -530,10 +602,14 @@
           groups.forEach(function (g) { (g.rows || []).forEach(function (r) { state.rows[String(r.id)] = r; }); });
           state.error = null;
           render();
-          if (focus && data.focus) {
+          drawn = true;
+          if (focus && data.focus && data.focus.found) {
             var row = document.getElementById("r-" + focus);
             if (row && row.scrollIntoView) row.scrollIntoView({ block: "center" });
+            // "Show it": the notice's button is gone, so focus moves to the run
+            if (row && reveal.move === focus) row.focus();
           }
+          reveal.move = null;
         });
       })
       .catch(function (e) {
@@ -546,7 +622,9 @@
         host.setAttribute("aria-busy", "false");
         fbar.hidden = state.error != null || (!state.totalRuns && !urlFiltered() && !anySaved());
         loading = false;
-        newRuns.shown = state.error == null ? shown : null;
+        // the version of the list drawn now; none when this load drew nothing
+        // (a focused run outside the filters that no widening could bring in)
+        newRuns.shown = drawn ? shown : null;
         if (newRuns.again) { newRuns.again = false; checkNewRuns(); } // a change during this load
       });
   }
@@ -659,7 +737,7 @@
   // critical: the history cannot be read; warning: monitor runs are paused
   // (master key locked) and / or older runs are still being processed;
   // info: how many runs, where and since when
-  var note = { status: null, err: false, locked: false };
+  var note = { status: null, err: false, locked: false, focus: null }; // focus: the focused run outside the filters
   function paintNote() {
     var n = null, s = note.status;
     if (note.err || state.error != null) {
@@ -692,6 +770,20 @@
           detail: T("你运行的每次检测都会保存在这里，仅在本机。", "Every audit you run is saved here, on this machine only.") };
       }
     }
+    // the focused run outside the filters comes before the counts and warnings (folded into it)
+    var nf = note.focus;
+    if (nf && !(n && n.level === "critical")) {
+      var fn = nf.kind === "widened"
+        ? { level: "info", title: Tf("已扩大时间范围以显示运行 #{id}", "Range widened to show run #{id}", { id: nf.id }) }
+        : { level: "info", title: Tf("运行 #{id} 不符合当前筛选条件", "Run #{id} doesn't match the current filters", { id: nf.id }),
+          actions: [{ act: "showfocus", label: T("显示它", "Show it"), primary: true }] };
+      if (n && n.level === "warning") {
+        fn.level = "warning";
+        fn.items = [[n.title + ": "].concat(n.detail)].concat(n.items || []);
+        fn.actions = (fn.actions || []).concat(n.actions || []);
+      }
+      n = fn;
+    }
     window.EkteNotice.show($("#note"), n);
   }
   function loadNote() {
@@ -712,6 +804,7 @@
     var act = b.getAttribute("data-note-act");
     if (act === "retry") load();
     else if (act === "unlock") location.href = "/watches";
+    else if (act === "showfocus") showFocused();
   });
   window.addEventListener("ekte:lang", paintNote);
 

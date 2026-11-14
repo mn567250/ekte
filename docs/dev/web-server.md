@@ -583,7 +583,7 @@ by host, port and path (no scheme, no trailing slash). Computed once per
   "trend_metrics": ["score", "latency_p50"], "points_max": 50, "min_runs": 3,
   "total_groups": 37, "total_runs": 1204,
   "after": "<cursor or null>",
-  "focus": {"id": 812, "key": "https://relay.example/v1|gpt-4o"},
+  "focus": {"id": 812, "found": true, "key": "https://relay.example/v1|gpt-4o"},
   "groups": [{
     "key": "https://relay.example/v1|gpt-4o",
     "kind": "relay_model",
@@ -604,8 +604,9 @@ by host, port and path (no scheme, no trailing slash). Computed once per
 }
 ```
 
-`focus` is null without `groups.focus` or when the run is not among the
-filtered runs. `relay` is null for `group=model|all`, `claimed_model` null for
+`focus` is null without `groups.focus`; otherwise `found` says whether the
+page holds the run's group (`key`). For a run that is not among the filtered
+runs, see **The `focus` answer** below. `relay` is null for `group=model|all`, `claimed_model` null for
 `relay|all` (and for runs without a claimed model). `label` is the relay label
 (`relay`), the model (`model`), `(all)` (`all`) or `<relay label> · <model>`,
 with `(unknown)` for a missing part. `base_urls` lists the group's URLs, the
@@ -652,6 +653,36 @@ without `runs.focus`. `risk_level` is `inconclusive` for a run without one,
 `mode` `check` for one without, `detect` `auto` / `manual` / null and `exec`
 `manual` / `monitor`; `family` holds the colour families of the risk badge,
 score and grade (`metrics.family`).
+
+### The `focus` answer
+
+`groups.focus` and `runs.focus` name a run by its id, whatever the filters.
+The answer's `focus` is:
+
+| The run | `focus` |
+|---|---|
+| on the page (the groups' page holds its group; the runs' page holds it) | `{"id": 812, "found": true}`, plus `"key"` for `groups` |
+| among the filtered runs but not on this page (`runs`: another group, or before the cursor) | `{"id": 812, "found": false}` |
+| exists, outside the filters | `{"id": 812, "found": false, "outside": true, "started_at": "2026-08-14T09:10:02.000000+00:00", "by_range_only": true, "excluded_by": ["range"]}` |
+| does not exist | `{"id": 812, "found": false}` |
+
+`started_at` is the run's start (UTC, as in its run row; null without one).
+`excluded_by` lists the URL keys of the filters that leave the run out, in
+the schema's order (`range` stands for `range` / `from` / `to`; filters are
+ANDed, so the run matches them all exactly when it matches each);
+`by_range_only` is `excluded_by == ["range"]`: the run matches every other
+filter. Costs one statement on the run's own row (by its id) with one
+`EXISTS` per filter set, and only when the run is not on the page; no extra
+query over the runs.
+
+History widens the range when `by_range_only` is true: `range=` (empty), `from`
+= 00:00 of the run's day in the viewer's zone, written with its UTC offset
+(`2026-08-14T00:00:00+02:00`: a bare `YYYY-MM-DD` would be read as UTC
+midnight), no `to`, every other filter and the focus kept; the page notice
+says "Range widened to show run #n" once. Otherwise the notice says "Run #n
+doesn't match the current filters", and its "Show it" clears the filters in
+`excluded_by` (the range widened as above when it is one of them), keeping
+the focus.
 
 ### `GET /api/history/{rid}?trend=1`
 

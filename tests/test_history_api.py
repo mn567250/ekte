@@ -179,8 +179,110 @@ def test_focus_returns_the_page_holding_the_run(seeded):
     last_key, last_ids = expected[-1]
     out = history_api.groups(_conn(), {"groups.limit": "2", "groups.focus": str(last_ids[0]),
                                        "trend.metrics": "score"})
-    assert out["focus"] == {"id": last_ids[0], "key": last_key}
+    assert out["focus"] == {"id": last_ids[0], "found": True, "key": last_key}
     assert [g["key"] for g in out["groups"]] == [k for k, _ in expected] and out["after"] is None
+
+
+# --------------------------------------------------------------------------- #
+# Focus outside the filters (#157)
+# --------------------------------------------------------------------------- #
+NOW = datetime(2026, 11, 10, 15, 0, tzinfo=UTC)
+
+
+@pytest.fixture
+def focus_runs(data):
+    """A run of today, one 40 days old, one of today in another suite."""
+    return {"new": _save(NOW - timedelta(hours=1)),
+            "old": _save(NOW - timedelta(days=40)),
+            "other": _save(NOW - timedelta(hours=2), suite="quick")}
+
+
+def _focused(endpoint: str, params: dict) -> dict:
+    """The focus answer of ``endpoint`` under ``params`` resolved at NOW."""
+    t = {"trend.metrics": "score"} if endpoint == "groups" else {}
+    key = history_api.groups(_conn(), {"trend.metrics": "score"})["groups"][0]["key"]
+    if endpoint == "runs":
+        t["group.key"] = key
+    out = getattr(history_api, endpoint)(_conn(), history_api.resolve_params({**t, **params}, now=NOW))
+    return out["focus"]
+
+
+@pytest.mark.parametrize("endpoint", ["groups", "runs"])
+def test_focus_outside_by_range_only(focus_runs, endpoint):
+    old = focus_runs["old"]
+    started = _conn().execute("SELECT started_at FROM history_metrics WHERE history_id = ?",
+                              (old,)).fetchone()[0]
+    for params in ({"range": "30d"}, {"range": "30d", "tz": "Asia/Shanghai"},
+                   {"from": "2026-10-20", "suite": "standard"}):
+        fo = _focused(endpoint, {**params, f"{endpoint}.focus": str(old)})
+        assert fo == {"id": old, "found": False, "outside": True, "started_at": started,
+                      "by_range_only": True, "excluded_by": ["range"]}, params
+    assert datetime.fromisoformat(started) == NOW - timedelta(days=40)
+    # widened to its day (00:00 in the viewer's zone, no to): found
+    day = "2026-10-01T00:00:00+08:00"
+    fo = _focused(endpoint, {"from": day, "tz": "Asia/Shanghai", f"{endpoint}.focus": str(old)})
+    assert fo["found"] is True and "outside" not in fo
+
+
+@pytest.mark.parametrize("endpoint", ["groups", "runs"])
+def test_focus_outside_by_another_filter(focus_runs, endpoint):
+    other = focus_runs["other"]
+    fo = _focused(endpoint, {"range": "30d", "suite": "standard", f"{endpoint}.focus": str(other)})
+    assert fo["outside"] is True and fo["by_range_only"] is False and fo["excluded_by"] == ["suite"]
+    assert datetime.fromisoformat(fo["started_at"]) == NOW - timedelta(hours=2)
+    # both: every filter that leaves it out, in the schema's order
+    old = focus_runs["old"]
+    fo = _focused(endpoint, {"range": "30d", "suite": "quick", "relay": RELAY,
+                             f"{endpoint}.focus": str(old)})
+    assert fo["by_range_only"] is False and fo["excluded_by"] == ["range", "suite"]
+
+
+@pytest.mark.parametrize("endpoint", ["groups", "runs"])
+def test_focus_unknown_run_is_not_found(focus_runs, endpoint):
+    fo = _focused(endpoint, {"range": "30d", "suite": "standard", f"{endpoint}.focus": "99999"})
+    assert fo == {"id": 99999, "found": False}
+
+
+def test_focus_in_another_group_is_not_outside(focus_runs):
+    """runs.focus of a run that matches the filters but is in another group:
+    not found, and not outside the filters."""
+    _save(NOW - timedelta(hours=3), model="model-b")
+    page = history_api.groups(_conn(), {"trend.metrics": "score"})
+    keys = [g["key"] for g in page["groups"]]
+    assert len(keys) == 2
+    b = next(k for k in keys if k.endswith("model-b"))
+    fo = history_api.runs(_conn(), {"group.key": b, "runs.focus": str(focus_runs["new"])})["focus"]
+    assert fo == {"id": focus_runs["new"], "found": False}
+
+
+def test_focus_outside_by_text_search(focus_runs):
+    """q (free text, which joins history) is checked on the run's row too."""
+    fo = _focused("groups", {"q": "no-such-relay", "groups.focus": str(focus_runs["new"])})
+    assert fo["excluded_by"] == ["q"] and fo["by_range_only"] is False
+    fo = _focused("groups", {"q": "relay.example", "range": "7d", "groups.focus": str(focus_runs["old"])})
+    assert fo["excluded_by"] == ["range"] and fo["by_range_only"] is True
+
+
+def test_focus_outside_by_monitor(focus_runs):
+    """watch=<id> (#155): a run of no monitor, or of another, is left out by watch."""
+    mine = _save(NOW - timedelta(hours=4), watch_id=7)
+    fo = _focused("groups", {"watch": "7", "groups.focus": str(focus_runs["new"])})
+    assert fo["excluded_by"] == ["watch"] and fo["by_range_only"] is False
+    fo = _focused("groups", {"watch": "8", "range": "7d", "groups.focus": str(mine)})
+    assert fo["excluded_by"] == ["watch"]
+    fo = _focused("groups", {"watch": "7", "groups.focus": str(mine)})
+    assert fo["found"] is True and "outside" not in fo
+
+
+def test_every_query_field_has_its_filter_key():
+    """excluded_by names URL keys: every Query field is mapped (a new filter
+    must be), each to a key of the URL schema or to None."""
+    import dataclasses
+
+    assert set(history_api.FILTER_KEYS) == {f.name for f in dataclasses.fields(query.Query)}
+    named = {k for k in history_api.FILTER_KEYS.values() if k is not None}
+    assert named <= set(query.SINGLE_KEYS) | set(query.MULTI_KEYS)
+    assert named == {k for k in query.SINGLE_KEYS + query.MULTI_KEYS if k not in ("from", "to", "tz", "group")}
 
 
 # --------------------------------------------------------------------------- #
@@ -531,6 +633,35 @@ def test_benchmark_20k_runs_under_budget(bench_data, monkeypatch):
                                                                         "tz": "Europe/Berlin"})),
         "runs range 24h": lambda: history_api.runs(conn, at_end({"group.key": key, "range": "24h"})),
     }
+    # a focused run (#157) under range=30d and suite: inside, outside by the range only (about
+    # 300 days old), outside by suite; each in its own group (groups.focus answers its key)
+    suite = conn.execute("SELECT suite FROM history GROUP BY suite ORDER BY COUNT(*) DESC").fetchone()[0]
+    f30 = {**t, "range": "30d", "suite": suite}
+    start = query.parse_query(at_end(f30)).start
+    assert start is not None
+
+    def pick(cond: str, *args) -> tuple[int, str]:
+        rid = conn.execute("SELECT m.history_id FROM history_metrics m JOIN history h ON h.id = m.history_id"
+                           f" WHERE {cond} ORDER BY m.history_id LIMIT 1", args).fetchone()[0]
+        out = history_api.groups(conn, at_end({**t, "groups.focus": str(rid)}))["focus"]
+        return rid, out["key"]
+
+    old_since = query.us_of(end - timedelta(days=300))
+    focus = {
+        "inside": pick("m.started_us >= ? AND h.suite = ?", query.us_of(start), suite),
+        "by range": pick("m.started_us <= ? AND h.suite = ?", old_since, suite),
+        "by suite": pick("m.started_us >= ? AND h.suite <> ?", query.us_of(start), suite),
+    }
+    expect = {"inside": None, "by range": True, "by suite": False}
+    for name, (rid, gkey) in focus.items():
+        got = history_api.groups(conn, at_end({**f30, "groups.focus": str(rid)}))["focus"]
+        assert got.get("by_range_only") is expect[name], (name, got)
+        cases[f"groups 30d+suite, focus {name}"] = (
+            lambda rid=rid: history_api.groups(conn, at_end({**f30, "groups.focus": str(rid)})))
+        cases[f"runs 30d+suite, focus {name}"] = (
+            lambda rid=rid, gkey=gkey: history_api.runs(conn, at_end({"range": "30d", "suite": suite,
+                                                                     "group.key": gkey,
+                                                                     "runs.focus": str(rid)})))
     # status and report detail (GET /api/history/status, /api/history/{rid}
     # with and without trend=1) on the fixture's 16 kB reports
     cases |= {name: (lambda fn=fn: fn(conn))

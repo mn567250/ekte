@@ -129,7 +129,11 @@ holds the filters (`EkteFilters`), the sort (`groups.sort`, also sent as
 `runs.sort`), the trends (`trend.metrics`, default `score,latency_p50`) and the
 focused run (`runs.focus`: the open report or the last row "Show more"
 revealed; a `#r-<id>` link sets it), sent as `groups.focus` / `runs.focus` so
-a copied link shows that run again. The trend picker (in the filter panel,
+a copied link shows that run again, also outside the filters: when only the range leaves it
+out (`focus.by_range_only`), the range widens to a custom range from the run's
+day and the page notice says so once; otherwise the notice offers "Show it",
+which clears the filters in `focus.excluded_by` and moves focus to the run
+(see `docs/dev/web-server.md`, **The `focus` answer**). The trend picker (in the filter panel,
 `EkteFilters` `extra`) lists `history_trends` of `GET /api/metrics` by
 `label_key`; `v2/trendpick.js` (`EkteTrendPick.clean / toggle / buttons`,
 tested under node) keeps one or two on: with two on the others are `disabled`
