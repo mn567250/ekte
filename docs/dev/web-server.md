@@ -157,8 +157,8 @@ not given; `-` means "(unknown)", i.e. the run has no value.
 | `range` | `24h`, `7d`, `30d`, `90d`, `365d`. A **day range** (`7d` … `365d`, N days) is today plus the previous N − 1 calendar days in `tz`: `from` = 00:00 local of the first day (`zoneinfo` calendar days, so a range across a DST change is N days, not N × 24 h), no `to`. **`24h`** is exact: `to` = now rounded up to the next minute, `from` = `to` − 24 h. Not with `to`; a day range takes `from` only in its resolved form (a local midnight in `tz`, as `Query.canonical()` writes it). The pages default to `30d` (`filters.js` `FIELDS`); `range=` (empty) is all time | History `days`, Analytics range presets |
 | `tz` | the viewer's time zone, an IANA name (default `UTC`; unknown: 400). Selects no runs: it places day ranges and is the zone of every time bucket (the widgets have no zone key of their own: `trend.tz`, `heat.tz` and `errors.tz` went with [#161](https://github.com/mn567250/ekte/issues/161) and are now a 400). `EkteFilters.widgetParams()` sends the browser's zone with every widget request; the page URL never holds it, so a shared link resolves in each viewer's zone | the pages' `trend.tz` / `heat.tz` / `errors.tz` |
 | `surface` | `chat`, `embedding`, `rerank` (NULL reads as chat); empty: all surfaces | both |
-| `relay` | a relay key (`relay_map.relay_key`, `(unknown)` without URL), repeatable | both |
-| `model` | a claimed model (`(unknown)` without one), repeatable | both |
+| `relay` | a relay key (`relay_map.relay_key`, `(unknown)` without URL), repeatable. `-` is read as `(unknown)`, as for the other keys ([#191](https://github.com/mn567250/ekte/issues/191)); the canonical form, the options endpoints and the filter panel write `(unknown)` | both |
+| `model` | a claimed model (`(unknown)` without one), repeatable; `-` is read as `(unknown)`, as for `relay` | both |
 | `suite`, `mode`, `api`, `stream` | the exact value (`stream` is the stored `stream_mode`), or `-` | History `suite/mode/api/stream`, Analytics `stream_mode` |
 | `detect` | `auto`, `manual`, `-` | History `detect` |
 | `risk` | `clean`, `low`, `medium`, `high`, `inconclusive` (no risk level is inconclusive) | History `risk` |
@@ -392,7 +392,8 @@ The values present for each filter key, counted under the current filters
 ```
 
 `value` is spelled as the URL takes it (`-` = none; relays and models use
-`(unknown)`, their group key); a relay's `label` is what History calls it
+`(unknown)`, their group key, which the filter panel also writes for its
+"(unknown)" option; `-` in a URL is read as it, #191); a relay's `label` is what History calls it
 (`history_api.relay_labels`: its knowledge-base name, else the host of its
 URL); a monitor's (`watch`) is its name, read from `watches.db` once per
 request, or, for a monitor that no longer exists, `Deleted monitor #<id>`

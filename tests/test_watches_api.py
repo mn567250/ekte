@@ -125,6 +125,23 @@ def test_each_key_filters(client, mixed):
     assert _names(client, "suite=-") == []
 
 
+def test_unknown_relay_and_model_match_the_monitors_without_one(client, data):
+    _watch(name="Known")
+    _watch(name="No URL", base_url="")
+    rows = {w["name"]: w for w in client.get("/api/watches").json()}
+    assert rows["No URL"]["relay_key"] == "(unknown)"
+    # "-" is "(unknown)", as on History and Analytics (#191)
+    assert _names(client, "relay=-") == _names(client, "relay=(unknown)") == ["No URL"]
+    assert _names(client, "relay=-&relay=(unknown)") == ["No URL"]
+    # no monitor lacks a model: "-" matches none, and is a valid value
+    assert _names(client, "model=-") == []
+    # the options list the stored key, and count it under relay=- like relay=(unknown)
+    out = _opts(client)
+    assert _counts(out["relay"]).get("(unknown)") == 1 and "-" not in _counts(out["relay"])
+    assert _opts(client, "relay=-")["monitors"] == 1
+    assert _opts(client, "relay=-")["filters"] == {"relay": ["(unknown)"]}
+
+
 def test_q_matches_name_url_relay_label_models_and_suite(client, mixed):
     assert _names(client, "q=alph") == ["Alpha"]
     assert _names(client, "q=ALPHA") == ["Alpha"]          # ASCII case-insensitive

@@ -309,6 +309,67 @@ def test_a_widget_with_a_bare_date_and_tz_includes_a_run_just_after_local_midnig
     assert utc["runs"] == 0 and utc["from"] == "2026-11-01T00:00:00.000000+00:00"
 
 
+def test_unknown_relay_and_model_are_one_value():
+    # "-" is the stored "(unknown)" key of relay / model, as "-" is "no value" for the other keys
+    q = parse_query({"relay": ["-", "a"], "model": "-"})
+    assert q.relays == ("(unknown)", "a") and q.models == ("(unknown)",)
+    both = parse_query([("relay", "-"), ("relay", "(unknown)"), ("model", "(unknown)")])
+    assert both.relays == ("(unknown)",) and both.models == ("(unknown)",)
+    # one cache key whichever spelling the URL has; the canonical form is the stored key
+    assert parse_query({"relay": "-"}).canonical() == parse_query({"relay": "(unknown)"}).canonical() == {
+        "group": "relay", "relay": ["(unknown)"]}
+    assert query.resolve_params({"model": "-"}) == [("group", "relay"), ("model", "(unknown)")]
+    assert parse_query(q.params()) == q
+    # the other keys keep "-" as it is (it is what their facet columns store)
+    assert parse_query({"suite": "-", "api": "-"}).canonical()["suite"] == "-"
+
+
+def _client():
+    from fastapi.testclient import TestClient
+
+    from ekte.web import analytics_widgets, cache
+    from ekte.web.server import create_app
+
+    cache.default_cache.clear()
+    analytics_widgets.SURFACE_CACHE.clear()
+    return TestClient(create_app(), base_url="http://localhost")
+
+
+def _json(client, path, params):
+    r = client.get(path, params=params)
+    assert r.status_code == 200, (path, params, r.text)
+    return r.json()
+
+
+def test_unknown_relay_and_model_select_the_runs_without_one_on_both_pages(data):
+    known = _save(T0, base_url=RELAY, model="model-a")
+    no_relay = _save(T0 + timedelta(hours=1), base_url="", model="model-a")
+    no_model = _save(T0 + timedelta(hours=2), base_url=RELAY, model="")
+    client = _client()
+    for key, want in (("relay", {no_relay}), ("model", {no_model})):
+        for value in ("-", "(unknown)"):
+            params = {key: value}
+            # Analytics: the summary counts exactly those runs
+            assert _json(client, "/api/analytics/summary", params)["runs"] == len(want), params
+            # History: their groups, and the runs of each group
+            groups = _json(client, "/api/history/groups", {**params, "trend.metrics": "score"})["groups"]
+            assert sum(g["runs"] for g in groups) == len(want), params
+            ids = set()
+            for g in groups:
+                rows = _json(client, "/api/history/runs", {**params, "group.key": g["key"]})["rows"]
+                ids |= {r["id"] for r in rows}
+            assert ids == want, params
+    # the filter options list the stored key, which the panel writes for "(unknown)" too
+    options = _json(client, "/api/filters/options", {})
+    assert {o["value"] for o in options["relay"]} >= {"(unknown)"}
+    assert {o["value"] for o in options["model"]} >= {"(unknown)", "model-a"}
+    assert "-" not in {o["value"] for o in options["relay"] + options["model"]}
+    # options counted under relay=-: the model list counts the run without a relay
+    under = _json(client, "/api/filters/options", {"relay": "-"})
+    assert {o["value"]: o["runs"] for o in under["model"]} == {"model-a": 1}
+    assert known not in (no_relay, no_model)
+
+
 @pytest.mark.parametrize("params, message", [
     ({"color": "red"}, "unknown parameter 'color'"),
     ({"days": "7"}, "unknown parameter 'days'"),
@@ -379,6 +440,7 @@ def test_every_filter_in_sql(seeded):
         "relay x2": (Query(relays=("cheap-gpt", OTHER)), lambda r: r["relay_key"] in ("cheap-gpt", OTHER)),
         "model x2": (Query(models=("model-a", "model-b")), lambda r: r["claimed_model"] in ("model-a", "model-b")),
         "model unknown": (Query(models=("(unknown)",)), lambda r: not r["claimed_model"]),
+        "model -": (parse_query({"model": "-"}), lambda r: not r["claimed_model"]),
         "suite": (Query(suite="quick"), lambda r: r["suite"] == "quick"),
         "suite -": (Query(suite="-"), lambda r: not r["suite"]),
         "mode": (Query(mode="check"), lambda r: r["mode"] == "check"),

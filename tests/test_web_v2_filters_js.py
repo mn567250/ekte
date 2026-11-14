@@ -69,7 +69,10 @@ def parse(search: str, fields: list[str] | None = None) -> dict[str, Any]:
     ("surface=video", {}),
     ("surface=-", {}),  # surface has no "(unknown)"
     ("relay=a&relay=b&relay=a", {"relay": ["a", "b"]}),
-    ("relay=-", {"relay": ["-"]}),
+    # relay / model: "-" is the stored key "(unknown)", one value either way (#191)
+    ("relay=-", {"relay": ["(unknown)"]}),
+    ("relay=-&relay=%28unknown%29", {"relay": ["(unknown)"]}),
+    ("model=%28unknown%29&model=-&model=m", {"model": ["(unknown)", "m"]}),
     ("relay=", {"relay": []}),
     ("model=gpt-4o&model=claude", {"model": ["gpt-4o", "claude"]}),
     ("suite=standard", {"suite": "standard"}),
@@ -129,7 +132,7 @@ def test_parse_drops_keys_the_page_does_not_show():
 # --------------------------------------------------------------------------- #
 FULL = {
     "q": "relay x", "range": "", "from": "2026-01-01", "to": "2026-02-01", "surface": "rerank",
-    "relay": ["a", "-"], "model": ["m1"], "suite": "-", "mode": "check", "api": "anthropic", "stream": "both",
+    "relay": ["a", "(unknown)"], "model": ["m1"], "suite": "-", "mode": "check", "api": "anthropic", "stream": "both",
     "detect": "manual", "risk": "clean", "min_score": "55", "exec": "manual", "watch": "12",
     "group": "all",
 }
@@ -138,7 +141,7 @@ FULL = {
 def test_every_key_round_trips():
     qs = run(f"return F.serialise({js(FULL)}, {{}}, {js(ALL)});")
     # range "" (all time, custom from / to) differs from the schema's 30d: "range="
-    assert qs == ("q=relay+x&range=&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=-&model=m1&suite=-"
+    assert qs == ("q=relay+x&range=&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=%28unknown%29&model=m1&suite=-"
                   "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&watch=12"
                   "&group=all")
     back = parse(qs)
@@ -596,10 +599,13 @@ def test_href_writes_the_range_explicitly():
 
 def test_href_repeats_relay_and_model_and_encodes_values():
     got = href("analytics", {"relay": ["https://a.example/v1?x=1&y=2", "-", "b|c"], "model": ["m 1", "-"]})
-    assert got == ("/analytics?relay=https%3A%2F%2Fa.example%2Fv1%3Fx%3D1%26y%3D2&relay=-&relay=b%7Cc"
-                   "&model=m+1&model=-")
+    # "-" is written as the stored "(unknown)" (#191)
+    assert got == ("/analytics?relay=https%3A%2F%2Fa.example%2Fv1%3Fx%3D1%26y%3D2&relay=%28unknown%29&relay=b%7Cc"
+                   "&model=m+1&model=%28unknown%29")
     back = run(f"return F.parse({js(got.split('?')[1])}, {js(ALL)});")
-    assert back == {"relay": ["https://a.example/v1?x=1&y=2", "-", "b|c"], "model": ["m 1", "-"]}
+    assert back == {"relay": ["https://a.example/v1?x=1&y=2", "(unknown)", "b|c"], "model": ["m 1", "(unknown)"]}
+    # both spellings in one state: one value
+    assert href("analytics", {"relay": ["-", "(unknown)"]}) == "/analytics?relay=%28unknown%29"
     # "-" only where the schema accepts "(unknown)"
     assert href("analytics", {"suite": "-", "surface": "-"}) == "/analytics?suite=-"
 
@@ -607,7 +613,8 @@ def test_href_repeats_relay_and_model_and_encodes_values():
 def test_href_extra_keys():
     # filter keys of the target replace the state's (a History group's relay and model)
     got = href("analytics", HISTORY_STATE, {"relay": ["key|1"], "model": ["-"], "tab": "overview"})
-    assert got == "/analytics?range=7d&surface=chat&relay=key%7C1&model=-&exec=monitor&tab=overview"
+    # ("-" is written as the stored "(unknown)", #191)
+    assert got == "/analytics?range=7d&surface=chat&relay=key%7C1&model=%28unknown%29&exec=monitor&tab=overview"
     # widget and view keys come only from extra, sorted; null / tz / other pages' keys are left out
     got = href("history", {"range": "7d", "runs.focus": "1"},
                {"runs.focus": 42, "groups.sort": "-time", "tab": None, "tz": "UTC", "group": "model"})

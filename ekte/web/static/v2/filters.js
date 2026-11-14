@@ -81,6 +81,8 @@
   "use strict";
 
   var UNKNOWN = "-";
+  // relay / model: the key of the runs without one (ekte.web.analytics.UNKNOWN_RELAY)
+  var UNKNOWN_KEY = "(unknown)";
   var RANGES = ["24h", "7d", "30d", "90d", "365d"];
   var CUSTOM = "custom"; // the range select's "Custom range": from / to
   var ISO = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
@@ -112,7 +114,10 @@
   /* The URL schema of ekte/web/query.py, in the order fields are shown and
    * keys are written. kind: text | range | select | multi | number;
    * values: the fixed choices (null: free, listed by the options endpoint);
-   * unknown: "-" ("(unknown)") is a valid value; pattern: what a free value
+   * unknown: "-" ("(unknown)") is a valid value; unknownValue: the value
+   * "(unknown)" is written as instead (relay / model: the stored key
+   * "(unknown)" that the server, its options and the pages' links use; "-"
+   * in a URL is read as it, so the panel has one "(unknown)"); pattern: what a free value
    * must look like (watch: a monitor id); def: the schema default
    * (range: the last 30 days on every page; "range=" is all time);
    * page: always remembered per page, never shared ("remembered filters"). */
@@ -120,8 +125,8 @@
     q: { kind: "text", def: "", page: true },
     range: { kind: "range", def: "30d", values: RANGES },
     surface: { kind: "select", def: "", values: ["chat", "embedding", "rerank"] },
-    relay: { kind: "multi", def: [], values: null, unknown: true },
-    model: { kind: "multi", def: [], values: null, unknown: true },
+    relay: { kind: "multi", def: [], values: null, unknown: true, unknownValue: UNKNOWN_KEY },
+    model: { kind: "multi", def: [], values: null, unknown: true, unknownValue: UNKNOWN_KEY },
     suite: { kind: "select", def: "", values: null, unknown: true },
     mode: { kind: "select", def: "", values: null, unknown: true },
     api: { kind: "select", def: "", values: null, unknown: true },
@@ -180,6 +185,7 @@
       var n = Number(v);
       return isFinite(n) && n >= 0 && n <= 100 ? String(n) : undefined;
     }
+    if (f.kind === "multi" && v === UNKNOWN && f.unknownValue) return f.unknownValue;
     if (f.kind === "text" || f.kind === "multi") return v;
     if (v === UNKNOWN) return f.unknown ? v : undefined;
     if (f.pattern && !f.pattern.test(v)) return undefined;
@@ -433,7 +439,8 @@
         .filter(function (x) { return x !== undefined; });
       // all time (or a custom range): "range=", never the target's default
       if (k === "range") { if (vals.length) q.append(k, vals[0]); return; }
-      vals = vals.filter(function (x) { return x !== ""; });
+      // (unique: "-" and "(unknown)" are one relay / model value)
+      vals = vals.filter(function (x, i) { return x !== "" && vals.indexOf(x) === i; });
       (multi ? vals : vals.slice(0, 1)).forEach(function (x) { q.append(k, x); });
     });
     rest.sort().forEach(function (k) { append(q, k, extra[k]); });
@@ -508,7 +515,7 @@
   var current = null;
 
   function valueLabel(key, v, opts) {
-    if (v === UNKNOWN) return tr(["（未知）", "(unknown)"]);
+    if (v === UNKNOWN || (FIELDS[key] && v === FIELDS[key].unknownValue)) return tr(["（未知）", "(unknown)"]);
     if (key === "risk") return window.EKTE_I18N && EKTE_I18N.label ? EKTE_I18N.label("RISK_LEVEL", v) : v;
     if (V[key] && V[key][v]) return tr(V[key][v]);
     var o = opts && opts[key];
@@ -586,7 +593,7 @@
 
     // the values a choice field offers: fixed ones, the server's, the current
     function choices(k) {
-      var f = FIELDS[k], seen = {}, out = [], server = options[k];
+      var f = FIELDS[k], seen = {}, out = [], server = options[k], none = f.unknownValue || UNKNOWN;
       var add = function (v, n) {
         if (v === "" || v == null || seen[v]) return;
         seen[v] = out.length + 1;
@@ -602,9 +609,9 @@
       });
       [].concat(st[k]).forEach(function (v) { add(v); });
       // "(unknown)" when the server lists it, or there is no list to ask
-      if (f.unknown && !seen[UNKNOWN] && !server) add(UNKNOWN);
+      if (f.unknown && !seen[none] && !server) add(none);
       // "(unknown)" last
-      out.sort(function (a, b) { return (a.value === UNKNOWN) - (b.value === UNKNOWN); });
+      out.sort(function (a, b) { return (a.value === none) - (b.value === none); });
       return out;
     }
 
