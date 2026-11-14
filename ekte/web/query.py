@@ -51,6 +51,8 @@ Key                           Values
 ``min_score``                 0–100: runs scoring at least this (runs without a score are
                               left out)
 ``exec``                      ``manual`` (started by hand), ``monitor`` (by a monitor)
+``watch``                     a monitor id (a positive integer): the runs of exactly that
+                              monitor (``history.watch_id``), also after it was deleted
 ``q``                         free text, matched as a substring, case-insensitively for
                               ASCII (SQL ``LIKE``; ``%``, ``_`` and ``\\`` are literal),
                               against base URL, relay label, claimed model, model, suite,
@@ -97,6 +99,7 @@ import base64
 import binascii
 import json
 import math
+import re
 import sqlite3
 from bisect import bisect_left, bisect_right
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -135,7 +138,7 @@ RISKS = tuple(r.value for r in RiskLevel)
 MAX_PARAM = analytics.MAX_PARAM
 # Keys that take one value, and the ones that may repeat.
 SINGLE_KEYS = ("from", "to", "range", "tz", "surface", "suite", "mode", "api", "stream", "detect",
-               "risk", "min_score", "exec", "q", "group")
+               "risk", "min_score", "exec", "watch", "q", "group")
 MULTI_KEYS = ("relay", "model")
 # page_runs()
 SORTS = ("time", "score", "risk", "grade")
@@ -179,6 +182,7 @@ class Query:
     risk: str | None = None
     min_score: float | None = None
     exec: str | None = None
+    watch: int | None = None
     text: str | None = None
     group: str = "relay"
     range: str | None = None
@@ -215,7 +219,8 @@ class Query:
             "suite": self.suite, "mode": self.mode, "api": self.api, "stream": self.stream,
             "detect": self.detect, "risk": self.risk,
             "min_score": _num_text(self.min_score) if self.min_score is not None else None,
-            "exec": self.exec, "q": self.text, "group": self.group,
+            "exec": self.exec, "watch": str(self.watch) if self.watch is not None else None,
+            "q": self.text, "group": self.group,
             "range": self.range if self.days else None,
             "tz": self.tz if self.tz != DEFAULT_TZ else None,
         }
@@ -272,6 +277,21 @@ def _time(key: str, value: str | None) -> datetime | None:
     if dt is None:
         raise QueryError(f"{key} must be an ISO 8601 timestamp (naive ones are UTC)")
     return dt
+
+
+# the largest id SQLite stores (a monitor's id is an INTEGER PRIMARY KEY)
+_MAX_ID = 2**63 - 1
+_WATCH_RE = re.compile(r"[1-9][0-9]{0,18}")
+
+
+def _watch(value: str | None) -> int | None:
+    """A ``watch`` value: a positive integer, in plain digits without leading zeros
+    (one spelling per monitor, as filters.js checks it)."""
+    if value is None:
+        return None
+    if not _WATCH_RE.fullmatch(value) or int(value) > _MAX_ID:
+        raise QueryError("watch must be a monitor id (a positive integer)")
+    return int(value)
 
 
 def _ceil_minute(now: datetime) -> datetime:
@@ -361,6 +381,7 @@ def parse_query(params: Params, *, now: datetime | None = None) -> Query:
         risk=_choice("risk", single.get("risk"), RISKS),
         min_score=min_score,
         exec=_choice("exec", single.get("exec"), EXECS),
+        watch=_watch(single.get("watch")),
         text=single.get("q"),
         group=_choice("group", single.get("group"), GROUPS) or "relay",
         range=day_range, tz=tz,
@@ -576,6 +597,8 @@ def select_runs(q: Query) -> RunSelection:
         add(*_in_table("m.relay_id", "relay_group", "relay_key", q.relays))
     if q.models:
         add(*_in_table("m.model_id", "model_group", "model_key", q.models))
+    if q.watch is not None:
+        add("m.watch_id = ?", q.watch)
     if q.min_score is not None:
         add("m.score >= ?", q.min_score)
     if q.text is not None:

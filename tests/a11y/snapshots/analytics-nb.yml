@@ -92,6 +92,10 @@
       - option "Alle" [selected]
       - option "Manuelt (11)"
       - option "Overvåking (4)"
+    - text: Overvåking
+    - combobox "Overvåking":
+      - option "Alle" [selected]
+      - option "gpt-4o (4)"
     - text: Grupper etter
     - combobox "Grupper etter":
       - option "Relé" [selected]

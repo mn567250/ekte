@@ -144,7 +144,7 @@ def test_q_lowercases_ascii_only(data):
 
 
 def test_unknown_and_run_only_keys_are_refused(client, mixed):
-    for bad in ("range=30d", "risk=high", "from=2026-01-01", "exec=monitor", "group=relay", "foo=1",
+    for bad in ("range=30d", "risk=high", "from=2026-01-01", "exec=monitor", "group=relay", "watch=7", "foo=1",
                 "runs.sort=time", f"{watches_api.TOKEN}=x", ":error=x"):
         r = client.get(f"/api/watches?{bad}")
         assert r.status_code == 400, bad

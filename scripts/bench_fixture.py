@@ -11,6 +11,9 @@ runs (mostly successes, a few 429s, relay errors and network failures).
 Deterministic for a ``--seed``. It also writes ``--monitors`` monitors
 (default 200; ``--watches`` is the old name) into ``watches.db``, over the
 same relays and models, with mixed states, thresholds and last risks.
+:data:`WATCH_SHARE` of the runs belong to monitors (:data:`WATCH_IDS`, ids of
+those monitors, and :data:`DELETED_WATCHES` ids no monitor has: deleted ones,
+whose runs stay).
 
 With ``--bench`` it then times :func:`ekte.web.query.aggregate`,
 :func:`~ekte.web.query.series` and :func:`~ekte.web.query.page_runs` and
@@ -42,6 +45,16 @@ MODELS = ("gpt-4o", "gpt-4o-mini", "claude-sonnet", "claude-haiku", "gemini-pro"
 SUITES = ("standard", "quick", "deep")
 APIS = ("openai", "anthropic", "responses")
 STREAMS = ("stream", "non_stream", "both")
+# the share of runs started by a monitor, and the monitors they spread over:
+# the first WATCHES - DELETED_WATCHES of the ones build_watches() writes (ids
+# from 1 in a new watches.db), and DELETED_WATCHES ids no monitor has
+WATCH_SHARE = 0.2
+WATCHES = 40
+DELETED_WATCHES = 4
+WATCH_IDS = (*range(1, WATCHES - DELETED_WATCHES + 1),
+             *range(100_001, 100_001 + DELETED_WATCHES))
+# the monitor the watch=<id> cases select
+WATCH = 7
 # bytes of each run's report_json
 REPORT_BYTES = 16_000
 # outcome -> weight per request (success dominates, as in real runs)
@@ -97,7 +110,9 @@ def build_watches(watches: int = 200, relays: int = 50, seed: int = 0) -> int:
     (adding to what is there), straight into the table as
     :func:`ekte.web.watches.create` leaves it, spread over the relays and
     models of the runs, with mixed states (:data:`MONITOR_STATES`), alert
-    thresholds and last risks; deterministic for ``seed``. Returns the number
+    thresholds and last risks; deterministic for ``seed``. In a new
+    ``watches.db`` their ids start at 1, so the first ones are the monitors
+    of :data:`WATCH_IDS` (never drafts: they have runs). Returns the number
     written. Their API keys are ``env:`` references (no secret)."""
     from ekte import datadir
     from ekte.web import watches as store
@@ -109,6 +124,8 @@ def build_watches(watches: int = 200, relays: int = 50, seed: int = 0) -> int:
         r = rng.randrange(relays)
         model = MODELS[rng.randrange(len(MODELS))]
         state = rng.choices(list(MONITOR_STATES), list(MONITOR_STATES.values()))[0]
+        if state == "draft" and i < WATCHES - DELETED_WATCHES:
+            state = "paused"  # it owns runs (WATCH_IDS): it has run, so it is set up
         alert_on = rng.choices(list(THRESHOLDS), list(THRESHOLDS.values()))[0]
         surface = rng.choices(("chat", "embedding", "rerank"), (0.9, 0.07, 0.03))[0]
         draft = state == "draft"
@@ -168,7 +185,7 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
                                (0.6, 0.2, 0.1, 0.05, 0.05))[0]
             rating = "A" if score >= 90 else "B" if score >= 80 else "C" if score >= 70 else \
                 "D" if score >= 60 else "F"
-            watch = rng.randrange(1, 6) if rng.random() < 0.3 else None
+            watch = WATCH_IDS[rng.randrange(WATCHES)] if rng.random() < WATCH_SHARE else None
             chat = surface == "chat"
             latency = rng.lognormvariate(6.5, 0.4) * speed[r]
             ttft = rng.lognormvariate(5.8, 0.4) * speed[r] if chat else None
@@ -248,6 +265,21 @@ def _time(fn: Callable[[], Any], repeat: int) -> tuple[float, float]:
     return statistics.median(t), p95(t)
 
 
+def history_cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
+    """History's status and report detail (GET /api/history/status and
+    /api/history/{rid}, with and without ``trend=1``): the functions behind
+    the endpoints, on the newest run. Timed by tests/test_history_api.py."""
+    from ekte.web import history
+    from ekte.web.server import history_report
+
+    rid = int(conn.execute("SELECT MAX(id) FROM history").fetchone()[0] or 0)
+    return {
+        "history status": lambda c: history.status(),
+        "history report": lambda c: history_report(rid),
+        "history report, trend=1": lambda c: history_report(rid, trend=True),
+    }
+
+
 def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
     """The benchmarked calls, by name: each takes a query connection."""
     from ekte.web import query
@@ -255,6 +287,7 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
     deep = [_after(conn, query.Query(), "-time", 49)]
     every = query.Query()
     chat = query.Query(surface="chat")
+    watched = query.Query(surface="chat", watch=WATCH)
     # relative ranges resolve at the fixture's END, so the cases are deterministic
     berlin30 = query.parse_query({"range": "30d", "tz": "Europe/Berlin", "surface": "chat"}, now=END)
     year = query.parse_query({"range": "365d", "surface": "chat"}, now=END)
@@ -288,6 +321,11 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
         "page_runs -time, range 365d": lambda c: query.page_runs(c, year, "-time"),
         "aggregate range 24h, by relay": lambda c: query.aggregate(c, day, kpis, "relay"),
         "series score, hour, range 24h": lambda c: query.series(c, day, "score", "relay", "hour"),
+        # one monitor's runs (#155)
+        "aggregate kpis, watch": lambda c: query.aggregate(c, watched, kpis, "all"),
+        "series score, day, watch": lambda c: query.series(c, watched, "score", "relay", "day",
+                                                           "Europe/Berlin"),
+        "page_runs -time, watch": lambda c: query.page_runs(c, watched.replace(surface=None), "-time"),
     }
 
 

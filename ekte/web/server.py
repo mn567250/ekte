@@ -868,6 +868,42 @@ def _kb_error_response(exc: Exception) -> JSONResponse:
     )
 
 
+class _ReportNotFound(LookupError):
+    """No saved report with this id (answered 404, never cached)."""
+
+
+def history_report(rid: int, trend: bool = False) -> dict[str, Any] | None:
+    """What ``GET /api/history/{rid}`` answers: the saved report as stored, or
+    ``None``; with ``trend`` each request's running medians and their p25–p75
+    bands for the performance chart, the failure class of each failed request
+    of a run saved before classes were recorded, and the run's History trend
+    values (``history_trends``)."""
+    from ekte.web import history
+
+    report = history.get(rid)
+    if report is None:
+        return None
+    perf = report.get("performance") if trend else None
+    if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
+        attach_trends(perf["requests"])
+        # failure classes of a run saved before they were recorded
+        errorclass.attach_classes(perf["requests"])
+    if trend:
+        # the run's History trend values, from the same per-run SQL as the
+        # groups' trends (a group of this run alone shows exactly these)
+        from ekte.web import history_api
+
+        report["history_trends"] = history_api.run_trends(history.query_connection(), rid)
+    return report
+
+
+def _found(rid: int, trend: bool) -> dict[str, Any]:
+    report = history_report(rid, trend)
+    if report is None:
+        raise _ReportNotFound(rid)
+    return report
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ekte",
@@ -1432,36 +1468,37 @@ def create_app() -> FastAPI:
 
         return history_api.runs(history.query_connection(), params)
 
+    # The history as a whole and one saved report: cached like the widgets
+    # (keyed on the data version, which every save, rescore and delete bumps),
+    # so the browser revalidates them with If-None-Match.
     @app.get("/api/history/status")
-    def history_status() -> Any:
+    @_cached("history.status", prepare=lambda params: [])  # takes no parameters
+    def history_status(params: Any) -> Any:
         """The history as a whole, for the pages' notices (history.status)."""
         from ekte.web import history
 
-        return JSONResponse(history.status())
+        return history.status()
+
+    # Saved reports can be large: a small cache of their own, so a few opened
+    # reports never push the widgets' answers out of the shared one.
+    from ekte.web.cache import ResponseCache as _ResponseCache
+
+    report_cache = _ResponseCache(16)
 
     @app.get("/api/history/{rid}")
-    def history_get(rid: int, trend: int = 0) -> Any:
+    def history_get(request: Request, rid: int, trend: int = 0) -> Response:
         """A saved report as stored; ``trend=1`` (the pages that show it) adds
         each request's running medians and their p25–p75 bands for the
         performance chart, and the failure class of each failed request of a
-        run saved before classes were recorded."""
-        from ekte.web import history
-
-        report = history.get(rid)
-        if report is None:
+        run saved before classes were recorded. Cached per run and ``trend``
+        (other parameters are ignored)."""
+        want = [("trend", "1")] if trend else []
+        handler = _cached(f"history.report.{rid}", cache=report_cache,
+                          prepare=lambda params: want)(lambda params: _found(rid, bool(trend)))
+        try:
+            return handler(request)
+        except _ReportNotFound:
             return JSONResponse({"error": "not found"}, status_code=404)
-        perf = report.get("performance") if trend else None
-        if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
-            attach_trends(perf["requests"])
-            # failure classes of a run saved before they were recorded
-            errorclass.attach_classes(perf["requests"])
-        if trend:
-            # the run's History trend values, from the same per-run SQL as the
-            # groups' trends (a group of this run alone shows exactly these)
-            from ekte.web import history_api
-
-            report["history_trends"] = history_api.run_trends(history.query_connection(), rid)
-        return JSONResponse(report)
 
     # ----- Evidence: a saved run's raw request/response pairs ------------- #
     def _evidence_of(rid: int) -> tuple[Any, dict[str, Any] | None]:

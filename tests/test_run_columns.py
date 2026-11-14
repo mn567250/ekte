@@ -203,4 +203,47 @@ def test_ensure_run_columns_is_cheap_once_done(data):  # noqa: F811
         statements: list[str] = []
         conn.set_trace_callback(statements.append)
         run_row.ensure_run_columns(conn)
-        assert not [s for s in statements if s.lstrip().upper().startswith(("UPDATE", "INSERT"))]
+        assert not [s for s in statements if s.lstrip().upper().startswith(("UPDATE", "INSERT", "DROP"))]
+
+
+def test_an_index_with_other_columns_is_made_again(data):  # noqa: F811
+    """The run row's columns changed while its triggers did not (a metric
+    column added): the covering index is made again with every column."""
+    history.save(_fixture())
+    with _db(data) as conn:
+        conn.execute("DROP INDEX idx_run_row")
+        conn.execute(f"CREATE INDEX idx_run_row ON history_metrics ({', '.join(run_row.NUMBERS[:-1])})")
+        run_row.ensure_run_columns(conn)
+        assert [r[2] for r in conn.execute("PRAGMA index_info(idx_run_row)")] == list(run_row.NUMBERS)
+
+
+def test_a_v15_database_gets_the_monitor_on_the_run_row(data):  # noqa: F811
+    """Schema 16: history.watch_id copied onto the run row (the watch filter),
+    filled in for the runs already saved, kept by the triggers, and covered by
+    idx_run_row (made again: CREATE INDEX IF NOT EXISTS would keep the old one)."""
+    rids = [history.save(_fixture(), watch_id=w) for w in (3, None, 4)]
+    with _db(data) as conn:  # as schema 15 left it
+        for (trigger,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'"
+                                       " AND name LIKE 'run_row_%'").fetchall():
+            conn.execute(f"DROP TRIGGER {trigger}")
+        conn.execute("DROP INDEX idx_run_row")
+        conn.execute("ALTER TABLE history_metrics DROP COLUMN watch_id")
+        old = ", ".join(c for c in run_row.NUMBERS if c != "watch_id")
+        conn.execute(f"CREATE INDEX idx_run_row ON history_metrics ({old})")
+        conn.execute("PRAGMA user_version = 15")
+    history.init()
+    with _db(data) as conn:
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == history._SCHEMA_VERSION
+        got = dict(conn.execute("SELECT history_id, watch_id FROM history_metrics").fetchall())
+        assert got == dict(zip(rids, (3, None, 4), strict=True))
+        indexed = [r[2] for r in conn.execute("PRAGMA index_info(idx_run_row)")]
+        assert indexed == list(run_row.NUMBERS) and "watch_id" in indexed
+        sel = query.select_runs(query.parse_query({"watch": "3"}))
+        plan = " ".join(r[3] for r in conn.execute(f"EXPLAIN QUERY PLAN SELECT COUNT(*) {sel.sql}", sel.args))
+        assert "COVERING INDEX idx_run_row" in plan, plan
+        # the triggers keep it: a run moved to another monitor, or by hand
+        conn.execute("UPDATE history SET watch_id = 9 WHERE id = ?", (rids[1],))
+        conn.execute("UPDATE history SET watch_id = NULL WHERE id = ?", (rids[0],))
+        _run_row_ok(conn)
+        assert dict(conn.execute("SELECT history_id, watch_id FROM history_metrics").fetchall()) == \
+            dict(zip(rids, (None, 9, 4), strict=True))

@@ -113,6 +113,10 @@
       - option "Alle" [selected]
       - option "Manuell (11)"
       - option "Überwachung (4)"
+    - text: Überwachung
+    - combobox "Überwachung":
+      - option "Alle" [selected]
+      - option "gpt-4o (4)"
     - group "Trends":
       - text: Trends 2 von höchstens 2 ausgewählt
       - button "Score" [pressed]

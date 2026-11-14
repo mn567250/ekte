@@ -92,6 +92,10 @@
       - option "Tutti" [selected]
       - option "Manuale (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "Tutti" [selected]
+      - option "gpt-4o (4)"
     - text: Raggruppa per
     - combobox "Raggruppa per":
       - option "Relay" [selected]
