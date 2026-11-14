@@ -54,27 +54,51 @@
     - button "Filter" [expanded]
     - text: Suche
     - searchbox "Suche"
-    - text: Status
-    - combobox "Status":
-      - option "Alle" [selected]
-      - option "Einrichtung nötig"
-    - text: Letztes Risiko
-    - combobox "Letztes Risiko":
-      - option "Alle" [selected]
-      - option "Noch kein Ergebnis"
     - text: Endpunkttyp
     - combobox "Endpunkttyp":
       - option "Alle" [selected]
-      - option "Chat"
-    - text: Relay / Anbieter
-    - combobox "Relay / Anbieter":
-      - option "Alle" [selected]
-      - option "127.0.0.1:9099"
+      - option "Chat (1)"
+      - option "Embeddings"
+      - option "Reranking"
+    - group "Relay / Anbieter":
+      - text: Relay / Anbieter
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Angegebenes Modell":
+      - text: Angegebenes Modell
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Alle" [selected]
-      - option "standard"
-    - text: 1 von 1 Überwachungen angezeigt
+      - option "standard (1)"
+    - text: Protokoll
+    - combobox "Protokoll":
+      - option "Alle" [selected]
+      - option "openai (1)"
+    - text: Messanfragen
+    - combobox "Messanfragen":
+      - option "Alle" [selected]
+      - option "Streaming (1)"
+      - option "Ohne Streaming"
+      - option "Streaming + ohne Streaming"
+    - text: Status
+    - combobox "Status":
+      - option "Alle" [selected]
+      - option "Aktiv"
+      - option "Pausiert"
+      - option "Einrichtung nötig (1)"
+    - text: Alarmierend
+    - combobox "Alarmierend":
+      - option "Alle" [selected]
+      - option "Auf oder über der Alarmschwelle"
+      - option "Unter der Alarmschwelle (1)"
+    - text: 1 Monitor entspricht diesen Filtern.
+    - checkbox "Filter über Seiten hinweg behalten" [checked]
+    - text: Filter über Seiten hinweg behalten
+    - status
+    - button "Link zu dieser Ansicht kopieren"
+  - status
   - tablist "Überwachungsansichten":
     - tab "Konfigurieren" [selected]
     - tab "Läuft"
@@ -138,8 +162,12 @@
         - combobox "Rohe Anfragen/Antworten — gpt-4o":
           - option "Behalten" [selected]
           - option "Nicht behalten"
-      - 'link "Aus Lauf #1 →"':
-        - /url: /history?range=&surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+      - 'link "Aus Lauf #1: gpt-4o"':
+        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&runs.focus=1
+        - text: "Aus Lauf #1"
+      - 'link "In Analyse öffnen: gpt-4o"':
+        - /url: /analytics?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&api=openai&stream=stream&exec=monitor&watch=1&tab=overview
+        - text: In Analyse öffnen
       - form "Einrichtung abschließen, um sie einzuschalten":
         - heading "Einrichtung abschließen, um sie einzuschalten" [level=4]
         - paragraph: Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie.

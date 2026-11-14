@@ -33,7 +33,7 @@ body(F).then((out) => console.log(JSON.stringify(out === undefined ? null : out)
 """
 
 ALL = ["q", "range", "surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk",
-       "min_score", "exec", "watch", "group"]
+       "min_score", "exec", "watch", "group", "state", "alerting"]
 
 
 def run(body: str, tz: str | None = None) -> Any:
@@ -545,11 +545,11 @@ def test_pages_hold_the_field_matrix():
         "history": ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk",
                     "min_score", "range", "exec", "watch"],
         "analytics": ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
-        "watches": ["q", "surface", "relay", "model", "suite", "api", "stream"],
+        "watches": ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"],
     }
     assert all(k in ALL for keys in pages.values() for k in keys)
     # the pages create their panels from the registry, with no list of their own
-    for page, name in (("history", "FLD"), ("analytics", "FIELDS")):
+    for page, name in (("history", "FLD"), ("analytics", "FIELDS"), ("watches", "FLD")):
         src = (STATIC / f"{page}.html").read_text(encoding="utf-8")
         assert f"var {name} = window.EkteFilters.PAGES.{page}.slice();" in src
 
@@ -614,3 +614,36 @@ def test_href_extra_keys():
     assert got == "/history?range=7d&groups.sort=-time&runs.focus=42"
     # an extra range replaces a custom one
     assert href("analytics", {"range": "", "from": "2026-01-01"}, {"range": "90d"}) == "/analytics?range=90d"
+
+
+# --------------------------------------------------------------------------- #
+# the Monitors page's own keys (#160)
+# --------------------------------------------------------------------------- #
+MONITORS = ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"]
+
+
+def test_monitor_keys_parse_and_stay_on_their_page():
+    assert parse("state=paused&alerting=yes", MONITORS) == {"state": "paused", "alerting": "yes"}
+    # not the server's values (a running monitor is live state, not a filter): dropped
+    assert parse("state=running&alerting=maybe", MONITORS) == {}
+    # History does not show them
+    assert parse("state=paused&relay=a", run("return F.PAGES.history;")) == {"relay": ["a"]}
+    assert run("return [F.FIELDS.state.page, F.FIELDS.alerting.page];") == [True, True]
+    # links: only to the Monitors page
+    st = {"relay": ["a"], "state": "draft", "alerting": "no"}
+    assert href("watches", st) == "/watches?relay=a&state=draft&alerting=no"
+    assert href("history", st) == "/history?relay=a"
+    assert href("analytics", st) == "/analytics?relay=a"
+
+
+def test_monitor_keys_never_enter_the_shared_memory():
+    got = run(_PAGES + """
+      const s = mem({});
+      const mons = page("watches", F.PAGES.watches);
+      use(mons, "?relay=a&state=paused&alerting=yes", s);
+      const shared = JSON.parse(s.getItem("ekte.v2.filters.shared"));
+      return [shared, open(hist, "", s).state, open(mons, "", s).state];
+    """)
+    assert got[0]["relay"] == ["a"] and not {"state", "alerting", "q"} & set(got[0])
+    assert got[1]["relay"] == ["a"] and "state" not in got[1]
+    assert (got[2]["state"], got[2]["alerting"], got[2]["relay"]) == ("paused", "yes", ["a"])

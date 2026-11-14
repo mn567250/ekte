@@ -226,3 +226,43 @@ def seed_history_views(end: datetime) -> None:
     bench = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bench)
     bench.build(**HISTORY_BULK)
+
+
+
+# --------------------------------------------------------------------------- #
+# The Monitors page's own tests (test_watches_page.py, #160)
+# --------------------------------------------------------------------------- #
+MONITOR_RELAY_A = "https://relay-a.example/v1"
+MONITOR_RELAY_B = "https://relay-b.example/v1"
+
+
+def _monitor_report(started: datetime, base_url: str, model: str, score: float, risk: str) -> dict[str, Any]:
+    report = _history_report(started, model, score, "B", risk)
+    report["target"] = dict(report["target"], base_url=base_url)
+    return report
+
+
+def seed_monitors_page(end: datetime) -> None:
+    """Three monitors over two relays, none of them running on its own (a
+    draft and two paused ones, so the scheduler starts nothing):
+
+    - "Alpha": a draft scheduled from a run of relay A 40 days before ``end``
+      (outside the default 30 days: "From run #n" must still find it);
+    - "Beta": paused, relay B, claimed model claude-x, last run a day ago
+      (a run of the monitor: watch_id set), risk medium at or above its
+      threshold (alerting);
+    - "Gamma": paused, relay A, never run.
+    """
+    from ekte.web import history, watches
+
+    watches.init()
+    old = history.save(_monitor_report(end - timedelta(days=40), MONITOR_RELAY_A, "gpt-4o", 81.0, "low"))
+    watches.create({"name": "Alpha", "base_url": MONITOR_RELAY_A, "model": "gpt-4o", "source_report_id": old},
+                   draft=True)
+    beta = watches.create({"name": "Beta", "base_url": MONITOR_RELAY_B, "model": "m-raw", "claimed_model": "claude-x",
+                           "interval_sec": 3600, "enabled": False, "alert_on": "medium"})
+    started = end - timedelta(days=1)
+    last = history.save(_monitor_report(started, MONITOR_RELAY_B, "claude-x", 60.0, "medium"), watch_id=beta)
+    watches.mark_run(beta, "medium", 60.0, last, started.timestamp())
+    watches.create({"name": "Gamma", "base_url": MONITOR_RELAY_A, "model": "gpt-4o", "interval_sec": 3600,
+                    "enabled": False})

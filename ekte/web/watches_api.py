@@ -33,7 +33,9 @@ Key                                    A monitor matches when
 =====================================  ==========================================================
 
 The shared keys are validated by :func:`ekte.web.query.parse_query` (same
-values, same errors). Every other key, the run-only keys of History and
+values, same errors). ``tz``, which every widget request of the pages
+carries (``EkteFilters.widgetParams``), is accepted and validated the same way
+but filters nothing and is not part of the cache key. Every other key, the run-only keys of History and
 Analytics (``range``, ``risk``, …) included, is refused with
 ``unknown parameter`` (:class:`~ekte.web.query.QueryError`, answered 400).
 Filtering runs in Python over the monitor rows: it is bounded by the number
@@ -117,7 +119,9 @@ def parse(params: query.Params) -> WatchQuery:
     shared: list[tuple[str, str]] = []
     own: dict[str, str] = {}
     for key, value in query._pairs(params):
-        if key in SHARED_KEYS:
+        # tz: the viewer's zone every widget request carries (design B); it
+        # resolves nothing here, so it is validated and left out of the key
+        if key in SHARED_KEYS or key == "tz":
             shared.append((key, value))
         elif key in OWN_KEYS:
             if len(value) > query.MAX_PARAM:

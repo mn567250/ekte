@@ -249,8 +249,9 @@ def test_storage_is_only_a_fallback(open_page) -> None:
 
 
 def test_monitor_open_in_history_uses_the_shared_keys(open_page) -> None:
-    """The monitor's links to History name its relay by the relay key (not the
-    old base_url=) and open History filtered to its runs."""
+    """The monitor's links to History (EkteFilters.href, #160) name its relay
+    by the relay key (not the old base_url=), add watch=<id> and focus the
+    run (runs.focus): History opens filtered to the monitor's runs, with it."""
     page = open_page("/watches")
     hrefs = page.evaluate("() => [...document.querySelectorAll('a[href^=\"/history?\"]')].map((a) => a.getAttribute('href'))")
     issues: list[str] = []
@@ -258,17 +259,17 @@ def test_monitor_open_in_history_uses_the_shared_keys(open_page) -> None:
         issues.append("no link to History on the monitors page")
     for href in hrefs:
         query = dict(parse_qsl(urlsplit(href).query))
-        # range= (all time): the run may be older than History's default range (#152)
-        if set(query) - {"surface", "relay", "model", "suite", "range"} or "relay" not in query:
+        if set(query) - {"surface", "relay", "model", "suite", "watch", "runs.focus"} or not {"relay", "runs.focus"} <= set(query):
             issues.append(f"{href}: not the shared keys")
+        if urlsplit(href).fragment:
+            issues.append(f"{href}: a fragment instead of runs.focus")
     if hrefs:
         query = dict(parse_qsl(urlsplit(hrefs[0]).query))
-        run = urlsplit(hrefs[0]).fragment
         page.goto(open_page.base_url + hrefs[0], wait_until="load")
         settle(page)
         checked = page.evaluate("() => [...document.querySelectorAll('input[data-m=relay]:checked')].map((b) => b.value)")
         if checked != [query["relay"]]:
             issues.append(f"History's relay filter is {checked!r}")
-        if not page.locator("#" + run).count():
-            issues.append(f"the monitor's run {run} is not in the filtered list")
+        if not page.locator("#r-" + query["runs.focus"]).count():
+            issues.append(f"the monitor's run {query['runs.focus']} is not in the filtered list")
     assert_no_issues(issues, "monitors -> history [en]", "monitor-link")

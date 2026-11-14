@@ -144,6 +144,9 @@
     - 'link "Abrir em Análises: model-a · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
       - text: Abrir em Análises
+    - 'link "Monitores deste relay e modelo: model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Monitores deste relay e modelo
     - text: Pontuação
     - 'img "Tendência de Pontuação em 7 auditorias: de 70 a 82, em subida."'
     - text: 82 Latência p50
@@ -192,6 +195,9 @@
     - 'link "Abrir em Análises: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
       - text: Abrir em Análises
+    - 'link "Monitores deste relay e modelo: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Monitores deste relay e modelo
     - text: Pontuação
     - 'img "Tendência de Pontuação em 4 auditorias: de 58 a 64, em subida."'
     - text: 64 Latência p50
@@ -225,6 +231,9 @@
     - 'link "Abrir em Análises: model-b · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
       - text: Abrir em Análises
+    - 'link "Monitores deste relay e modelo: model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Monitores deste relay e modelo
     - text: Pontuação
     - 'img "Tendência de Pontuação em 2 auditorias: de 89 a 91, em subida."'
     - text: 91 Latência p50
@@ -248,6 +257,9 @@
     - 'link "Abrir em Análises: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
       - text: Abrir em Análises
+    - 'link "Monitores deste relay e modelo: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Monitores deste relay e modelo
     - text: Pontuação 72 Latência p50 <duration>
     - list:
       - listitem:
@@ -333,6 +345,9 @@
     - 'link "Abrir em Análises: gpt-4o · 127.0.0.1:9099"':
       - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
       - text: Abrir em Análises
+    - 'link "Monitores deste relay e modelo: gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Monitores deste relay e modelo
     - text: Pontuação 53 Latência p50 sem dados
     - list:
       - listitem:

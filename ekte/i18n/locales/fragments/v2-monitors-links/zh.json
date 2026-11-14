@@ -1,0 +1,16 @@
+{
+ "strings": {
+  "1 monitor matches these filters.": "1 个监控符合筛选条件。",
+  "{n} monitors match these filters.": "{n} 个监控符合筛选条件。",
+  "No monitors match these filters.": "没有符合这些筛选条件的监控。",
+  "Clear filters": "清除筛选",
+  "Open in History": "在检测历史中打开",
+  "{link}: {name}": "{link}：{name}",
+  "Monitors for this relay and model": "此中转站和模型的监控",
+  "Monitors for this relay and model: {model} · {relay}": "此中转站和模型的监控：{model} · {relay}",
+  "Monitors for these filters": "这些筛选条件的监控",
+  "Alerting": "告警",
+  "At or above its alert threshold": "达到告警阈值",
+  "Below its alert threshold": "低于告警阈值"
+ }
+}

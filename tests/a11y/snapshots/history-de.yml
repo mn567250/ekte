@@ -144,6 +144,9 @@
     - 'link "In Analyse öffnen: model-a · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-a&tab=overview
       - text: In Analyse öffnen
+    - 'link "Monitore für dieses Relay und Modell: model-a · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-a
+      - text: Monitore für dieses Relay und Modell
     - text: Score
     - 'img "Score-Verlauf über 7 Prüfungen: von 70 auf 82, steigend."'
     - text: 82 Latenz p50
@@ -192,6 +195,9 @@
     - 'link "In Analyse öffnen: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a&tab=overview
       - text: In Analyse öffnen
+    - 'link "Monitore für dieses Relay und Modell: model-a · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
+      - text: Monitore für dieses Relay und Modell
     - text: Score
     - 'img "Score-Verlauf über 4 Prüfungen: von 58 auf 64, steigend."'
     - text: 64 Latenz p50
@@ -225,6 +231,9 @@
     - 'link "In Analyse öffnen: model-b · Example Relay"':
       - /url: /analytics?range=30d&relay=example-relay&model=model-b&tab=overview
       - text: In Analyse öffnen
+    - 'link "Monitore für dieses Relay und Modell: model-b · Example Relay"':
+      - /url: /watches?relay=example-relay&model=model-b
+      - text: Monitore für dieses Relay und Modell
     - text: Score
     - 'img "Score-Verlauf über 2 Prüfungen: von 89 auf 91, steigend."'
     - text: 91 Latenz p50
@@ -248,6 +257,9 @@
     - 'link "In Analyse öffnen: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /analytics?range=30d&relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b&tab=overview
       - text: In Analyse öffnen
+    - 'link "Monitore für dieses Relay und Modell: model-b · gateway.a-very-long-relay-hostname.example.org"':
+      - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
+      - text: Monitore für dieses Relay und Modell
     - text: Score 72 Latenz p50 <duration>
     - list:
       - listitem:
@@ -333,6 +345,9 @@
     - 'link "In Analyse öffnen: gpt-4o · 127.0.0.1:9099"':
       - /url: /analytics?range=30d&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&tab=overview
       - text: In Analyse öffnen
+    - 'link "Monitore für dieses Relay und Modell: gpt-4o · 127.0.0.1:9099"':
+      - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
+      - text: Monitore für dieses Relay und Modell
     - text: Score 53 Latenz p50 keine Daten
     - list:
       - listitem:

@@ -54,27 +54,51 @@
     - button "筛选" [expanded]
     - text: 搜索
     - searchbox "搜索"
-    - text: 状态
-    - combobox "状态":
-      - option "全部" [selected]
-      - option "待设置"
-    - text: 上次风险
-    - combobox "上次风险":
-      - option "全部" [selected]
-      - option "尚无结果"
     - text: 接口类型
     - combobox "接口类型":
       - option "全部" [selected]
-      - option "对话"
-    - text: 中转站 / 厂商
-    - combobox "中转站 / 厂商":
-      - option "全部" [selected]
-      - option "127.0.0.1:9099"
+      - option "对话 (1)"
+      - option "嵌入"
+      - option "重排"
+    - group "中转站 / 厂商":
+      - text: 中转站 / 厂商
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "声称模型":
+      - text: 声称模型
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: 套件
     - combobox "套件":
       - option "全部" [selected]
-      - option "standard"
-    - text: 显示 1/1 个监控
+      - option "standard (1)"
+    - text: 协议
+    - combobox "协议":
+      - option "全部" [selected]
+      - option "openai (1)"
+    - text: 探测请求
+    - combobox "探测请求":
+      - option "全部" [selected]
+      - option "流式 (1)"
+      - option "非流式"
+      - option "流式 + 非流式"
+    - text: 状态
+    - combobox "状态":
+      - option "全部" [selected]
+      - option "启用中"
+      - option "已暂停"
+      - option "待设置 (1)"
+    - text: 告警
+    - combobox "告警":
+      - option "全部" [selected]
+      - option "达到告警阈值"
+      - option "低于告警阈值 (1)"
+    - text: 1 个监控符合筛选条件。
+    - checkbox "在页面间保留筛选" [checked]
+    - text: 在页面间保留筛选
+    - status
+    - button "复制此视图的链接"
+  - status
   - tablist "监控视图":
     - tab "配置" [selected]
     - tab "运行中"
@@ -138,8 +162,12 @@
         - combobox "原始请求/响应 — gpt-4o":
           - option "保留" [selected]
           - option "不保留"
-      - 'link "来自运行 #1 →"':
-        - /url: /history?range=&surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+      - 'link "来自运行 #1：gpt-4o"':
+        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&runs.focus=1
+        - text: "来自运行 #1"
+      - link "在分析中打开：gpt-4o":
+        - /url: /analytics?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard&api=openai&stream=stream&exec=monitor&watch=1&tab=overview
+        - text: 在分析中打开
       - form "设置后即可启用":
         - heading "设置后即可启用" [level=4]
         - paragraph: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。
