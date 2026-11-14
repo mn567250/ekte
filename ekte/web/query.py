@@ -23,8 +23,11 @@ not given. ``-`` stands for "(unknown)": the run has no value.
 ============================  ==============================================================
 Key                           Values
 ============================  ==============================================================
-``from``, ``to``              ISO 8601 (naive = UTC), compared with the run's
-                              ``started_at``; ``from`` inclusive, ``to`` exclusive
+``from``, ``to``              ISO 8601, compared with the run's ``started_at``; ``from``
+                              inclusive, ``to`` exclusive. A bare date (``YYYY-MM-DD``)
+                              is 00:00 of that day in ``tz`` (so ``to=2026-11-02`` ends
+                              with Nov 1 local); a time without an offset is UTC, one
+                              with an offset is kept as given
 ``range``                     ``24h``, ``7d``, ``30d``, ``90d``, ``365d``, resolved at parse
                               time. A day range (``7d`` … ``365d``, N days) is today and
                               the N − 1 calendar days before it in ``tz``: ``from`` =
@@ -270,12 +273,24 @@ def _choice(key: str, value: str | None, allowed: Sequence[str]) -> str | None:
     return value
 
 
-def _time(key: str, value: str | None) -> datetime | None:
+def _time(key: str, value: str | None, zone: tzinfo) -> datetime | None:
+    """A ``from`` / ``to`` value in UTC: a bare date (``YYYY-MM-DD``) is 00:00
+    of that day in ``zone`` (:func:`day_start`, as the day ranges); a value
+    with a time is ISO 8601 as given (naive = UTC, an offset kept)."""
     if value is None:
         return None
+    try:
+        day = date.fromisoformat(value)
+    except ValueError:
+        pass
+    else:
+        try:
+            return day_start(day, zone)
+        except (OverflowError, ValueError):  # the first / last representable day
+            raise QueryError(f"{key} must be an ISO 8601 timestamp or date") from None
     dt = analytics_store.parse_ts(value)
     if dt is None:
-        raise QueryError(f"{key} must be an ISO 8601 timestamp (naive ones are UTC)")
+        raise QueryError(f"{key} must be an ISO 8601 timestamp or date (naive times are UTC)")
     return dt
 
 
@@ -340,7 +355,7 @@ def parse_query(params: Params, *, now: datetime | None = None) -> Query:
             raise QueryError(f"unknown parameter {key[:64]!r}")
 
     zone, tz = _zone(single.get("tz", DEFAULT_TZ))
-    start, end = _time("from", single.get("from")), _time("to", single.get("to"))
+    start, end = _time("from", single.get("from"), zone), _time("to", single.get("to"), zone)
     rng = _choice("range", single.get("range"), tuple(RANGES))
     day_range: str | None = None
     if rng is not None:
