@@ -229,3 +229,41 @@ def test_monitor_runs_get_their_monitor_on_the_run_row(upgraded):
     conn = history.query_connection()
     sel = query.select_runs(query.parse_query({"watch": str(wid)}))
     assert [r[0] for r in conn.execute(f"SELECT m.history_id {sel.sql}", sel.args)] == [rid]
+
+
+def test_the_pages_of_150_work_on_upgraded_data(upgraded):
+    """#161: from every release the history (up to schema 16, the monitor on
+    the run row) and watches (up to 5, the data version) migrations all run,
+    and History, Analytics and Monitors render and answer the shapes of #150:
+    the change signal, the filtered and cached monitor list with its options,
+    day ranges in the viewer's zone and watch=<id>."""
+    data, manifest, _src = upgraded
+    before = {n: _version(data / n) for n in ("history.db", "watches.db")}
+    client = TestClient(create_app(), base_url="http://localhost")
+    _open_all()
+    assert _version(data / "history.db") == dbmigrate.latest(history.MIGRATIONS) >= 16 > before["history.db"]
+    assert _version(data / "watches.db") == dbmigrate.latest(watches.MIGRATIONS) >= 5 > before["watches.db"]
+    assert isinstance(watches.data_version(), int)
+    for page in ("/history", "/analytics", "/watches"):
+        r = client.get(page)
+        assert r.status_code == 200, page
+        assert "/static/filters.js" in r.text and "/static/live.js" in r.text, page
+    version = client.get("/api/version")
+    assert version.status_code == 200 and set(version.json()) == {"data", "live"}
+    rows = client.get("/api/watches", params={"tz": "Europe/Berlin"}).json()
+    assert {w["name"] for w in rows} == {w["name"] for w in manifest["watches"]}
+    assert all({"state", "alerting", "relay_key", "relay_label"} <= set(w) for w in rows)
+    assert all(not {"running", "queued", "progress"} & set(w) for w in rows)
+    options = client.get("/api/watches/options").json()
+    assert options["monitors"] == len(manifest["watches"])
+    states = {o["value"] for o in options["state"]}
+    assert states and states <= {"active", "paused", "draft"}
+    first = rows[0]
+    narrowed = client.get("/api/watches", params={"relay": first["relay_key"], "state": first["state"]}).json()
+    assert first["id"] in {w["id"] for w in narrowed}
+    shared = {"trend.metrics": "score", "range": "", "tz": "Europe/Berlin"}
+    groups = client.get("/api/history/groups", params=shared)
+    assert groups.status_code == 200 and groups.json()["total_runs"] == len(manifest["history"])
+    assert client.get("/api/history/groups", params={**shared, "range": "30d"}).status_code == 200
+    wid = str(manifest["watches"][0]["id"])
+    assert client.get("/api/analytics/summary", params={"watch": wid, "range": ""}).status_code == 200
