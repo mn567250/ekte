@@ -20,9 +20,8 @@ Without ``surface`` a widget uses the most common surface of the selection
 version: :func:`default_surface`), so runs of different surfaces never mix;
 the answer names it (``surface``).
 
-Time buckets are made in the viewer's time zone: the widget's own key
-(``trend.tz``, ``heat.tz``, ``errors.tz``) or else the shared ``tz``
-(:mod:`ekte.web.query`; default UTC).
+Time buckets are made in the viewer's time zone, the shared ``tz``
+(:mod:`ekte.web.query`; default UTC); the widgets have no zone key of their own.
 """
 
 from __future__ import annotations
@@ -268,16 +267,16 @@ def _series_public(result: query.SeriesResult, ahead: int | None = None) -> dict
 def widget_series(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/series``: one metric per group (``group``) over
     time buckets. ``trend.metric`` (default score), ``trend.bucket`` (hour,
-    day, week), ``trend.tz`` (IANA, default the shared ``tz``), ``trend.key`` (repeatable,
+    day, week), ``trend.key`` (repeatable,
     up to :data:`MAX_KEYS` series keys; default the busiest groups),
     ``trend.ahead`` (buckets to forecast: hour 12 / 24, day 3 / 7, week 2 / 4;
     0 or absent for none): each series' ``forecast``
     (:mod:`ekte.web.forecast`), or None."""
-    w = _widget(params, "trend", ("metric", "bucket", "tz", "ahead"), ("key",))
+    w = _widget(params, "trend", ("metric", "bucket", "ahead"), ("key",))
     conn, q = _setup(params)
     bucket = _str_choice(w, "bucket", "trend.bucket", TREND_BUCKETS, "day")
     ahead = _int_choice(w, "ahead", "trend.ahead", (0, *forecast.AHEAD[bucket]), 0)
-    result = query.series(conn, q, w.get("metric") or "score", None, bucket, w.get("tz") or q.tz,
+    result = query.series(conn, q, w.get("metric") or "score", None, bucket, q.tz,
                           keys=w["key"], quantiles=True)
     return {**_head(q), **_series_public(result, ahead)}
 
@@ -286,15 +285,15 @@ def widget_heatmap(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/heatmap``: one metric on the weekday x time-of-day
     grid (a series with bucket ``dow_hour``). ``heat.metric`` (default score),
     ``heat.block`` (hours per row: 1, 2, 3, 4, 6), ``heat.fold`` (week,
-    4weeks, month_week), ``heat.tz`` (default the shared ``tz``), ``heat.key`` (one series key of
+    4weeks, month_week), ``heat.key`` (one series key of
     ``group``; default every selected run as one series, group ``all``)."""
-    w = _widget(params, "heat", ("metric", "block", "fold", "tz", "key"))
+    w = _widget(params, "heat", ("metric", "block", "fold", "key"))
     conn, q = _setup(params)
     block = _int_choice(w, "block", "heat.block", BLOCKS, 1)
     fold = _str_choice(w, "fold", "heat.fold", FOLDS, "week")
     key = w.get("key")
     result = query.series(conn, q, w.get("metric") or "score", None if key else "all", "dow_hour",
-                          w.get("tz") or q.tz, keys=[key] if key else (), block=block, fold=fold,
+                          q.tz, keys=[key] if key else (), block=block, fold=fold,
                           max_keys=1)
     return {**_head(q), **_series_public(result)}
 
@@ -460,13 +459,13 @@ def widget_errors(params: Any) -> dict[str, Any]:
     outcome (:data:`ERROR_CLASSES`, from ``history_outcomes``), pooled per group
     (``group``), in total and per time bucket of the run's start
     (``errors.bucket``: hour, day, week, dow_hour; ``errors.block`` for
-    dow_hour; ``errors.tz``, default the shared ``tz``). ``errors.run=<id>``: also that run's per-minute
+    dow_hour; the time zone is the shared ``tz``). ``errors.run=<id>``: also that run's per-minute
     timeline (``run``), classified from its request records."""
-    w = _widget(params, "errors", ("bucket", "block", "tz", "run"))
+    w = _widget(params, "errors", ("bucket", "block", "run"))
     conn, q = _setup(params)
     size = _str_choice(w, "bucket", "errors.bucket", BUCKETS, "day")
     block = _int_choice(w, "block", "errors.block", BLOCKS, 1)
-    zone, zone_name = query._zone(w.get("tz") or q.tz)
+    zone, zone_name = query._zone(q.tz)
     rid = None
     if w.get("run") is not None:
         if not w["run"].isdigit():

@@ -1,6 +1,6 @@
 """The browser's HTTP cache holds every component's answer (#153).
 
-History and Analytics load their components through ``EkteFilters.fetchWidget``,
+History, Analytics and Monitors load their components through ``EkteFilters.fetchWidget``,
 a plain ``fetch`` on the server's ``ETag`` + ``Cache-Control: no-cache``.
 Reloading a page with unchanged data must therefore send a conditional request
 for every component, and the server must answer each one with ``304``: counted
@@ -24,8 +24,8 @@ from playwright.sync_api import BrowserContext, Page
 
 from tests.a11y.harness import DESKTOP, _free_port, settle, track_network
 
-# the component endpoints of the two pages (all cached with an ETag)
-COMPONENTS = ("/api/history/", "/api/analytics/", "/api/filters/", "/api/metrics")
+# the component endpoints of the three pages (all cached with an ETag)
+COMPONENTS = ("/api/history/", "/api/analytics/", "/api/filters/", "/api/metrics", "/api/watches")
 RANGE = "range=&from=2020-01-01T00:00:00Z&to=2100-01-01T00:00:00Z"
 
 
@@ -159,5 +159,21 @@ def test_analytics_reload_revalidates_every_component(cache_server: tuple[str, _
     settle(page)
     log.take()
     page.goto(f"{url}/analytics?{RANGE}", wait_until="load")
+    settle(page)
+    _assert_all_revalidated(first, log.take())
+
+
+def test_monitors_reload_revalidates_every_component(cache_server: tuple[str, _Log],
+                                                      context: BrowserContext) -> None:
+    """The Monitors page (#160): its list and the filter options are cached
+    URLs too; a reload revalidates both (#161, #150's Definition of done)."""
+    url, log = cache_server
+    page = context.new_page()
+    page.goto(f"{url}/watches?surface=chat", wait_until="load")
+    settle(page)
+    first = log.take()
+    paths = {u.split("?")[0] for u, _, _ in first}
+    assert {"/api/watches", "/api/watches/options"} <= paths, paths
+    page.reload(wait_until="load")
     settle(page)
     _assert_all_revalidated(first, log.take())

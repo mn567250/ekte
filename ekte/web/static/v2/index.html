@@ -392,6 +392,7 @@
 <script src="/icons.js"></script>
 <script src="/static/tabs.js"></script>
 <script src="/static/jobs.js"></script>
+<script src="/static/live.js"></script>
 <script src="/secretfield.js"></script>
 <script src="/static/relaycfg.js"></script>
 <script src="/static/nav.js"></script>
@@ -574,8 +575,13 @@
   window.addEventListener("ekte:lang", paintNote);
   loadNote();
 
+  // the Running tab: read on the change signal (live.js), progress from each
+  // run's event stream; nothing on a timer
   var jobs = window.EkteJobs.init($("#jobs"), {
     kind: "audit",
+    live: true,
+    // the audit this page follows has its own stream (follow): no second one
+    skip: function (id) { return id === jobId; },
     onChange: function (active, rows) {
       // an audit ended: the newest saved run changed
       if (active < note.active) loadNote();

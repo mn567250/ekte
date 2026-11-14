@@ -23,15 +23,19 @@ STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v
 _JS = r"""
 const path = require("path");
 const timers = [], fetched = [];
-global.window = { addEventListener() {} };
+const handlers = {}, streams = [];
+global.window = { addEventListener(name, fn) { (handlers[name] = handlers[name] || []).push(fn); } };
+global.EventSource = function (url) { this.url = url; this.closed = false; streams.push(this); };
+global.EventSource.prototype.close = function () { this.closed = true; };
 global.document = { hidden: false, addEventListener() {}, activeElement: null };
 global.setTimeout = (fn, ms) => { timers.push(ms); return timers.length; };
 global.clearTimeout = () => {};
 global.fetch = (url) => { fetched.push(url); return Promise.resolve({ ok: true, json: () => ({ jobs: [] }) }); };
 require(path.join(process.argv[1], "jobs.js"));
 const J = window.EkteJobs;
-const body = new Function("J", "timers", "fetched", "return (async () => {" + process.argv[2] + "})();");
-body(J, timers, fetched).then((out) => console.log(JSON.stringify(out === undefined ? null : out)),
+const body = new Function("J", "timers", "fetched", "handlers", "streams",
+  "return (async () => {" + process.argv[2] + "})();");
+body(J, timers, fetched, handlers, streams).then((out) => console.log(JSON.stringify(out === undefined ? null : out)),
   (err) => { console.error(err && err.stack || err); process.exit(1); });
 """
 
@@ -111,3 +115,72 @@ def test_polling_stays_the_default():
       return { timers, fetched };
     """)
     assert got["fetched"] == ["/api/jobs"] and got["timers"]
+
+
+def test_live_mode_reads_jobs_on_the_change_signal_and_follows_streams():
+    """The Audit page (#161): /api/jobs once at start and on every ekte:live,
+    progress from each active run's event stream, nothing on a timer."""
+    got = run("""
+      let answer = [{ id: "job-1", kind: "audit", status: "running", progress: 0 }];
+      global.fetch = (url) => { fetched.push(url); return Promise.resolve({ ok: true, json: () => ({ jobs: answer }) }); };
+      const list = { innerHTML: "", contains: () => false, addEventListener() {}, querySelector: () => null };
+      const j = J.init(list, { kind: "audit", live: true });
+      await new Promise((r) => setImmediate(r));
+      const first = { fetched: fetched.slice(), streams: streams.map((s) => s.url) };
+      const es = streams[0];
+      es.onmessage({ data: JSON.stringify({ type: "running" }) });
+      es.onmessage({ data: JSON.stringify({ type: "start", total: 4 }) });
+      es.onmessage({ data: JSON.stringify({ type: "detector_done", index: 1 }) });
+      const row = j.rows()[0];
+      answer = [];
+      handlers["ekte:live"].forEach((fn) => fn());
+      await new Promise((r) => setImmediate(r));
+      return { first, timers, fetched, pct: row.progress, done: row.done, closed: es.closed, rows: j.rows() };
+    """)
+    assert got["first"] == {"fetched": ["/api/jobs"], "streams": ["/api/jobs/job-1/events"]}
+    assert got["timers"] == []
+    assert got["fetched"] == ["/api/jobs", "/api/jobs"]
+    assert got["pct"] == 50 and got["done"] == 2
+    assert got["closed"] is True and got["rows"] == []
+
+
+def test_live_mode_streams_running_rows_only_and_rereads_after_done():
+    """No stream for a queued run or one the page follows itself; a "done"
+    reads /api/jobs at once, again after an answer that was in flight, and
+    an answer from before the end does not reopen the stream."""
+    got = run("""
+      const queue = [];
+      global.fetch = (url) => { fetched.push(url);
+        return new Promise((resolve) => queue.push(resolve)); };
+      const answer = (jobs) => queue.shift()({ ok: true, json: () => ({ jobs }) });
+      const tick = () => new Promise((r) => setImmediate(r));
+      const list = { innerHTML: "", contains: () => false, addEventListener() {}, querySelector: () => null };
+      const run = (id, status) => ({ id, kind: "audit", status, progress: 0 });
+      const j = J.init(list, { kind: "audit", live: true, skip: (id) => id === "job-3" });
+      answer([run("job-1", "running"), run("job-2", "queued"), run("job-3", "running")]);
+      await tick();
+      const opened = streams.map((s) => s.url);
+      // the change signal asks while the run ends: the stale answer comes back after "done"
+      handlers["ekte:live"].forEach((fn) => fn());
+      streams[0].onmessage({ data: JSON.stringify({ type: "done" }) });
+      const inFlight = fetched.length;
+      answer([run("job-1", "running"), run("job-2", "running")]);
+      await tick();
+      const afterStale = { streams: streams.map((s) => [s.url, s.closed]), fetched: fetched.length };
+      answer([run("job-2", "running")]);
+      await tick();
+      return { opened, inFlight, afterStale, rows: j.rows().map((r) => r.id), timers,
+               streams: streams.map((s) => [s.url, s.closed]) };
+    """)
+    assert got["opened"] == ["/api/jobs/job-1/events"]
+    assert got["inFlight"] == 2  # the done joined the refresh in flight ...
+    assert got["afterStale"]["fetched"] == 3  # ... which reads once more when it is back
+    # job-1 ended: the stale answer did not reopen its stream; job-2 now runs
+    assert got["afterStale"]["streams"] == [["/api/jobs/job-1/events", True], ["/api/jobs/job-2/events", False]]
+    assert got["rows"] == ["job-2"] and got["timers"] == []
+
+
+def test_the_audit_page_follows_the_change_signal():
+    page = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert '<script src="/static/live.js"></script>' in page
+    assert "live: true," in page

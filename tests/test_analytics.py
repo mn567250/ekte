@@ -408,7 +408,7 @@ def test_http_endpoints(client):
     r = client.get("/api/analytics/summary", params={"from": "2026-03-03T12:00:00Z"})
     assert r.status_code == 200 and r.json()["to"] is not None and r.json()["runs"] == 13
     r = client.get("/api/analytics/series", params=[
-        ("trend.metric", "ttft_p50"), ("trend.bucket", "day"), ("trend.tz", "Europe/Berlin"),
+        ("trend.metric", "ttft_p50"), ("trend.bucket", "day"), ("tz", "Europe/Berlin"),
         ("trend.key", "cheap-gpt"), ("trend.key", OTHER),
     ])
     body = r.json()
@@ -460,7 +460,7 @@ def test_http_phase4_endpoints(client):
     assert r.status_code == 200 and r.headers["cache-control"] == "no-cache" and r.headers["etag"]
     assert [m["id"] for m in r.json()["metrics"]] == ["relay_overhead", "network_rtt"]
     r = client.get("/api/analytics/errors", params={"group": "model", "errors.bucket": "dow_hour",
-                                                    "errors.tz": "UTC"})
+                                                    "tz": "UTC"})
     # runs with outcome counts (history_outcomes): every run but the two old-shaped ones
     assert r.status_code == 200 and r.json()["covered"] == 15 and r.json()["runs"] == 17
     r = client.get("/api/analytics/integrity", params={"model": "model-a"})

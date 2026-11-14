@@ -13,10 +13,11 @@ visit states only a running app reaches, all without network access:
   (checks done, one running, live performance records), so the scan view with
   its radar, blinking check icon, ticking clock and live chart stays up.
 * ``audit-jobs``: the audit page's "Running" tab (v2/jobs.js) with a running
-  and a queued background audit (``/api/jobs`` answered by a route), so the
-  page polls every 2 s. (This list used to be History's "In progress".)
-* ``monitors-running``: Monitors with the monitor running (spinner, progress,
-  polling every 2 s).
+  and a queued background audit (``/api/jobs`` answered by a route); the
+  list reads it on load and on the change signal (no polling, #161), and the
+  running row has no event stream here. (This list used to be History's "In progress".)
+* ``monitors-running``: Monitors with the monitor running (spinner, progress
+  from /api/jobs; no polling, #160).
 * ``history-charts``: History with three runs of one relay (grade and decode speed
   sparklines) whose report carries a ``performance`` block built by
   ``ekte.perf.build_performance`` (timeline chart, legend, meters); the seeded
@@ -265,6 +266,10 @@ def open_state(
         reload_needed = True
     if reload_needed:
         page.goto(open_page.base_url + path, wait_until="load")
+        if page_id == "audit-jobs":
+            # only the hash changed: no new document, and the list reads
+            # /api/jobs on load, not on a timer (#161)
+            page.reload(wait_until="load")
         settle(page)
     if page_id == "audit-running":
         page.wait_for_function("() => typeof window.__a11yPush === 'function'")

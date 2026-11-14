@@ -45,17 +45,17 @@ WIDGET_CASES = [
     ("summary, 30d", widget_summary, {"from": "2026-10-01T00:00:00Z", "to": "2026-10-31T00:00:00Z"}),
     ("summary, all", widget_summary, {}),
     ("summary, watch", widget_summary, {"watch": "7"}),
-    ("series score, day", widget_series, {"trend.tz": "Europe/Berlin"}),
-    ("series score, day, watch", widget_series, {"trend.tz": "Europe/Berlin", "watch": "7"}),
-    ("series score, day, forecast", widget_series, {"trend.tz": "Europe/Berlin", "trend.ahead": "7"}),
+    ("series score, day", widget_series, {"tz": "Europe/Berlin"}),
+    ("series score, day, watch", widget_series, {"tz": "Europe/Berlin", "watch": "7"}),
+    ("series score, day, forecast", widget_series, {"tz": "Europe/Berlin", "trend.ahead": "7"}),
     ("series error_rate, week", widget_series, {"trend.metric": "error_rate", "trend.bucket": "week",
                                                 "group": "model"}),
     ("heatmap latency", widget_heatmap, {"heat.metric": "latency_p50", "heat.block": "2",
-                                         "heat.tz": "Asia/Shanghai"}),
+                                         "tz": "Asia/Shanghai"}),
     ("leaderboard, by relay", widget_leaderboard, {"surface": "chat"}),
     ("leaderboard, relay x model", widget_leaderboard, {"board.by": "relay_model"}),
     ("breakdown", widget_breakdown, {"breakdown.metric": ["relay_overhead", "network_rtt"]}),
-    ("errors, day", widget_errors, {"errors.tz": "Europe/Berlin"}),
+    ("errors, day", widget_errors, {"tz": "Europe/Berlin"}),
     ("errors, dow_hour by model", widget_errors, {"errors.bucket": "dow_hour", "group": "model"}),
     ("integrity", widget_integrity, {}),
     # relative ranges (#152): a day range from local midnight in tz, 365 days, an exact 24 h
@@ -223,7 +223,7 @@ def test_summary_on_a_non_chat_surface_keeps_the_slots(data, client):  # noqa: F
 # series and heatmap
 # --------------------------------------------------------------------------- #
 def test_series_keys_groups_buckets_and_families(seeded, client):  # noqa: F811
-    out = _get(client, "/api/analytics/series", [("trend.metric", "score"), ("trend.tz", "Europe/Berlin"),
+    out = _get(client, "/api/analytics/series", [("trend.metric", "score"), ("tz", "Europe/Berlin"),
                                                  ("trend.key", "cheap-gpt"), ("trend.key", OTHER)])
     assert [s["key"] for s in out["series"]] == ["cheap-gpt", OTHER] and out["tz"] == "Europe/Berlin"
     point = out["series"][0]["points"][0]
@@ -255,7 +255,7 @@ def test_series_forecast(data, client):  # noqa: F811
         for k in range(8):
             _save(T0 + timedelta(days=day, hours=2 * k), base_url=RELAY,
                   ttft=float(300 + 10 * day + (k - 4) * 5))
-    base = {"trend.metric": "ttft_p50", "trend.tz": "Europe/Berlin"}
+    base = {"trend.metric": "ttft_p50", "tz": "Europe/Berlin"}
     without = _get(client, "/api/analytics/series", base)
     assert without["series"] and all(s["forecast"] is None for s in without["series"])
     assert all(s["forecast"] is None
@@ -286,7 +286,7 @@ def test_series_forecast(data, client):  # noqa: F811
 
 
 def test_heatmap(seeded, client):  # noqa: F811
-    out = _get(client, "/api/analytics/heatmap", {"heat.block": "6", "heat.tz": "UTC"})
+    out = _get(client, "/api/analytics/heatmap", {"heat.block": "6", "tz": "UTC"})
     assert out["bucket"] == "dow_hour" and out["group"] == "all" and len(out["series"]) == 1
     cells = out["series"][0]["points"]
     assert out["series"][0]["runs"] == 60 and all(c["hours"] == 6 and c["family"] for c in cells)
@@ -389,7 +389,7 @@ def test_errors_classify_like_the_outcome_model(data, client):  # noqa: F811
         if rec["endpoint"] == "target" and (o := errorclass.outcome(rec)) is not None:
             expected[o] += 1
     assert expected == TRICKY_COUNTS
-    out = _get(client, "/api/analytics/errors", {"errors.run": str(rid), "errors.tz": "Europe/Berlin"})
+    out = _get(client, "/api/analytics/errors", {"errors.run": str(rid), "tz": "Europe/Berlin"})
     assert out["classes"] == list(errorclass.OUTCOMES)
     totals = out["totals"]
     assert totals["counts"] == TRICKY_COUNTS and totals["requests"] == 12 and totals["judged"] == 8
@@ -455,7 +455,7 @@ def test_errors_groups_buckets_filters_and_coverage(seeded, client):  # noqa: F8
     assert empty["runs"] == 0 and empty["coverage"] is None and empty["groups"] == empty["buckets"] == []
     assert empty["totals"]["success_rate"] is None
     for params, message in [({"errors.bucket": "month"}, "errors.bucket must be one of"),
-                            ({"errors.tz": "Nowhere/x"}, "unknown time zone"),
+                            ({"tz": "Nowhere/x"}, "unknown time zone"),
                             ({"errors.run": "x"}, "errors.run must be a run id")]:
         assert message in _get(client, "/api/analytics/errors", params, 400)["error"]
 
@@ -701,16 +701,18 @@ def test_the_summary_of_a_day_range_compares_the_days_before(seeded, client, mon
     assert out["previous"] == {"from": "2026-09-11T22:00:00.000000+00:00", "to": out["from"]}
 
 
-def test_the_widgets_zone_falls_back_to_the_shared_tz(seeded):  # noqa: F811
+def test_the_widgets_zone_is_the_shared_tz(seeded):  # noqa: F811
     shared = {"tz": "America/Los_Angeles"}
     assert widget_series(shared)["tz"] == "America/Los_Angeles"
-    assert widget_series({**shared, "trend.tz": "Asia/Tokyo"})["tz"] == "Asia/Tokyo"
     assert widget_heatmap(shared)["tz"] == "America/Los_Angeles"
     assert widget_errors(shared)["tz"] == "America/Los_Angeles"
     assert widget_series({})["tz"] == "UTC"
-    assert widget_series(shared)["series"] == widget_series({"trend.tz": "America/Los_Angeles"})["series"]
     with pytest.raises(QueryError, match="unknown time zone"):
         widget_series({"tz": "Nowhere/Land"})
+    # the widgets' own zone keys went with #161: the top-level tz replaced them
+    for widget, key in ((widget_series, "trend.tz"), (widget_heatmap, "heat.tz"), (widget_errors, "errors.tz")):
+        with pytest.raises(QueryError, match="unknown parameter"):
+            widget(shared | {key: "Asia/Tokyo"})
 
 
 
@@ -764,6 +766,8 @@ def test_benchmark_20k_runs_under_budget(bench_data):
     history.query_connection()
     results = {name: bench_report.measure(lambda fn=fn, params=params: fn(params))
                for name, fn, params in WIDGET_CASES}
+    # GET /api/metrics, the registry every page loads (#161: every component endpoint has a case)
+    results["metrics"] = bench_report.measure(metrics.catalogue)
     slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
     bench_report.record("analytics_widgets", results, budget)
     assert not slow, f"p95 over {budget} ms: {slow}"

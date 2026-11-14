@@ -51,6 +51,7 @@ LIVE_LOG_JS = """
 () => {
   const live = document.getElementById('live');
   window.__a11yLive = [];
+  if (!live) return; // a page without the region (Audit, Monitors)
   new MutationObserver(() => { const t = live.textContent.trim(); if (t) window.__a11yLive.push(t); })
     .observe(live, { childList: true, characterData: true, subtree: true });
 }
@@ -198,18 +199,28 @@ class _Count:
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.n = 0
+        self.other: list[str] = []  # every other /api/ request, by path
 
     def take(self) -> int:
         with self.lock:
             n, self.n = self.n, 0
         return n
 
+    def take_other(self) -> list[str]:
+        with self.lock:
+            out, self.other = self.other, []
+        return out
+
 
 def _counting(app: Any, count: _Count) -> Any:
     async def wrapped(scope: dict[str, Any], receive: Any, send: Any) -> None:
-        if scope["type"] == "http" and scope.get("path") == "/api/version":
+        path = scope.get("path") or ""
+        if scope["type"] == "http" and path == "/api/version":
             with count.lock:
                 count.n += 1
+        elif scope["type"] == "http" and path.startswith("/api/"):
+            with count.lock:
+                count.other.append(path)
         await app(scope, receive, send)
 
     return wrapped
@@ -245,7 +256,7 @@ def version_server(base_url: str) -> Iterator[tuple[str, _Count]]:
     thread.join(timeout=10)
 
 
-@pytest.mark.parametrize("path", ["/analytics", "/history"])
+@pytest.mark.parametrize("path", ["/analytics", "/history", "/watches", "/"])
 def test_hidden_tab_sends_no_version_requests(browser: Browser, version_server: tuple[str, _Count], path: str) -> None:
     url, count = version_server
     ctx = _context(browser, url)
@@ -261,5 +272,24 @@ def test_hidden_tab_sends_no_version_requests(browser: Browser, version_server: 
         page.wait_for_timeout(10000)
         assert count.take() == 1, "a visible tab asks every 10 s"
         assert json.loads(page.evaluate("() => JSON.stringify(window.__a11yLive)")) == []
+    finally:
+        ctx.close()
+
+
+@pytest.mark.parametrize("path", ["/", "/history", "/analytics", "/watches", "/kb"])
+def test_no_page_polls_data_on_a_timer(browser: Browser, version_server: tuple[str, _Count], path: str) -> None:
+    """#150's Definition of done: no page polls /api/watches or any other
+    data endpoint on a fixed interval; only the change signal is asked, and
+    the data stays unchanged here, so nothing else is fetched."""
+    url, count = version_server
+    ctx = _context(browser, url)
+    try:
+        page = ctx.new_page()
+        page.goto(url + path, wait_until="load")
+        settle(page)
+        page.wait_for_timeout(2000)  # the page's own first loads
+        count.take_other()
+        page.wait_for_timeout(22000)  # two poll intervals and a bit
+        assert count.take_other() == [], f"{path} fetched data on a timer"
     finally:
         ctx.close()

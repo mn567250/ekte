@@ -4,13 +4,21 @@
  *
  * Markup: an empty <ul class="jlist" id="…"></ul> inside the page's own panel.
  *
- * EkteJobs.init(list, opts) polls /api/jobs and renders one <li class="job">
+ * EkteJobs.init(list, opts) reads /api/jobs and renders one <li class="job">
  * per queued / running run of that kind (a progress bar with role=progressbar,
  * "Watch live", "Open monitor" for monitors, Cancel), plus failed runs, which
- * never reach History (the server drops them after a while). It polls every
- * 2 s while a run is active and every 5 s otherwise (so a page notices a
- * run that starts elsewhere); polling pauses while the browser tab is hidden and
- * catches up when it is shown again. Re-renders on "ekte:lang" from cache.
+ * never reach History (the server drops them after a while). Re-renders on
+ * "ekte:lang" from cache. How it learns about changes depends on opts:
+ *   opts.live: true      the change signal (live.js, issue 161): /api/jobs is
+ *                        read once at start and again on every "ekte:live"
+ *                        (a run started or ended) and when a run's stream
+ *                        says it is done; the progress of each running row
+ *                        follows its event stream (/api/jobs/<id>/events),
+ *                        except for opts.skip(id) (a run the page follows
+ *                        itself). Nothing on a timer (the Audit page).
+ *   default              polls every 2 s while a run is active and every 5 s
+ *                        otherwise; polling pauses while the tab is hidden
+ *                        and catches up when it is shown again.
  *   opts.kind            "audit" (everything but monitors, the default) or
  *                        "monitor"
  *   opts.onChange(active, rows)  called after every render with the number
@@ -75,7 +83,9 @@
     // msg: per-run notes (a function, so it follows the language)
     var st = { rows: [], timer: null, due: false, active: {}, msg: {}, busy: null };
 
-    var polls = opts.poll !== false;
+    var follows = opts.live === true;
+    var polls = opts.poll !== false && !follows;
+    var streams = {}; // live mode: job id -> {es, prog}
     function schedule() {
       clearTimeout(st.timer);
       if (!polls) return;
@@ -100,20 +110,104 @@
       // failed runs never reach History: keep them; cancelled and
       // finished ones go
       st.rows = rows.filter(function (j) { return isActive(j) || j.status === "error"; });
+      if (follows) syncStreams();
       render();
       if (finished && opts.onFinish) opts.onFinish();
     }
 
+    // live mode: one event stream per running row (a queued row shows no
+    // progress; its start bumps the change signal), so at most as many
+    // connections as audits run at once (EKTE_MAX_PARALLEL_AUDITS);
+    // opts.skip(id) leaves out a run the page follows itself. EventSource
+    // reconnects by itself after a drop (the server replays the log: the
+    // count starts again); a stream the browser gives up on is closed, and
+    // the next ekte:live reads /api/jobs again. A run whose stream said
+    // "done" is not reopened by an answer from before it ended.
+    var ended = {};
+    function syncStreams() {
+      var running = {};
+      st.rows.forEach(function (j) {
+        if (j.status === "running" && !ended[j.id] && !(opts.skip && opts.skip(j.id))) running[j.id] = true;
+      });
+      Object.keys(streams).forEach(function (id) { if (!running[id]) closeStream(id); });
+      Object.keys(running).forEach(function (id) { if (!streams[id]) openStream(id); });
+    }
+    function closeStream(id) {
+      var s = streams[id];
+      if (!s) return;
+      try { s.es.close(); } catch (e) { /* closed */ }
+      delete streams[id];
+    }
+    function openStream(id) {
+      if (typeof EventSource !== "function") return;
+      var es;
+      try { es = new EventSource("/api/jobs/" + encodeURIComponent(id) + "/events"); } catch (e) { return; }
+      var s = streams[id] = { es: es, prog: progress(), opened: false };
+      es.onopen = function () {
+        if (streams[id] !== s) return;
+        if (s.opened) s.prog = progress(); // a reconnect: the log is replayed from the start
+        s.opened = true;
+      };
+      es.onmessage = function (m) {
+        if (streams[id] !== s) return;
+        var ev;
+        try { ev = JSON.parse(m.data); } catch (e) { return; }
+        s.prog.add(ev);
+        if (ev && ev.type === "done") {
+          // the run ended: read /api/jobs now (not only when the change signal says so)
+          ended[id] = true;
+          closeStream(id);
+          refresh();
+          return;
+        }
+        onProgress(id, s.prog);
+      };
+      es.onerror = function () { if (streams[id] === s && es.readyState === 2) closeStream(id); };
+    }
+    // one stream event: re-render only when what a row shows changed, at
+    // most once a frame (a replayed log arrives as a burst)
+    function onProgress(id, prog) {
+      var j = null;
+      for (var i = 0; i < st.rows.length; i++) if (st.rows[i].id === id) { j = st.rows[i]; break; }
+      if (!j) return;
+      var before = [j.status, j.progress, j.done, j.total].join();
+      var status = prog.status();
+      if (status === "running" || status === "queued") j.status = status;
+      if (prog.known()) {
+        var c = prog.counts();
+        j.progress = prog.pct();
+        j.done = c.done;
+        j.total = c.total;
+      }
+      if ([j.status, j.progress, j.done, j.total].join() !== before) renderSoon();
+    }
+    var frame = null;
+    function renderSoon() {
+      if (typeof requestAnimationFrame !== "function") { render(); return; }
+      if (frame != null) return;
+      frame = requestAnimationFrame(function () { frame = null; render(); });
+    }
+
+    // a refresh asked while one is in flight reads /api/jobs once more when
+    // it is back: that answer may predate the change it was asked for
     function refresh() {
-      if (st.busy) return st.busy;
+      if (st.busy) {
+        st.again = true;
+        return st.busy;
+      }
       clearTimeout(st.timer);
       st.timer = null;
       st.due = false;
+      st.again = false;
       st.busy = fetch("/api/jobs")
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) { if (d) apply(d.jobs); })
         .catch(function () {})
-        .then(function () { st.busy = null; schedule(); });
+        .then(function () {
+          st.busy = null;
+          if (st.again && follows) return refresh();
+          schedule();
+        });
       return st.busy;
     }
 
@@ -189,8 +283,9 @@
         .then(refresh);
     });
     window.addEventListener("ekte:lang", render);
+    if (follows) window.addEventListener("ekte:live", function () { refresh(); });
 
-    if (polls) refresh();
+    if (polls || follows) refresh();
     return { refresh: refresh, rows: function () { return st.rows.slice(); }, set: apply };
   }
 
