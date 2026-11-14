@@ -133,7 +133,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # the shared fields and URL state (History #127, Analytics #126, Monitors #160)
     (_V2 + "filters.js", ("history", "analytics", "monitors")),
     (_V2 + "trendpick.js", ("history",)),
-    (_V2 + "live.js", ("history", "analytics", "monitors")),
+    (_V2 + "live.js", ("audit", "history", "analytics", "monitors")),
     (_V2 + "notice.js", ("audit", "history", "monitors", "analytics", "kb")),
     (_V2 + "accessibility.html", ("accessibility",)),
     # the page fetches bitv-report.json; the catalogue is what it is built from

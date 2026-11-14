@@ -23,15 +23,19 @@ STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v
 _JS = r"""
 const path = require("path");
 const timers = [], fetched = [];
-global.window = { addEventListener() {} };
+const handlers = {}, streams = [];
+global.window = { addEventListener(name, fn) { (handlers[name] = handlers[name] || []).push(fn); } };
+global.EventSource = function (url) { this.url = url; this.closed = false; streams.push(this); };
+global.EventSource.prototype.close = function () { this.closed = true; };
 global.document = { hidden: false, addEventListener() {}, activeElement: null };
 global.setTimeout = (fn, ms) => { timers.push(ms); return timers.length; };
 global.clearTimeout = () => {};
 global.fetch = (url) => { fetched.push(url); return Promise.resolve({ ok: true, json: () => ({ jobs: [] }) }); };
 require(path.join(process.argv[1], "jobs.js"));
 const J = window.EkteJobs;
-const body = new Function("J", "timers", "fetched", "return (async () => {" + process.argv[2] + "})();");
-body(J, timers, fetched).then((out) => console.log(JSON.stringify(out === undefined ? null : out)),
+const body = new Function("J", "timers", "fetched", "handlers", "streams",
+  "return (async () => {" + process.argv[2] + "})();");
+body(J, timers, fetched, handlers, streams).then((out) => console.log(JSON.stringify(out === undefined ? null : out)),
   (err) => { console.error(err && err.stack || err); process.exit(1); });
 """
 
@@ -111,3 +115,36 @@ def test_polling_stays_the_default():
       return { timers, fetched };
     """)
     assert got["fetched"] == ["/api/jobs"] and got["timers"]
+
+
+def test_live_mode_reads_jobs_on_the_change_signal_and_follows_streams():
+    """The Audit page (#161): /api/jobs once at start and on every ekte:live,
+    progress from each active run's event stream, nothing on a timer."""
+    got = run("""
+      let answer = [{ id: "job-1", kind: "audit", status: "running", progress: 0 }];
+      global.fetch = (url) => { fetched.push(url); return Promise.resolve({ ok: true, json: () => ({ jobs: answer }) }); };
+      const list = { innerHTML: "", contains: () => false, addEventListener() {}, querySelector: () => null };
+      const j = J.init(list, { kind: "audit", live: true });
+      await new Promise((r) => setImmediate(r));
+      const first = { fetched: fetched.slice(), streams: streams.map((s) => s.url) };
+      const es = streams[0];
+      es.onmessage({ data: JSON.stringify({ type: "running" }) });
+      es.onmessage({ data: JSON.stringify({ type: "start", total: 4 }) });
+      es.onmessage({ data: JSON.stringify({ type: "detector_done", index: 1 }) });
+      const row = j.rows()[0];
+      answer = [];
+      handlers["ekte:live"].forEach((fn) => fn());
+      await new Promise((r) => setImmediate(r));
+      return { first, timers, fetched, pct: row.progress, done: row.done, closed: es.closed, rows: j.rows() };
+    """)
+    assert got["first"] == {"fetched": ["/api/jobs"], "streams": ["/api/jobs/job-1/events"]}
+    assert got["timers"] == []
+    assert got["fetched"] == ["/api/jobs", "/api/jobs"]
+    assert got["pct"] == 50 and got["done"] == 2
+    assert got["closed"] is True and got["rows"] == []
+
+
+def test_the_audit_page_follows_the_change_signal():
+    page = (STATIC / "index.html").read_text(encoding="utf-8")
+    assert '<script src="/static/live.js"></script>' in page
+    assert "live: true," in page

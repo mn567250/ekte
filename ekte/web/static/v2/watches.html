@@ -692,7 +692,7 @@
   // older than it (issue 157), so the run is found whatever its age. The run the
   // monitor was made from (own: false) is not one of the monitor's runs, so
   // that link leaves out watch=<id>, which would exclude it.
-  function historyHref(w, reportId, own) {
+  function runHref(w, reportId, own) {
     var f = monFilters(w);
     if (own === false) delete f.watch;
     return window.EkteFilters.href("history", f, { "runs.focus": String(reportId) });
@@ -772,10 +772,10 @@
       lastParts.push("<span>" + esc(T("评分", "Score")) + " <b>" + esc(fmtScore(w.last_score)) + "</b>/100</span>");
     }
     if (w.last_report_id != null) {
-      lastParts.push(cardLink(historyHref(w, w.last_report_id), T("在检测历史中打开", "Open in History"), name, "ml-last"));
+      lastParts.push(cardLink(runHref(w, w.last_report_id), T("在检测历史中打开", "Open in History"), name, "ml-last"));
     }
     if (w.source_report_id != null) {
-      lastParts.push(cardLink(historyHref(w, w.source_report_id, false), Tf("来自运行 #{n}", "From run #{n}", { n: w.source_report_id }), name, "ml-source"));
+      lastParts.push(cardLink(runHref(w, w.source_report_id, false), Tf("来自运行 #{n}", "From run #{n}", { n: w.source_report_id }), name, "ml-source"));
     }
     lastParts.push(cardLink(analyticsHref(w), T("在分析中打开", "Open in Analytics"), name, "ml-analytics"));
     var running = isRunning(w);
