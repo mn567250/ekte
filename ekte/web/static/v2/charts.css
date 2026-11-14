@@ -79,6 +79,9 @@
 .hmap .none { fill: var(--sunken); }
 .hlegend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12px; color: var(--ink-muted); }
 .hlegend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+/* the scale's end values never break inside ("100 %"); its caption wraps under it on a phone */
+.hlegend .hv { white-space: nowrap; }
+.hlegend li:first-child { flex-wrap: wrap; }
 .hlegend .hscale { display: inline-flex; gap: 2px; }
 .hlegend .hv { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
 .hlegend .sub { color: var(--ink-muted); }

@@ -25,9 +25,10 @@
   "Run now ignores the run window.": "«Executar agora» ignora a janela de execução.",
   "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).": "{h} de 168 horas por semana · cerca de {runs} execuções em vez de {all} (−{pct} %).",
   "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "O intervalo de verificação ({every}) é maior que a janela: os horários de início deslizam, e uma execução que começaria depois da janela espera pela próxima.",
-  "Runs": "Executa",
   "Doesn't run": "Não executa",
-  "Now": "Agora",
-  "The monitor runs at its check interval at any time of day.": "O monitor corre com o seu intervalo de verificação a qualquer hora do dia."
+  "The monitor runs at its check interval at any time of day.": "O monitor corre com o seu intervalo de verificação a qualquer hora do dia.",
+  "Runs {h} of 168 hours a week.": "Executa {h} de 168 horas por semana.",
+  "Runs {n} of {b} hours": "Executa {n} de {b} horas",
+  "share of each block's hours it runs": "proporção das horas de cada bloco em que executa"
  }
 }

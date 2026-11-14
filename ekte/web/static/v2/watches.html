@@ -9,6 +9,7 @@
 <script src="/static/theme.js"></script>
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/charts.css" />
 <link rel="stylesheet" href="/static/ekte.css" />
 <link rel="stylesheet" href="/static/fields.css" />
 <link rel="stylesheet" href="/static/jobs.css" />
@@ -124,20 +125,8 @@
   @media (max-width: 520px) { .rw-times { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rw-times > .tz { grid-column: 1 / -1; } }
   .rw-times select.in { width: 100%; }
   .rw-times + .hint { margin-top: -8px; }
-  /* the week at a glance: purely visual (aria-hidden), the coverage line below says the same in text */
-  .rw-week { background: var(--sunken); border-radius: 12px; padding: 12px 12px 10px; display: grid; gap: 3px; }
-  .rw-row { display: grid; grid-template-columns: 2.4rem repeat(24, minmax(0, 1fr)); gap: 2px; align-items: center; }
-  .rw-row > b { font-size: 11px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rw-row > span { font-size: 10.5px; color: var(--ink-muted); font-variant-numeric: tabular-nums; grid-column: span 6; }
-  .rw-row > i { height: 12px; border-radius: 3px; background: var(--line); }
-  .rw-row > i.on { background: var(--primary); }
-  .rw-row > i.now { outline: 2px solid var(--ink); outline-offset: 1px; }
-  .rw-key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 11px; color: var(--ink-muted); }
-  .rw-key span { display: inline-flex; align-items: center; gap: 5px; }
-  .rw-key i { width: 12px; height: 8px; border-radius: 2px; background: var(--line); }
-  .rw-key i.on { background: var(--primary); }
-  .rw-key i.now { background: transparent; outline: 2px solid var(--ink); outline-offset: -2px; height: 10px; }
-  @media (forced-colors: active) { .rw-week { display: none; } }
+  /* the week as the Analytics peak-hours heatmap draws it (charts.js), in blocks of hours */
+  .rw-heat { min-width: 0; position: relative; }
   .rw-cov { margin: -8px 0 0; font-size: 12.5px; color: var(--ink); line-height: 1.45; }
   .rw-cov b { font-variant-numeric: tabular-nums; }
   .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; margin: 0; }
@@ -268,6 +257,7 @@
 <script src="/static/filters.js"></script>
 <script src="/static/live.js"></script>
 <script src="/static/nav.js"></script>
+<script src="/static/charts.js"></script>
 <script>
 (function () {
   "use strict";
@@ -586,14 +576,6 @@
     return (r ? esc(winSummary(r)) : esc(T("始终", "Always"))) + linkBtn("edit-window", w.id, T("修改运行时段", "Change run window")) +
       (r ? '<span class="aside">' + esc(r.tz) + "</span>" : "");
   }
-  // the weekday (0 = Monday) and hour it is now in the window's zone
-  function nowIn(tz) {
-    try {
-      var parts = new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", hourCycle: "h23", timeZone: tz }).formatToParts(new Date());
-      var get = function (t) { return (parts.filter(function (p) { return p.type === t; })[0] || {}).value; };
-      return { day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(get("weekday")), hour: parseInt(get("hour"), 10) % 24 };
-    } catch (e) { return null; }
-  }
   // runs a week: each open stretch starts with a run, then one per interval
   function winRuns(win, interval) {
     var every = Math.max(1, (interval || 3600) / 3600), runs = 0, run = 0, first = -1;
@@ -649,20 +631,8 @@
       html += '<p class="hint">' + esc(T("跨夜时段：于次日清晨结束，并归属于开始的那一天。", "Overnight window: it ends the next morning and belongs to the day it starts on.")) + "</p>";
     }
     if (!v.days.length) return html;
-    var hrs = winHours(v), now = nowIn(v.tz);
-    // the week: hour ticks on top, one row per day
-    var week = '<div class="rw-row"><span style="grid-column:2 / span 6">00</span><span>06</span><span>12</span><span>18</span></div>';
-    for (var d = 0; d < 7; d++) {
-      week += '<div class="rw-row"><b>' + esc(dayName(d)) + "</b>";
-      for (var h = 0; h < 24; h++) {
-        var cls = (winOn(v, d, h) ? "on" : "") + (now && now.day === d && now.hour === h ? " now" : "");
-        week += cls ? '<i class="' + cls.trim() + '"></i>' : "<i></i>";
-      }
-      week += "</div>";
-    }
-    week += '<div class="rw-key"><span><i class="on"></i>' + esc(T("运行", "Runs")) + "</span><span><i></i>" + esc(T("不运行", "Doesn't run")) +
-      "</span>" + (now ? '<span><i class="now"></i>' + esc(T("现在", "Now")) + "</span>" : "") + "</div>";
-    html += '<div class="rw-week" aria-hidden="true">' + week + "</div>";
+    var hrs = winHours(v);
+    html += '<div class="rw-heat" data-rw="' + id + '"></div>';
     var all = Math.round(168 * 3600 / (w.interval_sec || 3600)), runs = winRuns(v, w.interval_sec);
     html += '<p class="rw-cov">' + (hrs >= 168
       ? esc(T("每周 168 小时全部检测。", "Checked all 168 hours a week."))
@@ -681,6 +651,36 @@
     }
     return html;
   }
+  // the run window's heatmap uses the blocks of the Analytics peak-hours default (4 h), so the two grids line up
+  var RW_BLOCK = 4;
+  function drawWindows() {
+    if (!window.EkteCharts) return;
+    var hosts = $("list").querySelectorAll("[data-rw]");
+    for (var i = 0; i < hosts.length; i++) {
+      var host = hosts[i], s = st(host.getAttribute("data-rw")), v = s.vals.win;
+      if (!v) continue;
+      var B = RW_BLOCK, cells = [];
+      for (var d = 0; d < 7; d++) for (var h0 = 0; h0 < 24; h0 += B) {
+        var n = 0;
+        for (var h = h0; h < h0 + B; h++) if (winOn(v, d, h)) n++;
+        if (n) cells.push({ dow: d + 1, hour: h0, v: n / B, runs: n });
+      }
+      var hrs = winHours(v);
+      window.EkteCharts.heatmap(host, {
+        id: "rwh-" + host.getAttribute("data-rw"), unit: "ratio", block: B, lo: 0, hi: 1, maxH: 216, cells: cells,
+        title: T("运行时段", "Run window"),
+        desc: Tf("每周有 {h} / 168 小时运行。", "Runs {h} of 168 hours a week.", { h: hrs }),
+        days: WIN_ALL.map(dayName),
+        hourLabel: function (h, b) { return b > 1 ? pad2(h) + "–" + pad2(h + b) : pad2(h); },
+        tipTime: function (dow, h) { return dayName(dow - 1) + " " + pad2(h) + ":00–" + pad2(h + B) + ":00"; },
+        tipSub: function (c) { return Tf("运行其中 {n} / {b} 小时", "Runs {n} of {b} hours", { n: c.runs, b: B }); },
+        lowHint: "",
+        legend: { scale: T("每个时段中运行的小时比例", "share of each block's hours it runs"), few: null, none: T("不运行", "Doesn't run") },
+      });
+    }
+  }
+  var rwResize = null;
+  window.addEventListener("resize", function () { clearTimeout(rwResize); rwResize = setTimeout(drawWindows, 150); });
   function checkWindow(v) {
     if (v.preset === "always") return null;
     if (!v.days.length) return function () { return T("请至少选择一天。", "Choose at least one day."); };
@@ -1013,6 +1013,10 @@
 
   var flashId = null, focusSetup = false;
   function render() {
+    renderList();
+    drawWindows();
+  }
+  function renderList() {
     var list = $("list");
     if (loadErr && !watches) {
       $("count").textContent = "";

@@ -25,9 +25,10 @@
   "Run now ignores the run window.": "立即运行不受运行时段限制。",
   "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).": "每周 {h} / 168 小时 · 约 {runs} 次运行，而不是 {all} 次（−{pct} %）。",
   "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "检测间隔（{every}）长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
-  "Runs": "运行",
   "Doesn't run": "不运行",
-  "Now": "现在",
-  "The monitor runs at its check interval at any time of day.": "监控按检测间隔全天候运行。"
+  "The monitor runs at its check interval at any time of day.": "监控按检测间隔全天候运行。",
+  "Runs {h} of 168 hours a week.": "每周有 {h} / 168 小时运行。",
+  "Runs {n} of {b} hours": "运行其中 {n} / {b} 小时",
+  "share of each block's hours it runs": "每个时段中运行的小时比例"
  }
 }

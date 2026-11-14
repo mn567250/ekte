@@ -56,7 +56,10 @@
  *          cells [{ dow 1..7 (Mon..Sun), hour (block start) 0..23, v, runs,
  *          low, g (week of the fold, 0-based; default 0) }], days [7 short
  *          names], hourLabel(h), tipTime(dow, hour, g), lowHint,
- *          legend { few, none } texts; groups [labels]: the weekdays repeat
+ *          legend { few, none, scale } texts (null leaves an item out);
+ *          lo, hi: fixed scale bounds (default: the data's); maxH: the grid's
+ *          height cap in px (default 720); tipSub(c): the tooltip's second
+ *          line (default "{n} runs"); groups [labels]: the weekdays repeat
  *          once per label (weeks of a fold), side by side with a wider gap
  *   - stackBars(host, cfg)    bars over time, each stacked from categories
  *                             (shares of the bucket's total), faded for few
@@ -469,12 +472,13 @@
     // square cells: as wide as the columns allow, the grid at most 720 px tall;
     // blocks of several hours get a wider axis for their "00:00–06:00" labels
     var left = B > 1 ? 96 : 48, top = G ? 34 : 20;
-    var size = Math.max(16, Math.min(Math.floor((W0 - left - 2 - SEP * (NG - 1)) / (7 * NG)), Math.floor(720 / rows)));
+    var size = Math.max(16, Math.min(Math.floor((W0 - left - 2 - SEP * (NG - 1)) / (7 * NG)), Math.floor((cfg.maxH || 720) / rows)));
     // the gap and corner radius grow with the cell, so large cells stay tiles
     var gap = Math.max(2, Math.round(size * 0.1)), rx = Math.max(3, Math.round(size * 0.12));
     var W = left + 7 * NG * size + SEP * (NG - 1) + gap, H = top + rows * size + gap;
     var vs = cells.map(function (c) { return c.v; });
-    var lo = vs.length ? Math.min.apply(null, vs) : 0, hi = vs.length ? Math.max.apply(null, vs) : 1;
+    var lo = cfg.lo != null ? cfg.lo : vs.length ? Math.min.apply(null, vs) : 0;
+    var hi = cfg.hi != null ? cfg.hi : vs.length ? Math.max.apply(null, vs) : 1;
     var step = function (v) { return hi > lo ? Math.min(STEPS - 1, Math.floor(((v - lo) / (hi - lo)) * STEPS)) : Math.floor(STEPS / 2); };
     var at = {}, kOf = function (g, dow, h) { return (G ? g + 1 + "." : "") + dow + "-" + h; };
     cells.forEach(function (c) { at[kOf(c.g || 0, c.dow, c.hour - c.hour % B)] = c; });
@@ -526,13 +530,13 @@
     var legend = '<ul class="hlegend">' +
       '<li><span class="hv">' + esc(fmt(lo, cfg.unit)) + "</span>" + '<span class="hscale" aria-hidden="true">' + scale + "</span>" +
       '<span class="hv">' + esc(fmt(hi, cfg.unit)) + "</span>" + '<span class="sub">' + esc(L.scale || "") + "</span></li>" +
-      "<li>" + sw("low") + "<span>" + esc(L.few || "") + "</span></li>" +
-      "<li>" + sw("none") + "<span>" + esc(L.none || "") + "</span></li></ul>";
+      (L.few === null ? "" : "<li>" + sw("low") + "<span>" + esc(L.few || "") + "</span></li>") +
+      (L.none === null ? "" : "<li>" + sw("none") + "<span>" + esc(L.none || "") + "</span></li>") + "</ul>";
     host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>' + legend;
     tipFor(host, function (k) {
       var c = at[k];
       return '<p class="when">' + esc(cfg.tipTime(c.dow, c.hour - c.hour % B, c.g || 0)) + "</p><ul><li><span><b>" + esc(fmt(c.v, cfg.unit)) + "</b>" +
-        '<span class="sub">' + esc(Tf("{n} 次检测", "{n} runs", { n: c.runs })) + "</span>" +
+        '<span class="sub">' + esc(cfg.tipSub ? cfg.tipSub(c) : Tf("{n} 次检测", "{n} runs", { n: c.runs })) + "</span>" +
         (c.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li></ul>";
     });
   }

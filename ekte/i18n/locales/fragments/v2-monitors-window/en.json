@@ -25,9 +25,10 @@
   "Run now ignores the run window.": "Run now ignores the run window.",
   "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).": "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).",
   "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.",
-  "Runs": "Runs",
   "Doesn't run": "Doesn't run",
-  "Now": "Now",
-  "The monitor runs at its check interval at any time of day.": "The monitor runs at its check interval at any time of day."
+  "The monitor runs at its check interval at any time of day.": "The monitor runs at its check interval at any time of day.",
+  "Runs {h} of 168 hours a week.": "Runs {h} of 168 hours a week.",
+  "Runs {n} of {b} hours": "Runs {n} of {b} hours",
+  "share of each block's hours it runs": "share of each block's hours it runs"
  }
 }

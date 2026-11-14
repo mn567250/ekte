@@ -25,9 +25,10 @@
   "Run now ignores the run window.": "«Kjør nå» ignorerer kjøretidsvinduet.",
   "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).": "{h} av 168 timer i uken · omtrent {runs} kjøringer i stedet for {all} (−{pct} %).",
   "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "Kontrollintervallet ({every}) er lengre enn vinduet: starttidene forskyves, og en kjøring som ville startet etter vinduet venter på neste.",
-  "Runs": "Kjører",
   "Doesn't run": "Kjører ikke",
-  "Now": "Nå",
-  "The monitor runs at its check interval at any time of day.": "Monitoren kjører med sitt kontrollintervall til alle døgnets tider."
+  "The monitor runs at its check interval at any time of day.": "Monitoren kjører med sitt kontrollintervall til alle døgnets tider.",
+  "Runs {h} of 168 hours a week.": "Kjører {h} av 168 timer i uken.",
+  "Runs {n} of {b} hours": "Kjører {n} av {b} timer",
+  "share of each block's hours it runs": "andel av timene i hver blokk den kjører"
  }
 }
