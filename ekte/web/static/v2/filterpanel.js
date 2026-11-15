@@ -28,7 +28,7 @@
  * Returns:
  *   render(p)        (re)builds the panel; p = { body, foot (HTML), count,
  *                    summary: [texts] }; focus stays on the field (data-f /
- *                    data-range / id) or toggle that had it
+ *                    data-range / data-fk / id) or toggle that had it
  *   sync(p)          p = { count, summary }: badge, summary and reset only
  *   setOpen(open), isOpen(), focusStart()
  */
@@ -45,7 +45,7 @@
   }
   var ico = function (n) { return window.ekteIcon ? window.ekteIcon(n, {}) : ""; };
   // the attributes a field is found again by after a re-render
-  var KEYS = ["data-f", "data-range", "id"];
+  var KEYS = ["data-f", "data-range", "data-fk", "id"];
 
   function create(section, opts) {
     opts = opts || {};

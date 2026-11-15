@@ -615,6 +615,90 @@
       return out;
     }
 
+    /* relay / model (kind "multi", #205): a button that opens a group of
+     * checkboxes. pop = { k, q } while one is open (q: its search text); it
+     * survives render(), so new option counts keep the list open. Ticking
+     * every value keeps them all (the URL lists each): only an empty
+     * selection is "All", as a list never names values seen later. */
+    var pop = null;
+    var MS = {
+      relay: { many: ["{n} 个中转站", "{n} relays"], find: ["筛选中转站…", "Filter relays…"] },
+      model: { many: ["{n} 个模型", "{n} models"], find: ["筛选模型…", "Filter models…"] },
+    };
+    var SEARCH_FROM = 6; // a search box once a list has this many values
+    function msText(k) {
+      var sel = st[k];
+      if (!sel.length) return tr(["全部", "All"]);
+      if (sel.length === 1) return valueLabel(k, sel[0], options);
+      return Tf(MS[k].many[0], MS[k].many[1], { n: num(sel.length) });
+    }
+    function msShown(k) {
+      var q = pop && pop.k === k ? pop.q.trim().toLowerCase() : "";
+      return choices(k).filter(function (c) {
+        return !q || valueLabel(k, c.value, options).toLowerCase().indexOf(q) >= 0 || c.value.toLowerCase().indexOf(q) >= 0;
+      });
+    }
+    function popHTML(k) {
+      var all = choices(k), shown = msShown(k), q = pop && pop.k === k ? pop.q : "", id = "ekf-" + k;
+      var find = all.length >= SEARCH_FROM
+        ? '<label class="ekf-ms-q"><span class="sr-only">' + esc(tr(MS[k].find)) + '</span><input class="in" type="search" id="' + id +
+          '-q" data-fk="' + k + ':q" data-msq="' + k + '" value="' + esc(q) + '" placeholder="' + esc(tr(MS[k].find)) + '" autocomplete="off" /></label>'
+        : "";
+      var acts = '<div class="ekf-ms-acts"><button type="button" class="linkbtn" data-fk="' + k + ':all" data-msa="all">' +
+        esc(q.trim() ? tr(["全选显示项", "Select shown"]) : tr(["全选", "Select all"])) + "</button>" +
+        '<button type="button" class="linkbtn" data-fk="' + k + ':none" data-msa="none">' + esc(tr(["清除", "Clear"])) + "</button></div>";
+      var items = shown.map(function (c, i) {
+        return '<li><label class="ekf-opt"><input type="checkbox" id="' + id + "-" + i + '" data-fk="' + esc(k + ":v:" + c.value) + '" data-m="' + k +
+          '" value="' + esc(c.value) + '"' + (st[k].indexOf(c.value) >= 0 ? " checked" : "") + " /><span>" +
+          esc(valueLabel(k, c.value, options)) + runs(c.runs) + "</span></label></li>";
+      }).join("");
+      return '<div class="ekf-ms-head">' + find + acts + "</div>" +
+        (shown.length ? '<ul class="ekf-ms-list">' + items + "</ul>"
+          : '<p class="ekf-ms-none">' + esc(Tf("没有匹配“{q}”的项", "Nothing matches “{q}”", { q: q.trim() })) + "</p>");
+    }
+    // a list that would stick out of the panel (or the viewport) opens to the
+    // left of its button's right edge instead
+    function place(k) {
+      var p = section.querySelector("#ekf-" + k + "-p");
+      if (!p || p.hidden) return;
+      p.classList.remove("ekf-ms-end");
+      var r = p.getBoundingClientRect(), w = document.documentElement.clientWidth || window.innerWidth;
+      var edge = Math.min(w - 8, section.getBoundingClientRect().right);
+      if (r.right > edge) p.classList.add("ekf-ms-end");
+    }
+    function msOpen(k, focusIn) {
+      if (pop && pop.k !== k) msClose(false);
+      pop = { k: k, q: "" };
+      var p = section.querySelector("#ekf-" + k + "-p"), b = section.querySelector("#ekf-" + k + "-b");
+      if (!p || !b) { pop = null; return; }
+      p.innerHTML = popHTML(k);
+      p.hidden = false;
+      b.setAttribute("aria-expanded", "true");
+      place(k);
+      if (focusIn) msItems(k)[0] && msItems(k)[0].focus();
+    }
+    function msClose(focusBtn) {
+      if (!pop) return;
+      var k = pop.k;
+      pop = null;
+      var p = section.querySelector("#ekf-" + k + "-p"), b = section.querySelector("#ekf-" + k + "-b");
+      if (p) { p.hidden = true; p.innerHTML = ""; }
+      if (b) { b.setAttribute("aria-expanded", "false"); if (focusBtn) b.focus(); }
+    }
+    // the search box and the checkboxes, in arrow-key order
+    function msItems(k) {
+      var p = section.querySelector("#ekf-" + k + "-p");
+      return p ? Array.prototype.slice.call(p.querySelectorAll("input")) : [];
+    }
+    // after a change: the button's text and count (the list itself is current)
+    function msSync() {
+      Object.keys(MS).forEach(function (k) {
+        var t = section.querySelector("#ekf-" + k + "-t"), n = section.querySelector('[data-ms="' + k + '"] .ekf-ms-n');
+        if (t) t.textContent = msText(k);
+        if (n) { n.textContent = num(st[k].length); n.hidden = st[k].length < 2; }
+      });
+    }
+
     function fieldHTML(k) {
       var f = FIELDS[k], label = esc(tr(L[k]));
       if (f.kind === "text") {
@@ -638,14 +722,16 @@
             : "");
       }
       if (f.kind === "multi") {
-        var list = choices(k), sel = st[k];
-        if (!list.length) return ""; // nothing to choose from
-        var boxes = list.map(function (c, i) {
-          return '<label class="ekf-opt"><input type="checkbox" id="ekf-' + k + "-" + i + '" data-m="' + k + '" value="' + esc(c.value) + '"' +
-            (sel.indexOf(c.value) >= 0 ? " checked" : "") + " /><span>" + esc(valueLabel(k, c.value, options)) + runs(c.runs) + "</span></label>";
-        }).join("");
-        return '<fieldset class="ekf-multi" data-key="' + k + '"><legend>' + label + "</legend>" +
-          '<div class="ekf-opts">' + boxes + "</div></fieldset>";
+        if (!choices(k).length) return ""; // nothing to choose from
+        var isOpen = !!(pop && pop.k === k), n = st[k].length, id = "ekf-" + k;
+        // a button like the selects; it opens a group of checkboxes (#205)
+        return '<div class="ekf-ms" data-ms="' + k + '"><span class="ekf-lbl" id="' + id + '-l">' + label + "</span>" +
+          '<button type="button" class="in ekf-ms-btn" id="' + id + '-b" data-fk="' + k + ':btn" aria-haspopup="true" aria-expanded="' + isOpen +
+          '" aria-controls="' + id + '-p" aria-labelledby="' + id + "-l " + id + '-t">' +
+          '<span class="ekf-ms-t" id="' + id + '-t">' + esc(msText(k)) + "</span>" +
+          '<span class="ekf-ms-n" aria-hidden="true"' + (n > 1 ? "" : " hidden") + ">" + esc(num(n)) + "</span></button>" +
+          '<div class="ekf-ms-pop" id="' + id + '-p" role="group" aria-labelledby="' + id + '-l"' + (isOpen ? "" : " hidden") + ">" +
+          (isOpen ? popHTML(k) : "") + "</div></div>";
       }
       var all = f.required ? "" : '<option value="">' + esc(tr(["全部", "All"])) + "</option>";
       return '<label><span>' + label + '</span><select class="in" data-f="' + k + '">' + all +
@@ -680,8 +766,18 @@
         section.querySelector("#fsharefb").hidden = false;
         section.querySelector("#fshareurl").value = url();
       }
+      if (pop) {
+        // the list went away with its field (a page without it now): closed
+        if (!section.querySelector("#ekf-" + pop.k + "-p")) pop = null;
+        else {
+          place(pop.k);
+          // the caret stays at the end of the search text
+          var qi = document.activeElement;
+          if (qi && qi.hasAttribute("data-msq") && section.contains(qi)) qi.setSelectionRange(qi.value.length, qi.value.length);
+        }
+      }
     }
-    function sync() { panel.sync({ count: activeCount(), summary: summary() }); }
+    function sync() { panel.sync({ count: activeCount(), summary: summary() }); msSync(); }
 
     function writeUrl() {
       var qs = serialise(st, defaults, fields);
@@ -734,6 +830,7 @@
       var patch = {};
       own.forEach(function (k) { patch[k] = null; });
       custom = false;
+      pop = null;
       set(patch, { render: true });
     }
 
@@ -803,7 +900,9 @@
       }
       var m = el.getAttribute("data-m");
       if (m) {
-        var vals = Array.prototype.map.call(section.querySelectorAll('input[data-m="' + m + '"]:checked'), function (x) { return x.value; });
+        // one value on or off; values the search hides stay as they are
+        var vals = st[m].filter(function (v) { return v !== el.value; });
+        if (el.checked) vals.push(el.value);
         var p = {}; p[m] = vals;
         return set(p);
       }
@@ -824,6 +923,19 @@
       set(patch);
     });
     section.addEventListener("input", function (ev) {
+      var mq = ev.target.getAttribute("data-msq");
+      if (mq && pop && pop.k === mq) {
+        // only the list changes; the field and its caret stay
+        pop.q = ev.target.value;
+        var at = ev.target.selectionStart, box = section.querySelector("#ekf-" + mq + "-p");
+        box.innerHTML = popHTML(mq);
+        var qi = box.querySelector("[data-msq]");
+        qi.focus();
+        try { qi.setSelectionRange(at, at); } catch (e) { /* ignore */ }
+        var n = msShown(mq).length;
+        say(Tf("显示 {n} / {total} 项", "{n} of {total} shown", { n: num(n), total: num(choices(mq).length) }));
+        return;
+      }
       var k = ev.target.getAttribute("data-f");
       if (k !== "q" && k !== "min_score") return;
       var el = ev.target;
@@ -836,7 +948,61 @@
     });
     section.addEventListener("click", function (ev) {
       if (ev.target.closest("#fshare")) copyLink();
+      var b = ev.target.closest(".ekf-ms-btn");
+      if (b) {
+        var k = b.closest("[data-ms]").getAttribute("data-ms");
+        // from the keyboard (detail 0) focus moves into the list
+        if (pop && pop.k === k) msClose(false); else msOpen(k, ev.detail === 0);
+        return;
+      }
+      var a = ev.target.closest("[data-msa]");
+      if (a && pop) {
+        var mk = pop.k, patch = {};
+        if (a.getAttribute("data-msa") === "none") patch[mk] = [];
+        else {
+          var add = msShown(mk).map(function (c) { return c.value; });
+          patch[mk] = st[mk].concat(add.filter(function (v) { return st[mk].indexOf(v) < 0; }));
+        }
+        // the list is re-drawn with its new ticks; focus stays on the link
+        if (set(patch).length) {
+          var box = section.querySelector("#ekf-" + mk + "-p");
+          if (box) { box.innerHTML = popHTML(mk); var again = box.querySelector('[data-msa="' + a.getAttribute("data-msa") + '"]'); if (again) again.focus(); }
+        }
+      }
     });
+    section.addEventListener("keydown", function (ev) {
+      var b = ev.target.closest(".ekf-ms-btn");
+      if (b && ev.key === "ArrowDown") {
+        ev.preventDefault();
+        var bk = b.closest("[data-ms]").getAttribute("data-ms");
+        if (!pop || pop.k !== bk) msOpen(bk, true);
+        else if (msItems(bk)[0]) msItems(bk)[0].focus();
+        return;
+      }
+      if (!pop) return;
+      var field = ev.target.closest("[data-ms]");
+      if (!field || field.getAttribute("data-ms") !== pop.k) return;
+      if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); msClose(true); return; }
+      if ((ev.key === "ArrowDown" || ev.key === "ArrowUp") && !b) {
+        var items = msItems(pop.k), i = items.indexOf(ev.target);
+        if (i < 0) i = ev.key === "ArrowDown" ? -1 : items.length;
+        var next = items[Math.max(0, Math.min(items.length - 1, i + (ev.key === "ArrowDown" ? 1 : -1)))];
+        if (next) { ev.preventDefault(); next.focus(); }
+        return;
+      }
+      // Enter ticks a checkbox like Space; in the search box it does nothing
+      if (ev.key === "Enter" && ev.target.type === "checkbox") { ev.preventDefault(); ev.target.click(); }
+      else if (ev.key === "Enter" && ev.target.hasAttribute("data-msq")) ev.preventDefault();
+    });
+    // a click or focus outside the open list closes it
+    function outside(ev) {
+      if (!pop) return;
+      var f = section.querySelector('[data-ms="' + pop.k + '"]');
+      if (!f || !f.contains(ev.target)) msClose(false);
+    }
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("focusin", outside);
+    window.addEventListener("resize", function () { if (pop) place(pop.k); });
     window.addEventListener("ekte:lang", function () { render(); });
 
     // the URL shows the view: one from storage too, without dropped keys

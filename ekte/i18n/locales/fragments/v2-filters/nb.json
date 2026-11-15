@@ -2,6 +2,13 @@
  "strings": {
   "Filters updated: {n} active": "Filtre oppdatert: {n} aktive",
   "Last 24 hours": "Siste 24 timer",
-  "Last 365 days": "Siste 365 dager"
+  "Last 365 days": "Siste 365 dager",
+  "Filter relays…": "Filtrer releer…",
+  "Filter models…": "Filtrer modeller…",
+  "Select all": "Velg alle",
+  "Select shown": "Velg de viste",
+  "Clear": "Tøm",
+  "Nothing matches “{q}”": "Ingenting samsvarer med «{q}»",
+  "{n} of {total} shown": "{n} av {total} vises"
  }
 }
