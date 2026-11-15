@@ -88,8 +88,9 @@
   .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
   .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--t-sm); color: var(--ink-muted); }
   .legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }
-  /* long relay URLs wrap only after "/" and "." (<wbr>, see brk()), never
-     mid-word; a single overlong part still breaks rather than overflow */
+  /* series names (relay, model) come from fmt.js's relay(): a long one is
+     cut in the middle with "…" (full name in the title), never broken
+     mid-word; a single overlong word still breaks rather than overflow */
   .legend .nm, .lbl { min-width: 0; overflow-wrap: break-word; }
   .legend .nm { color: var(--ink); font-weight: 600; }
   .lbl { display: block; }
@@ -319,6 +320,7 @@
   </main>
 </div>
 <script src="/i18n.js"></script>
+<script src="/static/fmt.js"></script>
 <script src="/icons.js"></script>
 <script src="/static/nav.js"></script>
 <script src="/static/notice.js"></script>
@@ -336,10 +338,12 @@
   var ico = function (n, o) { return window.ekteIcon ? window.ekteIcon(n, o || {}) : ""; };
   var C = window.EkteCharts, esc = C.esc, fmt = C.fmt;
   // escaped text that may wrap after "/" and "." (relay URLs)
-  var brk = function (s) { return esc(s).replace(/([/.])/g, "$1<wbr>"); };
+  // a series name (relay, model, relay · model) as HTML: fmt.js, the same on every page
+  var brk = function (s) { return EkteFmt.relay(s); };
   // T(zh, en) with {name} placeholders filled after translation
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   var Tf = function (zh, en, vars) {
-    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    return window.EkteFmt.fill(T(zh, en), vars);
   };
 
   /* This page only draws. Every number, grade, colour family, delta
@@ -842,7 +846,7 @@
           var on = shown.indexOf(c.key) >= 0;
           var dis = (on && shown.length === 1) || (!on && full);
           return '<button type="button" data-key="' + esc(c.key) + '" aria-pressed="' + on + '"' + (dis ? " disabled" : "") + ">" +
-            esc(c.label || c.key) + "</button>";
+            brk(c.label || c.key) + "</button>";
         }).join("") + "</div></div>" : ""));
   }
   $("#cmp-ctl").addEventListener("click", function (ev) {
@@ -1164,7 +1168,7 @@
   }
   function runsCol() {
     return { key: "runs", label: T("检测次数", "Runs"), num: true, value: function (r) { return r.runs; },
-      cell: function (r) { return '<td class="n">' + esc(String(r.runs)) + "</td>"; } };
+      cell: function (r) { return '<td class="n">' + esc(EkteFmt.num(r.runs)) + "</td>"; } };
   }
   function metricValue(c) { return c && typeof c.value === "number" ? c.value : null; }
 
@@ -1200,7 +1204,7 @@
     }
     cols.push(
       { key: "runs", label: T("检测次数", "Runs"), num: true, value: function (r) { return r.fc ? null : r.p.n; },
-        cell: function (r) { return '<td class="n">' + (r.fc ? "—" : esc(String(r.p.n))) + "</td>"; } },
+        cell: function (r) { return '<td class="n">' + (r.fc ? "—" : esc(EkteFmt.num(r.p.n))) + "</td>"; } },
       { key: "note", label: T("说明", "Note"),
         cell: function (r) { return '<td class="nt">' + (r.fc ? esc(T("预测（估计）", "Forecast (estimate)")) : r.p.low ? esc(hint) : "") + "</td>"; } });
     return discHTML(o.pfx, o.key, {
@@ -1253,7 +1257,7 @@
     }
     var cell = function (c, unit, runs) {
       if (!c) return '<td class="n">—</td>';
-      return '<td class="n">' + esc(fmt(c.value, unit)) + '<span class="cn">n=' + esc(String(c.n)) + (c.n < runs ? " / " + esc(String(runs)) : "") + "</span></td>";
+      return '<td class="n">' + esc(fmt(c.value, unit)) + '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + (c.n < runs ? " / " + esc(EkteFmt.num(runs)) : "") + "</span></td>";
     };
     var cols = [labelCol(groupName(b.by)), runsCol()].concat((b.metrics || []).map(function (m) {
       return { key: m.id, label: metricName(m.id, "short_label_key"), num: true,
@@ -1387,7 +1391,7 @@
           { key: "value", label: m.agg !== "median" ? T("占比", "Share") : T("中位数", "Median"), num: true, value: function (c) { return c.v; },
             cell: function (c) { return '<td class="n">' + esc(fmt(c.v, m.unit)) + "</td>"; } },
           { key: "runs", label: T("检测次数", "Runs"), num: true, value: function (c) { return c.runs; },
-            cell: function (c) { return '<td class="n">' + esc(String(c.runs)) + "</td>"; } },
+            cell: function (c) { return '<td class="n">' + esc(EkteFmt.num(c.runs)) + "</td>"; } },
           { key: "note", label: T("说明", "Note"), cell: function (c) { return '<td class="nt">' + (c.low ? esc(cellHint()) : "") + "</td>"; } },
         ]),
       });
@@ -1471,7 +1475,7 @@
     var first = bars.length ? Math.min.apply(null, bars.map(function (b) { return b.t; })) : null;
     var classes = d.classes;
     var impCls = function (c) { return IMPAIRED.indexOf(c) >= 0 ? "imp" + (c === IMPAIRED[0] ? " first" : "") : ""; };
-    var count = function (n, cls) { return '<td class="n' + (cls ? " " + cls : "") + '">' + esc(String(n)) + "</td>"; };
+    var count = function (n, cls) { return '<td class="n' + (cls ? " " + cls : "") + '">' + esc(EkteFmt.num(n)) + "</td>"; };
     // the columns both tables share: calls, one per outcome class, the rates (raw(row): the row's counts)
     var callCols = function (raw) {
       return [{ key: "calls", label: T("调用", "Calls"), num: true, value: function (r) { return raw(r).requests; }, cell: function (r) { return count(raw(r).requests); } }]
@@ -1572,7 +1576,7 @@
     }
     // the context column only when some run measured the context window
     var ctx = d.has_context !== false;
-    var nc = function (c) { return '<span class="cn">n=' + esc(String(c.n)) + "</span>" + (c.n && c.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : ""); };
+    var nc = function (c) { return '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + "</span>" + (c.n && c.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : ""); };
     var cols = [labelCol(T("中转站 × 模型", "Relay × model")), runsCol()].concat(d.checks.map(function (c) {
       return { key: "check:" + c, label: checkName(c), value: function (r) { return severity(r.checks[c]); }, cell: function (r) { return chip(r.checks[c]); } };
     }), [{ key: "model_mismatch_rate", label: metricName("model_mismatch_rate"), num: true, value: function (r) { return metricValue(r.model_mismatch); },
@@ -1685,7 +1689,7 @@
           caption: T("所选范围内的中位数（n = 测得该值的检测次数）", "Medians over the selected range (n = runs that measured a value)"),
           cols: [labelCol(gName), runsCol()].concat(BILL_METRICS.map(function (k) {
             return { key: k, label: metricName(k), num: true, value: function (r) { return metricValue(r.metrics[k]); },
-              cell: function (r) { var c = r.metrics[k]; return '<td class="n">' + esc(fmt(c.value, units[k])) + '<span class="cn">n=' + esc(String(c.n)) + "</span></td>"; } };
+              cell: function (r) { var c = r.metrics[k]; return '<td class="n">' + esc(fmt(c.value, units[k])) + '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + "</span></td>"; } };
           })),
         });
     }
@@ -1712,7 +1716,7 @@
     rows.forEach(function (r) { ["relay_overhead", "network_rtt"].forEach(function (k) { max = Math.max(max, r.metrics[k].value || 0); }); });
     var cell = function (c, cls) {
       var w = typeof c.value === "number" && max ? Math.max(1, (c.value / max) * 100) : 0;
-      return '<td class="n bar">' + esc(fmt(c.value, "ms")) + '<span class="cn">n=' + esc(String(c.n)) + "</span>" +
+      return '<td class="n bar">' + esc(fmt(c.value, "ms")) + '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + "</span>" +
         (w ? '<span class="hbar ' + cls + '" aria-hidden="true"><span style="width:' + w.toFixed(1) + '%"></span></span>' : "") + "</td>";
     };
     var gName = groupName(d.group), head = kpiHead("ovh", p.data[1]);

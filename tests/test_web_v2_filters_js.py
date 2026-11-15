@@ -25,6 +25,7 @@ STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v
 _JS = r"""
 const path = require("path");
 global.window = {};
+require(path.join(process.argv[1], "fmt.js"));
 require(path.join(process.argv[1], "filters.js"));
 const F = window.EkteFilters;
 const body = new Function("F", "return (async () => {" + process.argv[2] + "})();");

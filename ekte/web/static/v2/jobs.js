@@ -47,8 +47,9 @@
   var ACTIVE_MS = 2000, IDLE_MS = 5000;
 
   var T = function (zh, en) { return window.T ? window.T(zh, en) : en; };
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   var Tf = function (zh, en, vars) {
-    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    return window.EkteFmt.fill(T(zh, en), vars);
   };
   var ico = function (n, o) { return window.ekteIcon ? window.ekteIcon(n, o || {}) : ""; };
   var esc = function (s) {
@@ -233,7 +234,7 @@
       var prog = isActive(j)
         ? '<div class="jprog"><div class="bar' + (q ? " q" : "") + '" role="progressbar" aria-valuemin="0" aria-valuemax="100"' +
           (q ? "" : ' aria-valuenow="' + pct + '"') + ' aria-label="' + esc(label) + '"><span style="width:' + pct + '%"></span></div>' +
-          "<b>" + (q ? "" : pct + "%") + "</b></div>"
+          "<b>" + (q ? "" : esc(window.EkteFmt.unit(pct / 100, "ratio", { digits: 0 }))) + "</b></div>"
         : "";
       var live = isActive(j)
         ? '<a class="btn sm pri" href="/?job=' + encodeURIComponent(j.id) + '">' + ico("eye") + esc(T("实时查看", "Watch live")) + "</a>"

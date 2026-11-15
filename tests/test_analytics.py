@@ -130,7 +130,8 @@ def test_relays_grouped_by_knowledge_base_entry_at_query_time(data):
                                 "kind": "provider", "runs": 1}
     assert relays["cheap-gpt"] == {"key": "cheap-gpt", "label": "Cheap GPT", "in_kb": True,
                                    "kind": "relay", "runs": 2}
-    assert relays[OTHER] == {"key": OTHER, "label": OTHER, "in_kb": False, "kind": "url", "runs": 1}
+    # an unsaved relay by its host, as History and the filter chips name it (issue 229)
+    assert relays[OTHER] == {"key": OTHER, "label": "other.example", "in_kb": False, "kind": "url", "runs": 1}
     assert next(iter(relays)) == "cheap-gpt"  # most runs first
 
     # Renaming the relay relabels its history; saving one re-groups old runs.

@@ -53,7 +53,7 @@ _PAGE = """<!doctype html>
 <p class="sr-only" id="live" role="status"></p>
 <section class="card filters" id="filters" hidden></section>
 </main>
-<script src="/i18n.js"></script><script src="/icons.js"></script>
+<script src="/i18n.js"></script><script src="/static/fmt.js"></script><script src="/icons.js"></script>
 <script src="/static/filterpanel.js"></script><script src="/static/filters.js"></script>
 <script>
   window.__changes = [];

@@ -1,14 +1,16 @@
 /* ekte web UI v2 — hand-drawn inline-SVG charts and value formatting.
  *
  * Plain browser global, no modules, no libraries, no outgoing requests. Load
- * after /lang.js (T, EKTE_LANG) and /icons.js. Exposes window.EkteCharts with:
+ * after /lang.js (T, EKTE_LANG), /icons.js and /static/fmt.js (the value
+ * formatters below are fmt.js's). Exposes window.EkteCharts with:
  *   - esc(s)                  HTML-escaped text (every label from the API
  *                             goes through it: relay names are user input)
  *   - fmt(v, unit, o)         a value in the UI locale with its unit
  *                             (ratio -> %, ms, tok/s, …); "—" for null.
  *                             o.bare drops the unit suffix
  *   - fmtDelta(d, unit)       a signed difference ("+2.1", "−120 ms", "+3 pp")
- *   - unitName(unit)          the unit as an axis caption ("%", "ms", …)
+ *   - unitName(unit)          the unit written out as an axis caption
+ *                             ("percent", "milliseconds", …)
  *   - timeChart(host, cfg)    a time-series line chart: one median line per
  *                             series with its p25–p75 band, gaps where a
  *                             bucket has no data, faded hollow markers for
@@ -98,43 +100,12 @@
     });
   }
   function Tx(zh, en) { return window.T ? window.T(zh, en) : en; }
-  function Tf(zh, en, vars) {
-    return Tx(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
-  }
-  // "1 run" / "{n} runs", "1 request" / "{n} requests"
-  function runsText(n) { return n === 1 ? Tx("1 次检测", "1 run") : Tf("{n} 次检测", "{n} runs", { n: n }); }
-  function requestsText(n) { return n === 1 ? Tx("1 次请求", "1 request") : Tf("{n} 次请求", "{n} requests", { n: n }); }
-  function nf(opts) {
-    try { return window.EKTE_LANG.numFmt(opts); } catch (e) { return new Intl.NumberFormat(undefined, opts); }
-  }
-
-  var DIGITS = { score: 1, ratio: 1, ms: 0, "tok/s": 1, tokens: 0, count: 1, s: 1 };
-  var SUFFIX = { ms: " ms", "tok/s": " tok/s", tokens: " tok", s: " s" };
-
-  function fmt(v, unit, o) {
-    if (typeof v !== "number" || !isFinite(v)) return "—";
-    o = o || {};
-    if (unit === "ratio") return nf({ style: "percent", maximumFractionDigits: o.digits != null ? o.digits : 1 }).format(v);
-    var d = o.digits != null ? o.digits : DIGITS[unit] != null ? DIGITS[unit] : 1;
-    var s = nf({ maximumFractionDigits: d }).format(v);
-    return o.bare || !SUFFIX[unit] ? s : s + SUFFIX[unit];
-  }
-
-  function fmtDelta(d, unit) {
-    if (typeof d !== "number" || !isFinite(d)) return "—";
-    if (unit === "ratio") {
-      return Tf("{n} 个百分点", "{n} pp", { n: nf({ maximumFractionDigits: 1, signDisplay: "exceptZero" }).format(d * 100) });
-    }
-    var s = nf({ maximumFractionDigits: DIGITS[unit] != null ? DIGITS[unit] : 1, signDisplay: "exceptZero" }).format(d);
-    return SUFFIX[unit] ? s + SUFFIX[unit] : s;
-  }
-
-  function unitName(unit) {
-    return {
-      score: Tx("健康分（0–100）", "score (0–100)"), ratio: "%", ms: "ms", "tok/s": "tok/s",
-      tokens: "tokens", count: Tx("个数", "count"), s: Tx("秒", "seconds"),
-    }[unit] || unit || "";
-  }
+  // every number, unit and count goes through fmt.js (issue 229); these
+  // names stay for the pages that call them on EkteCharts
+  var F = window.EkteFmt;
+  var runsText = F.runs, requestsText = F.requests, fmt = F.unit, fmtDelta = F.delta;
+  // the axis caption writes the unit out ("milliseconds", "percent")
+  function unitName(unit) { return F.unitName(unit, true); }
 
   /* ---------------- scales ---------------- */
   function niceStep(span, count) {
@@ -293,7 +264,7 @@
       out.push('<line x1="' + f1(l.x) + '" x2="' + f1(l.x) + '" y1="' + (M.t - 2) + '" y2="' + (M.t + ph) + '"/>');
     });
     groups.forEach(function (g) {
-      var glyph = (g.kinds.tool_version ? "v" : "") + (g.kinds.kb_profile ? (g.kinds.tool_version ? "·" : "") + "KB" : "");
+      var glyph = (g.kinds.tool_version ? "v" : "") + (g.kinds.kb_profile ? (g.kinds.tool_version ? "·" : "") + "KB" : ""); // fmt-ok: "KB" is the knowledge base
       var x = Math.min(W - M.r - 12, (g.x0 + g.x1) / 2);
       out.push('<text x="' + f1(x) + '" y="' + (M.t - 6) + '" text-anchor="middle">' + glyph + "</text>");
     });

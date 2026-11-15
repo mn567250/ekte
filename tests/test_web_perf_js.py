@@ -18,6 +18,7 @@ _JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;  // no DOM: the style injection must be skipped
+require(path.join(process.argv[1], "v2", "fmt.js"));
 require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 const perf = JSON.parse(process.argv[2]);
@@ -154,6 +155,7 @@ _LIVE_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "fmt.js"));
 require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };  // after load: style injection stays skipped
@@ -198,6 +200,7 @@ _AXIS_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "fmt.js"));
 require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 const recs = JSON.parse(process.argv[2]);
@@ -222,7 +225,7 @@ def test_perf_js_axes_fit_the_data():
     assert out["axis"] == {"max": 600, "step": 100, "n": 6}
     chart = out["chart"]
     ticks = re.findall(r'<text class="zp-tick" x="([\d.]+)" y="216" text-anchor="(\w+)">([^<]+)</text>', chart)
-    assert [t[2] for t in ticks] == ["0s", "100s", "200s", "300s", "400s"]  # 500s would not fit before the edge
+    assert [t[2] for t in ticks] == ["0 s", "100 s", "200 s", "300 s", "400 s"]  # 500 s would not fit before the edge
     assert ticks[0][1] == "start" and {t[1] for t in ticks[1:]} == {"middle"}
     assert "600s" not in chart and "1,000s" not in chart
     last = max(float(c) for c in re.findall(r'<circle class="zp-pt[^"]*" cx="([\d.]+)"', chart))
@@ -237,6 +240,7 @@ global.document = undefined;
 let made = 0;
 const Real = Intl.NumberFormat;
 Intl.NumberFormat = function (locale, opts) { made++; return new Real(locale, opts); };
+require(path.join(process.argv[1], "v2", "fmt.js"));
 require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 const P = window.EktePerf;
@@ -281,6 +285,7 @@ _LIVE_OPEN_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "fmt.js"));
 require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };
@@ -383,6 +388,7 @@ def _drive_live_panel(page) -> None:
     errors: list[str] = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.set_content('<!doctype html><html lang="en"><head><title>t</title></head><body><div id="host"></div></body></html>')
+    page.add_script_tag(content=(_STATIC / "v2" / "fmt.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "v2" / "kpi.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "perf.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=_REC_JS)
@@ -481,6 +487,7 @@ _SCALE_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "fmt.js"));
 require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };
@@ -571,6 +578,7 @@ _PARITY_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "fmt.js"));
 require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 console.log(JSON.stringify({chart: window.EktePerf.chart(JSON.parse(process.argv[2]), "latency")}));
@@ -617,7 +625,7 @@ def test_web_and_export_charts_draw_the_same_trend_and_axes():
             assert all(abs(a - b) <= 5 for a, b in zip(ys_w, ys_e, strict=True)), (side, g_web)
     # the same time axis: both end at the last request, with the same ticks
     def ticks(svg):
-        return [float(t.replace(",", "")) for t in re.findall(r">([\d.,]+)s</text>", svg)]
+        return [float(t.replace(",", "")) for t in re.findall(r">([\d.,]+) s</text>", svg)]
 
     assert ticks(web) == ticks(export) == [0, 2, 4, 6, 8]
 
@@ -649,6 +657,7 @@ def _live_page(page, motion_off: bool = False) -> None:
     page.set_content('<!doctype html><html lang="en"' + (' data-motion="off"' if motion_off else "") +
                      '><head><title>t</title></head><body style="width:760px"><div id="host"></div></body></html>')
     page.add_style_tag(content=(_STATIC / "v2" / "chartmotion.css").read_text(encoding="utf-8"))
+    page.add_script_tag(content=(_STATIC / "v2" / "fmt.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "v2" / "kpi.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "perf.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "v2" / "chartmotion.js").read_text(encoding="utf-8"))

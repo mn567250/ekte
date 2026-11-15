@@ -124,7 +124,7 @@
           - text: Feilrate
           - 'button "Om: Feilrate"'
           - text: 7,2 % Ingen data i forrige periode Data fra 14 av 15 kjøringer
-        - listitem: Forsinkelse p50 1 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem: Forsinkelse p50 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
         - listitem: Tid til første token p50 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
         - listitem: Dekodehastighet p50 62,9 tok/s Ingen data i forrige periode Data fra 14 av 15 kjøringer
         - listitem: Faktureringsforhold (prompt) 103,5 % Ingen data i forrige periode Data fra 10 av 15 kjøringer

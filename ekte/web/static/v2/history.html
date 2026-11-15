@@ -274,6 +274,7 @@
   </main>
 </div>
 <script src="/i18n.js"></script>
+<script src="/static/fmt.js"></script>
 <script src="/static/kpi.js"></script>
 <script src="/perf.js"></script>
 <script src="/static/chartmotion.js"></script>
@@ -300,10 +301,11 @@
     });
   };
   // T(zh, en) with {name} placeholders filled after translation
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   var Tf = function (zh, en, vars) {
-    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    return window.EkteFmt.fill(T(zh, en), vars);
   };
-  var num = function (s) { return typeof s === "number" ? String(Math.round(s)) : "—"; };
+  var num = function (s) { return EkteFmt.num(s); };
   // risk badge icons (the badge colour is the server's family.risk)
   var RISKI = { clean: "check", low: "warning", medium: "warning", high: "x", inconclusive: "info" };
 
@@ -1095,16 +1097,14 @@
   function keyed(key) { return window.EkteFilters.keyed(key, cat && cat.labels); }
   function trends() { return window.EkteTrendPick.clean(F.state()["trend.metrics"], cat.order, cat.max, DEF_TRENDS); }
 
-  // a value as text in the metric's display format, and its unit
-  var UNIT = { ms: "ms", tok_s: "tok/s" };
-  function fmtValue(m, v) {
-    if (v == null) return "—";
-    if (m.format === "grade") return cat.grades[Math.round(v) - 1] || "—"; // a point on the 1..6 scale: its letter
-    if (m.format === "percent" || m.format === "ratio_percent") {
-      try { return EKTE_LANG.numFmt({ style: "percent", maximumFractionDigits: 1 }).format(v); } catch (e) { return (v * 100).toFixed(1) + "%"; }
-    }
-    return String(Math.round(v));
+  // a value as text in the metric's display format (fmt.js: locale grouping,
+  // the same decimals as Analytics), and its unit
+  function fmtParts(m, v) {
+    if (v == null) return { text: "—", unit: "" };
+    if (m.format === "grade") return { text: cat.grades[Math.round(v) - 1] || "—", unit: "" }; // a point on the 1..6 scale: its letter
+    return EkteFmt.parts(v, m.format === "score" ? "count" : m.format, { digits: m.format === "score" || m.format === "ms" ? 0 : null });
   }
+  function fmtValue(m, v) { return fmtParts(m, v).text; }
 
   function trendCount(n) {
     return '<span aria-hidden="true">' + esc(n + " / " + cat.max) + '</span><span class="sr-only">' +
@@ -1152,7 +1152,7 @@
       var m = cat.byId[id], t = g.trends[id], name = keyed(m.short_label_key);
       var last = t && t.last, pts = (t && t.points) || [];
       if (!last || last.value == null || !pts.length) return { id: id, label: name, text: "", family: "grey", slot: gap };
-      var unit = UNIT[m.format] || "", u = unit ? " " + unit : "";
+      var unit = fmtParts(m, last.value).unit, u = unit ? " " + unit : "";
       var shown = m.format === "grade" && last.grade ? last.grade : fmtValue(m, last.value);
       var label = Tf("{metric}趋势（{n} 次检测）：从 {first} 到 {last}，{dir}。", "{metric} trend across {n} audits: from {first} to {last}, {dir}.", {
         metric: keyed(m.label_key), n: t.n, first: fmtValue(m, t.first) + u, last: shown + u,
@@ -1202,7 +1202,7 @@
       // (no-break spaces): a line never starts or ends with a separator
       '<span class="c-mode">' + (byMonitor(r) ? '<span class="badge sky">' + ico("bell") + " " + esc(T("监控", "Monitor")) + "</span> " : "") +
       "<b>" + esc(r.mode || "check") + "</b>" + surfaceHTML(r) + (r.suite ? SEP + esc(r.suite) : "") + protoHTML(r) +
-      (typeof r.latency_p50_ms === "number" ? '<span class="perf" title="' + esc(T("延迟 p50", "Latency p50")) + '">p50 ' + Math.round(r.latency_p50_ms) + " ms</span>" : "") + "</span>" +
+      (typeof r.latency_p50_ms === "number" ? '<span class="perf" title="' + esc(T("延迟 p50", "Latency p50")) + '">p50 ' + esc(EkteFmt.unit(r.latency_p50_ms, "ms")) + "</span>" : "") + "</span>" +
       '<span class="c-cv" aria-hidden="true">' + ico("chevronDown") + "</span></button>" +
       rerunBtnHTML(r) + schedBtnHTML(r) +
       '<button type="button" class="rdel" aria-label="' + esc(T("删除此记录", "Delete entry")) + '" title="' + esc(T("删除此记录", "Delete entry")) +

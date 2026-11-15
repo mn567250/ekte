@@ -32,10 +32,9 @@
     return window.EKTE_LANG ? window.EKTE_LANG.t(zh, en) : en;
   }
   // T() with {placeholders} filled in after translation
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   function Tf(zh, en, vals) {
-    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) {
-      return Object.prototype.hasOwnProperty.call(vals, k) ? vals[k] : m;
-    });
+    return window.EkteFmt.fill(T(zh, en), vals);
   }
   // AuditReport.stream_mode: the performance probe's configured request mode
   var STREAM_MODE = {
@@ -86,13 +85,8 @@
     var k = kind + "|" + (loc === undefined ? "" : JSON.stringify(loc)) + "|" + JSON.stringify(opts || {});
     return intlCache[k] || (intlCache[k] = new Ctor(loc, opts));
   }
-  function num(v, digits) {
-    try {
-      return intlFmt(Intl.NumberFormat, "n", locale(), { maximumFractionDigits: digits }).format(Number(v));
-    } catch (e) {
-      return String(Math.round(v * Math.pow(10, digits)) / Math.pow(10, digits));
-    }
-  }
+  // numbers, durations and sizes: fmt.js, as on every page (issue 229)
+  function num(v, digits) { return window.EkteFmt.num(v, digits); }
 
   // risk level -> token family + glyph (the pill text is EKTE_I18N.label)
   var RISK = {
@@ -316,24 +310,8 @@
       return c;
     }
   }
-  // a duration in mixed units, only those it needs (mirrors _fmt_duration in
-  // ekte/report/render.py): 850 µs, 457 ms, 6 s 97 ms, 1 min 5 s, 2 h 3 min 4 s
-  function fmtDuration(ms) {
-    var sign = ms < 0 ? "-" : "";
-    ms = Math.abs(ms);
-    if (ms === 0) return "0 ms";
-    if (ms < 1) return sign + Math.round(ms * 1000) + " µs";
-    if (ms < 10) return sign + ms.toFixed(1).replace(/\.0$/, "") + " ms";
-    var t = Math.round(ms), parts;
-    if (t < 1000) return sign + t + " ms";
-    if (t < 60000) parts = [[Math.floor(t / 1000), "s"], [t % 1000, "ms"]];
-    else {
-      var s = Math.round(ms / 1000);
-      parts = [[Math.floor(s / 3600), "h"], [Math.floor(s / 60) % 60, "min"], [s % 60, "s"]];
-    }
-    return sign + parts.filter(function (p) { return p[0]; })
-      .map(function (p) { return p[0] + " " + p[1]; }).join(" ");
-  }
+  // a duration in mixed units, only those it needs: 850 µs, 6 s 97 ms
+  function fmtDuration(ms) { return window.EkteFmt.duration(ms); }
   function fmt(x, k) {
     if (x == null) return "null";
     if (typeof x === "number" && k) {
@@ -698,10 +676,7 @@
   }
 
   // A detector's wall-clock time: "850 ms", "4.2 s", "73 s".
-  function duration(ms) {
-    if (ms == null || !isFinite(ms)) return "—";
-    return ms < 1000 ? num(ms, 0) + " ms" : num(ms / 1000, ms < 10000 ? 1 : 0) + " s";
-  }
+  function duration(ms) { return window.EkteFmt.elapsed(ms); }
 
   // One finding in full: outcome, summary, recommendation and up to 12
   // evidence fields. Used by the audit page's live checks list.
@@ -1118,11 +1093,7 @@
       });
     });
   }
-  function bytes(n) {
-    n = Number(n) || 0;
-    return n < 1024 ? Tf("{n} 字节", "{n} bytes", { n: num(n, 0) })
-      : n < 1048576 ? num(n / 1024, 1) + " KB" : num(n / 1048576, 1) + " MB";
-  }
+  function bytes(n) { return window.EkteFmt.bytes(n); }
   function urlPath(u) {
     var m = /^[a-z]+:\/\/[^/]+(\/[^?#]*)?/i.exec(String(u || ""));
     return m ? m[1] || "/" : String(u || "");

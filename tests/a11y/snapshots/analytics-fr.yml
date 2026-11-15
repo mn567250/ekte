@@ -124,7 +124,7 @@
           - text: Taux d'erreur
           - 'button "À propos : Taux d''erreur"'
           - text: 7,2 % Pas de données sur la période précédente Données de 14 exécutions sur 15
-        - listitem: Latence p50 1 <duration> Pas de données sur la période précédente Données de 14 exécutions sur 15
+        - listitem: Latence p50 <duration> Pas de données sur la période précédente Données de 14 exécutions sur 15
         - listitem: Délai du premier jeton p50 <duration> Pas de données sur la période précédente Données de 14 exécutions sur 15
         - listitem: Vitesse de décodage p50 62,9 tok/s Pas de données sur la période précédente Données de 14 exécutions sur 15
         - listitem: Ratio de facturation (entrée) 103,5 % Pas de données sur la période précédente Données de 10 exécutions sur 15

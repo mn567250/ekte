@@ -128,8 +128,9 @@ def test_timeline_axes_fit_the_data():
                           start_ms=i * 50_000.0, duration_ms=420.0) for i in range(11)]  # ends ~500.4 s
     svg = timeline_svg(recs, ("latency", "Latency", "ms", lambda r: r.duration_ms))
     # the time axis ends where the last request ended (500.42 s), not at a
-    # rounded-up 600 s; ticks every 100 s as long as their label fits
-    assert ">500s</text>" in svg and "600s" not in svg and "1,000s" not in svg
+    # rounded-up 600 s; ticks every 100 s as long as their label fits (the
+    # "500 s" label would cross the right edge, as in perf.js)
+    assert ">400 s</text>" in svg and "500 s" not in svg and "600 s" not in svg and "1,000 s" not in svg
     last = max(float(c) for c in re.findall(r'<circle class="pt[^"]*" cx="([\d.]+)"', svg))
     assert 860 - 16 - last < 2
     assert ">500</text>" in svg and ">1,000</text>" not in svg  # 420 ms x 1.05 -> 0..500
