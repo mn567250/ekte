@@ -14,8 +14,8 @@
 <link rel="stylesheet" href="/static/filterpanel.css" />
 <style>
   /* ---- knowledge page (v2) — page-only rules; colours via ekte.css tokens ---- */
-  .form-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
-  .form-title .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+  .form-title { font-family: var(--disp); font-weight: 600; font-size: var(--t-lg); margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .form-title .count { font-family: var(--sans); font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted); }
   .form-title:focus { outline: none; }
   .kb-card { margin-top: 20px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
@@ -23,8 +23,8 @@
   /* the one filter card for all tabs (filterpanel.css), fields as on Analytics */
   .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 12px; align-items: end; }
   .fgrid label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .fgrid label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
-  .fgrid .in { font-size: 13.5px; padding: 8px 30px 8px 11px; border-radius: 10px; background-position: right 16px center, right 11px center; min-width: 0; }
+  .fgrid label > span { font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
+  .fgrid .in { font-size: var(--t-base); padding: 8px 30px 8px 11px; border-radius: var(--r-sm); background-position: right 16px center, right 11px center; min-width: 0; }
   .fbody .res:empty { display: none; }
   .kb-tools { display: flex; justify-content: flex-end; margin: 14px 0 0; }
   .kb-tools:not(:has(.btn:not([hidden]))) { display: none; }
@@ -33,47 +33,47 @@
   [data-kb="add"] + [data-kb="list"] { margin-top: 14px; }
 
   /* add form: a disclosure so the lists come first */
-  .add { margin: 12px 0 4px; border: 1px dashed var(--line); border-radius: 14px; }
+  .add { margin: 12px 0 4px; border: 1px dashed var(--line); border-radius: var(--r-md); }
   .add > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .add > summary .zicon { width: 15px; height: 15px; }
   .add[open] > summary { border-bottom: 1px solid var(--line); }
   .add-body { padding: 4px 14px 16px; }
   .step { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
   .step:first-child { margin-top: 8px; padding-top: 0; border-top: 0; }
-  .step h3 { font-size: 15px; font-weight: 700; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .step h3 { font-size: var(--t-md); font-weight: 700; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
   .step h3 .n {
     display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%;
-    background: var(--sunken); border: 1px solid var(--line); font-size: 12.5px; font-family: var(--mono);
+    background: var(--sunken); border: 1px solid var(--line); font-size: var(--t-sm); font-family: var(--mono);
   }
   details.inline { margin-top: 10px; }
-  textarea.in.yaml { font-family: var(--mono); font-size: 12.5px; min-height: 180px; }
-  textarea.in.prompt { font-family: var(--mono); font-size: 12px; min-height: 160px; }
+  textarea.in.yaml { font-family: var(--mono); font-size: var(--t-sm); min-height: 180px; }
+  textarea.in.prompt { font-family: var(--mono); font-size: var(--t-xs); min-height: 160px; }
   .okbox {
     display: flex; align-items: flex-start; gap: 8px; background: var(--success-tint); border: 1px solid var(--success);
-    color: var(--success); border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5; font-weight: 600; margin-top: 14px;
+    color: var(--success); border-radius: var(--r-md); padding: 12px 14px; font-size: var(--t-base); line-height: 1.5; font-weight: 600; margin-top: 14px;
   }
   .errbox { margin-top: 14px; }
   .errbox[hidden], .okbox[hidden], .scan[hidden] { display: none; }
   .scan { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .scan h4 { margin: 0 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink-muted); }
-  .scan ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5; }
+  .scan h4 { margin: 0 0 6px; font-size: var(--label-size); font-weight: var(--label-weight); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-muted); }
+  .scan ul { margin: 0; padding-left: 18px; font-size: var(--t-base); line-height: 1.5; }
   .scan .bad li { color: var(--danger); }
   .scan .warn li { color: var(--ink); }
-  .scan pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; margin: 4px 0 0; background: var(--sunken); border-radius: 8px; padding: 8px 10px; }
+  .scan pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--t-xs); margin: 4px 0 0; background: var(--sunken); border-radius: var(--r-sm); padding: 8px 10px; }
   .scan li code, .item code, .grp code, .res code {
-    font-size: 12px; background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere;
+    font-size: var(--t-xs); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 0 5px; overflow-wrap: anywhere;
   }
-  .res { margin-top: 10px; font-size: 14px; }
+  .res { margin-top: 10px; font-size: var(--t-base); }
 
   /* items: one row per model / provider / relay */
   .items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   .item { padding: 12px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
   .item[hidden], .grp[hidden] { display: none; }
   .item.off .what { opacity: 0.7; }
-  .item .what { flex: 1 1 240px; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+  .item .what { flex: 1 1 240px; min-width: 0; font-size: var(--t-base); overflow-wrap: anywhere; }
   .item .nm { font-weight: 600; }
-  .item .meta { display: block; font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; line-height: 1.5; }
-  .item .ask { font-size: 13px; font-weight: 600; color: var(--danger); }
+  .item .meta { display: block; font-size: var(--t-sm); color: var(--ink-muted); margin-top: 3px; line-height: 1.5; }
+  .item .ask { font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
   /* Delete (your entries) sits before the switch; the switch closes every row
      at the same width, so the toggles line up down the list */
   .item .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
@@ -84,7 +84,7 @@
   .grps { display: flex; flex-direction: column; gap: 10px; }
   .grp { padding: 0; }
   .grp > summary { cursor: pointer; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 600; }
-  .grp > summary .cnt { color: var(--ink-muted); font-weight: 500; font-size: 13px; }
+  .grp > summary .cnt { color: var(--ink-muted); font-weight: 500; font-size: var(--t-sm); }
   .grp > .items { padding: 0 10px 10px; }
   .grp .item { box-shadow: none; border: 1px solid var(--line); }
   [data-kb="list"] { display: flex; flex-direction: column; gap: 10px; }

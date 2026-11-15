@@ -32,8 +32,8 @@
     ".secret-wrap>input{padding-right:44px}" +
     "input[data-secret]::-ms-reveal,input[data-secret]::-ms-clear{display:none}" +
     ".secret-eye{position:absolute;top:0;right:4px;bottom:0;margin:auto 0;width:36px;height:32px;" +
-    "display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:8px;" +
-    "background:none;color:var(--zsf-color,var(--faint));font-size:18px;cursor:pointer;transition:color .15s}" +
+    "display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:var(--r-sm);" +
+    "background:none;color:var(--zsf-color,var(--faint));font-size:var(--t-lg);cursor:pointer;transition:color var(--dur-fast)}" +
     ".secret-eye:hover,.secret-eye[aria-pressed=true]{color:var(--zsf-color-on,var(--ink))}" +
     ".secret-eye:focus-visible{outline:2px solid var(--zsf-focus,var(--teal,var(--grn,currentColor)));outline-offset:-2px}";
 

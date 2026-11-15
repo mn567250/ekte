@@ -20,6 +20,36 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: one set of design tokens, enforced ([#213](https://github.com/mn567250/ekte/issues/213))
+
+Font sizes, letter-spacing, radii, control heights and motion were written
+per page (22 font sizes, 85 hard-coded radii, 5 field and 6 button heights,
+11 durations and 4 easing curves). They are now tokens in one block of
+`ekte.css`, next to the colour tokens of `tokens.css`, and a test keeps them
+there.
+
+- **Tokens** ([#221](https://github.com/mn567250/ekte/issues/221)): a type
+  scale of eight steps (11–26 px) plus the page title and the report grade,
+  letter-spacing, spacing in 4 px steps, radius, control height, durations
+  and easings. Every stylesheet, page and script under `ekte/web/static`
+  uses them, including the self-contained styles of `perf.js` and
+  `secretfield.js`; `chartmotion.js` reads its timings from the tokens.
+- **Radius by role** ([#222](https://github.com/mn567250/ekte/issues/222)):
+  chart keys, chips and code, controls, inner panels, page cards, pills and
+  bars; `--r-card`, `--r-field` and `--r-btn` are gone.
+- **Three control heights** ([#223](https://github.com/mn567250/ekte/issues/223)):
+  every field, select and button is 32, 40 or 48 px tall (dense rows and
+  inline edits, the default, the audit form). The segmented radio control of
+  the audit and monitor pages is one shared component.
+- **One label style** ([#224](https://github.com/mn567250/ekte/issues/224))
+  for every uppercase label: form fields, table headers, key figures, card
+  sections.
+- **No drift**: `tests/test_web_design_tokens.py` fails on a literal font
+  size, letter-spacing, radius, duration or easing outside the token block,
+  on a label without the label tokens, on an unknown token and on a timing
+  constant in a script; `tests/a11y/test_control_sizes.py` fails on a
+  control of any other height.
+
 ### Web UI: visual bugs from the design audit ([#212](https://github.com/mn567250/ekte/issues/212))
 
 - **Analytics tables fit the page** ([#220](https://github.com/mn567250/ekte/issues/220)).

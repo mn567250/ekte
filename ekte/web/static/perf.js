@@ -1367,19 +1367,19 @@
     "--zp-better:#1a7f37;--zp-worse:#cb3b2e;--zp-focus:#2a78d6;--zp-tip-bg:#0c211e;--zp-tip-ink:#fff;" +
     "--zp-tip-shadow:rgba(0,0,0,.5)}" +
     ".zp-section,.zp-live{text-align:left}" +
-    ".zp-live{margin:18px auto 0;max-width:620px;background:var(--zp-panel);border:1px solid var(--zp-grid);border-radius:14px;padding:12px 14px}" +
-    ".zp-live-h{font-weight:700;font-size:13px;color:var(--zp-ink);margin-bottom:8px}" +
+    ".zp-live{margin:18px auto 0;max-width:620px;background:var(--zp-panel);border:1px solid var(--zp-grid);border-radius:var(--r-md);padding:12px 14px}" +
+    ".zp-live-h{font-weight:700;font-size:var(--t-sm);color:var(--zp-ink);margin-bottom:8px}" +
     ".zp-kpis{margin:4px 0 10px}" +
-    ".zp-probe{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--zp-ink2);margin:0 0 8px;font-family:var(--mono,monospace)}" +
-    ".zp-bar{flex:1;height:5px;background:var(--zp-track);border-radius:3px;overflow:hidden}" +
-    ".zp-bar i{display:block;height:100%;background:var(--zp-t);transition:width .3s}" +
+    ".zp-probe{display:flex;align-items:center;gap:10px;font-size:var(--t-xs);color:var(--zp-ink2);margin:0 0 8px;font-family:var(--mono,monospace)}" +
+    ".zp-bar{flex:1;height:5px;background:var(--zp-track);border-radius:var(--r-pill);overflow:hidden}" +
+    ".zp-bar i{display:block;height:100%;background:var(--zp-t);transition:width var(--dur-slow)}" +
     ".zp-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}" +
-    ".zp-tabs button{font:600 12px var(--sans,system-ui);color:var(--zp-ink2);background:var(--zp-tab);border:1.5px solid var(--zp-grid);border-radius:999px;padding:4px 11px;cursor:pointer}" +
+    ".zp-tabs button{font:600 var(--t-xs) var(--sans,system-ui);color:var(--zp-ink2);background:var(--zp-tab);border:1.5px solid var(--zp-grid);border-radius:var(--r-pill);padding:4px 11px;cursor:pointer}" +
     ".zp-tabs button.on{color:var(--zp-tab-on-ink);background:var(--zp-tab-on);border-color:var(--zp-tab-on)}" +
     ".zp-tabs button:focus-visible,.zp-data summary:focus-visible{outline:2px solid var(--zp-focus);outline-offset:2px}" +
     ".zp-chart{width:100%;height:auto;display:block}" +
     ".zp-grid{stroke:var(--zp-grid);stroke-width:1}" +
-    ".zp-tick{fill:var(--zp-ink2);font-size:11px;font-variant-numeric:tabular-nums}" +
+    ".zp-tick{fill:var(--zp-ink2);font-size:var(--t-2xs);font-variant-numeric:tabular-nums}" +
     ".zp-pt{stroke:var(--zp-surface);stroke-width:2}.zp-pt.t{fill:var(--zp-t)}.zp-pt.b{fill:var(--zp-b)}" +
     // audit (passive) requests: a lightly tinted ring in the series colour, so the
     // mark keeps >= 3:1 (its stroke) yet reads apart from solid and hollow points;
@@ -1389,7 +1389,7 @@
     ".zp-pt.hollow{fill:var(--zp-surface)}.zp-pt.hollow.t{stroke:var(--zp-t)}.zp-pt.hollow.b{stroke:var(--zp-b)}" +
     ".zp-legend .zp-key.hollow{background:transparent;border:2px solid var(--zp-t);box-sizing:border-box}" +
     ".zp-better{color:var(--zp-better);font-weight:700}.zp-worse{color:var(--zp-worse);font-weight:700}" +
-    ".zp-mode{border-top:1px solid var(--zp-grid);padding-top:14px;margin-top:20px;font-size:14.5px}" +
+    ".zp-mode{border-top:1px solid var(--zp-grid);padding-top:14px;margin-top:20px;font-size:var(--t-md)}" +
     ".zp-fail{stroke:var(--zp-x);stroke-width:2;stroke-linecap:round}" +
     // not the relay's failures (#172): grey, at full opacity (>= 3:1, BITV 9.1.4.11)
     ".zp-fail.imp{stroke:var(--zp-ink2);fill:none;stroke-width:1.75;stroke-linejoin:round}" +
@@ -1407,45 +1407,45 @@
     // requests above a focused y-range: triangles on the top edge
     ".zp-off{stroke:var(--zp-surface);stroke-width:1.5}.zp-off.t{fill:var(--zp-t)}.zp-off.b{fill:var(--zp-b)}" +
     ".zp-off:hover{stroke:var(--zp-ink)}" +
-    ".zp-key.line{width:14px;height:2px;border-radius:1px;background:var(--zp-ink2);vertical-align:middle}" +
+    ".zp-key.line{width:14px;height:2px;border-radius:var(--r-pill);background:var(--zp-ink2);vertical-align:middle}" +
     ".zp-legend .zp-key.probe{width:7px;height:7px;background:color-mix(in srgb,var(--zp-t) 40%,transparent);border:1px solid var(--zp-t);box-sizing:border-box}" +
-    ".zp-key.band{width:16px;height:10px;border-radius:2px;vertical-align:middle;background:linear-gradient(var(--zp-ink2),var(--zp-ink2)) center/100% 2px no-repeat," +
+    ".zp-key.band{width:16px;height:10px;border-radius:var(--r-2xs);vertical-align:middle;background:linear-gradient(var(--zp-ink2),var(--zp-ink2)) center/100% 2px no-repeat," +
     "color-mix(in srgb,var(--zp-ink2) 22%,transparent)}" +
     ".zp-key.tri{width:0;height:0;border-radius:0;border:solid transparent;border-width:0 5px 9px;border-bottom-color:var(--zp-t)}" +
     // the y-range switch above the chart
-    ".zp-scale{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0 0 4px;font-size:12px;color:var(--zp-ink2)}" +
-    ".zp-seg{display:inline-flex;gap:2px;padding:2px;border:1.5px solid var(--zp-grid);border-radius:999px;background:var(--zp-tab)}" +
-    ".zp-seg button{font:600 12px var(--sans,system-ui);color:var(--zp-ink2);background:none;border:0;border-radius:999px;padding:3px 10px;min-height:24px;cursor:pointer}" +
+    ".zp-scale{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0 0 4px;font-size:var(--t-xs);color:var(--zp-ink2)}" +
+    ".zp-seg{display:inline-flex;gap:2px;padding:2px;border:1.5px solid var(--zp-grid);border-radius:var(--r-pill);background:var(--zp-tab)}" +
+    ".zp-seg button{font:600 var(--t-xs) var(--sans,system-ui);color:var(--zp-ink2);background:none;border:0;border-radius:var(--r-pill);padding:3px 10px;min-height:24px;cursor:pointer}" +
     ".zp-seg button[aria-pressed=true]{color:var(--zp-tab-on-ink);background:var(--zp-tab-on)}" +
     ".zp-seg button:disabled{opacity:.5;cursor:not-allowed}" +
-    ".zp-auto{font:600 12px var(--sans,system-ui);color:var(--zp-ink);background:none;border:0;padding:3px 2px;min-height:24px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}" +
+    ".zp-auto{font:600 var(--t-xs) var(--sans,system-ui);color:var(--zp-ink);background:none;border:0;padding:3px 2px;min-height:24px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}" +
     ".zp-seg button:focus-visible,.zp-auto:focus-visible{outline:2px solid var(--zp-focus);outline-offset:2px}" +
     ".zp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}" +
-    ".zp-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--zp-ink2);margin:2px 0 8px}" +
+    ".zp-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:var(--t-xs);color:var(--zp-ink2);margin:2px 0 8px}" +
     ".zp-key{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;font-style:normal}" +
     ".zp-key.t{background:var(--zp-t)}.zp-key.b{background:var(--zp-b)}" +
     ".zp-legend .zp-key.passive{background:color-mix(in srgb,var(--zp-t) 35%,transparent);border:2px solid var(--zp-t);box-sizing:border-box}" +
     ".zp-key.x{width:auto;height:auto;border-radius:0;color:var(--zp-x);font-weight:800}" +
-    ".zp-key.x.imp{color:var(--zp-ink2)}.zp-key.x.uncounted{color:var(--zp-ink2);font-size:9.5px;font-weight:400;margin-right:3px}" +
+    ".zp-key.x.imp{color:var(--zp-ink2)}.zp-key.x.uncounted{color:var(--zp-ink2);font-size:var(--t-2xs);font-weight:400;margin-right:3px}" +
     ".zp-imp-note{flex-basis:100%;margin:0;color:var(--zp-ink)}" +
-    ".zp-empty{font-size:12.5px;color:var(--zp-faint);padding:18px 0;text-align:center}" +
-    ".zp-muted{font-size:12.5px;color:var(--zp-ink2);margin:6px 0;line-height:1.5}" +
-    ".zp-h{font-size:13.5px;margin:16px 0 6px;color:var(--zp-ink)}" +
+    ".zp-empty{font-size:var(--t-sm);color:var(--zp-faint);padding:18px 0;text-align:center}" +
+    ".zp-muted{font-size:var(--t-sm);color:var(--zp-ink2);margin:6px 0;line-height:1.5}" +
+    ".zp-h{font-size:var(--t-base);margin:16px 0 6px;color:var(--zp-ink)}" +
     ".zp-scroll{overflow-x:auto}" +  // .zp-wide: a plain wrapper (pages may let it scroll)
-    ".zp-table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0 10px;font-variant-numeric:tabular-nums}" +
-    ".zp-table th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--zp-faint);text-align:left;padding:5px 7px;border-bottom:1px solid var(--zp-grid)}" +
+    ".zp-table{width:100%;border-collapse:collapse;font-size:var(--t-xs);margin:6px 0 10px;font-variant-numeric:tabular-nums}" +
+    ".zp-table th{font-size: var(--label-size);font-weight: var(--label-weight);text-transform:uppercase;letter-spacing: var(--track-label);color:var(--zp-faint);text-align:left;padding:5px 7px;border-bottom:1px solid var(--zp-grid)}" +
     ".zp-table td{padding:5px 7px;border-bottom:1px dotted var(--zp-grid);color:var(--zp-ink2);white-space:nowrap}" +
     ".zp-table .r{text-align:right}.zp-table.zp-small{width:auto}" +
-    ".zp-unit{color:var(--zp-faint);font-size:10.5px}" +
-    ".zp-list{font-size:12.5px;color:var(--zp-ink2);margin:6px 0;padding-left:18px;line-height:1.55}" +
+    ".zp-unit{color:var(--zp-faint);font-size:var(--t-2xs)}" +
+    ".zp-list{font-size:var(--t-sm);color:var(--zp-ink2);margin:6px 0;padding-left:18px;line-height:1.55}" +
     // The data table is for screen readers until it takes focus or is opened
     // (:where keeps this overridable: a page may always show the toggle).
     ".zp-plot{position:relative}" +
     ".zp-data:where(:not(:focus-within):not([open])){position:absolute;left:0;bottom:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}" +
-    ".zp-data summary{font-size:12px;color:var(--zp-ink2);cursor:pointer;margin:2px 0 4px}" +
+    ".zp-data summary{font-size:var(--t-xs);color:var(--zp-ink2);cursor:pointer;margin:2px 0 4px}" +
     ".zp-data-scroll{max-height:260px;overflow:auto}" +
     ".zp-tip{position:fixed;z-index:50;display:none;pointer-events:none;white-space:pre;background:var(--zp-tip-bg);color:var(--zp-tip-ink);" +
-    "font:500 11.5px/1.45 var(--mono,monospace);padding:7px 9px;border-radius:8px;box-shadow:0 8px 24px -10px var(--zp-tip-shadow)}";
+    "font:500 var(--t-xs)/1.45 var(--mono,monospace);padding:7px 9px;border-radius:var(--r-sm);box-shadow:0 8px 24px -10px var(--zp-tip-shadow)}";
   (function inject() {
     if (typeof document === "undefined" || !document.head || document.getElementById("zp-css")) return;
     var st = document.createElement("style");

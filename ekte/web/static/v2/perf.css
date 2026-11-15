@@ -36,24 +36,24 @@
 :root .zp-live {
   max-width: none;
   border-color: var(--line);
-  border-radius: var(--r-field);
+  border-radius: var(--r-sm);
   box-shadow: var(--shadow-card);
 }
-:root .zp-tabs button { font-family: var(--sans); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+:root .zp-tabs button { font-family: var(--sans); transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast); }
 /* the y-range switch (Full range / Probe focus) in the same type */
 :root .zp-seg button, :root .zp-auto { font-family: var(--sans); }
-:root .zp-seg button { transition: background 0.15s, color 0.15s; }
+:root .zp-seg button { transition: background var(--dur-fast), color var(--dur-fast); }
 :root .zp-seg button:not([aria-pressed="true"]):not(:disabled):hover { color: var(--ink); }
 :root .zp-tabs button:not(.on):hover { color: var(--ink); border-color: var(--line); }
 /* the live probe bar has the audit progress bar's (.pbar) shape and motion */
 :root .zp-bar { height: 6px; }
-:root .zp-bar i { transition: width 0.4s ease; }
+:root .zp-bar i { transition: width var(--dur-slow) var(--ease-out); }
 /* the ten-column stat table fits the 760px card without scrolling */
 :root .zp-table th,
 :root .zp-table td { padding-left: 5px; padding-right: 5px; }
 :root .zp-table th:first-child,
 :root .zp-table td:first-child { padding-left: 0; }
-:root .zp-table th { letter-spacing: 0.2px; }
+:root .zp-table th { letter-spacing: var(--track-label); }
 :root .zp-h { font-family: var(--disp); font-weight: 600; }
 :root .zp-tip { font-family: var(--mono); box-shadow: var(--shadow-pop); }
 
@@ -77,7 +77,7 @@
 :root .zp-data summary:hover { color: var(--ink); }
 :root .zp-data-scroll {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   margin-top: 4px;
   background: var(--surface);
 }

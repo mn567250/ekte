@@ -19,14 +19,14 @@
   /* inline field errors */
   .in[aria-invalid="true"] { border-color: var(--danger); }
   .in[aria-invalid="true"]:focus { box-shadow: 0 0 0 4px var(--danger-tint); }
-  .ferr { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: var(--danger); line-height: 1.45; }
+  .ferr { margin: 6px 0 0; font-size: var(--t-sm); font-weight: 600; color: var(--danger); line-height: 1.45; }
   .ferr[hidden] { display: none; }
   /* number input with a unit suffix */
   .unit-in { position: relative; }
   .unit-in .in { padding-right: 96px; }
   .unit-in .unit {
     position: absolute; top: 0; bottom: 0; right: 14px; display: flex; align-items: center;
-    font-size: 13px; font-weight: 600; color: var(--ink-muted); pointer-events: none;
+    font-size: var(--t-sm); font-weight: 600; color: var(--ink-muted); pointer-events: none;
     max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .sw-t { font-style: normal; }
@@ -37,7 +37,7 @@
   .unit-in input[type="number"]::-webkit-inner-spin-button,
   .unit-in input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .edit .unit-in .in { padding-right: 76px; }
-  .edit .unit-in .unit { right: 10px; font-size: 12px; }
+  .edit .unit-in .unit { right: 10px; font-size: var(--t-xs); }
   .switch:has(input:disabled) { cursor: not-allowed; opacity: 0.55; }
 
   /* monitor cards */
@@ -47,17 +47,17 @@
   /* paused: a dashed card edge instead of fading the body (opacity pushed its
      text below 4.5:1, WCAG 1.4.3); the state itself is spelled out by the switch */
   .mon.off { border-style: dashed; border-color: var(--line); }
-  .mon.flash { animation: mon-flash 1.6s ease-out; }
+  .mon.flash { animation: mon-flash var(--dur-wait) var(--ease-out); }
   @keyframes mon-flash { from { box-shadow: 0 0 0 3px var(--primary-tint), var(--shadow-card); } }
   .mon-top { display: flex; align-items: flex-start; gap: 10px 14px; flex-wrap: wrap; }
   .mon-title { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; min-width: 0; flex: 1 1 220px; }
   .mon-name {
-    font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.3px; margin: 0;
+    font-family: var(--disp); font-weight: 600; font-size: var(--t-lg); letter-spacing: var(--track-heading); margin: 0;
     overflow-wrap: anywhere; min-width: 0;
   }
   .mon-top .switch { flex: 0 1 auto; margin-left: auto; min-width: 0; max-width: 100%; flex-wrap: wrap; row-gap: 2px; }
   .mon-top .switch .sw-l, .mon-top .switch .sw-t { min-width: 0; overflow-wrap: anywhere; }
-  .mon-url { font-family: var(--mono); font-size: 12.5px; color: var(--ink-muted); margin-top: 6px; overflow-wrap: anywhere; }
+  .mon-url { font-family: var(--mono); font-size: var(--t-sm); color: var(--ink-muted); margin-top: 6px; overflow-wrap: anywhere; }
   .mon-meta {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 16px;
     margin: 14px 0 0; padding: 14px 0 0; border-top: 1px dashed var(--line);
@@ -67,45 +67,45 @@
      and every value in the row still starts on the same line */
   .mon-meta > div { min-width: 0; display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 4px; align-content: start; }
   .mon-meta dt {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); margin: 0;
+    font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); margin: 0;
     align-self: end;
   }
   /* an open inline editor gets the whole row, so its field and Save / Cancel fit */
   .mon-meta > div:has(.edit) { grid-column: 1 / -1; }
   .mon-meta dd .edit { max-width: 440px; }
-  .mon-meta dd { margin: 0; font-size: 13.5px; color: var(--ink); overflow-wrap: anywhere; line-height: 1.45; }
+  .mon-meta dd { margin: 0; font-size: var(--t-base); color: var(--ink); overflow-wrap: anywhere; line-height: 1.45; }
   .mon-meta dd code {
-    font-size: 12px; background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px;
+    font-size: var(--t-xs); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 0 5px;
   }
   .mon-meta dd .aside { display: block; margin-top: 2px; }
-  .mon-meta select.in { font-size: 13px; padding: 6px 30px 6px 10px; border-radius: 10px; background-position: right 15px center, right 10px center; }
+  .mon-meta select.in { --field-h: var(--h-sm); font-size: var(--t-sm); padding: 4px 30px 4px 10px; border-radius: var(--r-sm); background-position: right 15px center, right 10px center; }
   .mon-last {
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 14px;
-    font-size: 13px; color: var(--ink-muted);
+    font-size: var(--t-sm); color: var(--ink-muted);
   }
   .mon-last b { color: var(--ink); }
-  .mon-last a { font-weight: 700; font-size: 12.5px; text-decoration: none; }
+  .mon-last a { font-weight: 700; font-size: var(--t-sm); text-decoration: none; }
   .mon-last a:hover { text-decoration: underline; }
   .mon-last a .zicon { width: 13px; height: 13px; margin-left: 3px; vertical-align: -2px; }
-  .mon-msg { margin-top: 10px; font-size: 13px; font-weight: 600; line-height: 1.45; }
+  .mon-msg { margin-top: 10px; font-size: var(--t-sm); font-weight: 600; line-height: 1.45; }
   .mon-msg:empty { display: none; }
   .mon-msg.ok { color: var(--success); }
   .mon-msg.bad { color: var(--danger); }
   /* the actions span the card, like the report's page actions (report.css) */
   .mon-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-  .mon-act .btn { flex: 1 1 200px; min-width: 0; padding: 12px 14px; white-space: normal; text-align: center; }
-  .mon-act .ask { flex-basis: 100%; font-size: 13px; font-weight: 600; color: var(--danger); }
+  .mon-act .btn { flex: 1 1 200px; min-width: 0; padding: 6px 14px; white-space: normal; text-align: center; }
+  .mon-act .ask { flex-basis: 100%; font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
   @media (max-width: 520px) { .mon-act .btn { flex-basis: 100%; } }
-  .mon-prog { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--info); }
-  .mon-prog .bar { flex: 1; height: 6px; border-radius: 3px; background: var(--info-tint); overflow: hidden; }
-  .mon-prog .bar > span { display: block; height: 100%; background: var(--info); border-radius: 3px; transition: width .4s ease; }
+  .mon-prog { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: var(--t-sm); font-weight: 700; color: var(--info); }
+  .mon-prog .bar { flex: 1; height: 6px; border-radius: var(--r-pill); background: var(--info-tint); overflow: hidden; }
+  .mon-prog .bar > span { display: block; height: 100%; background: var(--info); border-radius: var(--r-pill); transition: width var(--dur-slow) var(--ease-out); }
   .mon-prog b { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
-  .spin { display: inline-flex; animation: mon-spin 1s linear infinite; }
+  .spin { display: inline-flex; animation: mon-spin var(--dur-blink) linear infinite; }
   @keyframes mon-spin { to { transform: rotate(360deg); } }
   #list-title:focus { outline: none; }
   .mon-meta dd .edit { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
   .mon-meta dd .edit .row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .mon-meta dd .edit .in { font-size: 13px; padding: 7px 10px; border-radius: 10px; }
+  .mon-meta dd .edit .in { --field-h: var(--h-sm); font-size: var(--t-sm); padding: 4px 10px; border-radius: var(--r-sm); }
   .mon-meta dd .link { margin-left: 6px; }
   /* negative block margins: the pen button does not make its line taller, so
      "Stored ✎" starts on the same line as the plain values beside it */
@@ -115,7 +115,7 @@
   .mon-meta dd .edit.rw { max-width: 560px; gap: 16px; margin-top: 8px; }
   .rw fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   /* field labels inside the editor: sentence case, so they don't compete with the card's uppercase field names */
-  .rw .sub { display: block; font-size: 12px; font-weight: 700; color: var(--ink-muted); padding: 0; margin: 0 0 6px; }
+  .rw .sub { display: block; font-size: var(--t-xs); font-weight: 700; color: var(--ink-muted); padding: 0; margin: 0 0 6px; }
   .rw .seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   @media (max-width: 520px) { .rw .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .rw .seg button { min-width: 0; padding: 9px 8px; }
@@ -127,44 +127,44 @@
   .rw-times + .hint { margin-top: -8px; }
   /* the week as the Analytics peak-hours heatmap draws it (charts.js), in blocks of hours */
   .rw-heat { min-width: 0; position: relative; }
-  .rw-cov { margin: -8px 0 0; font-size: 12.5px; color: var(--ink); line-height: 1.45; }
+  .rw-cov { margin: -8px 0 0; font-size: var(--t-sm); color: var(--ink); line-height: 1.45; }
   .rw-cov b { font-variant-numeric: tabular-nums; }
-  .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; margin: 0; }
+  .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); font-size: var(--t-sm); line-height: 1.45; margin: 0; }
   .rw-note .zicon { flex: none; width: 16px; height: 16px; margin-top: 1px; }
   .rw-note.warn { background: var(--warning-tint); color: var(--warning); }
   .rw-note.info { background: var(--info-tint); color: var(--info); }
   .mon-act-note { flex-basis: 100%; margin: 0; }
   /* draft: a watch scheduled from a history run that still needs its interval / key */
   .setup {
-    margin-top: 14px; padding: 14px 16px; border-radius: 14px;
+    margin-top: 14px; padding: 14px 16px; border-radius: var(--r-md);
     background: var(--warning-tint); border: 1px solid var(--warning);
   }
-  .setup h4 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--ink); }
-  .setup > p { margin: 0 0 12px; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
+  .setup h4 { margin: 0 0 4px; font-size: var(--t-base); font-weight: 700; color: var(--ink); }
+  .setup > p { margin: 0 0 12px; font-size: var(--t-sm); color: var(--ink-muted); line-height: 1.5; }
   .setup .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; align-items: start; }
-  .setup .lab { font-size: 12.5px; }
+  .setup .lab { font-size: var(--t-sm); }
   .setup .go { margin-top: 12px; }
-  .empty.boxed { border: 1.5px dashed var(--line); border-radius: 18px; }
+  .empty.boxed { border: 1.5px dashed var(--line); border-radius: var(--r-md); }
   .empty p { margin: 8px 0 0; }
   .empty a { font-weight: 700; }
   .tabs [role="tab"] .count:empty { display: none; }
   .tabs [role="tab"] .count { font-variant-numeric: tabular-nums; }
   /* nested in the .tab-card: a quieter item surface instead of a second card shadow */
-  .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: 16px; }
+  .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: var(--r-md); }
   .tab-card .section-title { margin-top: 0; }
   /* collapse toggle: the monitor's name is the button (as History's group headings) */
   .mtog {
     display: inline-flex; align-items: center; gap: 6px; max-width: 100%; margin: -3px 0; padding: 3px 6px 3px 2px; cursor: pointer;
-    font: inherit; letter-spacing: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 8px;
+    font: inherit; letter-spacing: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: var(--r-sm);
   }
   .mtog:hover { background: var(--sunken); }
   .mtog .t { overflow-wrap: anywhere; min-width: 0; }
-  .mtog .zicon { width: 16px; height: 16px; flex: none; color: var(--ink-muted); transition: transform 0.2s; }
+  .mtog .zicon { width: 16px; height: 16px; flex: none; color: var(--ink-muted); transition: transform var(--dur-base); }
   .mtog[aria-expanded="false"] .zicon { transform: rotate(-90deg); }
   .mon-meta[hidden], .mon-act[hidden], .setup[hidden] { display: none; }
   .mon-tools { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
   .mon-tools[hidden] { display: none; }
-  .mon-tools .linkbtn { font-size: 12.5px; font-weight: 600; }
+  .mon-tools .linkbtn { font-size: var(--t-sm); font-weight: 600; }
   .nomatch p { margin: 0 0 10px; }
   .mon:focus { outline: none; }
   .mon:focus-visible { outline: 3px solid var(--info); outline-offset: 3px; }
@@ -175,24 +175,6 @@
   .keystore fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .keystore legend { padding: 0; }
   .keystore .hint { margin: 8px 0 0; }
-  .seg.radio { display: grid; grid-template-columns: repeat(2, minmax(min-content, 1fr)); }
-  @media (max-width: 480px) { .seg.radio { grid-template-columns: minmax(0, 1fr); } }
-  .seg.radio > span { position: relative; display: grid; }
-  .seg.radio label {
-    text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
-    color: var(--ink-muted); background: var(--surface); border: 1.5px solid transparent; border-radius: 11px;
-    padding: 10px 8px; transition: background 0.15s, color 0.15s;
-  }
-  .seg.radio input {
-    appearance: none; position: absolute; inset: 0; z-index: 1; margin: 0; cursor: pointer;
-    border: 1.5px solid var(--border); border-radius: 11px; background: transparent; transition: border-color 0.15s;
-  }
-  .seg.radio input:hover { border-color: var(--ink-muted); }
-  .seg.radio input:hover + label { color: var(--ink); }
-  .seg.radio input:checked { border-color: var(--primary); }
-  .seg.radio input:checked + label { color: var(--on-primary); background: var(--primary); }
-  .seg.radio input:disabled { cursor: not-allowed; }
-  .seg.radio input:disabled + label { opacity: 0.6; }
 </style>
 </head>
 <body>
