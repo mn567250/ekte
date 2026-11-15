@@ -78,6 +78,15 @@ word or the colours (contrast, distance between steps, `--success` =
 thresholds of its own. Info blue (`--info`, family `sky`) is for information,
 never a verdict.
 
+Messages have two shapes. The **Callout** (`.znote` in `ekte.css`) is for a
+message that needs attention or action: page size for the page notice
+(below), inline size for one inside a card or form, built by
+`EkteNotice.callout(level, html, { role, icon })` (`notice.js`; tones info,
+success, warning, critical, neutral). The **Note** (`.note`) is an inline
+hint: one muted line with an icon, no box. `tests/test_web_callouts.py` fails
+on a message box of a page's own (a status tint with a status border outside
+`.znote`), on the removed box classes and on a page restyling `.note`.
+
 Every v2 page but Accessibility has one **page notice** right under its hero
 (`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
 in `ekte.css`): `EkteNotice.show(el, {level, title, detail, items, actions})`
@@ -93,8 +102,10 @@ the newest saved run / runs locally; History: history unreadable / monitor
 runs paused (master key locked) or older runs still processed / run count;
 Analytics: data unreadable / runs not yet in the charts or with an estimated
 start time / what it is based on; Knowledge: load failure / skipped or
-ignored entries / switched-off items / complete. Monitors keeps its master-key
-bar (`masterkey.js`), which looks and sits the same. The history-wide numbers
+ignored entries / switched-off items / complete; Monitors: the key status, only
+when something needs doing (how keys are kept is said once, by the API key
+storage setting), plus its master-key bar (`masterkey.js`), a page-size Callout
+in the tone of the key's state. The history-wide numbers
 come from `GET /api/history/status` (`history.status()`: run count, oldest and
 newest run, rows the analytics backfill has not processed,
 runs with an estimated start time).

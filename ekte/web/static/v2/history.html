@@ -33,7 +33,7 @@
   .hist:focus { outline: none; }
   .hist .state { padding: 26px 22px; color: var(--ink-muted); font-size: var(--t-base); }
   .hist .state.loading { font-family: var(--mono); font-size: var(--t-sm); color: var(--ink-muted); }
-  .hist .errbox { margin: 18px; }
+  .hist > .znote.inline { margin: 18px; }
 
   /* shared column header = sort controls (+ collapse / expand all groups) */
   .colhead { display: grid; grid-template-columns: 1fr calc(var(--del) * 3 + 12px); gap: 6px; padding: 10px 18px 6px; border-bottom: 1px solid var(--line); align-items: center; }
@@ -185,10 +185,8 @@
   .rdel:hover { color: var(--danger); background: var(--danger-tint); border-color: var(--danger); }
 
   /* inline confirmation (row delete + clear all) */
-  .confirm {
-    display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; margin: 2px 0 10px; padding: 10px 12px;
-    border: 1px solid var(--danger); background: var(--danger-tint); border-radius: var(--r-sm); font-size: var(--t-sm); color: var(--danger); font-weight: 600;
-  }
+  /* an inline critical Callout (.znote.inline, ekte.css) with its buttons */
+  .confirm.znote.inline { align-items: center; margin: 2px 0 10px; font-size: var(--t-sm); font-weight: 600; }
   .confirm[hidden] { display: none; }
   .confirm .msg { flex: 1 1 200px; min-width: 0; }
   .confirm .btns { display: flex; gap: 8px; }
@@ -819,8 +817,8 @@
     syncCounts();
 
     if (state.error != null) {
-      host.innerHTML = '<div class="errbox">' + esc(T("无法读取历史：", "Could not read history: ")) + esc(state.error) +
-        "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")) + "</div>";
+      host.innerHTML = EkteNotice.callout("critical", esc(T("无法读取历史：", "Could not read history: ")) + esc(state.error) +
+        "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")), { role: false });
       return;
     }
     if (!state.groups) return;
@@ -880,8 +878,8 @@
   }
 
   function confirmHTML(id, what, msg, okLabel) {
-    return '<div class="confirm" id="' + id + '" role="group" aria-label="' + esc(msg) + '"' + (state.confirm === what ? "" : " hidden") + ">" +
-      '<span class="msg" data-msg="' + esc(msg) + '">' + esc(msg) + "</span>" +
+    return '<div class="znote inline critical confirm" id="' + id + '" role="group" aria-label="' + esc(msg) + '"' + (state.confirm === what ? "" : " hidden") + ">" +
+      '<span class="ico">' + ico("warning") + '</span><span class="msg" data-msg="' + esc(msg) + '">' + esc(msg) + "</span>" +
       '<span class="btns"><button type="button" class="btn sm danger-solid" data-yes="' + what + '">' + esc(okLabel) + "</button>" +
       '<button type="button" class="btn sm" data-no="' + what + '">' + esc(T("取消", "Cancel")) + "</button></span></div>";
   }
@@ -1054,7 +1052,7 @@
       }, function (e) {
         g.loading = false;
         body.removeAttribute("aria-busy");
-        if (!isAbort(e)) body.innerHTML = '<div class="errbox">' + esc(T("无法读取历史：", "Could not read history: ")) + esc(String((e && e.message) || e)) + "</div>";
+        if (!isAbort(e)) body.innerHTML = EkteNotice.callout("critical", esc(T("无法读取历史：", "Could not read history: ")) + esc(String((e && e.message) || e)), { role: false });
       });
     }
   }
@@ -1296,7 +1294,7 @@
       })
       .catch(function (e) {
         if (panel.isConnected)
-          panel.innerHTML = '<div class="errbox">' + esc(T("无法加载这份报告：", "Could not load this report: ")) + esc(EKTE_LANG.server(String((e && e.message) || e))) + "</div>";
+          panel.innerHTML = EkteNotice.callout("critical", esc(T("无法加载这份报告：", "Could not load this report: ")) + esc(EKTE_LANG.server(String((e && e.message) || e))), { role: false });
       });
   }
 

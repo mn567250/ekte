@@ -20,6 +20,27 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: one Callout and one Note for messages ([#226](https://github.com/mn567250/ekte/issues/226))
+
+Messages came in many boxes of their own (`.errbox`, `.infobox`, `.okbox`,
+Analytics' grey `.note` boxes, the Monitors' amber "Finish setup" panel and
+window warnings, History's delete confirmation, the master-key bar's own
+tones), so a page warning, an inline hint and a call to action looked alike.
+
+- **Callout:** the page notice's box, in two sizes (page, inline) and five
+  tones (info, success, warning, critical, neutral), for messages that need
+  attention or action. Load and form errors, the Audit form's hints, the
+  Knowledge forms' outcomes, the Accessibility page's load error, History's
+  delete confirmation, the Monitors' run-window warning and the master-key bar
+  all use it (`EkteNotice.callout` in `notice.js` for inline ones).
+- **Note:** an inline hint is one muted line with an info icon and no box
+  (Analytics' chart notes, the run-window hint).
+- **"Finish setup"** on Monitors is a warning Callout with the form below it,
+  not an amber box around the form.
+- **Key storage is said once on Monitors:** the steady-state page notice and
+  the line under the monitor list repeated what the API key storage setting
+  says; the notice now appears only when there is something to do.
+
 ### Web UI: tabs in two levels, selection in three looks ([#225](https://github.com/mn567250/ekte/issues/225))
 
 Main tabs, sub-tabs and segmented controls all showed their selection as the

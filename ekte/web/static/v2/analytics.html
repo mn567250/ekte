@@ -40,7 +40,6 @@
   [aria-busy="true"] .pbody { opacity: 0.55; }
   .state { padding: 14px 0; color: var(--ink-muted); font-size: var(--t-base); }
   .state.loading { font-family: var(--mono); font-size: var(--t-sm); color: var(--ink-muted); }
-  .errbox { margin-top: 0; }
 
   /* panel controls */
   .flab { font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); }
@@ -91,12 +90,9 @@
   .lbl { display: block; }
   .legend .sub { color: var(--ink-muted); white-space: nowrap; }
   .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: var(--t-xs); color: var(--ink-muted); margin: 4px 0 2px; }
-  .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
-  .note { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--t-sm); line-height: 1.5; color: var(--ink-muted); padding: 9px 12px; border-radius: var(--r-sm); background: var(--sunken); border: 1px solid var(--line); }
-  .note .zicon { width: 14px; height: 14px; flex: none; margin-top: 2px; }
-  .note.warn { color: var(--warning); background: var(--warning-tint); border-color: transparent; }
-  .note ul { margin: 4px 0 0; padding-left: 18px; }
-  .note > span { min-width: 0; overflow-wrap: anywhere; }
+  .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; }
+  .notes .znote.inline { margin: 0; }
+  /* .note (the inline Note) and the Callout (.znote.inline) are ekte.css's */
   .empty-data { padding: 30px 12px; text-align: center; color: var(--ink-muted); font-size: var(--t-base); border: 1px dashed var(--line); border-radius: var(--r-md); }
 
   /* data tables (chart table + leaderboard) */
@@ -626,7 +622,7 @@
     return at >= 0 ? { at: at } : null;
   }
   function errBox(prefix, msg) {
-    return '<div class="errbox" role="alert">' + esc(prefix) + esc(msg) + "</div>";
+    return EkteNotice.callout("critical", esc(prefix) + esc(msg));
   }
   function fewNote(hint) {
     return '<p class="note">' + ico("info") + "<span>" + esc(hint || lowHint()) + " " +
@@ -779,7 +775,7 @@
     var p = PANEL.kpi, body = $("#kpi-body"), sub = $("#kpi-sub"), s = p.data && p.data[0];
     if (p.err) {
       sub.textContent = "";
-      body.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取概览：", "Could not load the overview: ")) + esc(p.err) + "</div>";
+      body.innerHTML = errBox(T("无法读取概览：", "Could not load the overview: "), p.err);
       return;
     }
     if (!s) return;
@@ -937,7 +933,7 @@
     if (p.data) keepPairs(p.data[1]);
     renderCmpControls(s);
     if (p.err) {
-      body.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取对比数据：", "Could not load the comparison: ")) + esc(p.err) + "</div>";
+      body.innerHTML = errBox(T("无法读取对比数据：", "Could not load the comparison: "), p.err);
       return;
     }
     if (!s) return;
@@ -986,8 +982,8 @@
     });
     var notes = n ? forecastNote(s, withData, m, bucket, n) : "";
     if (warn.length) {
-      notes += '<p class="note warn">' + ico("warning") + "<span>" + warn.map(esc).join("<br>") + " " +
-        esc(T("可用上方的筛选只对比同类检测。", "Narrow the filters above to compare like with like.")) + "</span></p>";
+      notes += EkteNotice.callout("warning", warn.map(esc).join("<br>") + " " +
+        esc(T("可用上方的筛选只对比同类检测。", "Narrow the filters above to compare like with like.")), { role: false });
     }
     if (anyLow) notes += fewNote();
     if (marks.length) {
@@ -1237,7 +1233,7 @@
     var p = PANEL.lb, body = $("#lb-body"), b = p.data && p.data[0];
     renderBoardControls();
     if (p.err) {
-      body.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取排行榜：", "Could not load the leaderboard: ")) + esc(p.err) + "</div>";
+      body.innerHTML = errBox(T("无法读取排行榜：", "Could not load the leaderboard: "), p.err);
       return;
     }
     if (!b) return;
@@ -1929,8 +1925,8 @@
       box.hidden = false;
       box.classList.remove("empty-box");
       // the notice announces the failure: this box is no second alert
-      box.innerHTML = '<div class="errbox">' + esc(T("无法读取分析数据：", "Could not load analytics: ")) + esc(errText(e)) +
-        "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")) + "</div>";
+      box.innerHTML = EkteNotice.callout("critical", esc(T("无法读取分析数据：", "Could not load analytics: ")) + esc(errText(e)) +
+        "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")), { role: false });
       say("");
     });
   }

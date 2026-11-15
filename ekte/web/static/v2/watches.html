@@ -129,18 +129,13 @@
   .rw-heat { min-width: 0; position: relative; }
   .rw-cov { margin: -8px 0 0; font-size: var(--t-sm); color: var(--ink); line-height: 1.45; }
   .rw-cov b { font-variant-numeric: tabular-nums; }
-  .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); font-size: var(--t-sm); line-height: 1.45; margin: 0; }
-  .rw-note .zicon { flex: none; width: 16px; height: 16px; margin-top: 1px; }
-  .rw-note.warn { background: var(--warning-tint); color: var(--warning); }
-  .rw-note.info { background: var(--info-tint); color: var(--info); }
+  .rw > .znote.inline { margin: 0; }
   .mon-act-note { flex-basis: 100%; margin: 0; }
   /* draft: a watch scheduled from a history run that still needs its interval / key */
-  .setup {
-    margin-top: 14px; padding: 14px 16px; border-radius: var(--r-md);
-    background: var(--warning-tint); border: 1px solid var(--warning);
-  }
-  .setup h4 { margin: 0 0 4px; font-size: var(--t-base); font-weight: 700; color: var(--ink); }
-  .setup > p { margin: 0 0 12px; font-size: var(--t-sm); color: var(--ink-muted); line-height: 1.5; }
+  /* "Finish setup": a warning Callout, the form below it (not a coloured box around it) */
+  .setup { margin-top: 14px; }
+  .setup h4 { display: inline; margin: 0; font-size: var(--t-base); font-weight: 700; color: var(--ink); }
+  .setup > .znote.inline { margin: 0 0 12px; }
   .setup .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; align-items: start; }
   .setup .lab { font-size: var(--t-sm); }
   .setup .go { margin-top: 12px; }
@@ -215,7 +210,6 @@
         <h2 class="section-title" id="list-title" tabindex="-1"><span data-en="Configured monitors">Configured monitors</span> <span class="count" id="count"></span></h2>
         <div class="mon-tools" id="mon-tools" hidden><button type="button" class="linkbtn" id="mall"></button></div>
         <div class="mons" id="list" aria-live="polite"><p class="empty" data-en="Loading…">Loading…</p></div>
-        <p class="reassure"><span class="pico" id="lock-icon"></span> <span id="reassure-text"></span></p>
       </section>
 
       <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
@@ -461,8 +455,8 @@
         '<p class="hint">' + esc(T("检测历史不保存密钥。本地或自托管模型可留空。", "History never stores the key. Leave it empty for a local or self-hosted model.")) + "</p></div>";
     }
     return '<form class="setup" id="sb-' + w.id + '" data-id="' + w.id + '" novalidate aria-labelledby="su-' + w.id + '"' + (isShut(w) ? " hidden" : "") + ">" +
-      '<h4 id="su-' + w.id + '">' + esc(T("设置后即可启用", "Finish setup to switch it on")) + "</h4>" +
-      "<p>" + esc(T("配置取自检测历史中的那次运行。设置运行间隔后启用即可。", "The configuration comes from the run in History. Set how often it runs, then activate it.")) + "</p>" +
+      EkteNotice.callout("warning", '<h4 id="su-' + w.id + '">' + esc(T("设置后即可启用", "Finish setup to switch it on")) + "</h4> " +
+        '<span class="meta">' + esc(T("配置取自检测历史中的那次运行。设置运行间隔后启用即可。", "The configuration comes from the run in History. Set how often it runs, then activate it.")) + "</span>", { role: false }) +
       '<div class="fields">' + fields + "</div>" +
       '<button type="submit" class="btn pri go" data-act="activate" data-id="' + w.id + '"' + (s.busy ? ' disabled aria-busy="true"' : "") + ">" +
       icon("play") + esc(T("启用监控", "Activate monitor")) + "</button></form>";
@@ -613,10 +607,10 @@
           "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).")),
           { h: "<b>" + hrs + "</b>", runs: "<b>" + runs + "</b>", all: all, pct: Math.max(0, Math.round((all - runs) / all * 100)) })) + "</p>";
     if (hrs > 0 && hrs < 168) {
-      html += '<p class="rw-note warn">' + icon("warning") + "<span><b>" + esc(Tf("每周有 {n} 小时不检测。", "{n} h a week are not checked.", { n: 168 - hrs })) + "</b> " +
-        esc(T("中转站可能恰好在这些时段换用其他模型，且其规律可以被摸清。", "A relay could serve another model in exactly these hours, and its pattern can be learned.")) + "</span></p>";
+      html += EkteNotice.callout("warning", "<b>" + esc(Tf("每周有 {n} 小时不检测。", "{n} h a week are not checked.", { n: 168 - hrs })) + "</b> " +
+        esc(T("中转站可能恰好在这些时段换用其他模型，且其规律可以被摸清。", "A relay could serve another model in exactly these hours, and its pattern can be learned.")), { role: false });
       if (w.interval_sec && w.interval_sec > winLongest(v) * 3600) {
-        html += '<p class="rw-note info">' + icon("info") + "<span>" +
+        html += '<p class="note">' + icon("info") + "<span>" +
           esc(Tf("检测间隔（{every}）长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
             "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.",
             { every: fmtEvery(w.interval_sec) })) + "</span></p>";
@@ -1615,11 +1609,6 @@
         "API keys stay in the memory of ekte serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.")
       : T("API 密钥加密保存在本机 ~/.ekte/watches.db 中；用于解密的主密钥从不写入磁盘，每次重启后需输入。",
         "API keys are stored encrypted in ~/.ekte/watches.db on this machine; the master key that decrypts them is never written to disk — enter it after each restart.");
-    $("reassure-text").innerHTML = ks.st && ks.st.storage === "encrypted"
-      ? T("全程<b>本地运行</b>。API Key 仅<b>加密</b>保存在本机 <b>~/.ekte</b> 的本地数据库里，<b>绝不</b>出现在监控列表里、也不会发给浏览器。用于解密的主密钥<b>从不写入磁盘</b>：由你保管，每次重启后再输入。",
-        "Everything <b>runs locally</b>. The API key is stored <b>encrypted</b>, only in the local database under <b>~/.ekte</b> on this machine; it <b>never</b> appears in the monitor list and is never sent to the browser. The master key that decrypts it is <b>never written to disk</b>: you keep it, and enter it after each restart.")
-      : T("全程<b>本地运行</b>。API Key <b>不会被保存</b>：它只留在 ekte serve 的内存中，<b>绝不</b>写入磁盘、出现在监控列表里或发给浏览器。ekte serve 重启后请重新输入。",
-        "Everything <b>runs locally</b>. The API key is <b>not stored</b>: it stays in the memory of ekte serve only and is <b>never</b> written to disk, shown in the monitor list or sent to the browser. Enter it again after ekte serve restarts.");
   }
   function paintNote() {
     var n = null, c = (ks.st && ks.st.counts) || {};
@@ -1684,16 +1673,9 @@
         detail: locked === 1 ? T("1 个使用已加密 API 密钥的监控在等待你输入主密钥。", "1 monitor with an encrypted API key waits until you enter it.")
           : Tf("{n} 个使用已加密 API 密钥的监控在等待你输入主密钥。", "{n} monitors with an encrypted API key wait until you enter it.", { n: locked }),
         actions: [{ act: "unlock", label: T("解锁", "Unlock"), primary: true }] };
-    } else if (ks.st) {
-      n = ks.st.storage === "memory"
-        ? { level: "info", icon: "lock", title: T("API 密钥不会被保存", "API keys are not stored"),
-          detail: T("你输入的密钥只留在 ekte serve 的内存中，从不写入磁盘；重启后需重新输入。env: 变量引用照常工作。",
-            "Keys you enter stay in the memory of ekte serve only and are never written to disk; enter them again after a restart. env:VAR references keep working.") }
-        : { level: "info", icon: "lock", title: T("API 密钥已加密保存", "API keys are stored encrypted"),
-          detail: T("保存在本机 ~/.ekte/watches.db 中；用于解密的主密钥从不写入磁盘。",
-            "In ~/.ekte/watches.db on this machine; the master key that decrypts them is never written to disk.") };
-      n.actions = [{ act: "ks-change", label: T("更改", "Change") }];
     }
+    // nothing to act on: no notice. How keys are kept is said once on this
+    // page, by the API key storage setting (issue 226)
     window.EkteNotice.show($("note"), n);
   }
   function focusNote(act) {
@@ -1795,7 +1777,6 @@
     },
   });
 
-  $("lock-icon").innerHTML = icon("lock");
   if (window.EkteMasterKey) window.EkteMasterKey.mountBar($("mk-bar"), function () { load(); loadSecret(); });
   // language switch: re-render everything in place
   window.addEventListener("ekte:lang", function () { render(); paintStorage(); paintNote(); });

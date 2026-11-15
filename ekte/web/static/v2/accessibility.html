@@ -99,7 +99,7 @@
       <p data-en="Every test step of BITV 2.0 and EN 301 549 (chapter 9, the same as WCAG 2.1 level A and AA): how it is tested and the latest result of the automated accessibility tests.">Every test step of BITV 2.0 and EN 301 549 (chapter 9, the same as WCAG 2.1 level A and AA): how it is tested and the latest result of the automated accessibility tests.</p>
     </div>
 
-    <div class="errbox" id="loaderr" role="alert" hidden></div>
+    <div id="loaderr" role="alert" hidden></div>
 
     <section class="card card-pad" style="margin-top:20px" aria-labelledby="status-title">
       <h2 class="form-title" id="status-title" data-en="Status">Status</h2>
@@ -207,6 +207,7 @@
 <script src="/static/fmt.js"></script>
 <script src="/icons.js"></script>
 <script src="/static/nav.js"></script>
+<script src="/static/notice.js"></script>
 <script src="/static/charts.js"></script>
 <script src="/static/chartmotion.js"></script>
 <script>
@@ -536,7 +537,7 @@
   function paintErr() {
     var e = $("loaderr");
     e.hidden = !loadErr;
-    e.textContent = loadErr ? T("无法加载无障碍报告（bitv-report.json）。", "Could not load the accessibility report (bitv-report.json).") : "";
+    e.innerHTML = loadErr ? EkteNotice.callout("critical", esc(T("无法加载无障碍报告（bitv-report.json）。", "Could not load the accessibility report (bitv-report.json).")), { role: false }) : "";
   }
   function paintAll() {
     paintErr();

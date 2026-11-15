@@ -282,8 +282,8 @@
       '<div class="row"><button class="btn" type="button" id="' + id("check") + '">' + icon("search") + ' <span data-en="Check">Check</span></button>' +
       '<button class="btn pri" type="button" id="' + id("save") + '" disabled>' + icon("check") + ' <span data-en="Save to knowledge base">Save to knowledge base</span></button></div>' +
       '<div aria-live="polite"><div class="scan" id="' + id("scan") + '" hidden></div>' +
-      '<div class="errbox" id="' + id("err") + '" role="alert" hidden></div>' +
-      '<div class="okbox" id="' + id("ok") + '" hidden></div></div></div>';
+      '<div id="' + id("err") + '" role="alert" hidden></div>' +
+      '<div id="' + id("ok") + '" hidden></div></div></div>';
     el.innerHTML = html;
     translate(el);
 
@@ -352,10 +352,11 @@
     }
     function paintForm() {
       var e = $("err"), o = $("ok");
+      // the Callout (notice.js); the element around it is the live region
       e.hidden = !formErr;
-      e.textContent = formErr ? formErr() : "";
+      e.innerHTML = formErr ? window.EkteNotice.callout("critical", esc(formErr()), { role: false }) : "";
       o.hidden = !formOk;
-      o.innerHTML = formOk ? icon("check") + "<span>" + esc(formOk()) + "</span>" : "";
+      o.innerHTML = formOk ? window.EkteNotice.callout("success", esc(formOk()), { role: false }) : "";
       var sv = $("save"), off = !(scanned && scanned.ok);
       // the focused button is about to be disabled: move focus to "Check"
       // first (else it falls to <body>); the live region announces the outcome
@@ -462,17 +463,17 @@
       '<input class="in" id="' + id("url") + '" type="text" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" maxlength="500" placeholder="https://relay.example.com/v1" aria-describedby="' + id("err") + '">' +
       "</div></div>" +
       '<div class="row"><button class="btn pri" type="submit" id="' + id("save") + '">' + icon("plus") + ' <span data-en="Save relay">Save relay</span></button></div>' +
-      '<div aria-live="polite"><div class="errbox" id="' + id("err") + '" role="alert" hidden></div>' +
-      '<div class="okbox" id="' + id("ok") + '" hidden></div></div></form>';
+      '<div aria-live="polite"><div id="' + id("err") + '" role="alert" hidden></div>' +
+      '<div id="' + id("ok") + '" hidden></div></div></form>';
     translate(el);
 
     var $ = function (k) { return document.getElementById(id(k)); };
     var err = null, ok = null, bad = null;
     function paint() {
       $("err").hidden = !err;
-      $("err").textContent = err ? err() : "";
+      $("err").innerHTML = err ? window.EkteNotice.callout("critical", esc(err()), { role: false }) : "";
       $("ok").hidden = !ok;
-      $("ok").innerHTML = ok ? icon("check") + "<span>" + esc(ok()) + "</span>" : "";
+      $("ok").innerHTML = ok ? window.EkteNotice.callout("success", esc(ok()), { role: false }) : "";
       ["name", "url"].forEach(function (k) {
         if (bad === k) $(k).setAttribute("aria-invalid", "true"); else $(k).removeAttribute("aria-invalid");
       });

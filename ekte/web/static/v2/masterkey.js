@@ -435,8 +435,9 @@
       // keep focus on the equivalent control across the re-render (Lock
       // becomes Unlock and back), else it would fall to <body>
       var a = document.activeElement, keep = a && el.contains(a) ? a.getAttribute("data-mk") : null;
-      el.className = "zmk-bar " + kind;
-      el.innerHTML = '<div class="zmk-line"><span class="zmk-ico">' + icon("lock") + "</span><div class=\"zmk-text\">" + html + "</div>" +
+      // the page-size Callout (.znote, ekte.css) in the tone of its state
+      el.className = "znote zmk-bar " + { ok: "success", warn: "warning", bad: "critical" }[kind];
+      el.innerHTML = '<div class="zmk-line"><span class="zmk-ico ico">' + icon("lock") + "</span><div class=\"zmk-text\">" + html + "</div>" +
         '<div class="zmk-btns">' + buttons + "</div></div>" + warn + reset +
         '<p class="zmk-msg" role="status">' + esc(msg) + "</p>";
       if (keep) {
