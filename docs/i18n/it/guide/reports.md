@@ -8,7 +8,7 @@ predefinito); `--format json|md|html|pdf` scrive un solo formato. `--json` e
 `--compact` stampano invece su stdout.
 
 ```text
-╭─ ✗ HIGH RISK — Strong evidence the relay does not deliver the claimed model… ─╮
+╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
 │ Score  : 53.5/100 (rating F) · confidence medium                             │

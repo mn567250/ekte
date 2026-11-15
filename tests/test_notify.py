@@ -66,7 +66,7 @@ def test_build_text_delta_when_previous_given():
 def test_build_text_defaults_to_english():
     text = notify.build_text(REPORT, PREV_LOW)
     assert text.startswith("🛰️ ekte relay audit alert")
-    assert "Risk: 🔴 High risk (HIGH)" in text and "Score: 42.0/100 (grade D)" in text
+    assert "Risk: 🔴 Likely substituted (HIGH)" in text and "Score: 42.0/100 (grade D)" in text
     # the only Chinese left is the fixture's own sample finding titles
     for sample in REPORT["verdict"]["key_findings"]:
         text = text.replace(sample, "")
@@ -76,8 +76,8 @@ def test_build_text_defaults_to_english():
 def test_build_text_chinese_keeps_original_wording():
     text = notify.build_text(REPORT, PREV_LOW, lang="zh")
     assert text.startswith("🛰️ ekte 中继体检告警")
-    assert "风险：🔴 高风险（HIGH）" in text and "评分：42.0/100（评级 D）" in text
-    assert "较上次：🔵 低风险（LOW） → 🔴 高风险（HIGH）（恶化 ⬆️）" in text
+    assert "风险：🔴 疑似掉包（HIGH）" in text and "评分：42.0/100（评级 D）" in text
+    assert "较上次：🟢 基本一致（LOW） → 🔴 疑似掉包（HIGH）（恶化 ⬆️）" in text
 
 
 def test_unknown_language_falls_back_to_english():

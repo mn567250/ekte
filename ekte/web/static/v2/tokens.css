@@ -43,8 +43,14 @@
   --highlight: light-dark(#a1ebc5, #21543e);       /* hero highlighter stroke */
 
   /* ---- status (text colour, fill, pale tint) ---- */
-  --success: light-dark(#3e7a00, #62bc00);         /* leaf green, kept apart from --primary */
-  --success-tint: light-dark(#e5f7dc, #1c310f);
+  /* the verdict scale (ekte/risk_scale.py), one hue per step:
+     consistent = the brand green, mostly consistent = olive, deviations =
+     amber, likely substituted = red; info blue is never a verdict. The
+     steps stay apart from each other (tests/test_risk_scale.py). */
+  --success: var(--primary);
+  --success-tint: var(--primary-tint);
+  --fair: light-dark(#5a6b00, #c2c93c);            /* olive: "mostly consistent", grade C */
+  --fair-tint: light-dark(#eef3d2, #292c12);
   --warning: light-dark(#945f00, #e59600);         /* text */
   --warning-fill: light-dark(#bf7c00, #e59600);    /* dots, bars, ribbons */
   --on-warning: light-dark(#0c1b14, #090e0b);

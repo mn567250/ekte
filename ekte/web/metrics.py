@@ -26,7 +26,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from ekte import errorclass, scoring
+from ekte import errorclass, risk_scale, scoring
 from ekte.config import SURFACES
 
 # A value (or bucket, or leaderboard cell) resting on fewer runs than this is
@@ -48,10 +48,11 @@ _UNIT_FORMAT = {"score": "score", "grade": "grade", "ratio": "percent", "ms": "m
                 "tokens": "tokens", "count": "count", "s": "seconds"}
 # Colour families: judged ones, and the neutral families of the latency and
 # speed series (a value with no better or worse of its own).
-FAMILIES = ("good", "sky", "warn", "bad", "grey", "lat", "tps")
+FAMILIES = ("good", "fair", "warn", "bad", "grey", "lat", "tps")
 _UNIT_FAMILY = {"ms": "lat", "tok/s": "tps"}
-# The colour family of each grade letter (scoring.GRADE_SCALE).
-GRADE_FAMILY = {"A": "good", "B": "good", "C": "sky", "D": "warn", "E": "bad", "F": "bad"}
+# The colour family of each grade letter (scoring.GRADE_SCALE): its step of
+# the one verdict scale (ekte.risk_scale), as the verdict badges.
+GRADE_FAMILY = {letter: risk_scale.SCALE[level].family for letter, level in risk_scale.GRADE_LEVEL.items()}
 DIRECTIONS = ("better", "worse", "neutral", "none")
 TREND_KEYS = {1: "trend.rising", -1: "trend.falling", 0: "trend.unchanged"}
 

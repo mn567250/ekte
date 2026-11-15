@@ -24,7 +24,7 @@
 .kpi .kc { font-size: var(--t-xs); color: var(--ink-muted); line-height: 1.4; }
 /* a new group: measured on another base (e.g. all calls, not the answered ones) */
 .kpi.sep { border-style: dashed; background: none; }
-.kpi.f-good { --kpi-c: var(--success); } .kpi.f-sky { --kpi-c: var(--info); } .kpi.f-warn { --kpi-c: var(--warning); }
+.kpi.f-good { --kpi-c: var(--success); } .kpi.f-fair { --kpi-c: var(--fair); } .kpi.f-warn { --kpi-c: var(--warning); }
 .kpi.f-bad { --kpi-c: var(--danger); } .kpi.f-grey { --kpi-c: var(--ink-muted); }
 .kpi .kslot { color: var(--kpi-c, var(--ink-muted)); }
 

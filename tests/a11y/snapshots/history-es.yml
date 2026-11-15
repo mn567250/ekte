@@ -82,10 +82,10 @@
     - text: Riesgo
     - combobox "Riesgo":
       - option "Todos" [selected]
-      - option "Coherente (probablemente auténtico) (7)"
-      - option "Mayormente fiable (4)"
+      - option "Coherente (7)"
+      - option "Mayormente coherente (4)"
       - option "Desviaciones detectadas"
-      - option "Gato por liebre (4)"
+      - option "Probablemente sustituido (4)"
       - option "Señal insuficiente"
     - text: Puntuación mín.
     - spinbutton "Puntuación mín."
@@ -146,37 +146,37 @@
         - text: Latencia p50 <duration>
     - list:
       - listitem:
-        - button "30 sept 2026, 11:02 Coherente (probablemente auténtico) Puntuación 82 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "30 sept 2026, 11:02 Coherente Puntuación 82 Nota B check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "30 sept 2026, 10:02 Coherente (probablemente auténtico) Puntuación 85 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "30 sept 2026, 10:02 Coherente Puntuación 85 Nota B check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "30 sept 2026, 9:02 Coherente (probablemente auténtico) Puntuación 88 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "30 sept 2026, 9:02 Coherente Puntuación 88 Nota B check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "28 sept 2026, 10:02 Mayormente fiable Puntuación 78 Nota D check · standard openai · Streaming p50 <duration>"
+        - button "28 sept 2026, 10:02 Mayormente coherente Puntuación 78 Nota D check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "28 sept 2026, 9:02 Coherente (probablemente auténtico) Puntuación 80 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "28 sept 2026, 9:02 Coherente Puntuación 80 Nota B check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "28 sept 2026, 7:02 Coherente (probablemente auténtico) Puntuación 84 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "28 sept 2026, 7:02 Coherente Puntuación 84 Nota B check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "26 sept 2026, 8:02 Mayormente fiable Puntuación 70 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "26 sept 2026, 8:02 Mayormente coherente Puntuación 70 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"
@@ -199,22 +199,22 @@
         - text: Latencia p50 <duration>
     - list:
       - listitem:
-        - button "30 sept 2026, 8:02 Gato por liebre Puntuación 64 Nota D check · standard openai · Streaming p50 <duration>"
+        - button "30 sept 2026, 8:02 Probablemente sustituido Puntuación 64 Nota D check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "29 sept 2026, 11:02 Gato por liebre Puntuación 60 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 11:02 Probablemente sustituido Puntuación 60 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"
       - listitem:
-        - button "29 sept 2026, 10:02 Mayormente fiable Puntuación 66 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 10:02 Mayormente coherente Puntuación 66 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"
       - listitem:
-        - button "29 sept 2026, 9:02 Gato por liebre Puntuación 58 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 9:02 Probablemente sustituido Puntuación 58 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"
@@ -237,12 +237,12 @@
         - text: Latencia p50 <duration>
     - list:
       - listitem:
-        - button "29 sept 2026, 7:02 Coherente (probablemente auténtico) Puntuación 91 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 7:02 Coherente Puntuación 91 Nota B check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "29 sept 2026, 6:02 Coherente (probablemente auténtico) Puntuación 89 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 6:02 Coherente Puntuación 89 Nota B check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
@@ -261,13 +261,13 @@
       - listitem: Latencia p50 <duration>
     - list:
       - listitem:
-        - button "27 sept 2026, 10:02 Mayormente fiable Puntuación 72 Nota D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "27 sept 2026, 10:02 Mayormente coherente Puntuación 72 Nota D check · standard openai · Streaming p50 <duration>" [expanded]
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada"
-        - region "27 sept 2026, 10:02 Mayormente fiable Puntuación 72 Nota D check · standard openai · Streaming p50 <duration>":
+        - region "27 sept 2026, 10:02 Mayormente coherente Puntuación 72 Nota D check · standard openai · Streaming p50 <duration>":
           - article "Mayormente coherente, con algunos problemas menores":
-            - text: Mayormente fiable
+            - text: Mayormente coherente
             - heading "Mayormente coherente, con algunos problemas menores" [level=2]
             - list:
               - listitem: Puntuación de salud global 72/100 (Calificación D)
@@ -353,7 +353,7 @@
       - listitem: Latencia p50 sin datos
     - list:
       - listitem:
-        - button "27 sept 2026, 7:47 Gato por liebre Puntuación 53 Nota F check · standard"
+        - button "27 sept 2026, 7:47 Probablemente sustituido Puntuación 53 Nota F check · standard"
         - button "Repetir auditoría"
         - button "Programar como monitor"
         - button "Eliminar entrada" [expanded]

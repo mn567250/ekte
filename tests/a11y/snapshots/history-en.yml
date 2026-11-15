@@ -82,10 +82,10 @@
     - text: Risk
     - combobox "Risk":
       - option "All" [selected]
-      - option "Consistent (likely genuine) (7)"
-      - option "Mostly trustworthy (4)"
+      - option "Consistent (7)"
+      - option "Mostly consistent (4)"
       - option "Deviations found"
-      - option "Bait-and-switch (4)"
+      - option "Likely substituted (4)"
       - option "Insufficient signal"
     - text: Min. score
     - spinbutton "Min. score"
@@ -146,37 +146,37 @@
         - text: Latency p50 <duration>
     - list:
       - listitem:
-        - button "Sep 30, 2026, 11:02 AM Consistent (likely genuine) Score 82 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Sep 30, 2026, 11:02 AM Consistent Score 82 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 30, 2026, 10:02 AM Consistent (likely genuine) Score 85 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Sep 30, 2026, 10:02 AM Consistent Score 85 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 30, 2026, 9:02 AM Consistent (likely genuine) Score 88 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Sep 30, 2026, 9:02 AM Consistent Score 88 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 28, 2026, 10:02 AM Mostly trustworthy Score 78 Grade D check · standard openai · Streaming p50 <duration>"
+        - button "Sep 28, 2026, 10:02 AM Mostly consistent Score 78 Grade D check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 28, 2026, 9:02 AM Consistent (likely genuine) Score 80 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Sep 28, 2026, 9:02 AM Consistent Score 80 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 28, 2026, 7:02 AM Consistent (likely genuine) Score 84 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Sep 28, 2026, 7:02 AM Consistent Score 84 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 26, 2026, 8:02 AM Mostly trustworthy Score 70 Grade D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "Sep 26, 2026, 8:02 AM Mostly consistent Score 70 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
@@ -199,22 +199,22 @@
         - text: Latency p50 <duration>
     - list:
       - listitem:
-        - button "Sep 30, 2026, 8:02 AM Bait-and-switch Score 64 Grade D check · standard openai · Streaming p50 <duration>"
+        - button "Sep 30, 2026, 8:02 AM Likely substituted Score 64 Grade D check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 29, 2026, 11:02 AM Bait-and-switch Score 60 Grade D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 11:02 AM Likely substituted Score 60 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
       - listitem:
-        - button "Sep 29, 2026, 10:02 AM Mostly trustworthy Score 66 Grade D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 10:02 AM Mostly consistent Score 66 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
       - listitem:
-        - button "Sep 29, 2026, 9:02 AM Bait-and-switch Score 58 Grade D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 9:02 AM Likely substituted Score 58 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
@@ -237,12 +237,12 @@
         - text: Latency p50 <duration>
     - list:
       - listitem:
-        - button "Sep 29, 2026, 7:02 AM Consistent (likely genuine) Score 91 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 7:02 AM Consistent Score 91 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 29, 2026, 6:02 AM Consistent (likely genuine) Score 89 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 6:02 AM Consistent Score 89 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
@@ -261,13 +261,13 @@
       - listitem: Latency p50 <duration>
     - list:
       - listitem:
-        - button "Sep 27, 2026, 10:02 AM Mostly trustworthy Score 72 Grade D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "Sep 27, 2026, 10:02 AM Mostly consistent Score 72 Grade D check · standard openai · Streaming p50 <duration>" [expanded]
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
-        - region "Sep 27, 2026, 10:02 AM Mostly trustworthy Score 72 Grade D check · standard openai · Streaming p50 <duration>":
+        - region "Sep 27, 2026, 10:02 AM Mostly consistent Score 72 Grade D check · standard openai · Streaming p50 <duration>":
           - article "Mostly consistent, with a few minor issues":
-            - text: Mostly trustworthy
+            - text: Mostly consistent
             - heading "Mostly consistent, with a few minor issues" [level=2]
             - list:
               - listitem: Overall health score 72/100 (Rating D)
@@ -353,7 +353,7 @@
       - listitem: Latency p50 no data
     - list:
       - listitem:
-        - button "Sep 27, 2026, 7:47 AM Bait-and-switch Score 53 Grade F check · standard"
+        - button "Sep 27, 2026, 7:47 AM Likely substituted Score 53 Grade F check · standard"
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry" [expanded]

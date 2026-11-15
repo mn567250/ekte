@@ -88,14 +88,12 @@
   // numbers, durations and sizes: fmt.js, as on every page (issue 229)
   function num(v, digits) { return window.EkteFmt.num(v, digits); }
 
-  // risk level -> token family + glyph (the pill text is EKTE_I18N.label)
-  var RISK = {
-    clean: { c: "good", g: "check" },
-    low: { c: "sky", g: "warning" },
-    medium: { c: "warn", g: "warning" },
-    high: { c: "bad", g: "x" },
-    inconclusive: { c: "grey", g: "info" },
-  };
+  // risk level -> colour family + icon: the one verdict scale (EKTE_I18N.risk,
+  // ekte/risk_scale.py); the pill text is EKTE_I18N.label
+  function riskStep(level) {
+    var s = window.EKTE_I18N.risk(level);
+    return { c: s.family, g: s.icon, key: s.level };
+  }
   var STATC = { pass: "good", warn: "warn", fail: "bad", info: "sky", inconclusive: "grey", not_run: "grey", error: "bad" };
   // severity -> colour AND glyph, one source (never colour by one field and glyph by another)
   var SEV = {
@@ -229,9 +227,8 @@
       })
     );
   }
-  function scoreC(v) {
-    return v == null ? "grey" : v >= 85 ? "good" : v >= 70 ? "warn" : "bad";
-  }
+  // a score's colour family: its grade's step of the verdict scale
+  function scoreC(v) { return window.EKTE_I18N.scoreStep(v).family; }
   // the verdict's figures as compact KPI tiles (kpi.js, issue 208): the health
   // score (coloured by its band, the rating spoken with it) and the confidence
   function scoreTiles(v, sc, scoreTxt) {
@@ -239,7 +236,9 @@
     if (!K) return "";
     var none = scoreTxt === "—";
     return K.html([
-      { id: "score", label: T("综合健康分", "Overall health score"), text: scoreTxt, unit: "/100", family: scoreC(sc),
+      { id: "score", label: T("综合健康分", "Overall health score"), text: scoreTxt, unit: "/100",
+        // the grade's step when the report has one, so score and grade agree
+        family: v.rating ? window.EKTE_I18N.gradeStep(v.rating).family : scoreC(sc),
         sr: none ? null : scoreTxt + "/100" + (v.rating ? " (" + Tf("评级 {r}", "Rating {r}", { r: v.rating }) + ")" : "") },
       { id: "confidence", label: T("结论置信度", "Verdict confidence"), text: v.confidence ? label("CONFIDENCE", v.confidence) : "—" },
     ], { variant: "compact" });
@@ -815,8 +814,8 @@
       });
     }
     var v = r.verdict || {};
-    var risk = RISK[v.risk_level] || RISK.inconclusive;
-    var riskKey = RISK[v.risk_level] ? v.risk_level : "inconclusive";
+    var risk = riskStep(v.risk_level);
+    var riskKey = risk.key;
     var sc = v.overall_score;
     var t = r.target || {};
     var dims = allDims(r);
@@ -920,7 +919,7 @@
     return (
       '<article class="zr card ' + risk.c + '" aria-labelledby="' + hid + '">' +
       '<div class="ribbon" aria-hidden="true"></div>' +
-      '<div class="vhero"><div class="grade" aria-hidden="true">' + esc(v.rating || "–") + "</div>" +
+      '<div class="vhero"><div class="grade f-' + esc(window.EKTE_I18N.gradeStep(v.rating).family) + '" aria-hidden="true">' + esc(v.rating || "–") + "</div>" +
       '<div class="vmeta"><span class="badge ' + risk.c + ' vpill">' + ico(risk.g) + " " + esc(label("RISK_LEVEL", riskKey)) + "</span>" +
       '<h2 id="' + hid + '">' + esc(head(v)) + "</h2>" +
       (rest ? '<p class="sum">' + esc(rest) + "</p>" : "") +

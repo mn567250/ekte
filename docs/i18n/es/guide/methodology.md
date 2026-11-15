@@ -112,10 +112,10 @@ respuestas (integridad) y una clave API devuelta siguen elevando el riesgo.
 | Riesgo | Etiqueta en la interfaz | Cuándo |
 |---|---|---|
 | `inconclusive` | Señal insuficiente | Nada utilizable que juzgar: si se ejecutó alguna dimensión de perfil, ninguna dio un resultado utilizable (Correcto, Advertencia o Fallo) — el relay es inaccesible o el modelo no tiene perfil; si no, ninguna dimensión salvo la conectividad lo dio |
-| `high` | Gato por liebre | Un hallazgo CRÍTICO, un hallazgo ALTO/CRÍTICO en una dimensión núcleo, o dos o más hallazgos ALTOS |
+| `high` | Probablemente sustituido | Un hallazgo CRÍTICO, un hallazgo ALTO/CRÍTICO en una dimensión núcleo, o dos o más hallazgos ALTOS |
 | `medium` | Desviaciones detectadas | Exactamente un hallazgo ALTO fuera de las dimensiones núcleo, o un hallazgo MEDIO en una dimensión núcleo |
-| `low` | Mayormente fiable | Cualquier otro hallazgo MEDIO |
-| `clean` | Coherente (probablemente auténtico) | Ninguno de los anteriores |
+| `low` | Mayormente coherente | Cualquier otro hallazgo MEDIO |
+| `clean` | Coherente | Ninguno de los anteriores |
 
 El veredicto registra las dimensiones cuyos hallazgos fijan el riesgo
 (`verdict.drivers`) y las dimensiones que dieron un resultado utilizable

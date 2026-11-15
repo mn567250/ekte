@@ -7,7 +7,7 @@
 `--format json|md|html|pdf` 只写一种格式。`--json` 和 `--compact` 则改为输出到 stdout。
 
 ```text
-╭─ ✗ HIGH RISK — Strong evidence the relay does not deliver the claimed model… ─╮
+╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
 │ Score  : 53.5/100 (rating F) · confidence medium                             │

@@ -48,6 +48,21 @@ does not load `fmt.js`, fills placeholders itself, glues a unit to a number,
 shows `String(Math.round(…))` or breaks names with `<wbr>` (CSS and SVG values
 are exempt; a reviewed exception carries `// fmt-ok: <reason>`).
 
+Every verdict, score and grade is shown on **one scale**, `ekte/risk_scale.py`:
+the risk levels clean / low / medium / high (plus inconclusive) with one word
+("Consistent", "Mostly consistent", "Deviations found", "Likely substituted",
+"Insufficient signal"), one colour family and token (`good` `--success` = the
+brand green, `fair` `--fair` olive, `warn` `--warning`, `bad` `--danger`), one
+web icon and one CLI mark; grade letters sit on the same steps (`GRADE_LEVEL`)
+and a score has the grade of `scoring.GRADE_THRESHOLDS`. The CLI, the reports,
+the alerts and the API's colour families read it; the web UI's copy is
+`EKTE_I18N.risk(level)`, `gradeStep(letter)` and `scoreStep(score)` in
+`i18n.js`. `tests/test_risk_scale.py` fails when that copy, a translation of a
+word or the colours (contrast, distance between steps, `--success` =
+`--primary`) drift, or when a page or module keeps a risk map or score
+thresholds of its own. Info blue (`--info`, family `sky`) is for information,
+never a verdict.
+
 Every v2 page but Accessibility has one **page notice** right under its hero
 (`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
 in `ekte.css`): `EkteNotice.show(el, {level, title, detail, items, actions})`

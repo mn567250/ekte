@@ -134,6 +134,7 @@
   .det .dm { flex: none; margin-left: auto; display: inline-flex; align-items: baseline; gap: 10px; font-variant-numeric: tabular-nums; }
   .det .sc { font-size: var(--t-xs); font-weight: 600; white-space: nowrap; }
   .det .sc.good { color: var(--success); }
+  .det .sc.fair { color: var(--fair); }
   .det .sc.warn { color: var(--warning); }
   .det .sc.bad { color: var(--danger); }
   .det .ms { min-width: 54px; text-align: right; font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-muted); white-space: nowrap; }
@@ -982,11 +983,11 @@
     var head = fs.length
       ? '<button type="button" class="dt dtg" aria-expanded="' + !!li.__open + '" aria-controls="' + li.__pid + '">' +
         '<span class="chev" aria-hidden="true">' + ico("chevronDown") + "</span><span>" + name + ' <span class="nf">(' +
-        esc((fs.length === 1 ? T("{n} 项", "{n} finding") : T("{n} 项", "{n} findings")).replace("{n}", fs.length)) + ")</span></span></button>"
+        esc(fs.length === 1 ? Tf("{n} 项", "{n} finding", { n: 1 }) : Tf("{n} 项", "{n} findings", { n: fs.length })) + ")</span></span></button>"
       : '<span class="dt">' + name + "</span>";
     var meta = done
       ? (done.score != null
-          ? '<span class="sc ' + scoreC(done.score) + '">' + esc(T("{s} 分", "Score {s}").replace("{s}", Math.round(done.score * 10) / 10)) + "</span>"
+          ? '<span class="sc ' + scoreC(done.score) + '">' + esc(Tf("{s} 分", "Score {s}", { s: EkteFmt.num(done.score, 1) })) + "</span>"
           : "") + '<span class="ms">' + esc(dur(done.duration_ms)) + "</span>"
       : '<span class="ms" aria-hidden="true"></span>';
     li.querySelector(".dh").innerHTML = '<span class="ic" aria-hidden="true">' + icon + "</span>" + head + '<span class="dm">' + meta + "</span>";
@@ -1001,7 +1002,8 @@
     }
     p.innerHTML = fs.map(EkteReport.findingDetail).join("");
   }
-  function scoreC(v) { return v >= 85 ? "good" : v >= 70 ? "warn" : "bad"; }
+  // a score's colour family: its grade's step of the verdict scale (i18n.js)
+  function scoreC(v) { return EKTE_I18N.scoreStep(v).family; }
   $("#dets").addEventListener("click", function (e) {
     var b = e.target.closest("button.dtg");
     if (!b) return;

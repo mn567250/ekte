@@ -27,7 +27,7 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
-from ekte import __version__
+from ekte import __version__, risk_scale
 from ekte import i18n as _i18n
 from ekte.config import (
     DIMENSIONS,
@@ -135,13 +135,8 @@ app = typer.Typer(
 console = Console()
 err_console = Console(stderr=True)
 
-_RISK_STYLE = {
-    RiskLevel.CLEAN: ("green", "✓ CLEAN"),
-    RiskLevel.LOW: ("cyan", "• LOW RISK"),
-    RiskLevel.MEDIUM: ("yellow", "▲ MEDIUM RISK"),
-    RiskLevel.HIGH: ("bold red", "✗ HIGH RISK"),
-    RiskLevel.INCONCLUSIVE: ("dim", "? INCONCLUSIVE"),
-}
+# The one verdict scale (ekte.risk_scale): style, mark and word per level
+_RISK_STYLE = {level: (s.style, f"{s.mark} {s.word}") for level, s in risk_scale.SCALE.items()}
 _STATUS_STYLE = {
     Status.PASS: "green",
     Status.WARN: "yellow",

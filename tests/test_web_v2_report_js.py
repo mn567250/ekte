@@ -91,7 +91,7 @@ def test_report_severity_dots_meters_and_summary(tmp_path):
     assert html.count('class="dtog"') == 10 and html.count('<div class="zr-dimw off">') == 2
     assert "Context window" in html and "Performance" in html
     # the risk pill uses the shared vocabulary; the summary drops score + disclaimer
-    assert "Bait-and-switch" in html
+    assert "Likely substituted" in html
     summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
     assert "Overall health score" not in summary and "black-box" not in summary
     assert "Findings: 4 high, 5 medium." in summary
@@ -113,7 +113,7 @@ def test_report_is_translated(tmp_path, lang):
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     html = _render(tmp_path, lang, report)["html"]
     text = _text(html)
-    for en in ("Per-dimension checks", "Severity:", "Show evidence", "Bait-and-switch",
+    for en in ("Per-dimension checks", "Severity:", "Show evidence", "Likely substituted",
                "Overall health score", "Claimed model", "Test another", "Download report"):
         assert en not in text, (lang, en)
     summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
@@ -137,7 +137,7 @@ def test_report_clean_and_translated_summary(tmp_path):
     summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
     assert "Score de santé" not in summary and "boîte noire" not in summary
     assert "No warnings or failures" in html
-    assert "Consistent (likely genuine)" in html
+    assert "Consistent" in html
 
 
 

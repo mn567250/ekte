@@ -2,17 +2,19 @@
 .zr { overflow: hidden; padding: 0; min-width: 0; overflow-wrap: anywhere; }
 .zr .ribbon { height: 5px; background: var(--ink-muted); }
 .zr.good .ribbon { background: var(--success); }
-.zr.sky .ribbon { background: var(--info); }
+.zr.fair .ribbon { background: var(--fair); }
 .zr.warn .ribbon { background: var(--warning-fill); }
 .zr.bad .ribbon { background: var(--danger); }
 
 /* verdict hero */
 .zr .vhero { display: flex; gap: 22px; align-items: center; padding: 26px 26px 22px; }
 .zr .grade { font-family: var(--disp); font-weight: 700; font-size: var(--t-display); line-height: 0.8; letter-spacing: var(--track-display); color: var(--ink-muted); }
-.zr.good .grade { color: var(--success); }
-.zr.sky .grade { color: var(--info); }
-.zr.warn .grade { color: var(--warning); }
-.zr.bad .grade { color: var(--danger); }
+/* the grade by its own step of the verdict scale (as the score tile beside
+   it); the ribbon and the badge carry the risk level */
+.zr .grade.f-good { color: var(--success); }
+.zr .grade.f-fair { color: var(--fair); }
+.zr .grade.f-warn { color: var(--warning); }
+.zr .grade.f-bad { color: var(--danger); }
 .zr .vmeta { flex: 1; min-width: 0; }
 .zr .vpill { font-family: var(--disp); font-size: var(--t-base); font-weight: 600; padding: 6px 14px; white-space: normal; }
 .zr .vmeta h2 { font-family: var(--disp); font-weight: 600; font-size: var(--t-xl); letter-spacing: var(--track-heading); margin: 11px 0 0; line-height: 1.18; }
@@ -54,6 +56,7 @@
 .zr-dim .bar i { display: block; height: 100%; width: 0; border-radius: var(--r-pill); background: var(--ink-muted); transition: width var(--dur-slower) var(--ease-out); }
 .zr-dim .bar i.good { background: var(--success); }
 .zr-dim .bar i.sky { background: var(--info); }
+.zr-dim .bar i.fair { background: var(--fair); }
 .zr-dim .bar i.warn { background: var(--warning-fill); }
 .zr-dim .bar i.bad { background: var(--danger); }
 .zr-dim .badge { min-width: 58px; justify-content: center; font-variant-numeric: tabular-nums; }
@@ -184,6 +187,7 @@
 .zr-xr .xs { font-size: var(--t-xs); font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 .zr-xr .xs.good { color: var(--success); }
 .zr-xr .xs.sky { color: var(--info); }
+.zr-xr .xs.fair { color: var(--fair); }
 .zr-xr .xs.warn { color: var(--warning); }
 .zr-xr .xs.bad { color: var(--danger); }
 .zr-xr .xbar { height: 6px; background: var(--sunken); border-radius: var(--r-pill); overflow: hidden; }

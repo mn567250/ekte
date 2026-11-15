@@ -113,10 +113,10 @@ clé API renvoyée font toujours monter le risque.
 | Risque | Libellé dans l'interface | Quand |
 |---|---|---|
 | `inconclusive` | Signal insuffisant | Rien d'exploitable pour juger : si une dimension de profil a tourné, aucune n'a produit de résultat exploitable (Réussi, Avertissement ou Échec) — relais injoignable ou modèle sans profil ; sinon, aucune dimension autre que la connectivité n'en a produit |
-| `high` | Tromperie sur la marchandise | Un constat CRITIQUE, un constat ÉLEVÉ/CRITIQUE dans une dimension cœur, ou au moins deux constats ÉLEVÉS |
+| `high` | Probablement substitué | Un constat CRITIQUE, un constat ÉLEVÉ/CRITIQUE dans une dimension cœur, ou au moins deux constats ÉLEVÉS |
 | `medium` | Écarts détectés | Exactement un constat ÉLEVÉ hors des dimensions cœur, ou un constat MOYEN dans une dimension cœur |
-| `low` | Globalement fiable | Tout autre constat MOYEN |
-| `clean` | Cohérent (probablement authentique) | Aucun des cas ci-dessus |
+| `low` | Globalement conforme | Tout autre constat MOYEN |
+| `clean` | Conforme | Aucun des cas ci-dessus |
 
 Le verdict consigne les dimensions dont les constats fixent le risque
 (`verdict.drivers`) et celles qui ont produit un résultat exploitable

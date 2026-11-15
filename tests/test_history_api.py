@@ -311,7 +311,8 @@ def test_summary_row_carries_the_display_decisions(data):
     row = history_api.runs(_conn(), {"group": "all", "group.key": "(all)"})["rows"][0]
     assert row["id"] == rid
     assert row["risk_level"] == "inconclusive"
-    assert row["family"] == {"risk": "grey", "score": "warn", "grade": "good"}  # grade B
+    # the score wears its run's grade colour (grade B), so the two never disagree (issue 228)
+    assert row["family"] == {"risk": "grey", "score": "good", "grade": "good"}
     assert (row["mode"], row["detect"], row["exec"], row["surface"]) == ("check", "auto", "monitor", "chat")
     assert row["started_at"].startswith("2026-03-02T12:00:00")
     assert set(row) >= {"ts", "score", "grade", "suite", "api", "stream_mode", "watch_id",
@@ -354,7 +355,7 @@ def test_one_run_trends_equal_the_group_and_the_aggregator(data, client):
         if mid in group["trends"]:
             assert trends[mid] == group["trends"][mid]["last"]
     assert trends["error_rate"]["value"] == pytest.approx(0.2)
-    assert trends["score"]["grade"] == "C" and trends["score"]["family"] == "sky"
+    assert trends["score"]["grade"] == "C" and trends["score"]["family"] == "fair"
 
 
 # --------------------------------------------------------------------------- #

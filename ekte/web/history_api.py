@@ -49,6 +49,7 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import urlsplit
 
+from ekte import risk_scale
 from ekte.web import metrics, query, run_row
 from ekte.web.analytics import ALL_KEY, UNKNOWN_RELAY
 from ekte.web.metrics import HISTORY_TRENDS, MAX_TRENDS, MIN_RUNS, Metric
@@ -68,8 +69,7 @@ MAX_PAGE_LIMIT = 200
 # Per-run trend points: the newest runs of a group.
 POINTS = 50
 # The colour family of each risk level (as the History badges).
-RISK_FAMILY = {"clean": "good", "low": "sky", "medium": "warn", "high": "bad",
-               "inconclusive": "grey"}
+RISK_FAMILY = {level.value: s.family for level, s in risk_scale.SCALE.items()}
 # Each endpoint's widget keys: the namespaced keys it reads (others with a dot
 # belong to other widgets and are ignored).
 WIDGET_KEYS: dict[str, dict[str, tuple[str, ...]]] = {
@@ -344,9 +344,12 @@ def _row(d: Mapping[str, Any]) -> dict[str, Any]:
         "detect": None if auto is None else "auto" if auto else "manual",
         "stream_mode": d["stream_mode"] or None,
         "risk_level": risk, "score": score, "grade": grade, "kb_match": d["kb_match"],
+        # the score wears its grade's colour (the run's own grade when it has
+        # one), so the two never disagree; one scale (ekte.risk_scale)
         "family": {
             "risk": RISK_FAMILY.get(risk, "grey"),
-            "score": metrics.family(metrics.METRICS["score"], score),
+            "score": (metrics.family(metrics.METRICS["grade"], metrics.grade_value(grade)) if grade
+                      else metrics.family(metrics.METRICS["score"], score)),
             "grade": metrics.family(metrics.METRICS["grade"], metrics.grade_value(grade)),
         },
         "watch_id": d["watch_id"], "exec": "manual" if d["watch_id"] is None else "monitor",

@@ -114,10 +114,10 @@ continuano ad alzare il rischio.
 | Rischio | Etichetta nell'interfaccia | Quando |
 |---|---|---|
 | `inconclusive` | Segnale insufficiente | Niente di utilizzabile da giudicare: se è stata eseguita una dimensione di profilo, nessuna ha prodotto un risultato utilizzabile (Superato, Avviso o Fallito) — relay irraggiungibile o modello senza profilo; altrimenti nessuna dimensione oltre alla connettività ne ha prodotto uno |
-| `high` | Merce non conforme | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o due o più rilevazioni ALTE |
+| `high` | Probabilmente sostituito | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o due o più rilevazioni ALTE |
 | `medium` | Scostamenti rilevati | Esattamente una rilevazione ALTA fuori dalle dimensioni centrali, o una rilevazione MEDIA in una dimensione centrale |
-| `low` | Per lo più affidabile | Qualsiasi altra rilevazione MEDIA |
-| `clean` | Coerente (probabilmente autentico) | Nessuno dei casi precedenti |
+| `low` | Per lo più coerente | Qualsiasi altra rilevazione MEDIA |
+| `clean` | Coerente | Nessuno dei casi precedenti |
 
 Il verdetto registra le dimensioni le cui rilevazioni determinano il rischio
 (`verdict.drivers`) e le dimensioni che hanno prodotto un risultato utilizzabile
