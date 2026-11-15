@@ -106,6 +106,7 @@ kjøringer en verdi bygger på. Som standard sammenligner den ett testsett og é
 probemodus (de vanligste), så ulike kjøringer ikke blandes; filtrene og visningen
 ligger i URL-en, så en visning kan bokmerkes eller deles. Ingenting forlater
 maskinen.
+Panelene Feil og pålitelighet, Reléoverhead, Modellintegritet og Fakturering starter med de samme flisene for sine egne tall; under Feil og pålitelighet står andelen svekkede kall for seg etter en skillelinje, fordi den teller alle kall.
 
 Flere paneler svarer på smalere spørsmål: **topptider** (et varmekart ukedag ×
 time over TTFT, forsinkelse og dekodehastighet (median og halene p95 / p5),

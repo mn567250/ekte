@@ -114,6 +114,7 @@ impostazione predefinita confronta una suite e una modalità di sonda (le più
 frequenti), per non mescolare esecuzioni diverse; filtri e vista restano
 nell'URL, quindi una vista si può salvare nei preferiti o condividere. Nulla
 lascia la macchina.
+I pannelli Errori e affidabilità, Sovraccarico del relay, Integrità del modello e Fatturazione si aprono con gli stessi riquadri per i propri valori; in Errori e affidabilità la quota di chiamate compromesse resta a parte dopo un separatore, perché conta tutte le chiamate.
 
 Altri pannelli rispondono a domande più specifiche: **ore di punta** (una mappa
 di calore giorno della settimana × ora di TTFT, latenza e velocità di decodifica (mediana e code p95 / p5), jitter

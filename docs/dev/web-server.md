@@ -319,11 +319,13 @@ translated in the browser; their texts are in
 reads them in Python). `grade` is a metric: the run's grade letter on the 1..6
 scale (F = 1 … A = 6, `scoring.GRADE_SCALE`), aggregated as a median.
 
-`KPI_GRID` (the 12 Analytics tiles, 4 × 3 in reading order) and
+`KPI_GRID` (the 12 Analytics tiles, 4 × 3 in reading order), `KPI_SETS`
+(every KPI tile row of the UI by name, as groups of ids; `overview` is the
+grid) and
 `HISTORY_TRENDS` (`score`, `grade`, `latency_p50`, `ttft_p50`, `decode_tps`,
 `error_rate`) are named lists here, not in the pages. `GET /api/metrics`
 (cached, ETag) answers `catalogue()`: `metrics` (every metric's public
-fields), `kpi_grid`, `history_trends`, `max_trends`, `min_runs`, `grades`,
+fields), `kpi_grid`, `kpi_sets`, `history_trends`, `max_trends`, `min_runs`, `grades`,
 `families`, `directions`, `trend_keys` and `labels` (every key's English
 text, for English, the key language whose bundle carries no keyed strings).
 
@@ -412,9 +414,20 @@ are read once; `relay` (by relay id), `model` and `watch` are a `GROUP BY` over 
 and the other lists, `span` and `runs` are folded from one `GROUP BY` of each
 run's facet combination (`history_metrics.facet_id`, `ekte/web/run_row.py`).
 
-### `GET /api/analytics/summary` (`kpi.*`: none)
+### `GET /api/analytics/summary` (`kpi.set`)
 
-The 12 tiles of `KPI_GRID` in order (runs, relays, models, score,
+The tiles of one named set of `KPI_SETS` (`kpi.set`, #208; default
+`overview`; an unknown set is a 400), each built by `metrics.tile()`:
+`overview` is the 12 tiles of `KPI_GRID` (below); `errors` the relay's
+success, error, rate-limited and timeout rates and, as a second group, the
+impaired share (over all calls: the same values as the errors widget's
+`totals`); `overhead` relay overhead and network round trip; `integrity` the
+model-mismatch share and the effective context; `billing` the four billing
+and token metrics. Every tile also has `hint_key` (the pooled rates'
+`agg_hint` key, else null) and `group` (its group in the set: the page draws
+a divider before a new one), and the answer names its `set`.
+
+The `overview` set: the 12 tiles of `KPI_GRID` in order (runs, relays, models, score,
 risk_high_share, success_rate, error_rate, latency_p50, ttft_p50,
 decode_tps, billing_ratio_prompt, billing_ratio_completion), for the range
 and the previous range (none without `from`): for a day range the N calendar
@@ -427,7 +440,8 @@ bound); the page labels it up to today ("Oct 12 – Nov 10"):
  "tiles": [{"id": "error_rate", "value": 0.05, "n": 30, "coverage": 1.0, "applies": true,
             "previous": 0.04, "previous_n": 30, "delta": 0.01, "direction": "worse",
             "trend_key": "trend.rising", "family": "grey", "grade": null, "low_n": false,
-            "numerator": 30, "denominator": 600, "format": "percent", "label_key": "metric.error_rate"}]}
+            "numerator": 30, "denominator": 600, "format": "percent", "label_key": "metric.error_rate",
+            "hint_key": "metric.error_rate.agg_hint", "group": 0}], "set": "overview"}
 ```
 
 `applies: false` (a chat-only tile on another surface) has `value`, `n`,

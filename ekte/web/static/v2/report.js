@@ -238,6 +238,18 @@
   function scoreC(v) {
     return v == null ? "grey" : v >= 85 ? "good" : v >= 70 ? "warn" : "bad";
   }
+  // the verdict's figures as compact KPI tiles (kpi.js, #208): the health
+  // score (coloured by its band, the rating spoken with it) and the confidence
+  function scoreTiles(v, sc, scoreTxt) {
+    var K = window.EkteKpi;
+    if (!K) return "";
+    var none = scoreTxt === "—";
+    return K.html([
+      { id: "score", label: T("综合健康分", "Overall health score"), text: scoreTxt, unit: "/100", family: scoreC(sc),
+        sr: none ? null : scoreTxt + "/100" + (v.rating ? " (" + Tf("评级 {r}", "Rating {r}", { r: v.rating }) + ")" : "") },
+      { id: "confidence", label: T("结论置信度", "Verdict confidence"), text: v.confidence ? label("CONFIDENCE", v.confidence) : "—" },
+    ], { variant: "compact" });
+  }
   // The headline names what drove the risk (verdict.drivers, scoring order):
   // the claimed-model sentences only when model identity is among them, and a
   // scoped sentence when model identity was not verified. Reports from before
@@ -937,9 +949,7 @@
       '<div class="vmeta"><span class="badge ' + risk.c + ' vpill">' + ico(risk.g) + " " + esc(label("RISK_LEVEL", riskKey)) + "</span>" +
       '<h2 id="' + hid + '">' + esc(head(v)) + "</h2>" +
       (rest ? '<p class="sum">' + esc(rest) + "</p>" : "") +
-      '<div class="vscores"><div>' + esc(T("综合健康分", "Overall health score")) + ' <b class="' + scoreC(sc) + '">' + esc(scoreTxt) + "</b>/100" +
-      (v.rating ? ' <span class="sr-only">(' + esc(Tf("评级 {r}", "Rating {r}", { r: v.rating })) + ")</span>" : "") + "</div>" +
-      "<div>" + esc(T("结论置信度", "Verdict confidence")) + " <b>" + esc(v.confidence ? label("CONFIDENCE", v.confidence) : "—") + "</b></div></div>" +
+      '<div class="vscores">' + scoreTiles(v, sc, scoreTxt) + "</div>" +
       "</div></div>" +
       '<dl class="meta-strip">' + meta.join("") + "</dl>" +
       '<section class="sect"><h3>' + esc(T("逐项体检", "Per-dimension checks")) +

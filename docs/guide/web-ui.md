@@ -102,6 +102,7 @@ what they measured: the page says how many runs a value is based on. By default
 it compares one suite and probe mode (the most common ones), so unlike runs are
 not mixed; the filters and view are kept in the URL, so a view can be
 bookmarked or shared. Nothing leaves the machine.
+The Errors and reliability, Relay overhead, Model integrity and Billing panels open with the same tiles for their own figures; on Errors and reliability the impaired share stands apart after a divider, as it counts all calls.
 
 Further panels answer narrower questions: **peak hours** (a weekday × hour
 heatmap of TTFT, latency and decode speed (median and p95 / p5 tails),

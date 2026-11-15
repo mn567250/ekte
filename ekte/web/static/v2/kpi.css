@@ -1,7 +1,7 @@
 /* ekte web UI v2 — KPI tiles (kpi.js, #208): every key figure of the UI.
    Tokens only (tokens.css); light and dark come with them.
 
-   .kpis           the list: as many columns as fit (tiles at least 140px)
+   .kpis           the list: as many columns as fit (tiles at least 120px)
    .kpis.cols      a fixed count, --kpi-cols (2 below 600px)
    .kpis.compact   borderless tiles side by side, a divider between them:
                    [ slot (--kpi-slot-w, both rows) | label over value ]
@@ -9,7 +9,7 @@
    .kpi            one tile; .na: not measured here (keeps its slot);
                    .sep: the first tile of a new group (other base);
                    .f-<family>: the value's colour family (the server's) */
-.kpis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 10px; }
+.kpis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); gap: 10px; }
 .kpis.cols { grid-template-columns: repeat(var(--kpi-cols, 4), minmax(0, 1fr)); }
 .kpi { position: relative; border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px 11px; background: var(--sunken); min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .kpi .khead { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
