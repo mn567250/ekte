@@ -82,10 +82,10 @@
     - text: 风险
     - combobox "风险":
       - option "全部" [selected]
-      - option "一致（疑似真货） (7)"
-      - option "基本可信 (4)"
+      - option "一致 (7)"
+      - option "基本一致 (4)"
       - option "存在偏离"
-      - option "货不对板 (4)"
+      - option "疑似掉包 (4)"
       - option "信号不足"
     - text: 最低健康分
     - spinbutton "最低健康分"
@@ -146,37 +146,37 @@
         - text: 延迟 p50 <duration>
     - list:
       - listitem:
-        - button "2026年9月30日 11:02 一致（疑似真货） 健康分 82 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月30日 11:02 一致 健康分 82 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月30日 10:02 一致（疑似真货） 健康分 85 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月30日 10:02 一致 健康分 85 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月30日 09:02 一致（疑似真货） 健康分 88 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月30日 09:02 一致 健康分 88 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月28日 10:02 基本可信 健康分 78 评级 D check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月28日 10:02 基本一致 健康分 78 评级 D check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月28日 09:02 一致（疑似真货） 健康分 80 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月28日 09:02 一致 健康分 80 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月28日 07:02 一致（疑似真货） 健康分 84 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月28日 07:02 一致 健康分 84 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月26日 08:02 基本可信 健康分 70 评级 D 监控 check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月26日 08:02 基本一致 健康分 70 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
@@ -199,22 +199,22 @@
         - text: 延迟 p50 <duration>
     - list:
       - listitem:
-        - button "2026年9月30日 08:02 货不对板 健康分 64 评级 D check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月30日 08:02 疑似掉包 健康分 64 评级 D check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月29日 11:02 货不对板 健康分 60 评级 D 监控 check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 11:02 疑似掉包 健康分 60 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
       - listitem:
-        - button "2026年9月29日 10:02 基本可信 健康分 66 评级 D 监控 check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 10:02 基本一致 健康分 66 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
       - listitem:
-        - button "2026年9月29日 09:02 货不对板 健康分 58 评级 D 监控 check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 09:02 疑似掉包 健康分 58 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
@@ -237,12 +237,12 @@
         - text: 延迟 p50 <duration>
     - list:
       - listitem:
-        - button "2026年9月29日 07:02 一致（疑似真货） 健康分 91 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 07:02 一致 健康分 91 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月29日 06:02 一致（疑似真货） 健康分 89 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 06:02 一致 健康分 89 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
@@ -261,13 +261,13 @@
       - listitem: 延迟 p50 <duration>
     - list:
       - listitem:
-        - button "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>" [expanded]
+        - button "2026年9月27日 10:02 基本一致 健康分 72 评级 D check · standard openai · 流式 p50 <duration>" [expanded]
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
-        - region "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>":
+        - region "2026年9月27日 10:02 基本一致 健康分 72 评级 D check · standard openai · 流式 p50 <duration>":
           - article "基本一致，存在少量小问题":
-            - text: 基本可信
+            - text: 基本一致
             - heading "基本一致，存在少量小问题" [level=2]
             - list:
               - listitem: 综合健康分 72/100 (评级 D)
@@ -353,7 +353,7 @@
       - listitem: 延迟 p50 无数据
     - list:
       - listitem:
-        - button "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard"
+        - button "2026年9月27日 07:47 疑似掉包 健康分 53 评级 F check · standard"
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录" [expanded]

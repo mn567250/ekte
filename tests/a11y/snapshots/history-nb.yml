@@ -82,10 +82,10 @@
     - text: Risiko
     - combobox "Risiko":
       - option "Alle" [selected]
-      - option "Konsistent (trolig ekte) (7)"
-      - option "Stort sett pålitelig (4)"
+      - option "Konsistent (7)"
+      - option "Stort sett konsistent (4)"
       - option "Avvik funnet"
-      - option "Falsk vare (4)"
+      - option "Trolig byttet ut (4)"
       - option "For lite grunnlag"
     - text: Min. score
     - spinbutton "Min. score"
@@ -146,37 +146,37 @@
         - text: Forsinkelse p50 <duration>
     - list:
       - listitem:
-        - button "30. sep. 2026, 11:02 Konsistent (trolig ekte) Score 82 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "30. sep. 2026, 11:02 Konsistent Score 82 Karakter B check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "30. sep. 2026, 10:02 Konsistent (trolig ekte) Score 85 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "30. sep. 2026, 10:02 Konsistent Score 85 Karakter B check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "30. sep. 2026, 09:02 Konsistent (trolig ekte) Score 88 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "30. sep. 2026, 09:02 Konsistent Score 88 Karakter B check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "28. sep. 2026, 10:02 Stort sett pålitelig Score 78 Karakter D check · standard openai · Strømming p50 <duration>"
+        - button "28. sep. 2026, 10:02 Stort sett konsistent Score 78 Karakter D check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "28. sep. 2026, 09:02 Konsistent (trolig ekte) Score 80 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "28. sep. 2026, 09:02 Konsistent Score 80 Karakter B check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "28. sep. 2026, 07:02 Konsistent (trolig ekte) Score 84 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "28. sep. 2026, 07:02 Konsistent Score 84 Karakter B check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "26. sep. 2026, 08:02 Stort sett pålitelig Score 70 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
+        - button "26. sep. 2026, 08:02 Stort sett konsistent Score 70 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
@@ -199,22 +199,22 @@
         - text: Forsinkelse p50 <duration>
     - list:
       - listitem:
-        - button "30. sep. 2026, 08:02 Falsk vare Score 64 Karakter D check · standard openai · Strømming p50 <duration>"
+        - button "30. sep. 2026, 08:02 Trolig byttet ut Score 64 Karakter D check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "29. sep. 2026, 11:02 Falsk vare Score 60 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 11:02 Trolig byttet ut Score 60 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
       - listitem:
-        - button "29. sep. 2026, 10:02 Stort sett pålitelig Score 66 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 10:02 Stort sett konsistent Score 66 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
       - listitem:
-        - button "29. sep. 2026, 09:02 Falsk vare Score 58 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 09:02 Trolig byttet ut Score 58 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
@@ -237,12 +237,12 @@
         - text: Forsinkelse p50 <duration>
     - list:
       - listitem:
-        - button "29. sep. 2026, 07:02 Konsistent (trolig ekte) Score 91 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 07:02 Konsistent Score 91 Karakter B check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "29. sep. 2026, 06:02 Konsistent (trolig ekte) Score 89 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 06:02 Konsistent Score 89 Karakter B check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
@@ -261,13 +261,13 @@
       - listitem: Forsinkelse p50 <duration>
     - list:
       - listitem:
-        - button "27. sep. 2026, 10:02 Stort sett pålitelig Score 72 Karakter D check · standard openai · Strømming p50 <duration>" [expanded]
+        - button "27. sep. 2026, 10:02 Stort sett konsistent Score 72 Karakter D check · standard openai · Strømming p50 <duration>" [expanded]
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
-        - region "27. sep. 2026, 10:02 Stort sett pålitelig Score 72 Karakter D check · standard openai · Strømming p50 <duration>":
+        - region "27. sep. 2026, 10:02 Stort sett konsistent Score 72 Karakter D check · standard openai · Strømming p50 <duration>":
           - article "Stort sett konsistent, med noen få små avvik":
-            - text: Stort sett pålitelig
+            - text: Stort sett konsistent
             - heading "Stort sett konsistent, med noen få små avvik" [level=2]
             - list:
               - listitem: Samlet helsescore 72/100 (Vurdering D)
@@ -353,7 +353,7 @@
       - listitem: Forsinkelse p50 ingen data
     - list:
       - listitem:
-        - button "27. sep. 2026, 07:47 Falsk vare Score 53 Karakter F check · standard"
+        - button "27. sep. 2026, 07:47 Trolig byttet ut Score 53 Karakter F check · standard"
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring" [expanded]
