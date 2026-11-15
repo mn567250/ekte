@@ -62,14 +62,10 @@
       - option "Chat (1)"
       - option "Embeddings"
       - option "Reclassement"
-    - group "Relais / fournisseur":
-      - text: Relais / fournisseur
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "Modèle annoncé":
-      - text: Modèle annoncé
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: Relais / fournisseur
+    - button "Relais / fournisseur Tous": Tous
+    - text: Modèle annoncé
+    - button "Modèle annoncé Tous": Tous
     - text: Suite
     - combobox "Suite":
       - option "Tous" [selected]

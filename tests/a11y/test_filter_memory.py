@@ -15,7 +15,7 @@ from urllib.parse import parse_qsl, urlsplit
 import pytest
 from playwright.sync_api import Page
 
-from tests.a11y.harness import assert_no_issues, settle, track_network
+from tests.a11y.harness import assert_no_issues, pick, settle, track_network
 
 KEEP = "Keep filters across pages"
 
@@ -62,13 +62,14 @@ def test_filters_follow_the_navigation_unless_kept_per_page(open_page) -> None:
     keep = page.get_by_role("checkbox", name=KEEP)
     if keep.count() != 1 or not keep.is_checked():
         issues.append("History: no checked 'Keep filters across pages' checkbox in the filter panel")
-    relays = page.locator("input[data-m=relay]")
+    page.locator("#ekf-relay-b").click()  # the relay list (#205)
+    settle(page)
+    relays = page.locator("#ekf-relay-p input[data-m=relay]")
     values = [str(relays.nth(i).get_attribute("value")) for i in range(relays.count())]
     values = [v for v in values if v != "-"]
     assert len(values) >= 2, f"the seeded history should offer two relays, got {values}"
     first, second = values[0], values[1]
-    page.locator(f'input[data-m=relay][value="{first}"]').check()
-    settle(page)
+    pick(page, "relay", first)
 
     # shared (default): Analytics, opened from the nav, applies History's relay
     _nav(page, "/analytics")
@@ -97,9 +98,8 @@ def test_filters_follow_the_navigation_unless_kept_per_page(open_page) -> None:
     _open_panel(page)
     if page.get_by_role("checkbox", name=KEEP).is_checked():
         issues.append("the per-page preference is not the same on History")
-    page.locator(f'input[data-m=relay][value="{first}"]').uncheck()
-    page.locator(f'input[data-m=relay][value="{second}"]').check()
-    settle(page)
+    pick(page, "relay", first, on=False)
+    pick(page, "relay", second)
     _nav(page, "/analytics")
     st = _state(page)
     if st.get("relay") != [first] or st.get("stream") != "stream":

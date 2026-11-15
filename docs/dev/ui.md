@@ -204,10 +204,21 @@ the module.
   (`AbortController`); `fail` gets one widget's error, never an abort.
 - **Copy link to this view** sits in the panel's foot on every page using the
   module (a selected read-only field where the clipboard refuses).
-- **Accessibility**: every field has a visible label (relay / model are
-  checkbox groups named by their legend), the frame keeps focus, badge,
-  summary and Reset, and each change is announced in the page's `#live`
-  region ("Filters updated: N active").
+- **Relay / model** (`kind: "multi"`, several values, #205) are a button
+  styled like the selects (`.ekf-ms-btn`, `aria-haspopup`, `aria-expanded`,
+  named by the field label plus its value: "All", the one value, or "N
+  relays" with a count badge). It opens `.ekf-ms-pop`, a `role="group"` named
+  by the label, holding native checkboxes (`data-m`) with run counts,
+  **Select all** / **Clear** and, from six values on, a search box
+  (**Select shown** then adds only the matches). Ticking every value keeps the
+  full list in the URL; only an empty list is All. ArrowDown on the button
+  (or Enter / Space) opens it and moves focus in; arrows move, Escape closes
+  and returns to the button; a click or focus outside closes it. The open list
+  survives `render()` (new option counts), focus coming back by `data-fk`.
+- **Accessibility**: every field has a visible label, the frame keeps focus,
+  badge, summary and Reset, and each change is announced in the page's `#live`
+  region ("Filters updated: N active"; a search in a relay / model list: "N of
+  M shown").
 - `EkteFilters.keyed(key, labels)` reads an i18n key such as `metric.score`,
   falling back to `GET /api/metrics`' `labels` (English has no keyed strings).
 

@@ -23,6 +23,7 @@ from playwright.sync_api import BrowserContext, Page, Route
 from tests.a11y.harness import (
     assert_no_issues,
     assert_no_violations,
+    pick,
     run_axe,
     settle,
     track_network,
@@ -66,7 +67,7 @@ _PAGE = """<!doctype html>
 """
 
 
-def _context(open_page: Any, clipboard: bool = False) -> BrowserContext:
+def _context(open_page: Any, clipboard: bool = False, option_lists: dict[str, Any] | None = None) -> BrowserContext:
     base = open_page.base_url
     # a fixed viewer zone: widget requests carry it as tz (#152)
     ctx = open_page.browser.new_context(viewport={"width": 1280, "height": 900}, timezone_id="Europe/Berlin")
@@ -82,7 +83,7 @@ def _context(open_page: Any, clipboard: bool = False) -> BrowserContext:
 
     def options(route: Route) -> None:
         ctx.options_calls.append(route.request.url.removeprefix(base))  # type: ignore[attr-defined]
-        route.fulfill(status=200, content_type="application/json", body=json.dumps(OPTIONS))
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(option_lists or OPTIONS))
 
     ctx.route(f"{base}/api/filters/options*", options)
     return ctx
@@ -117,13 +118,21 @@ def test_fields_are_labelled_and_the_panel_passes_axe(open_page) -> None:
       .filter((el) => !(el.labels && el.labels.length && el.labels[0].textContent.trim())).map((el) => el.outerHTML)""")
     if unnamed:
         issues.append(f"fields without a label: {unnamed}")
-    legends = page.locator("#fbody fieldset legend").all_text_contents()
-    if legends != ["Relay / provider", "Claimed model"]:
-        issues.append(f"the relay / model groups are not named by their legend: {legends}")
+    # relay / model: a button named by its label and its value, opening a named group (#205)
+    names = [page.locator(f"#ekf-{k}-b").evaluate(
+        "(b) => b.getAttribute('aria-labelledby').split(' ').map((id) => document.getElementById(id).textContent).join(' ')")
+        for k in ("relay", "model")]
+    if names != ["Relay / provider All", "Claimed model All"]:
+        issues.append(f"the relay / model buttons are not named by label and value: {names}")
+    page.locator("#ekf-relay-b").click()
+    settle(page)
+    group = page.locator("#ekf-relay-p")
+    if group.get_attribute("role") != "group" or group.get_attribute("aria-labelledby") != "ekf-relay-l":
+        issues.append("the relay list is not a group named by the field's label")
     # the options endpoint was asked with the shared filters, and its values are offered
     if ctx.options_calls != ["/api/filters/options?range=30d&group=relay&tz=Europe%2FBerlin"]:  # type: ignore[attr-defined]
         issues.append(f"options requested as {ctx.options_calls}")  # type: ignore[attr-defined]
-    if "Example Relay (9)" not in page.locator("#fbody fieldset").first.inner_text():
+    if "Example Relay (9)" not in group.inner_text():
         issues.append("the relay options from /api/filters/options are not shown")
     if not page.locator("#fshare").is_visible():
         issues.append("no 'Copy link to this view' button")
@@ -141,8 +150,8 @@ def test_changes_go_to_the_url_and_are_announced(open_page) -> None:
     if _query(page) != [("tab", "trends"), ("trend.metric", "latency_p50")]:
         issues.append(f"on load the URL keeps an unknown key or loses a widget key: {page.url}")
     page.locator("[data-f=risk]").select_option("high")
-    page.locator("#fbody input[data-m=relay][value=example]").check()
-    page.locator("#fbody input[data-m=relay][value='-']").check()
+    pick(page, "relay", "example")
+    pick(page, "relay", "-")
     page.locator("[data-f=range]").select_option("")  # All time, over the 30d default
     page.locator("[data-f=q]").fill("gpt")
     page.wait_for_timeout(450)
@@ -188,7 +197,7 @@ def test_a_copied_link_reproduces_the_view_in_a_fresh_browser(open_page) -> None
     page = _open(_context(open_page, clipboard=True), base)
     _open_panel(page)
     page.locator("[data-f=surface]").select_option("embedding")
-    page.locator("#fbody input[data-m=model][value='claude-3']").check()
+    pick(page, "model", "claude-3")
     page.locator("[data-f=exec]").select_option("monitor")
     page.locator("[data-f=suite]").select_option("-")
     page.locator("[data-f=group]").select_option("model")
@@ -218,9 +227,102 @@ def test_a_copied_link_reproduces_the_view_in_a_fresh_browser(open_page) -> None
                        ("[data-f=group]", "model"), ("[data-f=min_score]", "60")):
         if fresh.locator(sel).input_value() != value:
             issues.append(f"{sel} is {fresh.locator(sel).input_value()!r}, not {value!r}")
-    if not fresh.locator("#fbody input[data-m=model][value='claude-3']").is_checked():
+    if fresh.locator("#ekf-model-t").inner_text() != "claude-3":
+        issues.append(f"the model button shows {fresh.locator('#ekf-model-t').inner_text()!r}, not claude-3")
+    pick(fresh, "model", "claude-3")  # already ticked: the list opens on it
+    if not fresh.locator("#ekf-model-p input[value='claude-3']").is_checked():
         issues.append("the model is not selected")
     assert_no_issues(issues, "filters fixture [en]", "filter-link")
+
+
+MODELS = ["gpt-4o", "gpt-4o-mini", "claude-3", "qwen2.5-0.5b-instruct-mlx", "qwen/qwen3-vl-4b", "qwen2.5-coder:7b",
+          "zai-org/glm-4.6v-flash"]
+
+
+@pytest.mark.bitv("9.2.1.1", "9.4.1.2", "9.4.1.3")
+def test_relay_and_model_are_dropdowns_with_checkboxes(open_page) -> None:
+    """#205: relay / model are a button like the selects; it opens a group of
+    checkboxes that is used with the keyboard alone, keeps focus while the
+    panel re-renders, filters long lists and never turns a full selection
+    into "All"."""
+    options = dict(OPTIONS, model=[{"value": m, "runs": 7 - i} for i, m in enumerate(MODELS)])
+    ctx = _context(open_page, option_lists=options)
+    page = _open(ctx, open_page.base_url)
+    _open_panel(page)
+    issues: list[str] = []
+    btn = page.locator("#ekf-relay-b")
+    # one grid cell each, like the selects
+    widths = page.evaluate("""() => ['#ekf-relay-b', '#ekf-model-b', '[data-f=suite]']
+      .map((s) => Math.round(document.querySelector(s).getBoundingClientRect().width))""")
+    if len(set(widths)) != 1:
+        issues.append(f"the relay / model buttons are not as wide as a select: {widths}")
+    btn.focus()
+    page.keyboard.press("ArrowDown")
+    settle(page)
+    if btn.get_attribute("aria-expanded") != "true":
+        issues.append("ArrowDown on the button does not open the list")
+    if page.evaluate("document.activeElement.value") != "example":
+        issues.append("focus did not move to the first option")
+    page.keyboard.press("Space")
+    settle(page)
+    # the options are fetched again and the panel re-renders: focus and the open list stay
+    if page.evaluate("document.activeElement.value") != "example" or btn.get_attribute("aria-expanded") != "true":
+        issues.append("after ticking, the list closed or focus left the option")
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("Space")
+    settle(page)
+    if [v for k, v in _query(page) if k == "relay"] != ["example", "http://127.0.0.1:9099/v1"]:
+        issues.append(f"the keyboard did not tick two relays: {_query(page)}")
+    if page.locator("#ekf-relay-t").inner_text() != "2 relays" or page.locator("#ekf-relay-b .ekf-ms-n").inner_text() != "2":
+        issues.append(f"the button reads {btn.inner_text()!r}, not '2 relays' with a count")
+    page.keyboard.press("Escape")
+    settle(page)
+    if btn.get_attribute("aria-expanded") != "false" or page.evaluate("document.activeElement.id") != "ekf-relay-b":
+        issues.append("Escape does not close the list and return to the button")
+    # every value ticked stays a list of values, never "All"
+    btn.click()
+    page.locator("#ekf-relay-p [data-msa=all]").click()
+    settle(page)
+    if [v for k, v in _query(page) if k == "relay"] != ["example", "http://127.0.0.1:9099/v1", "-"] \
+            or page.locator("#ekf-relay-t").inner_text() != "3 relays":
+        issues.append(f"Select all is not three relays: {page.locator('#ekf-relay-t').inner_text()!r} {_query(page)}")
+    page.locator("#ekf-relay-p [data-msa=none]").click()
+    settle(page)
+    if any(k == "relay" for k, _ in _query(page)) or page.locator("#ekf-relay-t").inner_text() != "All":
+        issues.append("Clear did not return to All")
+    # a long list has a labelled search box; Select shown takes only what it shows
+    page.locator("#ekf-model-b").click()
+    settle(page)
+    if btn.get_attribute("aria-expanded") != "false":
+        issues.append("opening the model list left the relay list open")
+    search = page.get_by_role("searchbox", name="Filter models…")
+    if search.count() != 1:
+        issues.append("the model list (7 values) has no labelled search box")
+    else:
+        search.fill("qwen")
+        settle(page)
+        shown = page.locator("#ekf-model-p input[data-m=model]").evaluate_all("(els) => els.map((e) => e.value)")
+        if shown != [m for m in MODELS if "qwen" in m]:
+            issues.append(f"the search shows {shown}")
+        if page.locator("#live").inner_text() != "3 of 7 shown":
+            issues.append(f"the search result is not announced: {page.locator('#live').inner_text()!r}")
+        page.locator("#ekf-model-p [data-msa=all]").click()
+        settle(page)
+        if [v for k, v in _query(page) if k == "model"] != [m for m in MODELS if "qwen" in m]:
+            issues.append(f"Select shown picked {_query(page)}")
+        search.fill("nothing-like-this")
+        settle(page)
+        if "Nothing matches" not in page.locator("#ekf-model-p").inner_text():
+            issues.append("an empty search result says nothing")
+    # a click outside closes it
+    page.locator("#main h1").click()
+    settle(page)
+    if page.locator("#ekf-model-b").get_attribute("aria-expanded") != "false":
+        issues.append("a click outside does not close the list")
+    btn.click()
+    settle(page)
+    assert_no_violations(run_axe(page, ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]), "filters fixture, relay list open [en]")
+    assert_no_issues(issues, "filters fixture [en]", "filter-multi")
 
 
 def test_storage_is_only_a_fallback(open_page) -> None:
@@ -267,7 +369,7 @@ def test_monitor_open_in_history_uses_the_shared_keys(open_page) -> None:
         query = dict(parse_qsl(urlsplit(hrefs[0]).query))
         page.goto(open_page.base_url + hrefs[0], wait_until="load")
         settle(page)
-        checked = page.evaluate("() => [...document.querySelectorAll('input[data-m=relay]:checked')].map((b) => b.value)")
+        checked = page.evaluate("() => EkteFilters.state().relay")
         if checked != [query["relay"]]:
             issues.append(f"History's relay filter is {checked!r}")
         if not page.locator("#r-" + query["runs.focus"]).count():

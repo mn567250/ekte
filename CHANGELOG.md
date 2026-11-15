@@ -200,6 +200,26 @@ to change, in every UI language.
   this suite.", in the report and the Web UI.
 - A test enforces a recommendation on every not-counted inconclusive outcome.
 
+### Web UI: relay and model filters are dropdowns with checkboxes ([#205](https://github.com/mn567250/ekte/issues/205))
+
+**Relay / provider** and **Claimed model** in the filter panel (History,
+Analytics, Monitors) are now a button the size of the other filters. It
+opens a list of checkboxes with the run counts, **Select all** and **Clear**,
+and a search box once a list has six or more values (**Select shown** then
+ticks only the matches). The open lists no longer take two grid columns, leave
+empty space beside the shorter fields or cut off their last entry.
+
+- The button reads **All**, the one chosen value, or e.g. **2 relays** with a
+  count badge. Ticking every value keeps them all in the URL; only an empty
+  selection means All, so a link never widens to relays or models that
+  appear later.
+- Keyboard: ArrowDown (or Enter / Space) opens the list and moves into it,
+  the arrow keys move through it, Space or Enter ticks, Escape closes it and
+  returns to the button; clicking or tabbing outside closes it too. The list
+  stays open, with focus on the same value, while new counts load.
+- The URL keys, `(unknown)` handling and `/api/filters/options` are
+  unchanged.
+
 ### Metrics, filters and History/Analytics rework ([#117](https://github.com/mn567250/ekte/issues/117))
 
 History and Analytics now show the same numbers, computed once on the

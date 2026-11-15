@@ -269,6 +269,21 @@ def settle(page: Page) -> None:
         page.evaluate(FINISH_ANIMATIONS_JS)
 
 
+def pick(page: Page, key: str, value: str, on: bool = True) -> None:
+    """Tick (on) or untick a relay / model value in the filter panel (#205):
+    open the field's list if it is closed, then set the checkbox. The list
+    stays open, as after a person's click."""
+    button = page.locator(f"#ekf-{key}-b")
+    if button.get_attribute("aria-expanded") != "true":
+        button.click()
+    box = page.locator(f'#ekf-{key}-p input[data-m={key}][value="{value}"]')
+    if on:
+        box.check()
+    else:
+        box.uncheck()
+    settle(page)
+
+
 # --------------------------------------------------------------------------- #
 # page states
 # --------------------------------------------------------------------------- #

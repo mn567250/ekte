@@ -32,7 +32,7 @@ from playwright.sync_api import Browser, BrowserContext, Page
 
 from tests.a11y.ekte_proc import EkteProc
 from tests.a11y.fake_relay import MODEL, FakeRelay
-from tests.a11y.harness import DESKTOP, settle, track_network
+from tests.a11y.harness import DESKTOP, pick, settle, track_network
 
 # the change signal's poll interval (10 s) plus the time a refresh takes
 WITHIN_MS = 15000
@@ -91,7 +91,7 @@ def test_relay_filter_is_in_the_url_and_the_request(browser: Browser, monitors_s
         assert _names(page) == ["Alpha", "Beta", "Gamma"]
         _open_panel(page)
         requests.clear()
-        page.locator(f'input[data-m=relay][value="{beta["relay_key"]}"]').check()
+        pick(page, "relay", beta["relay_key"])
         page.wait_for_function("() => document.querySelectorAll('.mon').length === 1")
         settle(page)
         assert _query(page.url).get("relay") == [beta["relay_key"]]
@@ -237,15 +237,15 @@ def test_shared_memory_carries_relay_not_state(browser: Browser, monitors_server
     try:
         hist = _open(ctx, base + "/history?range=")
         _open_panel(hist)
-        hist.locator(f'input[data-m=relay][value="{b}"]').check()
+        pick(hist, "relay", b)
         settle(hist)
         mon = _open(ctx, base + "/watches")
         assert mon.evaluate("() => EkteFilters.state().relay") == [b]
         assert _names(mon) == ["Beta"]
         _open_panel(mon)
-        mon.locator(f'input[data-m=relay][value="{b}"]').uncheck()
+        pick(mon, "relay", b, on=False)
         settle(mon)
-        mon.locator(f'input[data-m=relay][value="{a}"]').check()
+        pick(mon, "relay", a)
         settle(mon)
         mon.locator("select[data-f=state]").select_option("paused")
         settle(mon)

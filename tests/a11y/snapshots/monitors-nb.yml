@@ -62,14 +62,10 @@
       - option "Chat (1)"
       - option "Embeddinger"
       - option "Rerank"
-    - group "Relé / leverandør":
-      - text: Relé / leverandør
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "Oppgitt modell":
-      - text: Oppgitt modell
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: Relé / leverandør
+    - button "Relé / leverandør Alle": Alle
+    - text: Oppgitt modell
+    - button "Oppgitt modell Alle": Alle
     - text: Testsett
     - combobox "Testsett":
       - option "Alle" [selected]

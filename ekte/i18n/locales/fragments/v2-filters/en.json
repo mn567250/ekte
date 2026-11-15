@@ -2,6 +2,13 @@
  "strings": {
   "Filters updated: {n} active": "Filters updated: {n} active",
   "Last 24 hours": "Last 24 hours",
-  "Last 365 days": "Last 365 days"
+  "Last 365 days": "Last 365 days",
+  "Filter relays…": "Filter relays…",
+  "Filter models…": "Filter models…",
+  "Select all": "Select all",
+  "Select shown": "Select shown",
+  "Clear": "Clear",
+  "Nothing matches “{q}”": "Nothing matches “{q}”",
+  "{n} of {total} shown": "{n} of {total} shown"
  }
 }

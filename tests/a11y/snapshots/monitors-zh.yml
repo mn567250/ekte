@@ -62,14 +62,10 @@
       - option "对话 (1)"
       - option "嵌入"
       - option "重排"
-    - group "中转站 / 厂商":
-      - text: 中转站 / 厂商
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "声称模型":
-      - text: 声称模型
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: 中转站 / 厂商
+    - button "中转站 / 厂商 全部": 全部
+    - text: 声称模型
+    - button "声称模型 全部": 全部
     - text: 套件
     - combobox "套件":
       - option "全部" [selected]

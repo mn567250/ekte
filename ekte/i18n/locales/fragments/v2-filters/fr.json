@@ -2,6 +2,13 @@
  "strings": {
   "Filters updated: {n} active": "Filtres mis à jour : {n} actifs",
   "Last 24 hours": "Dernières 24 heures",
-  "Last 365 days": "365 derniers jours"
+  "Last 365 days": "365 derniers jours",
+  "Filter relays…": "Filtrer les relais…",
+  "Filter models…": "Filtrer les modèles…",
+  "Select all": "Tout sélectionner",
+  "Select shown": "Sélectionner les éléments affichés",
+  "Clear": "Effacer",
+  "Nothing matches “{q}”": "Aucun résultat pour « {q} »",
+  "{n} of {total} shown": "{n} sur {total} affichés"
  }
 }
