@@ -178,6 +178,18 @@ KPI_GRID: tuple[str, ...] = (
     "risk_high_share", "success_rate", "error_rate", "latency_p50",
     "ttft_p50", "decode_tps", "billing_ratio_prompt", "billing_ratio_completion",
 )
+# Every KPI tile row of the web UI, by name: the ids in reading order, as
+# groups (a new group starts after a divider; its tiles share one base). The
+# Analytics summary answers one set (``kpi.set``, default "overview": the
+# grid above); the other sets head their panels (#208).
+KPI_SETS: dict[str, tuple[tuple[str, ...], ...]] = {
+    "overview": (KPI_GRID,),
+    # the relay's rates over the calls it answered | the impaired share over all calls
+    "errors": (("success_rate", "error_rate", "rate_limited_rate", "timeout_rate"), ("impaired_rate",)),
+    "overhead": (("relay_overhead", "network_rtt"),),
+    "integrity": (("model_mismatch_rate", "context_effective"),),
+    "billing": (("billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"),),
+}
 # The History trend options, in button order (at most 2 shown at once).
 HISTORY_TRENDS: tuple[str, ...] = ("score", "grade", "latency_p50", "ttft_p50", "decode_tps", "error_rate")
 MAX_TRENDS = 2
@@ -213,6 +225,7 @@ def catalogue() -> dict[str, Any]:
     return {
         "metrics": every,
         "kpi_grid": list(KPI_GRID),
+        "kpi_sets": {k: [list(g) for g in v] for k, v in KPI_SETS.items()},
         "history_trends": list(HISTORY_TRENDS),
         "max_trends": MAX_TRENDS,
         "min_runs": MIN_RUNS,
@@ -339,5 +352,36 @@ def present(metric: str | Metric, value: Any, previous: Any = None, n: int | Non
         "trend_key": None if delta is None else TREND_KEYS[(delta > 0) - (delta < 0)],
         "low_n": applies and n is not None and m.agg != "count" and n < MIN_RUNS,
         "applies": applies,
+    }
+
+
+def kpi_ids(name: str) -> tuple[str, ...]:
+    """The tile ids of a :data:`KPI_SETS` set, in reading order."""
+    return tuple(mid for g in KPI_SETS[name] for mid in g)
+
+
+def tile(metric: str | Metric, cell: Any = None, previous: Any = None, *,
+         surface: str | None = None, group: int = 0) -> dict[str, Any]:
+    """One KPI tile (#208): :func:`present` of ``cell`` against ``previous``
+    (aggregated cells: ``value``, ``n``, ``coverage``, ``numerator``,
+    ``denominator``; None for none), plus what every tile row draws: the
+    metric's ``format``, its ``label_key`` (the KPI label), ``hint_key``
+    (how a pooled rate is aggregated; None for other metrics) and ``group``
+    (the tile's group in its set: a divider before a new one)."""
+    m = metric if isinstance(metric, Metric) else get(metric)
+    shown = present(m, cell.value if cell else None, previous.value if previous else None,
+                    cell.n if cell else None, previous.n if previous else None, surface=surface)
+    applies = shown["applies"]
+    return {
+        "id": m.id, **shown,
+        "n": cell.n if cell and applies else None,
+        "coverage": cell.coverage if cell and applies else None,
+        "previous": previous.value if previous and applies else None,
+        "previous_n": previous.n if previous and applies else None,
+        "numerator": cell.numerator if cell else None,
+        "denominator": cell.denominator if cell else None,
+        "format": m.format, "label_key": m.kpi_label_key,
+        "hint_key": m.agg_hint_key if m.agg == "pooled" else None,
+        "group": group,
     }
 

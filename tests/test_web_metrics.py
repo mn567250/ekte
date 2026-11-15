@@ -147,6 +147,13 @@ def test_registry_shape():
         "ttft_p50", "decode_tps", "billing_ratio_prompt", "billing_ratio_completion",
     ]
     assert len(KPI_GRID) == 12 and set(KPI_GRID) <= set(ids)
+    # every KPI tile row (#208): named sets of groups of known ids, the grid first
+    assert cat["kpi_sets"]["overview"] == [cat["kpi_grid"]]
+    assert cat["kpi_sets"]["errors"] == [["success_rate", "error_rate", "rate_limited_rate", "timeout_rate"],
+                                         ["impaired_rate"]]
+    for name, groups in cat["kpi_sets"].items():
+        flat = [mid for g in groups for mid in g]
+        assert flat and len(flat) == len(set(flat)) and set(flat) <= set(ids), name
     assert cat["history_trends"] == ["score", "grade", "latency_p50", "ttft_p50", "decode_tps", "error_rate"]
     assert cat["grades"] == ["F", "E", "D", "C", "B", "A"]
     assert cat["min_runs"] == MIN_RUNS

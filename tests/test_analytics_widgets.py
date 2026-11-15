@@ -219,6 +219,33 @@ def test_summary_on_a_non_chat_surface_keeps_the_slots(data, client):  # noqa: F
     assert _get(client, "/api/analytics/summary", {"surface": "chat"})["runs"] == 1
 
 
+def test_summary_answers_every_tile_set(seeded, client):  # noqa: F811
+    """Each named set (kpi.set, #208): its ids in order, the group of each
+    tile, the pooled rates' hint; the errors set equals the errors widget."""
+    params = {"from": (T0 + timedelta(days=30)).isoformat(), "to": (T0 + timedelta(days=60)).isoformat()}
+    for name, groups in metrics.KPI_SETS.items():
+        out = _get(client, "/api/analytics/summary", {**params, "kpi.set": name})
+        assert out["set"] == name and out["previous"] is not None
+        assert [(t["id"], t["group"]) for t in out["tiles"]] == [
+            (mid, i) for i, g in enumerate(groups) for mid in g]
+        for t in out["tiles"]:
+            pooled = metrics.get(t["id"]).agg == "pooled"
+            assert t["hint_key"] == (f"metric.{t['id']}.agg_hint" if pooled else None)
+            assert t["format"] == metrics.get(t["id"]).format and t["label_key"]
+    assert _get(client, "/api/analytics/summary", params) == _get(
+        client, "/api/analytics/summary", {**params, "kpi.set": "overview"}) | {"set": "overview"}
+    tiles = {t["id"]: t for t in _get(client, "/api/analytics/summary", {**params, "kpi.set": "errors"})["tiles"]}
+    tot = _get(client, "/api/analytics/errors", params)["totals"]
+    for tid, key in (("success_rate", "success_rate"), ("error_rate", "relay_error_rate"),
+                     ("rate_limited_rate", "rate_limited_rate"), ("timeout_rate", "timeout_rate"),
+                     ("impaired_rate", "impaired_rate")):
+        assert tiles[tid]["value"] == pytest.approx(tot[key]), tid
+    assert tiles["impaired_rate"]["denominator"] == tot["requests"]
+    assert tiles["success_rate"]["denominator"] == tot["judged"]
+    assert "kpi.set must be one of" in str(_get(client, "/api/analytics/summary", {"kpi.set": "nope"}, status=400))
+    _get(client, "/api/analytics/summary", {"kpi.other": "x"}, status=400)
+
+
 # --------------------------------------------------------------------------- #
 # series and heatmap
 # --------------------------------------------------------------------------- #
