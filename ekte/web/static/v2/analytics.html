@@ -266,7 +266,7 @@
             <div id="lb-ctl"></div>
             <div id="lb-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
-          <p class="sr-only" id="lbst" role="status"></p>
+          <p class="sr-only sortst" id="lbst" role="status"></p>
         </section>
       </section>
 
@@ -282,6 +282,7 @@
             <div id="cmp-ctl"></div>
             <div id="cmp-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
+          <p class="sr-only sortst" id="cmpst" role="status"></p>
         </section>
         <section class="panel" role="tabpanel" id="panel-heat" aria-labelledby="tab-heat" tabindex="0" hidden>
           <h2 id="heat-h" data-en="Peak hours">Peak hours</h2>
@@ -290,6 +291,7 @@
             <div id="heat-ctl"></div>
             <div id="heat-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
+          <p class="sr-only sortst" id="heatst" role="status"></p>
         </section>
       </section>
 
@@ -305,11 +307,13 @@
             <div id="err-ctl"></div>
             <div id="err-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
+          <p class="sr-only sortst" id="errst" role="status"></p>
         </section>
         <section class="panel" role="tabpanel" id="panel-ovh" aria-labelledby="tab-ovh" tabindex="0" hidden>
           <h2 id="ovh-h" data-en="Relay overhead">Relay overhead</h2>
           <p class="psub" data-en="Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.">Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.</p>
           <div class="pbody" id="ovh-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
+          <p class="sr-only sortst" id="ovhst" role="status"></p>
         </section>
       </section>
 
@@ -318,6 +322,7 @@
           <h2 id="int-h" data-en="Model integrity">Model integrity</h2>
           <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.</p>
           <div class="pbody" id="int-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
+          <p class="sr-only sortst" id="intst" role="status"></p>
         </section>
       </section>
 
@@ -329,6 +334,7 @@
             <div id="bill-ctl"></div>
             <div id="bill-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
+          <p class="sr-only sortst" id="billst" role="status"></p>
         </section>
       </section>
     </div>
@@ -425,7 +431,8 @@
   // Shared filters are top-level keys; each widget reads its own namespace
   // (trend.*, heat.*, board.*, errors.*: sent to its endpoint); the page's
   // own settings are view keys (tab, os / ts / rs: the sub-tab of a tab) or
-  // namespaces no endpoint reads (bill.*, lb.*, table.*).
+  // namespaces no endpoint reads (bill.*, table.*, and each table's sort:
+  // lb.*, cmpt.*, heatt.*, errt.*, errg.*, ovh.*, int.*, billt.*, bills.*).
   var FIELDS = window.EkteFilters.PAGES.analytics.slice(); // filters.js PAGES
   var TABS = ["overview", "trends", "reliability", "integrity", "billing"];
   // tabs with two panels show one at a time (sub-tabs); its URL key
@@ -440,9 +447,12 @@
     tab: "overview", os: "kpi", ts: "cmp", rs: "err",
     "trend.metric": "score", "trend.bucket": "day", "trend.key": [], "trend.ahead": "0",
     "heat.metric": "latency_p50", "heat.block": "4", "heat.fold": "week", "heat.key": "",
-    "board.by": "relay", "lb.sort": "", "errors.bucket": "day", "errors.block": "4",
+    "board.by": "relay", "errors.bucket": "day", "errors.block": "4",
     "bill.metric": "billing_ratio_prompt",
     "table.trend": "", "table.heat": "", "table.errors": "", "table.bill": "",
+    // the viewer's sort of each table ("<column>.<asc|desc>"; none: the table's own order)
+    "lb.sort": "", "cmpt.sort": "", "heatt.sort": "", "errt.sort": "", "errg.sort": "", "ovh.sort": "", "int.sort": "",
+    "billt.sort": "", "bills.sort": "",
   };
   var F = null; // the filters.js instance
   var state = { opts: null, charts: {}, still: false, kpiShown: null, pairs: null };
@@ -610,7 +620,7 @@
       if (el && !el.disabled) el.focus({ preventScroll: true });
     }
   }
-  var FOCUS_KEYS = ["data-v", "data-key", "data-tog", "data-lb", "data-lbsort", "data-kv"];
+  var FOCUS_KEYS = ["data-v", "data-key", "data-tog", "data-lb", "data-sort", "data-kv"];
   function focusables(box) {
     return Array.prototype.slice.call(box.querySelectorAll("button, a[href], select, input, textarea, [tabindex]"));
   }
@@ -1036,7 +1046,7 @@
       esc(Tf("时间（{tz}）", "Time ({tz})", { tz: s.tz })) + "</span></div>" +
       '<div class="chartbox" id="cmp-chart"></div>' +
       (notes ? '<div class="notes">' + notes + "</div>" : "") +
-      tableHTML(withData, m, name, { pfx: "t", key: "table.trend", group: s.group, bucket: bucket });
+      tableHTML(withData, m, name, { pfx: "t", id: "cmpt", key: "table.trend", group: s.group, bucket: bucket });
     var cfg = {
       id: "cmpc", title: Tf("{metric}随时间变化", "{metric} over time", { metric: name }), desc: desc, unit: m.unit,
       // the range, from one bucket before the first data on (a long empty
@@ -1048,19 +1058,123 @@
     drawChart("cmp", "cmp-chart", C.timeChart, cfg);
   }
 
-  // A "show as table" disclosure: pfx names its ids (pfx + "tog" / "body" /
-  // "cap"), key the view key (table.*) that remembers whether it is open.
-  function discHTML(pfx, key, caption, head, body) {
+  /* ---------------- tables (#207) ---------------- */
+  // Every table of the page is drawn by dataTable(spec) and can be sorted by
+  // its columns. spec: id (names the sort buttons, data-sort="<id>:<col>"),
+  // cap (the caption's id), caption, wrap (the scroll box's extra class),
+  // sortKey (the URL key holding the viewer's sort, "<col>.<asc|desc>"; none:
+  // the table's own order, the rows as given), cols, rows, rowClass(row) and
+  // pin(row) (rows kept after the others whatever the sort: forecasts).
+  // A column: key, label, num (numbers: right-aligned), cls, cell(row) (its
+  // <td>/<th>) and value(row) (what it sorts by: a number, a string, a list
+  // compared item by item, or null for no value, always last; a column
+  // without value() has no sort button), first ("asc" for text and time,
+  // else "desc": the direction of its first click).
+  // A sort click redraws only that table, from the spec of its last draw.
+  var TABLES = {};
+  function colOf(spec, k) { return spec.cols.filter(function (c) { return c.key === k; })[0] || null; }
+  function sortOf(spec) {
+    var v = String([].concat(S(spec.sortKey))[0] || ""), at = v.lastIndexOf(".");
+    var dir = v.slice(at + 1), col = at > 0 ? colOf(spec, v.slice(0, at)) : null;
+    // a column the table does not show now (another grouping or metric): its own order
+    return col && col.value && (dir === "asc" || dir === "desc") ? { key: col.key, dir: dir, col: col } : null;
+  }
+  function noValue(v) { return v == null || (typeof v === "number" && isNaN(v)); }
+  function cmpValue(x, y) {
+    if (Array.isArray(x)) {
+      for (var i = 0; i < x.length; i++) { var c = cmpValue(x[i], y[i]); if (c) return c; }
+      return 0;
+    }
+    if (typeof x === "string") return x.localeCompare(y, EKTE_LANG.locale(), { numeric: true, sensitivity: "base" });
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  // stable: ties keep the table's own order
+  function sortedRows(spec, sort) {
+    if (!sort) return spec.rows;
+    var dir = sort.dir === "asc" ? 1 : -1, pin = spec.pin || function () { return false; };
+    return spec.rows.map(function (r, i) { return { r: r, i: i, v: sort.col.value(r), p: pin(r) ? 1 : 0 }; }).sort(function (a, b) {
+      if (a.p !== b.p) return a.p - b.p;
+      var na = noValue(a.v), nb = noValue(b.v);
+      if (na || nb) return na === nb ? a.i - b.i : na ? 1 : -1;
+      return cmpValue(a.v, b.v) * dir || a.i - b.i;
+    }).map(function (x) { return x.r; });
+  }
+  function headHTML(spec, sort) {
+    return spec.cols.map(function (c) {
+      var cls = ((c.num ? "n" : "") + (c.cls ? " " + c.cls : "")).trim(), attr = cls ? ' class="' + cls + '"' : "";
+      if (!c.value) return '<th scope="col"' + attr + ">" + esc(c.label) + "</th>";
+      var on = sort && sort.key === c.key;
+      var name = on ? Tf("{key}，{dir}", "{key}, {dir}", { key: c.label, dir: sort.dir === "asc" ? T("升序排列", "sorted ascending") : T("降序排列", "sorted descending") })
+        : Tf("按{key}排序", "Sort by {key}", { key: c.label });
+      return '<th scope="col"' + attr + (on ? ' aria-sort="' + (sort.dir === "asc" ? "ascending" : "descending") + '"' : "") + ">" +
+        '<button type="button" class="sortb" data-sort="' + esc(spec.id + ":" + c.key) + '" title="' + esc(name) + '"><span>' + esc(c.label) + "</span>" +
+        ico("chevronDown") + "</button></th>";
+    }).join("");
+  }
+  function bodyHTML(spec, sort) {
+    return sortedRows(spec, sort).map(function (r) {
+      var cls = spec.rowClass ? spec.rowClass(r) : "";
+      return "<tr" + (cls ? ' class="' + cls + '"' : "") + ">" + spec.cols.map(function (c) { return c.cell(r); }).join("") + "</tr>";
+    }).join("");
+  }
+  function dataTable(spec) {
+    TABLES[spec.id] = spec;
+    var sort = sortOf(spec);
+    return '<div class="tscroll' + (spec.wrap ? " " + spec.wrap : "") + '" tabindex="0" role="region" aria-labelledby="' + spec.cap + '">' +
+      '<table class="dt"><caption id="' + spec.cap + '">' + esc(spec.caption) + "</caption><thead><tr>" + headHTML(spec, sort) +
+      "</tr></thead><tbody>" + bodyHTML(spec, sort) + "</tbody></table></div>";
+  }
+  // A sort button: its first direction, then the other, then the table's own order
+  $("main").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-sort]");
+    if (!b) return;
+    var ref = b.getAttribute("data-sort"), at = ref.indexOf(":"), spec = TABLES[ref.slice(0, at)];
+    var col = spec && colOf(spec, ref.slice(at + 1));
+    var cap = spec && document.getElementById(spec.cap), table = cap && cap.parentNode;
+    if (!col || !col.value || !table || !table.contains(b)) return;
+    var cur = sortOf(spec), first = col.first || "desc", next;
+    if (!cur || cur.key !== col.key) next = first;
+    else if (cur.dir === first) next = first === "asc" ? "desc" : "asc";
+    else next = null;
+    var patch = {}; patch[spec.sortKey] = next ? col.key + "." + next : null;
+    quietly(patch);
+    var sort = sortOf(spec);
+    table.tHead.rows[0].innerHTML = headHTML(spec, sort);
+    table.tBodies[0].innerHTML = bodyHTML(spec, sort);
+    var again = table.querySelector('[data-sort="' + CSS.escape(ref) + '"]');
+    if (again) again.focus();
+    var panel = table.closest(".panel"), st = panel && panel.querySelector(".sortst");
+    if (st) {
+      st.textContent = next ? Tf("已按{key}排序，{dir}", "Sorted by {key}, {dir}", { key: col.label, dir: next === "asc" ? T("升序", "ascending") : T("降序", "descending") })
+        : T("默认顺序", "Default order");
+    }
+  });
+  // the columns most tables share: the row's name (with the "few runs" badge) and its run count
+  function nameCell(r) {
+    return '<th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
+      (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>";
+  }
+  function lowRow(r) { return r.low_n || r.low ? "low" : ""; }
+  function labelCol(label) {
+    return { key: "label", label: label, first: "asc", value: function (r) { return String(r.label || r.key); }, cell: nameCell };
+  }
+  function runsCol() {
+    return { key: "runs", label: T("检测次数", "Runs"), num: true, value: function (r) { return r.runs; },
+      cell: function (r) { return '<td class="n">' + esc(String(r.runs)) + "</td>"; } };
+  }
+  function metricValue(c) { return c && typeof c.value === "number" ? c.value : null; }
+
+  // A "show as table" disclosure around a table: pfx names its ids (pfx +
+  // "tog" / "body" / "cap"), key the view key (table.*) that remembers whether it is open.
+  function discHTML(pfx, key, spec) {
     var open = S(key) === "1";
+    spec.cap = pfx + "cap";
     return '<div class="tdisc"><button type="button" class="disclosure" id="' + pfx + 'tog" data-tog="' + key + '" aria-expanded="' + open + '" aria-controls="' + pfx + 'body">' +
       "<span>" + esc(T("以表格显示", "Show as table")) + '</span><span class="cv" aria-hidden="true">' + ico("chevronDown") + "</span></button>" +
-      '<div class="tbody" id="' + pfx + 'body"' + (open ? "" : " hidden") + '><div class="tscroll" tabindex="0" role="region" aria-labelledby="' + pfx + 'cap">' +
-      '<table class="dt"><caption id="' + pfx + 'cap">' + esc(caption) + "</caption><thead><tr>" + head + "</tr></thead><tbody>" + body +
-      "</tbody></table></div></div></div>";
+      '<div class="tbody" id="' + pfx + 'body"' + (open ? "" : " hidden") + ">" + dataTable(spec) + "</div></div>";
   }
-  var th = function (text, num, cls) { return '<th scope="col"' + (num || cls ? ' class="' + (num ? "n" : "") + (cls ? " " + cls : "") + '"' : "") + ">" + esc(text) + "</th>"; };
 
-  // the data table of a time chart: one row per series and bucket
+  // the data table of a time chart: one row per series and bucket, forecasts after the measured rows
   function tableHTML(series, m, name, o) {
     var share = m.agg !== "median", rows = [];
     series.forEach(function (x) { x.points.forEach(function (p) { rows.push({ x: x, p: p }); }); });
@@ -1068,23 +1182,29 @@
     series.forEach(function (x) { if (x.fc) x.fc.points.forEach(function (p) { rows.push({ x: x, p: p, fc: true }); }); });
     rows.sort(function (a, b) { return a.p.t - b.p.t || series.indexOf(a.x) - series.indexOf(b.x); });
     var hint = lowHint();
-    return discHTML(o.pfx, o.key, Tf("{metric}（{group}，{bucket}）", "{metric} ({group}, {bucket})", {
-        metric: name, group: groupName(o.group), bucket: bucketName(o.bucket) }),
-      th(T("时间段", "Time bucket")) + th(T("数据系列", "Series")) + th(share ? T("占比", "Share") : T("中位数", "Median"), true) +
-      (share ? "" : '<th scope="col" class="n">p25–p75</th>') + th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
-      rows.map(function (r) {
-        var p = r.p;
-        if (r.fc) {
-          return '<tr class="fcrow"><td class="when">' + esc(bucketTime(p.t, o.bucket)) + '</td><td class="ser"><span class="lbl">' + brk(r.x.label) + "</span></td>" +
-            '<td class="n">≈ ' + esc(fmt(p.v, m.unit)) + "</td>" +
-            (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +
-            '<td class="n">—</td><td class="nt">' + esc(T("预测（估计）", "Forecast (estimate)")) + "</td></tr>";
-        }
-        return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t, o.bucket)) + '</td><td class="ser"><span class="lbl">' + brk(r.x.label) + "</span></td>" +
-          '<td class="n">' + esc(fmt(p.v, m.unit)) + "</td>" +
-          (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +
-          '<td class="n">' + esc(String(p.n)) + '</td><td class="nt">' + (p.low ? esc(hint) : "") + "</td></tr>";
-      }).join(""));
+    var cols = [
+      { key: "time", label: T("时间段", "Time bucket"), first: "asc", value: function (r) { return r.p.t; },
+        cell: function (r) { return '<td class="when">' + esc(bucketTime(r.p.t, o.bucket)) + "</td>"; } },
+      { key: "series", label: T("数据系列", "Series"), first: "asc", value: function (r) { return String(r.x.label); },
+        cell: function (r) { return '<td class="ser"><span class="lbl">' + brk(r.x.label) + "</span></td>"; } },
+      { key: "value", label: share ? T("占比", "Share") : T("中位数", "Median"), num: true, value: function (r) { return r.p.v; },
+        cell: function (r) { return '<td class="n">' + (r.fc ? "≈ " : "") + esc(fmt(r.p.v, m.unit)) + "</td>"; } },
+    ];
+    if (!share) {
+      cols.push({ key: "iqr", label: "p25–p75", num: true,
+        cell: function (r) { return '<td class="n">' + esc(fmt(r.p.lo, m.unit)) + " – " + esc(fmt(r.p.hi, m.unit)) + "</td>"; } });
+    }
+    cols.push(
+      { key: "runs", label: T("检测次数", "Runs"), num: true, value: function (r) { return r.fc ? null : r.p.n; },
+        cell: function (r) { return '<td class="n">' + (r.fc ? "—" : esc(String(r.p.n))) + "</td>"; } },
+      { key: "note", label: T("说明", "Note"),
+        cell: function (r) { return '<td class="nt">' + (r.fc ? esc(T("预测（估计）", "Forecast (estimate)")) : r.p.low ? esc(hint) : "") + "</td>"; } });
+    return discHTML(o.pfx, o.key, {
+      id: o.id, sortKey: o.id + ".sort", cols: cols, rows: rows,
+      caption: Tf("{metric}（{group}，{bucket}）", "{metric} ({group}, {bucket})", { metric: name, group: groupName(o.group), bucket: bucketName(o.bucket) }),
+      rowClass: function (r) { return r.fc ? "fcrow" : r.p.low ? "low" : ""; },
+      pin: function (r) { return r.fc; },
+    });
   }
   $("main").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-tog]");
@@ -1112,35 +1232,9 @@
     var b = ev.target.closest("[data-lb]");
     if (!b || boardBy() === b.getAttribute("data-lb")) return;
     var v = b.getAttribute("data-lb");
-    F.set({ "board.by": v === DEFAULTS["board.by"] ? null : v, "lb.sort": null });
+    // the sort stays: every grouping has the same columns
+    F.set({ "board.by": v === DEFAULTS["board.by"] ? null : v });
   });
-  var LB_FIRST = ["runs"], LB_LAST = ["last_run"];
-  function colName(k) {
-    if (k === "runs") return T("检测次数", "Runs");
-    if (k === "last_run") return T("最近一次检测", "Last run");
-    return metricName(k, "short_label_key");
-  }
-  function sortState() {
-    var v = String(S("lb.sort") || "").split(".");
-    return v.length === 2 && (v[1] === "asc" || v[1] === "desc") ? { key: v[0], dir: v[1] } : null;
-  }
-  function sortVal(row, k) {
-    if (k === "label") return String(row.label || row.key).toLowerCase();
-    if (k === "runs") return row.runs;
-    if (k === "last_run") { var t = Date.parse(row.last_run || ""); return isNaN(t) ? null : t; }
-    var c = row.metrics && row.metrics[k];
-    return c && typeof c.value === "number" ? c.value : null;
-  }
-  // a column sort the viewer picked (the server's order otherwise: best score first)
-  function sortedRows(rows, sort) {
-    if (!sort) return rows;
-    var k = sort.key, dir = sort.dir === "asc" ? 1 : -1;
-    return rows.map(function (r, i) { return [r, i]; }).sort(function (a, b) {
-      var x = sortVal(a[0], k), y = sortVal(b[0], k);
-      if (x == null || y == null) return x == null ? (y == null ? a[1] - b[1] : 1) : -1;
-      return (x < y ? -1 : x > y ? 1 : 0) * dir || a[1] - b[1];
-    }).map(function (p) { return p[0]; });
-  }
   function renderBoard() {
     var p = PANEL.lb, body = $("#lb-body"), b = p.data && p.data[0];
     renderBoardControls();
@@ -1153,49 +1247,21 @@
       body.innerHTML = '<div class="empty-data">' + esc(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range.")) + "</div>";
       return;
     }
-    var ae = document.activeElement, focusSort = ae && body.contains(ae) && ae.getAttribute("data-lbsort");
-    var sort = sortState(), by = b.by;
-    var units = {};
-    (b.metrics || []).forEach(function (m) { units[m.id] = m.unit; });
-    var cols = LB_FIRST.concat((b.metrics || []).map(function (m) { return m.id; }), LB_LAST);
-    var head = function (k, label, num) {
-      var on = sort && sort.key === k;
-      var name = on ? Tf("{key}，{dir}", "{key}, {dir}", { key: label, dir: sort.dir === "asc" ? T("升序排列", "sorted ascending") : T("降序排列", "sorted descending") })
-        : Tf("按{key}排序", "Sort by {key}", { key: label });
-      return '<th scope="col"' + (num ? ' class="n"' : "") + (on ? ' aria-sort="' + (sort.dir === "asc" ? "ascending" : "descending") + '"' : "") + ">" +
-        '<button type="button" class="sortb" data-lbsort="' + esc(k) + '" title="' + esc(name) + '"><span>' + esc(label) + "</span>" + ico("chevronDown") + "</button></th>";
-    };
     var cell = function (c, unit, runs) {
       if (!c) return '<td class="n">—</td>';
       return '<td class="n">' + esc(fmt(c.value, unit)) + '<span class="cn">n=' + esc(String(c.n)) + (c.n < runs ? " / " + esc(String(runs)) : "") + "</span></td>";
     };
+    var cols = [labelCol(groupName(b.by)), runsCol()].concat((b.metrics || []).map(function (m) {
+      return { key: m.id, label: metricName(m.id, "short_label_key"), num: true,
+        value: function (r) { return metricValue(r.metrics[m.id]); }, cell: function (r) { return cell(r.metrics[m.id], m.unit, r.runs); } };
+    }), [{ key: "last_run", label: T("最近一次检测", "Last run"),
+      value: function (r) { var t = Date.parse(r.last_run || ""); return isNaN(t) ? null : t; },
+      cell: function (r) { return '<td class="when">' + esc(r.last_run ? dfmt({ dateStyle: "medium", timeStyle: "short" }, new Date(r.last_run)) : "—") + "</td>"; } }]);
+    // without a sort of the viewer's: the server's order, best median score first
     body.innerHTML = (b.rows.some(function (r) { return r.low_n; }) ? fewNote(fewRows()) : "") +
-      '<div class="tscroll lbtab" tabindex="0" role="region" aria-labelledby="lbcap"><table class="dt"><caption id="lbcap">' +
-      esc(Tf("排行：{group}（{period}）", "Ranking: {group} ({period})", { group: groupName(by), period: periodOf(b) })) +
-      "</caption><thead><tr>" + head("label", groupName(by), false) +
-      cols.map(function (k) { return head(k, colName(k), k !== "last_run"); }).join("") + "</tr></thead><tbody>" +
-      sortedRows(b.rows, sort).map(function (r) {
-        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
-          (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>" +
-          '<td class="n">' + esc(String(r.runs)) + "</td>" +
-          cols.slice(1, -1).map(function (k) { return cell(r.metrics[k], units[k], r.runs); }).join("") +
-          '<td class="when">' + esc(r.last_run ? dfmt({ dateStyle: "medium", timeStyle: "short" }, new Date(r.last_run)) : "—") + "</td></tr>";
-      }).join("") + "</tbody></table></div>";
-    if (focusSort) {
-      var el = body.querySelector('[data-lbsort="' + CSS.escape(focusSort) + '"]');
-      if (el) el.focus();
-    }
+      dataTable({ id: "lb", cap: "lbcap", wrap: "lbtab", sortKey: "lb.sort", cols: cols, rows: b.rows, rowClass: lowRow,
+        caption: Tf("排行：{group}（{period}）", "Ranking: {group} ({period})", { group: groupName(b.by), period: periodOf(b) }) });
   }
-  $("#lb-body").addEventListener("click", function (ev) {
-    var b = ev.target.closest("[data-lbsort]");
-    if (!b) return;
-    var k = b.getAttribute("data-lbsort"), cur = sortState();
-    // a new column starts with the largest (or A–Z) first; the active one flips
-    var next = cur && cur.key === k ? { key: k, dir: cur.dir === "asc" ? "desc" : "asc" } : { key: k, dir: k === "label" ? "asc" : "desc" };
-    F.set({ "lb.sort": next.key + "." + next.dir });
-    var col = k === "label" ? groupName(boardBy()) : colName(k);
-    $("#lbst").textContent = Tf("已按{key}排序，{dir}", "Sorted by {key}, {dir}", { key: col, dir: next.dir === "asc" ? T("升序", "ascending") : T("降序", "descending") });
-  });
 
   /* ---- peak hours (weekday x hour) ---- */
   // a Monday: weekday names from Intl, in the UI language
@@ -1303,15 +1369,23 @@
       (foldNotes.length || cells.some(function (c) { return c.low; }) ? '<div class="notes">' +
         foldNotes.map(function (t) { return '<p class="note">' + ico("info") + "<span>" + esc(t) + "</span></p>"; }).join("") +
         (cells.some(function (c) { return c.low; }) ? fewNote(hatchedHint()) : "") + "</div>" : "") +
-      discHTML("ht", "table.heat", Tf("{metric}，按星期几和小时（{who}）", "{metric} by weekday and hour ({who})", { metric: name, who: who }),
-        (folded ? th(fold === "4weeks" ? T("周", "Week") : T("日期", "Days")) : "") + th(T("星期", "Weekday")) + th(T("小时", "Hour")) + th(m.agg !== "median" ? T("占比", "Share") : T("中位数", "Median"), true) +
-        th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
-        cells.map(function (c) {
-          return '<tr class="' + (c.low ? "low" : "") + '">' + (folded ? '<td class="when">' + esc(foldWeek(fold, c.g)) + "</td>" : "") +
-            '<td class="when">' + esc(dayName(c.dow, true)) + '</td><td class="when">' +
-            esc(timeSpan(c.dow, c.hour, blk)) +
-            '</td><td class="n">' + esc(fmt(c.v, m.unit)) + '</td><td class="n">' + esc(String(c.runs)) + '</td><td class="nt">' + (c.low ? esc(cellHint()) : "") + "</td></tr>";
-        }).join(""));
+      discHTML("ht", "table.heat", {
+        id: "heatt", sortKey: "heatt.sort", rows: cells, rowClass: lowRow,
+        caption: Tf("{metric}，按星期几和小时（{who}）", "{metric} by weekday and hour ({who})", { metric: name, who: who }),
+        // weekdays and hours sort by their place in the week, not by their names
+        cols: (folded ? [{ key: "week", label: fold === "4weeks" ? T("周", "Week") : T("日期", "Days"), first: "asc",
+          value: function (c) { return [c.g, c.dow, c.hour]; }, cell: function (c) { return '<td class="when">' + esc(foldWeek(fold, c.g)) + "</td>"; } }] : []).concat([
+          { key: "day", label: T("星期", "Weekday"), first: "asc", value: function (c) { return [c.dow, c.hour, c.g]; },
+            cell: function (c) { return '<td class="when">' + esc(dayName(c.dow, true)) + "</td>"; } },
+          { key: "hour", label: T("小时", "Hour"), first: "asc", value: function (c) { return [c.hour, c.dow, c.g]; },
+            cell: function (c) { return '<td class="when">' + esc(timeSpan(c.dow, c.hour, blk)) + "</td>"; } },
+          { key: "value", label: m.agg !== "median" ? T("占比", "Share") : T("中位数", "Median"), num: true, value: function (c) { return c.v; },
+            cell: function (c) { return '<td class="n">' + esc(fmt(c.v, m.unit)) + "</td>"; } },
+          { key: "runs", label: T("检测次数", "Runs"), num: true, value: function (c) { return c.runs; },
+            cell: function (c) { return '<td class="n">' + esc(String(c.runs)) + "</td>"; } },
+          { key: "note", label: T("说明", "Note"), cell: function (c) { return '<td class="nt">' + (c.low ? esc(cellHint()) : "") + "</td>"; } },
+        ]),
+      });
     var cfg = {
       id: "heatc", title: Tf("{metric}，按星期几和小时", "{metric} by weekday and hour", { metric: name }), desc: desc, unit: m.unit,
       cells: cells, block: blk, days: weekdays(), hourLabel: rowName, tipTime: span,
@@ -1394,40 +1468,45 @@
           when: worst ? when(worst) : "—" });
     var first = bars.length ? Math.min.apply(null, bars.map(function (b) { return b.t; })) : null;
     var classes = d.classes;
-    var count = function (n, c) { return '<td class="n' + (IMPAIRED.indexOf(c) >= 0 ? " imp" + (c === IMPAIRED[0] ? " first" : "") : "") + '">' + esc(String(n)) + "</td>"; };
-    var classHead = function () {
-      return classes.map(function (c) { return th(className(c), true, IMPAIRED.indexOf(c) >= 0 ? "imp" + (c === IMPAIRED[0] ? " first" : "") : ""); }).join("");
+    var impCls = function (c) { return IMPAIRED.indexOf(c) >= 0 ? "imp" + (c === IMPAIRED[0] ? " first" : "") : ""; };
+    var count = function (n, cls) { return '<td class="n' + (cls ? " " + cls : "") + '">' + esc(String(n)) + "</td>"; };
+    // the columns both tables share: calls, one per outcome class, the rates (raw(row): the row's counts)
+    var callCols = function (raw) {
+      return [{ key: "calls", label: T("调用", "Calls"), num: true, value: function (r) { return raw(r).requests; }, cell: function (r) { return count(raw(r).requests); } }]
+        .concat(classes.map(function (c) {
+          return { key: "class:" + c, label: className(c), num: true, cls: impCls(c),
+            value: function (r) { return raw(r).counts[c]; }, cell: function (r) { return count(raw(r).counts[c], impCls(c)); } };
+        }), [["success_rate", "success_rate"], ["relay_error_rate", "error_rate"], ["rate_limited_rate", "rate_limited_rate"],
+          ["timeout_rate", "timeout_rate"], ["impaired_rate", "impaired_rate"]].map(function (k) {
+          var imp = k[0] === "impaired_rate" ? "imp" : "";
+          return { key: k[0], label: metricName(k[1], "short_label_key"), num: true, cls: imp,
+            value: function (r) { return raw(r)[k[0]]; }, cell: function (r) { return count(pct(raw(r)[k[0]]), imp); } };
+        }));
     };
-    var rateCells = function (x) {
-      return ["success_rate", "relay_error_rate", "rate_limited_rate", "timeout_rate"].map(function (k) { return '<td class="n">' + esc(pct(x[k])) + "</td>"; }).join("") +
-        '<td class="n imp">' + esc(pct(x.impaired_rate)) + "</td>";
-    };
-    var rateHead = th(metricName("success_rate", "short_label_key"), true) + th(metricName("error_rate", "short_label_key"), true) +
-      th(metricName("rate_limited_rate", "short_label_key"), true) + th(metricName("timeout_rate", "short_label_key"), true) +
-      th(metricName("impaired_rate", "short_label_key"), true, "imp");
     var g = d.group, gName = groupName(g);
     body.innerHTML = cov + rates + (grid ? "" : legend) +
       '<div class="axcap" aria-hidden="true"><span>' + esc((grid ? metricName("error_rate") : T("未成功的已作答调用", "Answered calls not successful")) + " · %") + "</span><span>" +
       esc(Tf("时间（{tz}）", "Time ({tz})", { tz: d.tz })) + "</span></div>" +
       '<div class="chartbox" id="err-chart"></div>' +
       '<div class="notes">' + impNote + (bars.some(function (b) { return b.low; }) ? fewNote(grid ? hatchedHint() : lowHint()) : "") + "</div>" +
-      discHTML("et", "table.errors", Tf("每个时间段的调用结果（{bucket}）", "Call outcomes per time bucket ({bucket})", { bucket: bucketName(eb) }),
-        th(T("时间段", "Time bucket")) + th(T("调用", "Calls"), true) + classHead() + rateHead + th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
-        bars.map(function (b) {
-          return '<tr class="' + (b.low ? "low" : "") + '"><td class="when">' + esc(when(b)) + "</td>" + count(b.raw.requests) +
-            classes.map(function (c) { return count(b.raw.counts[c], c); }).join("") + rateCells(b.raw) +
-            count(b.runs) + '<td class="nt">' + (b.low ? esc(grid ? cellHint() : lowHint()) : "") + "</td></tr>";
-        }).join("")) +
+      discHTML("et", "table.errors", {
+        id: "errt", sortKey: "errt.sort", rows: bars, rowClass: lowRow,
+        caption: Tf("每个时间段的调用结果（{bucket}）", "Call outcomes per time bucket ({bucket})", { bucket: bucketName(eb) }),
+        // the time sorts by the bucket's start (weekday x hour: its place in the week)
+        cols: [{ key: "time", label: T("时间段", "Time bucket"), first: "asc", value: function (b) { return b.t; },
+          cell: function (b) { return '<td class="when">' + esc(when(b)) + "</td>"; } }]
+          .concat(callCols(function (b) { return b.raw; }), [
+            { key: "runs", label: T("检测次数", "Runs"), num: true, value: function (b) { return b.runs; }, cell: function (b) { return count(b.runs); } },
+            { key: "note", label: T("说明", "Note"), cell: function (b) { return '<td class="nt">' + (b.low ? esc(grid ? cellHint() : lowHint()) : "") + "</td>"; } },
+          ]),
+      }) +
       '<h3 class="subh" id="eg-h">' + esc(Tf("按{group}", "By {group}", { group: gName })) + "</h3>" +
-      '<div class="tscroll etab" tabindex="0" role="region" aria-labelledby="eg-cap"><table class="dt"><caption id="eg-cap">' +
-      esc(Tf("每个{group}的调用结果", "Call outcomes per {group}", { group: gName })) + "</caption><thead><tr>" +
-      th(gName) + th(T("有记录的检测", "Runs with records"), true) + th(T("调用", "Calls"), true) + classHead() + rateHead +
-      "</tr></thead><tbody>" + d.groups.map(function (r) {
-        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
-          (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>" +
-          '<td class="n">' + esc(r.covered + " / " + r.runs) + "</td>" + count(r.requests) +
-          classes.map(function (c) { return count(r.counts[c], c); }).join("") + rateCells(r) + "</tr>";
-      }).join("") + "</tbody></table></div>";
+      dataTable({
+        id: "errg", cap: "eg-cap", wrap: "etab", sortKey: "errg.sort", rows: d.groups, rowClass: lowRow,
+        caption: Tf("每个{group}的调用结果", "Call outcomes per {group}", { group: gName }),
+        cols: [labelCol(gName), { key: "covered", label: T("有记录的检测", "Runs with records"), num: true, value: function (r) { return r.covered; },
+          cell: function (r) { return count(r.covered + " / " + r.runs); } }].concat(callCols(function (r) { return r; })),
+      });
     if (grid) {
       drawChart("errs", "err-chart", C.heatmap, {
         id: "errc", title: T("中转站错误率，按星期几和小时", "Relay error rate by weekday and hour"), desc: desc, unit: "ratio",
@@ -1491,22 +1570,30 @@
     // the context column only when some run measured the context window
     var ctx = d.has_context !== false;
     var nc = function (c) { return '<span class="cn">n=' + esc(String(c.n)) + "</span>" + (c.n && c.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : ""); };
+    var cols = [labelCol(T("中转站 × 模型", "Relay × model")), runsCol()].concat(d.checks.map(function (c) {
+      return { key: "check:" + c, label: checkName(c), value: function (r) { return severity(r.checks[c]); }, cell: function (r) { return chip(r.checks[c]); } };
+    }), [{ key: "model_mismatch_rate", label: metricName("model_mismatch_rate"), num: true, value: function (r) { return metricValue(r.model_mismatch); },
+      cell: function (r) { return '<td class="n">' + esc(fmt(r.model_mismatch.value, "ratio")) + nc(r.model_mismatch) + "</td>"; } }]);
+    if (ctx) {
+      cols.push({ key: "context", label: T("实测 / 声明的上下文", "Effective / declared context"), num: true, value: function (r) { return metricValue(r.context); },
+        cell: function (r) {
+          var cx = r.context;
+          return '<td class="n">' + esc(fmt(cx.value, "ratio")) +
+            (cx.n ? '<span class="cn">' + esc(fmt(cx.effective, "tokens") + " / " + fmt(cx.claimed, "tokens")) + "</span>" : "") + nc(cx) + "</td>";
+        } });
+    }
     body.innerHTML = (d.rows.some(function (r) { return r.low_n; }) ? fewNote(fewRows()) : "") +
-      '<div class="tscroll itab" tabindex="0" role="region" aria-labelledby="int-cap"><table class="dt"><caption id="int-cap">' +
-      esc(T("每个中转站 × 模型的检查结果（n = 有结论的检测次数）", "Check results per relay × model (n = runs with a verdict)")) + "</caption><thead><tr>" +
-      th(T("中转站 × 模型", "Relay × model")) + th(T("检测次数", "Runs"), true) +
-      d.checks.map(function (c) { return th(checkName(c)); }).join("") +
-      th(metricName("model_mismatch_rate"), true) + (ctx ? th(T("实测 / 声明的上下文", "Effective / declared context"), true) : "") +
-      "</tr></thead><tbody>" + d.rows.map(function (r) {
-        var cx = r.context, mm = r.model_mismatch;
-        return '<tr><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
-          (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>" +
-          '<td class="n">' + esc(String(r.runs)) + "</td>" +
-          d.checks.map(function (c) { return chip(r.checks[c]); }).join("") +
-          '<td class="n">' + esc(fmt(mm.value, "ratio")) + nc(mm) + "</td>" +
-          (ctx ? '<td class="n">' + esc(fmt(cx.value, "ratio")) +
-          (cx.n ? '<span class="cn">' + esc(fmt(cx.effective, "tokens") + " / " + fmt(cx.claimed, "tokens")) + "</span>" : "") + nc(cx) + "</td>" : "") + "</tr>";
-      }).join("") + "</tbody></table></div>";
+      dataTable({ id: "int", cap: "int-cap", wrap: "itab", sortKey: "int.sort", cols: cols, rows: d.rows,
+        caption: T("每个中转站 × 模型的检查结果（n = 有结论的检测次数）", "Check results per relay × model (n = runs with a verdict)") });
+  }
+  // what a check column sorts by: its verdict as chip() shows it, the worst
+  // first (failed, warnings, passed), then the larger share of failed or warned
+  // runs; not checked or inconclusive (no verdict) is no value
+  function severity(cell) {
+    if (!cell || !cell.n) return null;
+    if (cell.fail) return [3, cell.fail / cell.n];
+    if (cell.warn) return [2, cell.warn / cell.n];
+    return [1, 0];
   }
 
   /* ---- billing and tokens ---- */
@@ -1553,7 +1640,7 @@
         esc(Tf("时间（{tz}）", "Time ({tz})", { tz: s.tz })) + "</span></div>" +
         '<div class="chartbox" id="bill-chart"></div>' +
         (withData.some(function (x) { return x.points.some(function (pt) { return pt.low; }); }) ? '<div class="notes">' + fewNote() + "</div>" : "") +
-        tableHTML(withData, m, name, { pfx: "bt", key: "table.bill", group: s.group, bucket: "day" });
+        tableHTML(withData, m, name, { pfx: "bt", id: "billt", key: "table.bill", group: s.group, bucket: "day" });
       cfg = {
         id: "billc", title: Tf("{metric}随时间变化", "{metric} over time", { metric: name }), unit: m.unit, bucketMs: BUCKET_MS.day,
         desc: Tf("{metric}（按天，{group}）。", "{metric} (by day, {group}).", { metric: name, group: groupName(s.group) }) + " " +
@@ -1580,17 +1667,14 @@
     if (sum.rows.length) {
       var gName = groupName(sum.group);
       html += '<h3 class="subh">' + esc(Tf("按{group}汇总", "Summary by {group}", { group: gName })) + "</h3>" +
-        '<div class="tscroll btab" tabindex="0" role="region" aria-labelledby="bs-cap"><table class="dt"><caption id="bs-cap">' +
-        esc(T("所选范围内的中位数（n = 测得该值的检测次数）", "Medians over the selected range (n = runs that measured a value)")) + "</caption><thead><tr>" +
-        th(gName) + th(T("检测次数", "Runs"), true) + BILL_METRICS.map(function (k) { return th(metricName(k), true); }).join("") +
-        "</tr></thead><tbody>" + sum.rows.map(function (r) {
-          return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
-            (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + '</th><td class="n">' + esc(String(r.runs)) + "</td>" +
-            BILL_METRICS.map(function (k) {
-              var c = r.metrics[k];
-              return '<td class="n">' + esc(fmt(c.value, units[k])) + '<span class="cn">n=' + esc(String(c.n)) + "</span></td>";
-            }).join("") + "</tr>";
-        }).join("") + "</tbody></table></div>";
+        dataTable({
+          id: "bills", cap: "bs-cap", wrap: "btab", sortKey: "bills.sort", rows: sum.rows, rowClass: lowRow,
+          caption: T("所选范围内的中位数（n = 测得该值的检测次数）", "Medians over the selected range (n = runs that measured a value)"),
+          cols: [labelCol(gName), runsCol()].concat(BILL_METRICS.map(function (k) {
+            return { key: k, label: metricName(k), num: true, value: function (r) { return metricValue(r.metrics[k]); },
+              cell: function (r) { var c = r.metrics[k]; return '<td class="n">' + esc(fmt(c.value, units[k])) + '<span class="cn">n=' + esc(String(c.n)) + "</span></td>"; } };
+          })),
+        });
     }
     body.innerHTML = html;
     if (cfg) drawChart("bill", "bill-chart", C.timeChart, cfg);
@@ -1621,22 +1705,22 @@
     body.innerHTML = (rows.length < d.rows.length ? '<p class="cov">' + esc(Tf("{n} 个分组没有这些数据，未列出。", "{n} groups without these values are not listed.", { n: d.rows.length - rows.length })) + "</p>" : "") +
       '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '"><li><span class="sw s0" aria-hidden="true"></span><span class="nm">' + esc(metricName("relay_overhead")) + "</span></li>" +
       '<li><span class="sw s1" aria-hidden="true"></span><span class="nm">' + esc(metricName("network_rtt")) + "</span></li></ul>" +
-      '<div class="tscroll otab" tabindex="0" role="region" aria-labelledby="ovh-cap"><table class="dt"><caption id="ovh-cap">' +
-      esc(Tf("每个{group}的中位数，条形按同一比例绘制", "Medians per {group}, bars on one shared scale", { group: gName })) + "</caption><thead><tr>" +
-      th(gName) + th(T("检测次数", "Runs"), true) + th(metricName("relay_overhead"), true) + th(metricName("network_rtt"), true) +
-      "</tr></thead><tbody>" + rows.map(function (r) {
-        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
-          (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + '</th><td class="n">' + esc(String(r.runs)) + "</td>" +
-          cell(r.metrics.relay_overhead, "s0") + cell(r.metrics.network_rtt, "s1") + "</tr>";
-      }).join("") + "</tbody></table></div>";
+      dataTable({
+        id: "ovh", cap: "ovh-cap", wrap: "otab", sortKey: "ovh.sort", rows: rows, rowClass: lowRow,
+        caption: Tf("每个{group}的中位数，条形按同一比例绘制", "Medians per {group}, bars on one shared scale", { group: gName }),
+        cols: [labelCol(gName), runsCol()].concat([["relay_overhead", "s0"], ["network_rtt", "s1"]].map(function (k) {
+          return { key: k[0], label: metricName(k[0]), num: true, value: function (r) { return metricValue(r.metrics[k[0]]); },
+            cell: function (r) { return cell(r.metrics[k[0]], k[1]); } };
+        })),
+      });
   }
 
   /* ---------------- panel registry ---------------- */
-  // ns: the URL namespaces whose change reloads the panel; redraw: those
-  // that only redraw it from the data it has (sort, open tables)
+  // ns: the URL namespaces whose change reloads the panel (a table's sort
+  // redraws only that table, dataTable; its disclosure only shows or hides it)
   var PANELS = [
     { id: "panel-kpi", name: "kpi", tab: "overview", sub: "kpi", ns: [], load: loadSummary, render: renderKpis },
-    { id: "panel-lb", name: "lb", tab: "overview", sub: "lb", ns: ["board"], redraw: ["lb"], load: loadBoard, render: renderBoard },
+    { id: "panel-lb", name: "lb", tab: "overview", sub: "lb", ns: ["board"], load: loadBoard, render: renderBoard },
     { id: "panel-cmp", name: "cmp", tab: "trends", sub: "cmp", ns: ["trend"], load: loadSeries, render: renderChart },
     { id: "panel-heat", name: "heat", tab: "trends", sub: "heat", ns: ["heat"], load: loadHeat, render: renderHeat },
     { id: "panel-err", name: "err", tab: "reliability", sub: "err", ns: ["errors"], load: loadErrors, render: renderErrors },
@@ -1749,7 +1833,6 @@
     PANELS.forEach(function (p) {
       var hit = function (ns) { return changed.some(function (k) { return k.indexOf(ns + ".") === 0; }); };
       if (p.ns.some(hit)) { p.stale = true; if (p.ctl) p.ctl.abort(); }
-      else if ((p.redraw || []).some(hit) && p.loaded && p.data) steady("#" + p.id, p.render);
     });
     if (changed.indexOf("tab") >= 0 && tabs && tabs.current() !== tab()) tabs.select(tab(), false, true);
     activate();

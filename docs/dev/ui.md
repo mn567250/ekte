@@ -71,6 +71,20 @@ annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)
 and `v2/charts.css` (four validated series colors per theme, told apart by
 marker shape too). Every chart is also rendered as a data table.
 
+Every Analytics table is drawn by one helper, `dataTable(spec)` in the page
+script (#207); `discHTML` wraps it in the **Show as table** disclosure. A spec
+lists its columns, each with `cell(row)` (its markup) and `value(row)` (what
+it sorts by: a number, a string, a list compared item by item, or null, which
+always sorts last; a column without `value` has no sort button). Its header
+buttons (`data-sort="<table>:<column>"`) cycle through the column's first
+direction (`first`, descending unless set), the other one and the table's own
+order (the rows as given); the sort is the URL key `spec.sortKey`
+(`<column>.<asc|desc>`, one namespace per table that no endpoint reads), a
+key whose column the table does not show is ignored, and `pin(row)` keeps
+rows (forecasts) after the others. A click redraws only that table's head and
+body from the spec of its last draw (no request), keeps the focus on the
+button and announces the new order in the panel's `.sortst` status.
+
 Each panel is self-contained: a `PANELS` registry in the page script lists its
 section id, `load()` (fetch with the current filters and view, then render) and
 `render()` (redraw from the loaded data, e.g. on a language switch), so panels

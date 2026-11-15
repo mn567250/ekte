@@ -181,6 +181,7 @@
   "{n} calls answered by the relay, from {runs} runs": "{n} chamadas respondidas pelo relay, de {runs} execuções",
   "{n} calls, {j} of them answered by the relay.": "{n} chamadas, {j} delas respondidas pelo relay.",
   "{n} groups without these values are not listed.": "{n} grupos sem estes valores não são listados.",
-  "{n} runs match these filters.": "{n} execuções correspondem a estes filtros."
+  "{n} runs match these filters.": "{n} execuções correspondem a estes filtros.",
+  "Default order": "Ordem padrão"
  }
 }

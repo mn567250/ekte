@@ -181,6 +181,7 @@
   "{n} calls answered by the relay, from {runs} runs": "{n} calls answered by the relay, from {runs} runs",
   "{n} calls, {j} of them answered by the relay.": "{n} calls, {j} of them answered by the relay.",
   "{n} groups without these values are not listed.": "{n} groups without these values are not listed.",
-  "{n} runs match these filters.": "{n} runs match these filters."
+  "{n} runs match these filters.": "{n} runs match these filters.",
+  "Default order": "Default order"
  }
 }
