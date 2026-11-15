@@ -121,7 +121,7 @@ def test_empty_states_tell_no_match_from_none(browser: Browser, monitors_server:
     ctx = _context(browser)
     try:
         page = _open(ctx, monitors_server.url + "/watches?state=paused&alerting=yes&q=gamma")
-        empty = page.locator("#list .nomatch")
+        empty = page.locator("#list .empty")
         assert "No monitors match these filters." in empty.inner_text()
         page.get_by_role("button", name="Clear filters").click()
         page.wait_for_function("() => document.querySelectorAll('.mon').length === 3")
