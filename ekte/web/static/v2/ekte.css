@@ -405,6 +405,7 @@ select.in {
 .badge.warn { color: var(--warning); background: var(--warning-tint); }
 .badge.bad { color: var(--danger); background: var(--danger-tint); }
 .badge.sky { color: var(--info); background: var(--info-tint); }
+.badge.fair { color: var(--fair); background: var(--fair-tint); }
 .badge.grey { color: var(--ink-muted); background: var(--sunken); }
 /* who decides a step (accessibility report): solid = the whole, light = the part */
 .badge.machine { color: var(--on-primary); background: var(--machine); }

@@ -21,7 +21,7 @@
    * Every group shares ONE column grid (--cols), so Risk / Score / Grade line
    * up across relays. Below 600px each row stacks instead (no h-scroll).
    *
-   * Colour families (.f-good, .f-sky, …) come from the server (family of a
+   * Colour families (.f-good, .f-fair, …) come from the server (family of a
    * row's risk, score and grade, of a trend's last value): no grading here. */
   /* Columns: time (with mode / suite under it) · risk · score · grade · chevron.
      Mode sits under the date instead of in its own column so the longest date
@@ -136,7 +136,7 @@
   .nomatch p { margin: 0 0 14px; }
 
   /* colour families (text) */
-  .f-good { color: var(--success); } .f-sky { color: var(--info); } .f-warn { color: var(--warning); }
+  .f-good { color: var(--success); } .f-fair { color: var(--fair); } .f-warn { color: var(--warning); }
   .f-bad { color: var(--danger); } .f-grey { color: var(--ink-muted); }
   /* trend series without a score family: latency = sky, tokens/s = violet
      (page-local token, >= 4.5:1 on --surface in both themes) */
@@ -307,7 +307,6 @@
   };
   var num = function (s) { return EkteFmt.num(s); };
   // risk badge icons (the badge colour is the server's family.risk)
-  var RISKI = { clean: "check", low: "warning", medium: "warning", high: "x", inconclusive: "info" };
 
   var host = $("#hist"), fbar = $("#filters");
   // the shared filters this page shows (ekte/web/query.py schema; filters.js PAGES)
@@ -1194,7 +1193,7 @@
     return '<li class="row" data-id="' + esc(id) + '"><div class="rline">' +
       '<button type="button" class="rmain" id="r-' + esc(id) + '" aria-expanded="' + open + '" aria-controls="p-' + esc(id) + '">' +
       '<span class="c-date">' + esc(fmtTime(r.ts)) + "</span>" +
-      '<span class="c-risk"><span class="badge ' + esc(fam(r, "risk")) + '">' + ico(RISKI[lvl] || "info") + " " +
+      '<span class="c-risk"><span class="badge ' + esc(fam(r, "risk")) + '">' + ico(EKTE_I18N.risk(lvl).icon) + " " +
       esc(EKTE_I18N.label("RISK_LEVEL", lvl)) + "</span></span>" +
       '<span class="c-score f-' + esc(fam(r, "score")) + '"><span class="sr-only">' + esc(T("健康分", "Score")) + " </span>" + num(r.score) + "</span>" +
       '<span class="c-grade f-' + esc(fam(r, "grade")) + '"><span class="sr-only">' + esc(T("评级", "Grade")) + " </span>" + esc(r.grade || "–") + "</span>" +

@@ -115,10 +115,10 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
 | Risiko | Bezeichnung in der UI | Wann |
 |---|---|---|
 | `inconclusive` | Unzureichendes Signal | Nichts Verwertbares zu beurteilen: Lief eine Profildimension, lieferte keine von ihnen ein verwertbares Ergebnis (Bestanden, Warnung oder Fehlgeschlagen) — das Relay ist nicht erreichbar oder das Modell hat kein Profil; andernfalls lieferte keine Dimension außer der Konnektivität eines |
-| `high` | Etikettenschwindel | Ein Befund KRITISCH, ein Befund HOCH/KRITISCH in einer Kerndimension oder zwei oder mehr Befunde HOCH |
+| `high` | Vermutlich ausgetauscht | Ein Befund KRITISCH, ein Befund HOCH/KRITISCH in einer Kerndimension oder zwei oder mehr Befunde HOCH |
 | `medium` | Abweichungen gefunden | Genau ein Befund HOCH außerhalb der Kerndimensionen oder ein Befund MITTEL in einer Kerndimension |
-| `low` | Weitgehend vertrauenswürdig | Jeder andere Befund MITTEL |
-| `clean` | Konsistent (wahrscheinlich echt) | Nichts davon |
+| `low` | Weitgehend konsistent | Jeder andere Befund MITTEL |
+| `clean` | Konsistent | Nichts davon |
 
 Das Urteil hält die Dimensionen fest, deren Befunde das Risiko bestimmen
 (`verdict.drivers`), und die Dimensionen, die ein verwertbares Ergebnis lieferten

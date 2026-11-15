@@ -268,7 +268,6 @@
     medium: ["中及以上", "Medium and above"],
     high: ["仅高", "High only"],
   };
-  var RISK_CLASS = { clean: "good", low: "sky", medium: "warn", high: "bad", inconclusive: "grey" };
 
   function riskLabel(v) {
     return window.EKTE_I18N ? window.EKTE_I18N.label("RISK_LEVEL", v) : v;
@@ -391,7 +390,9 @@
     if (isRunning(w)) return '<span class="badge sky"><span class="spin">' + icon("refresh") + "</span> " + esc(T("运行中", "Running")) + "</span>";
     if (isDraft(w)) return '<span class="badge warn">' + esc(T("待设置", "Needs setup")) + "</span>";
     if (w.last_risk) {
-      return '<span class="badge ' + (RISK_CLASS[w.last_risk] || "grey") + '">' + esc(riskLabel(w.last_risk)) + "</span>";
+      // the verdict scale's colour and icon (EKTE_I18N.risk), as on History
+      var rs = EKTE_I18N.risk(w.last_risk);
+      return '<span class="badge ' + rs.family + '">' + icon(rs.icon) + " " + esc(riskLabel(w.last_risk)) + "</span>";
     }
     if (w.last_run_ts) return '<span class="badge grey">' + esc(T("无结果", "No result")) + "</span>";
     return '<span class="badge grey">' + esc(T("尚未运行", "Not run yet")) + "</span>";

@@ -20,6 +20,30 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### One verdict scale for scores, grades and badges ([#228](https://github.com/mn567250/ekte/issues/228))
+
+A score, its grade and the verdict badge could show different colours for the
+same run (score 60 amber next to grade B in green), info blue doubled as a
+verdict colour, the report page coloured scores by thresholds of its own
+(85 / 70), and the web UI, CLI, reports and alerts each named the risk levels
+differently ("Mostly trustworthy", "LOW RISK", "Low risk"). There is now one
+scale, `ekte/risk_scale.py`, and a test keeps every copy of it in line.
+
+- **One ladder, one voice** everywhere (web UI, CLI, Markdown / HTML / PDF
+  reports, alerts and the docs, in every language): Consistent · Mostly
+  consistent · Deviations found · Likely substituted, plus Insufficient
+  signal.
+- **One colour and one icon per step:** the brand green (✓), a new olive
+  `--fair` (≈), amber (▲) and red (✗). Info blue is no longer a verdict, and
+  `--success` is the brand green itself, so two greens no longer compete in
+  the dark theme.
+- **Grades sit on the same steps** (A, B consistent; C mostly consistent; D
+  deviations; E, F likely substituted) and a score wears its grade's colour,
+  on History, Analytics, the report page, the Audit page's live checks and
+  the KPI tiles. On History and in the report, the score takes the run's own
+  grade, so the two never disagree.
+- Monitors' last-result badges carry the step's icon, as on History.
+
 ### Web UI: one formatter for numbers, units and relay names ([#229](https://github.com/mn567250/ekte/issues/229))
 
 History showed latency as "1300ms", Analytics as "1,900 ms"; the Analytics

@@ -108,10 +108,10 @@ echoed API key still escalate.
 | Risk | Label in the UI | When |
 |---|---|---|
 | `inconclusive` | Insufficient signal | Nothing usable to judge by: when a profile dimension ran, none of them produced a usable result (Pass, Warning or Fail) — the relay is unreachable or the model is unprofiled; otherwise no dimension other than connectivity produced one |
-| `high` | Bait-and-switch | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or two or more HIGH findings |
+| `high` | Likely substituted | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or two or more HIGH findings |
 | `medium` | Deviations found | Exactly one HIGH finding outside the core dimensions, or a MEDIUM finding in a core dimension |
-| `low` | Mostly trustworthy | Any other MEDIUM finding |
-| `clean` | Consistent (likely genuine) | None of the above |
+| `low` | Mostly consistent | Any other MEDIUM finding |
+| `clean` | Consistent | None of the above |
 
 The verdict records the dimensions whose findings set the risk
 (`verdict.drivers`) and the dimensions that produced a usable result

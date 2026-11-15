@@ -113,10 +113,10 @@ avisos quando são de gravidade Média ou superior. A adulteração de respostas
 | Risco | Rótulo na interface | Quando |
 |---|---|---|
 | `inconclusive` | Sinal insuficiente | Nada utilizável para julgar: se foi executada alguma dimensão de perfil, nenhuma produziu um resultado utilizável (Aprovado, Aviso ou Falha) — o relay está inacessível ou o modelo não tem perfil; caso contrário, nenhuma dimensão além da conectividade o produziu |
-| `high` | Gato por lebre | Uma constatação CRÍTICA, uma constatação ALTA/CRÍTICA numa dimensão núcleo, ou duas ou mais constatações ALTAS |
+| `high` | Provavelmente substituído | Uma constatação CRÍTICA, uma constatação ALTA/CRÍTICA numa dimensão núcleo, ou duas ou mais constatações ALTAS |
 | `medium` | Desvios detetados | Exatamente uma constatação ALTA fora das dimensões núcleo, ou uma constatação MÉDIA numa dimensão núcleo |
-| `low` | Globalmente fiável | Qualquer outra constatação MÉDIA |
-| `clean` | Coerente (provavelmente autêntico) | Nenhum dos casos acima |
+| `low` | Maioritariamente coerente | Qualquer outra constatação MÉDIA |
+| `clean` | Coerente | Nenhum dos casos acima |
 
 O veredito regista as dimensões cujas constatações definem o risco
 (`verdict.drivers`) e as dimensões que produziram um resultado utilizável

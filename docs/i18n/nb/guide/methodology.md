@@ -110,10 +110,10 @@ API-nøkkel trapper fortsatt opp.
 | Risiko | Etikett i grensesnittet | Når |
 |---|---|---|
 | `inconclusive` | For lite grunnlag | Ingenting brukbart å vurdere etter: når en profildimensjon kjørte, ga ingen av dem et brukbart resultat (Bestått, Advarsel eller Ikke bestått) — reléet kan ikke nås eller modellen har ingen profil; ellers ga ingen annen dimensjon enn tilkobling et slikt resultat |
-| `high` | Falsk vare | Et CRITICAL-funn, et HIGH/CRITICAL-funn i en kjernedimensjon, eller to eller flere HIGH-funn |
+| `high` | Trolig byttet ut | Et CRITICAL-funn, et HIGH/CRITICAL-funn i en kjernedimensjon, eller to eller flere HIGH-funn |
 | `medium` | Avvik funnet | Nøyaktig ett HIGH-funn utenfor kjernedimensjonene, eller et MEDIUM-funn i en kjernedimensjon |
-| `low` | Stort sett pålitelig | Alle andre MEDIUM-funn |
-| `clean` | Konsistent (trolig ekte) | Ingen av delene over |
+| `low` | Stort sett konsistent | Alle andre MEDIUM-funn |
+| `clean` | Konsistent | Ingen av delene over |
 
 Konklusjonen registrerer dimensjonene der funnene satte risikoen
 (`verdict.drivers`), og dimensjonene som ga et brukbart resultat

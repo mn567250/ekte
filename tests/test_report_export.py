@@ -44,7 +44,7 @@ def test_render_pdf_carries_the_whole_report(report):
         assert section in text
     assert report.verdict.headline in text
     assert "Reported prompt tokens far exceed estimate" in text
-    assert "HIGH RISK" in text and "page 2" in text
+    assert "Likely substituted" in text and "page 2" in text
 
 
 def test_render_pdf_escapes_relay_text_and_loads_nothing(report_dict):

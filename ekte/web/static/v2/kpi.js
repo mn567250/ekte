@@ -23,7 +23,7 @@
  *     (toggletip text), delta: { text, sign (-1|0|1), dir: better | worse |
  *     neutral | none, sr (spoken trend) }, note (a muted line instead of a
  *     delta), caption, faded (aria-describedby id), group (a new group
- *     starts after a divider), family (good | sky | warn | bad | grey:
+ *     starts after a divider), family (good | fair | warn | bad | grey:
  *     colours the value), slot (HTML before the value, e.g. a sparkline),
  *     sr (spoken value instead of text + unit) }
  * opts: { label (the list's accessible name), cols (a fixed column count;

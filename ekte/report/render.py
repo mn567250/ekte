@@ -19,6 +19,7 @@ import json
 from decimal import Decimal
 from typing import Any
 
+from ekte import risk_scale
 from ekte.detectors.reliability import SUCCESS_RATE_LABEL
 from ekte.models import (
     AuditReport,
@@ -45,20 +46,10 @@ _DISCLAIMER = (
 )
 
 # Risk presentation, shared shape with the CLI's _RISK_STYLE.
-_RISK_LABEL: dict[RiskLevel, str] = {
-    RiskLevel.CLEAN: "CLEAN",
-    RiskLevel.LOW: "LOW RISK",
-    RiskLevel.MEDIUM: "MEDIUM RISK",
-    RiskLevel.HIGH: "HIGH RISK",
-    RiskLevel.INCONCLUSIVE: "INCONCLUSIVE",
-}
-_RISK_COLOR: dict[RiskLevel, str] = {
-    RiskLevel.CLEAN: "var(--success)",
-    RiskLevel.LOW: "var(--info)",
-    RiskLevel.MEDIUM: "var(--warning)",  # not --warning-fill: the label needs >= 4.5:1
-    RiskLevel.HIGH: "var(--danger)",
-    RiskLevel.INCONCLUSIVE: "var(--ink-muted)",
-}
+# The one verdict scale (ekte.risk_scale): word and colour per level; the
+# colours are text colours (>= 4.5:1), not fills like --warning-fill.
+_RISK_LABEL: dict[RiskLevel, str] = {level: s.word for level, s in risk_scale.SCALE.items()}
+_RISK_COLOR: dict[RiskLevel, str] = {level: f"var({s.token})" for level, s in risk_scale.SCALE.items()}
 
 # The performance probe's configured request mode (AuditReport.stream_mode).
 _STREAM_MODE_LABEL: dict[str, str] = {

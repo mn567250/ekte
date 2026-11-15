@@ -14,14 +14,14 @@ from ekte.web.metrics import KPI_GRID, MIN_RUNS, present
     ("score", 95, "good", "A"),
     ("score", 90, "good", "A"),
     ("score", 85, "good", "B"),
-    ("score", 75, "sky", "C"),
+    ("score", 75, "fair", "C"),
     ("score", 65, "warn", "D"),
     ("score", 59.9, "bad", "F"),
     ("score", None, "grey", None),
-    ("dim:protocol", 72, "sky", "C"),
+    ("dim:protocol", 72, "fair", "C"),
     ("grade", 6, "good", "A"),
     ("grade", 5, "good", "B"),
-    ("grade", 4, "sky", "C"),
+    ("grade", 4, "fair", "C"),
     ("grade", 3, "warn", "D"),
     ("grade", 2, "bad", "E"),
     ("grade", 1, "bad", "F"),
@@ -95,10 +95,10 @@ def test_present_ignores_non_numbers():
 
 def test_grades_follow_the_scoring_thresholds(monkeypatch):
     assert present("score", 85)["grade"] == "B" and present("score", 85)["family"] == "good"
-    assert present("score", 72)["family"] == "sky"
+    assert present("score", 72)["family"] == "fair"
     monkeypatch.setattr(scoring, "GRADE_THRESHOLDS", ((95, "A"), (88, "B"), (75, "C"), (60, "D")))
     assert scoring.rating(85) == "C"
-    assert present("score", 85)["grade"] == "C" and present("score", 85)["family"] == "sky"
+    assert present("score", 85)["grade"] == "C" and present("score", 85)["family"] == "fair"
     assert present("score", 72)["grade"] == "D" and present("score", 72)["family"] == "warn"
     assert present("dim:protocol", 90)["grade"] == "B"
 

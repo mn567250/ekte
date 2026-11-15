@@ -88,6 +88,8 @@
       '<path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3"/><path d="M12 16.5v.5"/>',
     // minus — not run / skipped
     minus: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>',
+    // "about equal": the verdict scale's "mostly consistent" (ekte/risk_scale.py)
+    approx: '<path d="M5 9.5c2.3-2 4.7-2 7 0s4.7 2 7 0M5 15c2.3-2 4.7-2 7 0s4.7 2 7 0"/>',
     // search — search
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
     // trash — delete

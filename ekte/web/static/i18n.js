@@ -8,6 +8,10 @@
  *   - EN:         the same enum/dimension maps in English
  *   - label(kind, key) -> label in the current UI language (see lang.js);
  *                 kind is one of RISK_LEVEL / STATUS / SEVERITY / CONFIDENCE
+ *   - the verdict scale (ekte/risk_scale.py, issue 228): risk(level),
+ *                 gradeStep(letter), scoreStep(score) -> { level, family,
+ *                 icon }; gradeOf(score); RISK_STYLE, GRADE_LEVEL,
+ *                 GRADE_THRESHOLDS, GRADE_FLOOR
  *   - exportReport(report) -> a copy of an audit report for download, with
  *                 every human-readable text value in the current UI language
  *                 (CN included) and the JSON keys, enum values, ids, evidence
@@ -28,11 +32,12 @@
   "use strict";
 
   // ---- Enum label maps ------------------------------------------------- //
+  // the verdict scale's words (ekte/risk_scale.py; tests/test_risk_scale.py)
   var RISK_LEVEL = {
-    clean: "一致（疑似真货）",
-    low: "基本可信",
+    clean: "一致",
+    low: "基本一致",
     medium: "存在偏离",
-    high: "货不对板",
+    high: "疑似掉包",
     inconclusive: "信号不足",
   };
 
@@ -73,10 +78,10 @@
   // English counterparts, used when the UI language is EN.
   var EN = {
     RISK_LEVEL: {
-      clean: "Consistent (likely genuine)",
-      low: "Mostly trustworthy",
+      clean: "Consistent",
+      low: "Mostly consistent",
       medium: "Deviations found",
-      high: "Bait-and-switch",
+      high: "Likely substituted",
       inconclusive: "Insufficient signal",
     },
     STATUS: {
@@ -114,6 +119,39 @@
   function isZh() {
     return !window.EKTE_LANG || window.EKTE_LANG.isZh();
   }
+
+  // ---- The verdict scale (issue 228) ------------------------------------ //
+  // One ladder for verdict badges, scores and grades, the web copy of
+  // ekte/risk_scale.py (tests/test_risk_scale.py keeps the two equal): each
+  // level's colour family (f-<family>, badge <family>) and icon; grades sit on
+  // the same steps, and a score has the grade of ekte.scoring.GRADE_THRESHOLDS.
+  var RISK_STYLE = {
+    clean: { family: "good", icon: "check" },
+    low: { family: "fair", icon: "approx" },
+    medium: { family: "warn", icon: "warning" },
+    high: { family: "bad", icon: "x" },
+    inconclusive: { family: "grey", icon: "help" },
+  };
+  var GRADE_LEVEL = { A: "clean", B: "clean", C: "low", D: "medium", E: "high", F: "high" };
+  var GRADE_THRESHOLDS = [[90, "A"], [80, "B"], [70, "C"], [60, "D"]];
+  var GRADE_FLOOR = "F";
+  // a level's step: { level, family, icon } (an unknown level is inconclusive)
+  function risk(level) {
+    var k = Object.prototype.hasOwnProperty.call(RISK_STYLE, level) ? level : "inconclusive";
+    return { level: k, family: RISK_STYLE[k].family, icon: RISK_STYLE[k].icon };
+  }
+  // the grade letter of a 0..100 score (null for none)
+  function gradeOf(score) {
+    if (typeof score !== "number" || !isFinite(score)) return null;
+    for (var i = 0; i < GRADE_THRESHOLDS.length; i++) if (score >= GRADE_THRESHOLDS[i][0]) return GRADE_THRESHOLDS[i][1];
+    return GRADE_FLOOR;
+  }
+  // the step of a grade letter, or of a score (by its grade); grey without one
+  function gradeStep(letter) {
+    var l = GRADE_LEVEL[String(letter || "").toUpperCase()];
+    return l ? risk(l) : { level: null, family: "grey", icon: "minus" };
+  }
+  function scoreStep(score) { return gradeStep(gradeOf(score)); }
 
   function label(kind, key) {
     var map = (isZh() ? ZH : EN)[kind] || {};
@@ -453,6 +491,14 @@
     DIMENSIONS: DIMENSIONS,
     EN: EN,
     label: label,
+    RISK_STYLE: RISK_STYLE,
+    GRADE_LEVEL: GRADE_LEVEL,
+    GRADE_THRESHOLDS: GRADE_THRESHOLDS,
+    GRADE_FLOOR: GRADE_FLOOR,
+    risk: risk,
+    gradeOf: gradeOf,
+    gradeStep: gradeStep,
+    scoreStep: scoreStep,
     exportReport: exportReport,
     // English templates that every language (CN included) must translate.
     TEMPLATES: Object.keys(ALT)

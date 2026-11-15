@@ -28,7 +28,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-from ekte import i18n
+from ekte import i18n, risk_scale
 from ekte.clients.base import get_ssl_context
 from ekte.models import WEBHOOK_SCHEMA_VERSION, RiskLevel
 
@@ -44,13 +44,8 @@ _RISK_ORDER: dict[str, int] = {
 }
 
 # Human-facing label per risk level: (emoji, English label; translated per lang).
-_RISK_LABEL: dict[str, tuple[str, str]] = {
-    RiskLevel.CLEAN.value: ("✅", "Consistent"),
-    RiskLevel.LOW.value: ("🔵", "Low risk"),
-    RiskLevel.MEDIUM.value: ("🟡", "Medium risk"),
-    RiskLevel.HIGH.value: ("🔴", "High risk"),
-    RiskLevel.INCONCLUSIVE.value: ("⚪", "Undetermined"),
-}
+# (the one verdict scale, ekte.risk_scale)
+_RISK_LABEL: dict[str, tuple[str, str]] = {level.value: (s.emoji, s.word) for level, s in risk_scale.SCALE.items()}
 
 _MAX_FINDINGS = 5
 
