@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Changes compare with the period of the same length before ({prev}).": "Changes compare with the period of the same length before ({prev}).",
+  "Of all calls": "Of all calls",
+  "Succeeded": "Succeeded",
+  "Timeouts": "Timeouts"
+ }
+}

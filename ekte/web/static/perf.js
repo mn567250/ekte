@@ -702,39 +702,46 @@
   function p50of(stats) {
     return stats && stats.p50 != null ? stats.p50 : null;
   }
+  // The KPI tiles (window.EkteKpi, /static/kpi.js: the UI's one tile look,
+  // issue 208) of some { id, label, text, unit } tiles.
+  function kpiHTML(list, label) {
+    var K = window.EkteKpi;
+    return K ? '<div class="zp-kpis">' + K.html(list, { label: label }) + "</div>" : "";
+  }
+  function tile(id, label, text, unit) { return { id: id, label: label, text: text, unit: unit || "" }; }
   function tiles(ep, embed) {
     var streamed = ep.ttft_ms && ep.ttft_ms.count;
     var tps = p50of(ep.decode_tps_local);
     if (tps == null) tps = p50of(ep.decode_tps_reported);
-    var t = [[T("延迟 p50", "Latency p50"), num(p50of(ep.latency_ms)), "ms"]];
+    var t = [tile("latency_p50", T("延迟 p50", "Latency p50"), num(p50of(ep.latency_ms)), "ms")];
     if (embed) {
       // no tokens come back: latency and errors only
     } else if (streamed) {
-      t.push(["TTFT p50", num(p50of(ep.ttft_ms)), "ms"]);
-      t.push([T("解码速度 p50", "Decode speed p50"), num(tps), "tok/s"]);
+      t.push(tile("ttft_p50", "TTFT p50", num(p50of(ep.ttft_ms)), "ms"));
+      t.push(tile("decode_tps", T("解码速度 p50", "Decode speed p50"), num(tps), "tok/s"));
     } else {
       // Non-streamed calls have no first token: end-to-end speed instead.
-      t.push([T("端到端速度 p50", "End-to-end speed p50"), num(p50of(ep.e2e_tps_local)), "tok/s"]);
+      t.push(tile("e2e_tps", T("端到端速度 p50", "End-to-end speed p50"), num(p50of(ep.e2e_tps_local)), "tok/s"));
     }
-    t.push([T("错误率", "Error rate"), num(ep.error_rate, "ratio"), ""]);
-    return '<div class="zp-tiles">' + t.map(function (x) {
-      return '<div class="zp-tile"><div class="zp-tl">' + esc(x[0]) + '</div><div class="zp-tv">' + esc(x[1]) +
-        (x[2] ? ' <small>' + x[2] + "</small>" : "") + "</div></div>";
-    }).join("") + "</div>";
+    t.push(tile("error_rate", T("错误率", "Error rate"), num(ep.error_rate, "ratio")));
+    // the outcome figures: successes of all requests, timeouts and rate limits
+    t.push(tile("succeeded", T("成功", "Succeeded"), int(ep.successes), "/ " + int(ep.requests)));
+    t.push(tile("timeout_rate", T("超时", "Timeouts"), num(ep.timeout_rate, "ratio")));
+    t.push(tile("rate_limited_rate", T("限流（429）", "Rate limited (429)"), num(ep.rate_limited_rate, "ratio")));
+    return kpiHTML(t, T("关键指标", "Key figures"));
   }
   function endpointBlock(ep, title, embed) {
     var o = [];
     if (title) o.push('<h4 class="zp-h">' + esc(title) + "</h4>");
     o.push(tiles(ep, embed));
-    var line = int(ep.successes) + "/" + int(ep.requests) + " " + T("成功", "succeeded") + " · " +
-      T("超时", "timeouts") + " " + num(ep.timeout_rate, "ratio") + " · 429 " + num(ep.rate_limited_rate, "ratio");
-    if (ep.cached_excluded) line += " · " + int(ep.cached_excluded) + " " + T("缓存命中（不计入统计）", "cached (excluded)");
+    var line = [];
+    if (ep.cached_excluded) line.push(int(ep.cached_excluded) + " " + T("缓存命中（不计入统计）", "cached (excluded)"));
     // failures on the network path / inside ekte (#99), as _reliability_line in
     // ekte/report/performance.py; absent in reports saved before #99
-    if (ep.network_errors) line += " · " + int(ep.network_errors) + " " + T("网络失败（非中转站所致）", "network failures (not the relay's)");
-    if (ep.local_errors) line += " · " + int(ep.local_errors) + " " + T("ekte 内部失败（非中转站所致）", "ekte failures (not the relay's)");
-    if (ep.retried) line += " · " + int(ep.retried) + " " + T("次重试", "repeated");
-    o.push('<p class="zp-muted">' + esc(line) + "</p>");
+    if (ep.network_errors) line.push(int(ep.network_errors) + " " + T("网络失败（非中转站所致）", "network failures (not the relay's)"));
+    if (ep.local_errors) line.push(int(ep.local_errors) + " " + T("ekte 内部失败（非中转站所致）", "ekte failures (not the relay's)"));
+    if (ep.retried) line.push(int(ep.retried) + " " + T("次重试", "repeated"));
+    if (line.length) o.push('<p class="zp-muted">' + esc(line.join(" · ")) + "</p>");
     var extra = [];
     if (ep.cold_start_ms != null)
       extra.push(T("冷启动（首个请求）", "Cold start (first request)") + ": " + num(ep.cold_start_ms) + " ms" +
@@ -1074,7 +1081,6 @@
         decodeLabel = T("端到端速度 p50", "End-to-end speed p50");
       }
     }
-    function withUnit(v, unit) { return v == null ? "—" : num(v) + " " + unit; }
     // y-range: focused on the probe while it runs, unless the user chose one
     var running = this.probeTotal > 0 && probeDone > 0 && probeDone < this.probeTotal;
     var sc = scaleState(recs, this.metric, this.scale, running ? "probe" : "full");
@@ -1084,11 +1090,11 @@
     var v = {
       title: T("性能 · 实时", "Performance · live"),
       head: [
-        [T("请求数", "Requests"), int(calls.length)],
-        [T("延迟 p50", "Latency p50"), withUnit(p50(target.map(function (r) { return r.duration_ms; })), "ms")],
+        tile("requests", T("请求数", "Requests"), int(calls.length)),
+        tile("latency_p50", T("延迟 p50", "Latency p50"), num(p50(target.map(function (r) { return r.duration_ms; }))), "ms"),
       ].concat(embedOnly ? [] : [
-        ["TTFT p50", withUnit(ttftP50, "ms")],
-        [decodeLabel, withUnit(tpsP50, "tok/s")],
+        tile("ttft_p50", "TTFT p50", num(ttftP50), "ms"),
+        tile("decode_tps", decodeLabel, num(tpsP50), "tok/s"),
       ]),
       probe: null,
       embed: embedOnly,
@@ -1174,9 +1180,6 @@
     this.halt();
     if (this.el) this.render();
   };
-  function tileHtml(x) {
-    return '<div class="zp-tile"><div class="zp-tl">' + esc(x[0]) + '</div><div class="zp-tv">' + esc(x[1]) + "</div></div>";
-  }
   function plotInner(c, open) {
     return c.html + (c.empty ? "" : dataTable(c.calls, c.m, open, true));
   }
@@ -1186,7 +1189,7 @@
     // the toggle may have been opened before its "toggle" event ran
     var open = this.open || !!(prev && prev.open);
     var o = ['<div class="zp-live"><div class="zp-live-h">' + esc(v.title) + "</div>"];
-    o.push('<div class="zp-tiles">' + v.head.map(tileHtml).join("") + "</div>");
+    o.push(kpiHTML(v.head, v.title));
     if (v.probe) {
       o.push('<div class="zp-probe"><span>' + esc(v.probe.text) + '</span><div class="zp-bar" role="progressbar" aria-label="' +
         esc(v.probe.label) + '" aria-valuemin="0" aria-valuemax="' + v.probe.max + '" aria-valuenow="' + v.probe.now +
@@ -1209,9 +1212,8 @@
     this.el = {
       root: root,
       title: root.querySelector(".zp-live-h"),
-      tiles: Array.prototype.map.call(root.querySelectorAll(".zp-tile"), function (t) {
-        return [t.querySelector(".zp-tl"), t.querySelector(".zp-tv")];
-      }),
+      // the tiles, updated in place as requests stream in (no focus moved)
+      kpi: window.EkteKpi && root.querySelector(".zp-kpis") ? window.EkteKpi.mount(root.querySelector(".zp-kpis"), v.head, { label: v.title }) : null,
       probe: probe && { text: probe.querySelector("span"), bar: probe.querySelector(".zp-bar"), fill: probe.querySelector(".zp-bar i") },
       tabs: root.querySelector(".zp-tabs"),
       scale: root.querySelector(".zp-scale"),
@@ -1264,11 +1266,7 @@
   Live.prototype.patch = function (v) {
     var self = this, el = this.el, c = el.cache;
     setText(el.title, v.title);
-    v.head.forEach(function (x, i) {
-      if (!el.tiles[i]) return;
-      setText(el.tiles[i][0], x[0]);
-      setText(el.tiles[i][1], x[1]);
-    });
+    if (el.kpi) el.kpi.update(v.head);
     if (v.probe) {
       setText(el.probe.text, v.probe.text);
       setAttr(el.probe.bar, "aria-label", v.probe.label);
@@ -1364,19 +1362,14 @@
   // in :where(), i.e. zero specificity, so any page rule setting them wins.
   var CSS =
     ":where(.zp-section,.zp-live,.zp-tip){--zp-t:#2a78d6;--zp-b:#eb6834;--zp-x:#d03b3b;--zp-surface:#fffefb;" +
-    "--zp-grid:#e7ece5;--zp-ink:#0c211e;--zp-ink2:#566460;--zp-faint:#93a09b;--zp-panel:#fff;--zp-tile:#f5f8f4;" +
+    "--zp-grid:#e7ece5;--zp-ink:#0c211e;--zp-ink2:#566460;--zp-faint:#93a09b;--zp-panel:#fff;" +
     "--zp-track:#e3ebe3;--zp-tab:#fbfdfa;--zp-tab-on:#0c211e;--zp-tab-on-ink:#fff;--zp-cached:#8c959f;" +
     "--zp-better:#1a7f37;--zp-worse:#cb3b2e;--zp-focus:#2a78d6;--zp-tip-bg:#0c211e;--zp-tip-ink:#fff;" +
     "--zp-tip-shadow:rgba(0,0,0,.5)}" +
     ".zp-section,.zp-live{text-align:left}" +
     ".zp-live{margin:18px auto 0;max-width:620px;background:var(--zp-panel);border:1px solid var(--zp-grid);border-radius:14px;padding:12px 14px}" +
     ".zp-live-h{font-weight:700;font-size:13px;color:var(--zp-ink);margin-bottom:8px}" +
-    ".zp-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 10px}" +
-    "@media(max-width:520px){.zp-tiles{grid-template-columns:1fr 1fr}}" +
-    ".zp-tile{background:var(--zp-tile);border:1px solid var(--zp-grid);border-radius:10px;padding:7px 9px}" +
-    ".zp-tl{font-size:11px;color:var(--zp-faint);font-weight:600}" +
-    ".zp-tv{font-weight:700;font-size:16px;color:var(--zp-ink);font-variant-numeric:tabular-nums}" +
-    ".zp-tv small{font-size:11px;color:var(--zp-ink2);font-weight:600}" +
+    ".zp-kpis{margin:4px 0 10px}" +
     ".zp-probe{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--zp-ink2);margin:0 0 8px;font-family:var(--mono,monospace)}" +
     ".zp-bar{flex:1;height:5px;background:var(--zp-track);border-radius:3px;overflow:hidden}" +
     ".zp-bar i{display:block;height:100%;background:var(--zp-t);transition:width .3s}" +

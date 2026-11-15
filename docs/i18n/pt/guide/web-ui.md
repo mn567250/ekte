@@ -112,6 +112,7 @@ em quantas execuções um valor se baseia. Por omissão compara uma suite e um
 modo de sondagem (os mais frequentes), para não misturar execuções diferentes;
 filtros e vista ficam no URL, por isso uma vista pode ser guardada nos
 favoritos ou partilhada. Nada sai da máquina.
+Os painéis Erros e fiabilidade, Sobrecarga do relay, Integridade do modelo e Faturação abrem com os mesmos mosaicos para os seus próprios valores; em Erros e fiabilidade, a proporção de chamadas afetadas fica à parte após um separador, pois conta todas as chamadas.
 
 Outros painéis respondem a perguntas mais concretas: **horas de ponta** (um
 mapa de calor dia da semana × hora do TTFT, da latência e da velocidade de descodificação (mediana e caudas p95 /

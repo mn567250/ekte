@@ -220,6 +220,28 @@ empty space beside the shorter fields or cut off their last entry.
 - The URL keys, `(unknown)` handling and `/api/filters/options` are
   unchanged.
 
+### Web UI: every key figure looks and works the same ([#208](https://github.com/mn567250/ekte/issues/208))
+
+The key figures of the web UI used five different styles. They are now one
+tile everywhere: the label, the value, how it changed since the previous
+period (better or worse), how many runs it rests on, and an info button that
+explains how a rate is counted.
+
+- **Analytics.** **Errors and reliability** shows its success, error,
+  rate-limited and timeout rates as tiles with their change since the
+  previous period; the impaired share stays apart after a divider (it counts
+  all calls, not only the answered ones). **Relay overhead**, **Model
+  integrity** and **Billing** open with tiles of their overall figures.
+- **Audit.** The live performance panel and a report's performance figures
+  use the same tiles; the report adds successes, timeouts and rate limits
+  (429) as tiles. The live tiles update in place while an audit runs.
+- **History and reports.** The group trends and a report's health score and
+  verdict confidence use the compact form of the tiles.
+- `GET /api/analytics/summary` takes `kpi.set` (`overview`, the default and
+  the answer as before; `errors`, `overhead`, `integrity`, `billing`); every
+  tile also carries `hint_key` and `group`. `GET /api/metrics` lists the sets
+  as `kpi_sets`.
+
 ### Web UI: every Analytics table can be sorted by its columns ([#207](https://github.com/mn567250/ekte/issues/207))
 
 Until now only the leaderboard on **Analytics** could be sorted. Every table

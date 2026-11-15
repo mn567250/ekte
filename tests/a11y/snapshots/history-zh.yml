@@ -137,11 +137,13 @@
     - link "此中转站和模型的监控：model-a · Example Relay":
       - /url: /watches?relay=example-relay&model=model-a
       - text: 此中转站和模型的监控
-    - text: 健康分
-    - img "健康分趋势（7 次检测）：从 70 到 82，上升。"
-    - text: 82 延迟 p50
-    - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>，下降。"
-    - text: <duration>
+    - list "趋势图":
+      - listitem:
+        - img "健康分趋势（7 次检测）：从 70 到 82，上升。"
+        - text: 健康分 82
+      - listitem:
+        - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>，下降。"
+        - text: 延迟 p50 <duration>
     - list:
       - listitem:
         - button "2026年9月30日 11:02 一致（疑似真货） 健康分 82 评级 B check · standard openai · 流式 p50 <duration>"
@@ -188,11 +190,13 @@
     - link "此中转站和模型的监控：model-a · gateway.a-very-long-relay-hostname.example.org":
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
       - text: 此中转站和模型的监控
-    - text: 健康分
-    - img "健康分趋势（4 次检测）：从 58 到 64，上升。"
-    - text: 64 延迟 p50
-    - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>，下降。"
-    - text: <duration>
+    - list "趋势图":
+      - listitem:
+        - img "健康分趋势（4 次检测）：从 58 到 64，上升。"
+        - text: 健康分 64
+      - listitem:
+        - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>，下降。"
+        - text: 延迟 p50 <duration>
     - list:
       - listitem:
         - button "2026年9月30日 08:02 货不对板 健康分 64 评级 D check · standard openai · 流式 p50 <duration>"
@@ -224,11 +228,13 @@
     - link "此中转站和模型的监控：model-b · Example Relay":
       - /url: /watches?relay=example-relay&model=model-b
       - text: 此中转站和模型的监控
-    - text: 健康分
-    - img "健康分趋势（2 次检测）：从 89 到 91，上升。"
-    - text: 91 延迟 p50
-    - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>，下降。"
-    - text: <duration>
+    - list "趋势图":
+      - listitem:
+        - img "健康分趋势（2 次检测）：从 89 到 91，上升。"
+        - text: 健康分 91
+      - listitem:
+        - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>，下降。"
+        - text: 延迟 p50 <duration>
     - list:
       - listitem:
         - button "2026年9月29日 07:02 一致（疑似真货） 健康分 91 评级 B check · standard openai · 流式 p50 <duration>"
@@ -250,7 +256,9 @@
     - link "此中转站和模型的监控：model-b · gateway.a-very-long-relay-hostname.example.org":
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
       - text: 此中转站和模型的监控
-    - text: 健康分 72 延迟 p50 <duration>
+    - list "趋势图":
+      - listitem: 健康分 72
+      - listitem: 延迟 p50 <duration>
     - list:
       - listitem:
         - button "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>" [expanded]
@@ -261,7 +269,9 @@
           - article "基本一致，存在少量小问题":
             - text: 基本可信
             - heading "基本一致，存在少量小问题" [level=2]
-            - text: 综合健康分 72/100 (评级 D) 结论置信度 —
+            - list:
+              - listitem: 综合健康分 72/100 (评级 D)
+              - listitem: 结论置信度 无数据
             - term: 目标
             - definition:
               - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
@@ -338,7 +348,9 @@
     - link "此中转站和模型的监控：gpt-4o · 127.0.0.1:9099":
       - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
       - text: 此中转站和模型的监控
-    - text: 健康分 53 延迟 p50 无数据
+    - list "趋势图":
+      - listitem: 健康分 53
+      - listitem: 延迟 p50 无数据
     - list:
       - listitem:
         - button "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard"

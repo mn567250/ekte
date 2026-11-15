@@ -115,6 +115,7 @@ Standardmäßig vergleicht sie eine Suite und einen Probe-Modus (die häufigsten
 damit Ungleiches nicht vermischt wird; Filter und Ansicht stehen in der URL, eine
 Ansicht lässt sich also als Lesezeichen speichern oder teilen. Nichts verlässt
 den Rechner.
+Die Bereiche Fehler und Zuverlässigkeit, Relay-Overhead, Modellechtheit und Abrechnung beginnen mit denselben Kacheln für ihre eigenen Werte; bei Fehler und Zuverlässigkeit steht der Anteil beeinträchtigter Aufrufe nach einer Trennlinie für sich, da er alle Aufrufe zählt.
 
 Weitere Bereiche beantworten engere Fragen: **Stoßzeiten** (eine Heatmap
 Wochentag × Stunde von TTFT, Latenz und Dekodiertempo (Median und p95-/p5-Ausläufer),

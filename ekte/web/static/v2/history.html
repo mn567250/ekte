@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/static/ekte.css" />
 <link rel="stylesheet" href="/static/filterpanel.css" />
 <link rel="stylesheet" href="/static/report.css" />
+<link rel="stylesheet" href="/static/kpi.css" />
 <link rel="stylesheet" href="/static/perf.css" />
 <link rel="stylesheet" href="/static/chartmotion.css" />
 <style>
@@ -90,7 +91,8 @@
   .gtitle .gu .glink:hover { text-decoration: underline; }
   .gtitle .gu .glink .zicon { width: 13px; height: 13px; }
   /* group trends (one or two of score, grade, latency p50, TTFT p50, decode
-     speed p50, error rate: GET /api/metrics history_trends). Every tile has
+     speed p50, error rate: GET /api/metrics history_trends), compact KPI
+     tiles (kpi.js / kpi.css, issue 208). Every tile has
      a fixed size that depends only on its metric, never on its values or on
      which other trends are shown, so the trends line up across groups:
        [ sparkline (--sw, both rows) | caption over latest value (--vw) ]
@@ -99,24 +101,14 @@
      carries the divider space; the first one hides its line. Too many tiles
      for the header wrap onto a second line (the same in every group). */
   .hist { --sw: 96px; --sh: 36px; }
-  .trend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 16px; flex: 0 1 auto; min-width: 0; margin-left: auto; }
-  .tr {
-    display: grid; grid-template-columns: var(--sw) minmax(var(--vw), max-content); grid-template-rows: auto auto; column-gap: 9px; row-gap: 2px; align-items: end;
-    flex: none; font-size: 17px; padding-left: 16px; border-left: 1px solid var(--line);
-  }
-  .tr:first-child { border-left-color: transparent; }
-  /* --vw (in the value's 17px) fits the widest value; the column grows to a
-     longer caption (it depends on the language only), never to a value */
-  .tr[data-m="score"] { --vw: 2.6em; } .tr[data-m="grade"] { --vw: 2.8em; }
-  .tr[data-m="latency_p50"], .tr[data-m="ttft_p50"] { --vw: 4.8em; } .tr[data-m="decode_tps"] { --vw: 6.4em; }
-  .tr[data-m="error_rate"] { --vw: 3.6em; }
-  .tr .tl { grid-column: 2; grid-row: 1; text-align: right; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
-  .tr .tv { display: contents; }
-  .tr .tv svg, .tr .tv .nospark { grid-column: 1; grid-row: 1 / 3; align-self: center; }
-  .tr .tv .nospark { height: var(--sh); }
-  .tr .tv b { grid-column: 2; grid-row: 2; contain: inline-size; text-align: right; line-height: 1.1; color: inherit; font-family: var(--disp); font-weight: 700; font-size: 1em; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .tr .tv b.none { color: var(--ink-muted); font-weight: 600; }
-  .tr .tv b small { font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0; margin-left: 2px; }
+  .trend { flex: 0 1 auto; min-width: 0; margin-left: auto; --kpi-slot-w: var(--sw); }
+  /* --kpi-vw (in the value's 17px) fits the widest value; the column grows
+     to a longer caption (it depends on the language only), never to a value */
+  .trend .kpi[data-id="score"] { --kpi-vw: 2.6em; } .trend .kpi[data-id="grade"] { --kpi-vw: 2.8em; }
+  .trend .kpi[data-id="latency_p50"], .trend .kpi[data-id="ttft_p50"] { --kpi-vw: 4.8em; } .trend .kpi[data-id="decode_tps"] { --kpi-vw: 6.4em; }
+  .trend .kpi[data-id="error_rate"] { --kpi-vw: 3.6em; }
+  .trend .kpi .kv { contain: inline-size; }
+  .trend .kslot .nospark { display: block; width: var(--sw); height: var(--sh); }
   .trend svg { display: block; overflow: visible; width: var(--sw); height: var(--sh); }
   .trend .area { fill: currentColor; opacity: 0.14; }
   .trend .line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -254,7 +246,7 @@
     /* stacked tiles of one shared width */
     .hist { --sw: 84px; }
     .trend { flex: none; flex-direction: column; align-items: flex-end; gap: 8px; }
-    .tr, .tr[data-m] { --vw: 6.4em; padding-left: 0; border-left: 0; }
+    .trend .kpi, .trend .kpi[data-id] { --kpi-vw: 6.4em; padding-left: 0; border-left: 0; }
   }
 </style>
 </head>
@@ -282,6 +274,7 @@
   </main>
 </div>
 <script src="/i18n.js"></script>
+<script src="/static/kpi.js"></script>
 <script src="/perf.js"></script>
 <script src="/static/chartmotion.js"></script>
 <script src="/icons.js"></script>
@@ -1158,10 +1151,7 @@
     var tiles = (cat ? trends() : []).map(function (id) {
       var m = cat.byId[id], t = g.trends[id], name = keyed(m.short_label_key);
       var last = t && t.last, pts = (t && t.points) || [];
-      if (!last || last.value == null || !pts.length) {
-        return '<div class="tr f-grey" data-m="' + esc(id) + '"><span class="tl">' + esc(name) + '</span><div class="tv">' + gap +
-          '<b class="none"><span aria-hidden="true">—</span><span class="sr-only">' + esc(T("无数据", "no data")) + "</span></b></div></div>";
-      }
+      if (!last || last.value == null || !pts.length) return { id: id, label: name, text: "", family: "grey", slot: gap };
       var unit = UNIT[m.format] || "", u = unit ? " " + unit : "";
       var shown = m.format === "grade" && last.grade ? last.grade : fmtValue(m, last.value);
       var label = Tf("{metric}趋势（{n} 次检测）：从 {first} 到 {last}，{dir}。", "{metric} trend across {n} audits: from {first} to {last}, {dir}.", {
@@ -1170,11 +1160,11 @@
       // drawing scale: the score's and the grade's fixed ranges, else the points'
       var lo = m.format === "score" ? 0 : m.format === "grade" ? 1 : Math.min.apply(null, pts);
       var hi = m.format === "score" ? 100 : m.format === "grade" ? cat.grades.length : Math.max.apply(null, pts);
-      return '<div class="tr f-' + esc(last.family || "grey") + '" data-m="' + esc(id) + '"><span class="tl">' + esc(name) + '</span><div class="tv">' +
-        (pts.length >= 2 ? sparkSVG(pts, lo, hi, label, true, SPARK_W, SPARK_H) : gap) +
-        "<b>" + esc(shown) + (unit ? "<small>" + esc(unit) + "</small>" : "") + "</b></div></div>";
-    }).join("");
-    return '<div class="trend">' + tiles + "</div>";
+      return { id: id, label: name, text: shown, unit: unit, family: last.family || "grey",
+        slot: pts.length >= 2 ? sparkSVG(pts, lo, hi, label, true, SPARK_W, SPARK_H) : gap };
+    });
+    // the KPI tiles' compact variant (kpi.js, issue 208), right-aligned
+    return window.EkteKpi.html(tiles, { variant: "compact", align: "end", cls: "trend", label: T("趋势图", "Trends") });
   }
 
   /* ---------------- rows ---------------- */

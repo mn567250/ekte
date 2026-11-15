@@ -129,6 +129,9 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "charts.css", ("analytics", "accessibility", "monitors")),
     (_V2 + "chartmotion.js", ("audit", "history", "analytics", "accessibility")),
     (_V2 + "chartmotion.css", ("audit", "history", "analytics", "accessibility")),
+    # the KPI tiles (#208): Analytics, the live and report performance tiles, History trends
+    (_V2 + "kpi.js", ("audit", "history", "analytics")),
+    (_V2 + "kpi.css", ("audit", "history", "analytics")),
     (_V2 + "filterpanel.js", ("history", "monitors", "analytics", "kb")),
     (_V2 + "filterpanel.css", ("history", "monitors", "analytics", "kb")),
     # the shared fields and URL state (History #127, Analytics #126, Monitors #160)

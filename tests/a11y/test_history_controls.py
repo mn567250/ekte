@@ -172,7 +172,7 @@ def _trend_buttons(page: Page) -> dict[str, list[Any]]:
 
 
 def _tiles(page: Page) -> list[str]:
-    return page.evaluate("() => [...document.querySelector('#hist .group .trend').querySelectorAll('.tr')].map(t => t.dataset.m)")
+    return page.evaluate("() => [...document.querySelector('#hist .group .trend').querySelectorAll('.kpi')].map(t => t.dataset.id)")
 
 
 @pytest.mark.bitv("9.2.1.1", "9.4.1.2", "9.4.1.3", "9.1.3.1")
@@ -232,7 +232,7 @@ def test_trend_picker(open_page, history_server) -> None:
         issues.append(f"focus moved to {_active(page)!r}")
     if not _trend_buttons(page)["grade"][1]:
         issues.append("a third trend is not disabled")
-    label = page.locator("#hist .group .tr[data-m=error_rate] svg").first.get_attribute("aria-label") or ""
+    label = page.locator("#hist .group .kpi[data-id=error_rate] svg").first.get_attribute("aria-label") or ""
     if label != "Error rate trend across 3 audits: from 0% to 25%, rising.":
         issues.append(f"error rate sparkline has no description: {label!r}")
     assert_no_issues(issues, "history [en]", "trend-picker")

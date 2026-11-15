@@ -181,10 +181,12 @@ WATCHES_KEY = "options.watches"
 # --------------------------------------------------------------------------- #
 # KPI grid
 # --------------------------------------------------------------------------- #
-def _kpi_cells(conn: Any, q: query.Query) -> dict[str, query.Cell]:
-    """The KPI grid's cells over ``q``'s runs: the counts and every grid metric
-    that applies to ``q.surface``."""
-    wanted = [mid for mid in _metrics.KPI_GRID if mid in METRICS and METRICS[mid].applies(str(q.surface))]
+def _kpi_cells(conn: Any, q: query.Query, ids: Iterable[str] = _metrics.KPI_GRID) -> dict[str, query.Cell]:
+    """The cells of some KPI tiles (``ids``: registry metrics and the counts
+    of :data:`ekte.web.metrics.COUNTS`) over ``q``'s runs; every metric that
+    does not apply to ``q.surface`` is left out. One pass; ``runs`` is always
+    there."""
+    wanted = [mid for mid in ids if mid in METRICS and METRICS[mid].applies(str(q.surface))]
     # one pass: the metrics and the distinct relays (their ids) and models
     specs, rows = query._grouped(
         conn, query.select_runs(q), "all", query._metrics(wanted, q.surface),
@@ -202,48 +204,53 @@ def _kpi_cells(conn: Any, q: query.Query) -> dict[str, query.Cell]:
     return cells
 
 
-def widget_summary(params: Any) -> dict[str, Any]:
-    """``GET /api/analytics/summary``: the 12 tiles of
-    :data:`ekte.web.metrics.KPI_GRID`, in order, over the range and over the
-    previous range (``previous``; none without ``from``): for a day range the
-    same number of calendar days before it in ``tz`` (``[from − N days,
-    from)``), else the span of the same length before ``from``."""
-    _widget(params, "kpi")
-    conn, q = _setup(params)
-    prev_q: query.Query | None = None
-    start = q.start
-    days = q.days
+def _previous_query(q: query.Query) -> tuple[query.Query, query.Query | None]:
+    """``q`` and the range it is compared with: for a day range the same
+    number of calendar days before it in ``tz`` (``[from − N days, from)``),
+    else the span of the same length before ``from``; None without ``from``.
+    A ``from`` without ``to`` is bounded at now (the returned ``q``)."""
+    start, days = q.start, q.days
+    prev: query.Query | None = None
     try:
         if start is not None and days is not None:
-            prev_q = q.replace(start=query.previous_days(start, days, q.zone), end=start,
-                               range=None)
+            prev = q.replace(start=query.previous_days(start, days, q.zone), end=start, range=None)
         elif start is not None:
             end = q.end or datetime.now(UTC)
             q = q.replace(end=end)
-            prev_q = q.replace(start=start - (end - start), end=start)
+            prev = q.replace(start=start - (end - start), end=start)
     except (OverflowError, ValueError):
-        prev_q = None
-    now = _kpi_cells(conn, q)
-    then = _kpi_cells(conn, prev_q) if prev_q is not None else {}
-    tiles = []
-    for mid in _metrics.KPI_GRID:
-        m = _metrics.get(mid)
-        cur, prev = now.get(mid), then.get(mid)
-        shown = _metrics.present(m, cur.value if cur else None, prev.value if prev else None,
-                                 cur.n if cur else None, prev.n if prev else None, surface=q.surface)
-        applies = shown["applies"]
-        tiles.append({
-            "id": mid, **shown,
-            "n": cur.n if cur and applies else None,
-            "coverage": cur.coverage if cur and applies else None,
-            "previous": prev.value if prev and applies else None,
-            "previous_n": prev.n if prev and applies else None,
-            "numerator": cur.numerator if cur else None,
-            "denominator": cur.denominator if cur else None,
-            "format": m.format, "label_key": m.kpi_label_key,
-        })
-    return {**_head(q), "previous": _range(prev_q) if prev_q else None,
-            "runs": int(now["runs"].n), "tiles": tiles}
+        prev = None
+    return q, prev
+
+
+def kpi_tiles(conn: Any, q: query.Query, name: str = "overview") -> tuple[query.Query, dict[str, Any]]:
+    """The tiles of the :data:`ekte.web.metrics.KPI_SETS` set ``name`` over
+    ``q``'s runs, each against the previous range (:func:`_previous_query`):
+    ``previous`` (that range; None without one), ``runs`` and ``tiles``
+    (:func:`ekte.web.metrics.tile`, in the set's order); and ``q`` as
+    compared (a ``from`` alone bounded at now)."""
+    q, prev_q = _previous_query(q)
+    ids = _metrics.kpi_ids(name)
+    now = _kpi_cells(conn, q, ids)
+    then = _kpi_cells(conn, prev_q, ids) if prev_q is not None else {}
+    tiles = [_metrics.tile(mid, now.get(mid), then.get(mid), surface=q.surface, group=i)
+             for i, grp in enumerate(_metrics.KPI_SETS[name]) for mid in grp]
+    return q, {"previous": _range(prev_q) if prev_q else None, "runs": int(now["runs"].n), "tiles": tiles}
+
+
+def widget_summary(params: Any) -> dict[str, Any]:
+    """``GET /api/analytics/summary``: the KPI tiles of one set of
+    :data:`ekte.web.metrics.KPI_SETS` (``kpi.set``; default ``overview``, the
+    12 tiles of :data:`ekte.web.metrics.KPI_GRID`), in order, over the range
+    and over the previous range (``previous``; none without ``from``): for a
+    day range the same number of calendar days before it in ``tz``
+    (``[from − N days, from)``), else the span of the same length before
+    ``from``."""
+    w = _widget(params, "kpi", ("set",))
+    name = _str_choice(w, "set", "kpi.set", tuple(_metrics.KPI_SETS), "overview")
+    conn, q = _setup(params)
+    q, out = kpi_tiles(conn, q, name)
+    return {**_head(q), "set": name, **out}
 
 
 # --------------------------------------------------------------------------- #

@@ -114,6 +114,7 @@ combien d'exécutions repose une valeur. Par défaut, elle compare une suite et
 un mode de sonde (les plus fréquents), pour ne pas mélanger des exécutions
 différentes ; filtres et vue sont gardés dans l'URL, une vue peut donc être
 mise en favori ou partagée. Rien ne quitte la machine.
+Les panneaux Erreurs et fiabilité, Surcharge du relais, Intégrité du modèle et Facturation s'ouvrent sur les mêmes tuiles pour leurs propres chiffres ; dans Erreurs et fiabilité, la part des appels perturbés est séparée par un trait, car elle compte tous les appels.
 
 D'autres panneaux répondent à des questions plus précises : **heures de
 pointe** (une carte de chaleur jour de la semaine × heure du TTFT, de la latence et de la vitesse de décodage

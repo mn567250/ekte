@@ -14,6 +14,7 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs
 
 import pytest
 from playwright.sync_api import Page
@@ -23,6 +24,14 @@ from tests.a11y.harness import THEMES, assert_no_issues, settle, track_network
 
 PATH = "/analytics"
 PAGE_SRC = Path(__file__).resolve().parents[2] / "ekte" / "web" / "static" / "v2" / "analytics.html"
+
+
+def _call(url: str) -> str:
+    """An API request as the tests compare it: its path; a panel's headline
+    tiles (the summary of another set, #208) as ``…/summary#<set>``."""
+    path, _, query = url.partition("?")
+    kpi_set = parse_qs(query).get("kpi.set")
+    return f"{path}#{kpi_set[0]}" if kpi_set else path
 
 
 def _open(open_page: Any, query: str = "", init: str = "", clipboard: bool = False,
@@ -45,7 +54,7 @@ def _open(open_page: Any, query: str = "", init: str = "", clipboard: bool = Fal
     if route:
         ctx.route(*route)  # the later route wins
     calls: list[str] = []
-    ctx.on("request", lambda r: calls.append(r.url.removeprefix(base).split("?")[0]) if "/api/analytics/" in r.url or "/api/filters/" in r.url else None)
+    ctx.on("request", lambda r: calls.append(_call(r.url.removeprefix(base))) if "/api/analytics/" in r.url or "/api/filters/" in r.url else None)
     page = ctx.new_page()
     page.goto(base + PATH + query, wait_until="load")
     settle(page)
@@ -94,13 +103,13 @@ def test_tabs_load_only_their_panels(open_page) -> None:
     calls.clear()
     page.locator("#tab-reliability").click()
     settle(page)
-    if sorted(set(calls)) != ["/api/analytics/errors"]:
+    if sorted(set(calls)) != ["/api/analytics/errors", "/api/analytics/summary#errors"]:
         issues.append(f"Reliability loaded {calls}")
     calls.clear()
     page.locator("#ftog").click()
     page.locator("[data-f=exec]").select_option("manual")
     settle(page)
-    if sorted(set(calls)) != ["/api/analytics/errors", "/api/filters/options"]:
+    if sorted(set(calls)) != ["/api/analytics/errors", "/api/analytics/summary#errors", "/api/filters/options"]:
         issues.append(f"a filter change on Reliability loaded {calls}")
     if page.locator("#panel-reliability [aria-busy=true]").count():
         issues.append("a Reliability panel is still marked busy after loading")
@@ -334,9 +343,12 @@ def test_errors_tab_keeps_ekte_and_network_failures_apart(open_page) -> None:
     values = dict(zip(cols, cells, strict=False))
     if values.get("ekte") != "1" or values.get("Network") != "1":
         issues.append(f"Example Relay's ekte / network failures: {values}")
-    rates = page.locator("#err-body .rates").inner_text()
-    if "Error rate" not in rates or "Impaired" not in rates:
-        issues.append(f"the relay error rate and the impaired share are not shown apart: {rates!r}")
+    # the relay's rates as tiles, then the impaired share after a divider (#208)
+    tiles = page.locator("#err-kpis .kpi").evaluate_all(
+        "els => els.map(e => [e.dataset.id, e.classList.contains('sep')])")
+    if tiles != [["success_rate", False], ["error_rate", False], ["rate_limited_rate", False],
+                 ["timeout_rate", False], ["impaired_rate", True]]:
+        issues.append(f"the relay error rate and the impaired share are not shown apart: {tiles!r}")
     legend = page.locator("#err-body .legend .imp").all_text_contents()
     if [t.strip() for t in legend] != ["Network", "ekte"]:
         issues.append(f"the legend does not set network and ekte apart: {legend}")

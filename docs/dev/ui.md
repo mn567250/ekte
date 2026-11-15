@@ -54,17 +54,34 @@ metric's `format`. It has one `<section class="card panel">` per panel under
 the shared filter panel (`EkteFilters`: range, surface, relay, model, suite,
 protocol, probe requests, execution and the page-wide **Group by** `group`),
 so new panels slot in. The **KPI grid** is the summary's 12 `tiles` in
-`KPI_GRID` order, always 4 columns × 3 rows (2 columns below 600 px); a tile
-with `applies: false` keeps its slot and shows "n/a" ("Not measured on this
-surface"); the delta's colour and word follow `direction` (`none`: faded,
-with the "previous period has fewer than N runs" note); the count-up figure is
-`aria-hidden` beside a screen-reader value; pooled rates (`agg: "pooled"`)
-have a toggletip with the metric's `agg_hint` (hover and focus, hoverable,
-Escape hides it). The **errors** panel stacks the relay's outcome classes over
-the calls it answered (429, relay timeout, 5xx, 4xx and other) and keeps
-network and ekte failures apart, greyed out in legend and tables (they are not
-the relay's fault), with the relay error rate and the impaired share shown
-separately. Its charts come from
+`KPI_GRID` order, always 4 columns × 3 rows (2 columns below 600 px). The
+Errors, Relay overhead, Model integrity and Billing panels open with their
+own headline tiles (the summary's `kpi.set` of the same name, with changes
+against the previous range). The **errors** panel stacks the relay's outcome
+classes over the calls it answered (429, relay timeout, 5xx, 4xx and other)
+and keeps network and ekte failures apart, greyed out in legend and tables
+(they are not the relay's fault); its tiles show the relay's rates and, after
+a divider, the impaired share.
+
+**KPI tiles** (#208). Every key figure of the UI is one component,
+`v2/kpi.js` (`window.EkteKpi`) with `v2/kpi.css`: the Analytics tiles, the
+live performance panel and a report's performance tiles (`perf.js`), the
+History group trends and a report's verdict scores. A tile is
+`{ id, label, text, unit, value, na, hint, delta, note, caption, group,
+family, slot, sr }`; `EkteKpi.fromServer(tile, ctx)` maps a server tile
+(`metrics.tile()`) onto it. `html(tiles, opts)` draws a list: the `grid`
+variant (boxes; `cols` fixes the column count, else as many as fit) or
+`compact` (label over value, a `slot` such as a sparkline beside them, sized by
+`--kpi-slot-w` / `--kpi-vw`). A tile with `na` keeps its slot and shows "n/a"
+("Not measured on this surface"); the delta's colour and word follow
+`direction` (`none`: faded, described by the "previous period has fewer than
+N runs" note); a new `group` starts after a divider; the shown figure is
+`aria-hidden` beside a screen-reader value (`sr` overrides it). `count()`
+counts figures up from the ones shown before (per box or `key`; never under
+reduced motion or on a quiet redraw); `mount()` returns `update(tiles)`,
+which patches the same tiles in place (the live panel: focus is never moved).
+A `hint` is a toggletip (hover and focus, hoverable, Escape hides it), wired
+once for the whole document. Its charts come from
 `v2/charts.js` (`EkteCharts.timeChart`: hand-drawn inline SVG with median line,
 p25–p75 band, gaps for empty buckets, faded markers for `low_n` buckets,
 annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)

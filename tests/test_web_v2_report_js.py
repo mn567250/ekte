@@ -26,6 +26,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const el = { querySelectorAll: () => [], querySelector: () => null };
 let clicked = null;
@@ -48,6 +49,7 @@ def _render(tmp_path: Path, lang: str, report: dict, opts: dict | None = None) -
     for name in ("lang.js", "i18n.js", "icons.js"):
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir(exist_ok=True)
+    shutil.copy(_STATIC / "v2" / "kpi.js", tmp_path / "v2" / "kpi.js")
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     opts_file = tmp_path / "opts.json"
     if opts:
@@ -99,7 +101,8 @@ def test_report_severity_dots_meters_and_summary(tmp_path):
     assert re.findall(r'data-dl="(\w+)">([^<]+)<', foot) == [
         ("json", "JSON"), ("md", "Markdown"), ("html", "HTML"), ("pdf", "PDF")]
     assert 'role="group" aria-label="Download report"' in foot and 'class="dl-msg" role="status"' in foot
-    assert [g for g in out["globals"] if g.startswith("Ekte")] == ["EkteReport"]
+    # report.js adds only EkteReport (EkteKpi is the KPI tiles it draws with, kpi.js)
+    assert [g for g in out["globals"] if g.startswith("Ekte")] == ["EkteKpi", "EkteReport"]
 
 
 @needs_node
@@ -190,6 +193,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const rep = JSON.parse(reportJson), D = window.EkteReport.download;
 (async () => {
@@ -476,6 +480,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const R = window.EkteReport;
 console.log(JSON.stringify({ html: R.findingDetail(JSON.parse(findingJson)),
@@ -512,6 +517,7 @@ global.document = { documentElement: { style: {}, lang: "" }, readyState: "compl
                     querySelectorAll: () => [], addEventListener() {} };
 global.localStorage = { getItem: () => "en", setItem() {} };
 for (const m of ["locales.js", "lang.js", "i18n.js", "icons.js"]) require(path.join(dir, m));
+require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const el = { querySelectorAll: () => [], querySelector: () => null };
 window.EkteReport.render(el, JSON.parse(reportJson), {});
@@ -564,6 +570,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const report = JSON.parse(reportJson);
 const render = () => {
@@ -593,6 +600,7 @@ def test_intl_formatters_are_cached_and_output_unchanged(tmp_path, lang):
     for name in ("lang.js", "i18n.js", "icons.js"):
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir()
+    shutil.copy(_STATIC / "v2" / "kpi.js", tmp_path / "v2" / "kpi.js")
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     report["prompt_languages"] = ["de", "en"]
@@ -648,6 +656,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const report = JSON.parse(reportJson);
 Promise.all(["json", "md"].map(f => window.EkteReport.download(report, f, "r"))).then(() => {
@@ -669,6 +678,7 @@ def test_download_drops_the_chart_trend_lines(tmp_path):
     for name in ("lang.js", "i18n.js", "icons.js"):
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir()
+    shutil.copy(_STATIC / "v2" / "kpi.js", tmp_path / "v2" / "kpi.js")
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     report = perf_report().model_dump(mode="json")
     attach_trends(report["performance"]["requests"])

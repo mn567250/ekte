@@ -137,11 +137,13 @@
     - 'link "Monitors for this relay and model: model-a · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-a
       - text: Monitors for this relay and model
-    - text: Score
-    - 'img "Score trend across 7 audits: from 70 to 82, rising."'
-    - text: 82 Latency p50
-    - 'img "Latency p50 trend across 7 audits: from <duration> to <duration>, falling."'
-    - text: <duration>
+    - list "Trends":
+      - listitem:
+        - 'img "Score trend across 7 audits: from 70 to 82, rising."'
+        - text: Score 82
+      - listitem:
+        - 'img "Latency p50 trend across 7 audits: from <duration> to <duration>, falling."'
+        - text: Latency p50 <duration>
     - list:
       - listitem:
         - button "Sep 30, 2026, 11:02 AM Consistent (likely genuine) Score 82 Grade B check · standard openai · Streaming p50 <duration>"
@@ -188,11 +190,13 @@
     - 'link "Monitors for this relay and model: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
       - text: Monitors for this relay and model
-    - text: Score
-    - 'img "Score trend across 4 audits: from 58 to 64, rising."'
-    - text: 64 Latency p50
-    - 'img "Latency p50 trend across 4 audits: from <duration> to <duration>, falling."'
-    - text: <duration>
+    - list "Trends":
+      - listitem:
+        - 'img "Score trend across 4 audits: from 58 to 64, rising."'
+        - text: Score 64
+      - listitem:
+        - 'img "Latency p50 trend across 4 audits: from <duration> to <duration>, falling."'
+        - text: Latency p50 <duration>
     - list:
       - listitem:
         - button "Sep 30, 2026, 8:02 AM Bait-and-switch Score 64 Grade D check · standard openai · Streaming p50 <duration>"
@@ -224,11 +228,13 @@
     - 'link "Monitors for this relay and model: model-b · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-b
       - text: Monitors for this relay and model
-    - text: Score
-    - 'img "Score trend across 2 audits: from 89 to 91, rising."'
-    - text: 91 Latency p50
-    - 'img "Latency p50 trend across 2 audits: from <duration> to <duration>, falling."'
-    - text: <duration>
+    - list "Trends":
+      - listitem:
+        - 'img "Score trend across 2 audits: from 89 to 91, rising."'
+        - text: Score 91
+      - listitem:
+        - 'img "Latency p50 trend across 2 audits: from <duration> to <duration>, falling."'
+        - text: Latency p50 <duration>
     - list:
       - listitem:
         - button "Sep 29, 2026, 7:02 AM Consistent (likely genuine) Score 91 Grade B check · standard openai · Streaming p50 <duration>"
@@ -250,7 +256,9 @@
     - 'link "Monitors for this relay and model: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
       - text: Monitors for this relay and model
-    - text: Score 72 Latency p50 <duration>
+    - list "Trends":
+      - listitem: Score 72
+      - listitem: Latency p50 <duration>
     - list:
       - listitem:
         - button "Sep 27, 2026, 10:02 AM Mostly trustworthy Score 72 Grade D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -261,7 +269,9 @@
           - article "Mostly consistent, with a few minor issues":
             - text: Mostly trustworthy
             - heading "Mostly consistent, with a few minor issues" [level=2]
-            - text: Overall health score 72/100 (Rating D) Verdict confidence —
+            - list:
+              - listitem: Overall health score 72/100 (Rating D)
+              - listitem: Verdict confidence no data
             - term: Target
             - definition:
               - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
@@ -338,7 +348,9 @@
     - 'link "Monitors for this relay and model: gpt-4o · 127.0.0.1:9099"':
       - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
       - text: Monitors for this relay and model
-    - text: Score 53 Latency p50 no data
+    - list "Trends":
+      - listitem: Score 53
+      - listitem: Latency p50 no data
     - list:
       - listitem:
         - button "Sep 27, 2026, 7:47 AM Bait-and-switch Score 53 Grade F check · standard"

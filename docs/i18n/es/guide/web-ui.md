@@ -113,6 +113,7 @@ lo que midieron: la página indica en cuántas ejecuciones se basa un valor. Por
 defecto compara una suite y un modo de sondeo (los más frecuentes), para no
 mezclar ejecuciones distintas; filtros y vista se guardan en la URL, así que
 una vista se puede marcar o compartir. Nada sale del equipo.
+Los paneles Errores y fiabilidad, Sobrecarga del relay, Integridad del modelo y Facturación empiezan con las mismas fichas para sus propias cifras; en Errores y fiabilidad, la proporción de llamadas afectadas queda aparte tras un separador, porque cuenta todas las llamadas.
 
 Otros paneles responden preguntas más concretas: **horas punta** (un mapa de
 calor día de la semana × hora del TTFT, la latencia y la velocidad de decodificación (mediana y colas p95 /
