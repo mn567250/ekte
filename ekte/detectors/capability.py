@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import first_json_object
 from ekte.detectors.scale import Scale, outcome
@@ -118,6 +119,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.tools",
                     "failed",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="Tool-calling probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
@@ -215,6 +217,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_mode",
                     "failed",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="JSON-mode probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
@@ -298,6 +301,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_schema",
                     "failed",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="JSON-schema probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
@@ -391,6 +395,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.max_output",
                     "failed",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="Max-output probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",

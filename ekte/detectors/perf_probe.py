@@ -17,6 +17,7 @@ from typing import Any
 from ekte.clients import Client
 from ekte.config import AuditOptions
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import CUSTOM_SUITE, SUITE_ORDER
 from ekte.detectors.scale import Scale, outcome
 from ekte.models import DetectorResult, EndpointPerformance, Severity, Status
@@ -222,11 +223,27 @@ def consistency_finding(
     check: str,
     what: str,
     unit: str,
-    values: list[float],
+    pool: Sequence[Any],
+    value: Callable[[Any], float | None],
     higher: bool,
+    *,
+    missing_advice: str | None = None,
+    capped: bool = False,
 ) -> None:
-    """One tail-ratio consistency finding (or "few samples") for ``values``;
-    ``what`` names the metric (a :data:`CONSISTENCY_TITLE` key)."""
+    """One tail-ratio consistency finding (or "few samples") over ``pool``, the
+    probe requests the check looks at; ``value`` gives a request's sample (None
+    or 0 when it has none). ``what`` names the metric (a :data:`CONSISTENCY_TITLE`
+    key). A request is left out when it failed, was served from a cache, or has
+    no value; the evidence counts each, the finding names the requests it rests
+    on, and a "few samples" finding says what to change (``missing_advice`` when
+    requests without a value are the main reason; ``capped`` when the suite caps
+    the probe below the minimum)."""
+    live = [rec for rec in pool if not getattr(rec, "retried", False)]
+    failed = [rec for rec in live if not rec.ok]
+    cached = [rec for rec in live if rec.ok and rec.cached]
+    clean = [rec for rec in live if rec.ok and not rec.cached]
+    used = [(rec, v) for rec, v in ((rec, value(rec)) for rec in clean) if v]
+    values = [float(v) for _rec, v in used]
     ratio = tail_ratio(values, higher_is_better=higher)
     tail = "p10" if higher else "p90"
     p50 = r(percentile(values, 50))
@@ -237,15 +254,30 @@ def consistency_finding(
         tail: tail_value,
         "tail_ratio": round(ratio, 2) if ratio is not None else None,
         "unit": unit,
+        # Why the probe requests the check looked at were left out.
+        "requests": len(live),
+        "failed": len(failed),
+        "cached": len(cached),
+        "missing": len(clean) - len(used),
     }
     if ratio is None:
+        # Too few samples: the requests the check looked at, so the left-out
+        # ones (and why) are in the evidence.
         result.findings.append(
             scale.finding(
                 check, "few_samples",
                 title=CONSISTENCY_TITLE[what],
-                summary=f"{len(values)} clean samples; at least "
-                f"{MIN_CONSISTENCY_SAMPLES} are needed to judge consistency.",
+                summary=f"{len(values)} clean samples of {len(live)} probe requests "
+                f"({len(failed)} failed, {len(cached)} cached, {len(clean) - len(used)} "
+                f"without a usable value); at least {MIN_CONSISTENCY_SAMPLES} are needed "
+                "to judge consistency.",
                 evidence=evidence,
+                recommendation=advice.few_samples_advice(
+                    requests=len(live), failed=len(failed), cached=len(cached),
+                    missing=len(clean) - len(used), missing_advice=missing_advice,
+                    minimum=MIN_CONSISTENCY_SAMPLES, capped=capped,
+                ),
+                calls=[rec.seq for rec in live],
             )
         )
         return
@@ -258,8 +290,35 @@ def consistency_finding(
             f"{fmt(tail_value, unit)} — tail ratio ({spread}) {ratio:.2f} over "
             f"{len(values)} requests.",
             evidence=evidence,
+            calls=[rec.seq for rec, _v in used],
         )
     )
+
+
+# The probe was switched off (performance_requests <= 0).
+ENABLE_PROBE = "Set --performance-requests above 0 (10 or more to judge consistency) to run the probe."
+
+
+def scaling_advice(phases: Sequence[Sequence[Any]], *, minimum: int) -> str:
+    """What to change when a scaling check (two phases of probe requests, each
+    needing ``minimum`` clean samples) had too few: the phase that fell shortest
+    decides."""
+    def counts(pool: Sequence[Any]) -> tuple[int, int, int]:
+        live = [rec for rec in pool if not getattr(rec, "retried", False)]
+        return (len(live), sum(1 for rec in live if not rec.ok),
+                sum(1 for rec in live if rec.ok and rec.cached))
+    requests, failed, cached = min((counts(p) for p in phases), key=lambda c: c[0] - c[1] - c[2])
+    return advice.few_samples_advice(
+        requests=requests, failed=failed, cached=cached, missing=0, missing_advice=None,
+        minimum=minimum, capped=False,
+    )
+
+
+def probe_capped(options: AuditOptions, *, has_baseline: bool) -> bool:
+    """The suite caps the probe below the consistency minimum (standard with a
+    baseline sends :data:`STANDARD_COMPARE_REQUESTS`)."""
+    n = planned_probe_requests(options, has_baseline=has_baseline)
+    return 0 < n < MIN_CONSISTENCY_SAMPLES and not deep(options.suite)
 
 
 def error_finding(
@@ -304,7 +363,14 @@ def error_finding(
     )
 
 
-def load_finding(scale: Scale, result: DetectorResult, target: EndpointPerformance) -> None:
+def load_finding(
+    scale: Scale,
+    result: DetectorResult,
+    target: EndpointPerformance,
+    calls: Sequence[int] | None = None,
+) -> None:
+    """Burst vs sequential latency; ``calls`` are the ``seq`` numbers of the
+    requests it compares (the target's sequential probes and its burst)."""
     conc = target.concurrency
     seq = target.latency_ms.p50
     if conc is None or conc.latency_ms.count < _MIN_BURST_SAMPLES or not seq:
@@ -327,6 +393,7 @@ def load_finding(scale: Scale, result: DetectorResult, target: EndpointPerforman
                 "sequential_latency_p50_ms": r(seq),
                 "ratio": round(ratio, 2),
             },
+            calls=list(calls) if calls is not None else None,
         )
     )
 
@@ -341,3 +408,15 @@ def fmt(value: float | None, unit: str) -> str:
 
 def signed(value: float) -> str:
     return f"{value:+.0f}"
+
+
+def load_calls(
+    records: Sequence[Any], op: str, *, stream: bool | None = None, label: str = "target"
+) -> list[int]:
+    """The ``seq`` numbers of ``label``'s sequential probe and burst requests
+    (in request mode ``stream`` when given): what the load finding compares."""
+    return [
+        rec.seq for rec in records
+        if rec.endpoint == label and rec.op == op and rec.phase in ("probe", "probe_concurrent")
+        and not getattr(rec, "retried", False) and (stream is None or rec.stream == stream)
+    ]

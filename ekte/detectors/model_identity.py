@@ -19,6 +19,7 @@ import re
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
 from ekte.detectors.scale import DeductionScale, evidence_seqs, outcome
@@ -199,6 +200,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.fp",
                     "skipped_output_cap",
+                    recommendation=advice.BY_DESIGN,
                     calls=[],
                     id=f"model_identity.fp.{fp.id}",
                     title=f"Fingerprint skipped: {fp.signal}",
@@ -235,6 +237,7 @@ class ModelIdentityDetector(Detector):
                     SCALE.finding(
                         "model_identity.fp",
                         "inconclusive",
+                        recommendation=advice.failure_advice(outcome),
                         calls=[outcome],
                         id=f"model_identity.fp.{fp.id}",
                         title=f"Fingerprint inconclusive: {fp.signal}",
@@ -353,6 +356,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.no_evidence",
                     "none",
+                    recommendation=advice.NO_IDENTITY_EVIDENCE,
                     title="No usable identity evidence",
                     summary=(
                         "Neither the self-identification nor any fingerprint probe returned a "
@@ -418,6 +422,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.self_id",
                     "unavailable",
+                    recommendation=advice.failure_advice(outcome),
                     calls=calls,
                     title="Self-identification unavailable",
                     summary=outcome.error_message or f"No usable response (HTTP {outcome.status_code}).",
@@ -521,6 +526,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.model_field",
                     "unavailable",
+                    recommendation=advice.failure_advice(outcome) if not outcome.ok else advice.NO_MODEL_FIELD,
                     calls=[outcome],
                     title="No usable echoed model field",
                     summary=(

@@ -15,6 +15,7 @@ from typing import Any
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.scale import Scale, outcome
 from ekte.models import (
@@ -249,6 +250,9 @@ class QualityJudgeDetector(Detector):
                         or f"Judge could not commit to a verdict for '{claimed}'."
                     ),
                     evidence={"judge_confidence": confidence or None, "reasoning": reasoning},
+                    recommendation=(
+                        advice.JUDGE_FAILED if judge_errored else advice.JUDGE_UNDECIDED
+                    ),
                 )
             )
             result.status = Status.INCONCLUSIVE

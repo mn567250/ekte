@@ -18,6 +18,7 @@ from typing import Any
 from ekte import prompts
 from ekte.clients import detect_api
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.scale import Scale
 from ekte.detectors.wire_attrs import (
@@ -84,6 +85,7 @@ class ProtocolResponseDetector(Detector):
                 RESPONSE_SCALE.finding(
                     CALL,
                     "no_response",
+                    recommendation=advice.failure_advice(out),
                     calls=[out],
                     title="Response-attribute probe returned no body",
                     summary=out.error_message or f"HTTP {out.status_code}; no response body.",

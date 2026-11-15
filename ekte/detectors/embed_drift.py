@@ -10,6 +10,7 @@ from typing import Any
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.embedding import EmbeddingDetector, cosine_similarity, embed, sha
 from ekte.detectors.scale import Scale, outcome
@@ -75,6 +76,7 @@ class EmbedDriftDetector(EmbeddingDetector):
                     calls=[_res],
                     title="Vector drift not measured",
                     summary=f"No vector for the pinned input: {problem}.",
+                    recommendation=advice.failure_advice(_res),
                 )
             )
             result.status = Status.INCONCLUSIVE

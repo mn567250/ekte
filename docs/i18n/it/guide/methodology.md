@@ -898,6 +898,16 @@ standard; servono almeno 10 campioni puliti. Il riferimento è il riferimento
 affidabile, altrimenti l'intervallo `performance.decode_tps` del profilo nella
 base di conoscenza.
 
+Una richiesta della sonda viene esclusa quando è fallita, è arrivata da una
+cache o non ha la metrica: una richiesta in streaming senza delta di contenuto
+non ha TTFT, e quindi nemmeno velocità di decodifica. Con meno di 10 campioni
+puliti il controllo non conta; il suo risultato conta ciò che è stato escluso e
+perché, e la sua raccomandazione dice cosa cambiare: correggere gli errori, far
+trasmettere il relay in streaming (o usare `--performance-non-streaming`) o
+inviare più richieste (`--performance-requests`). La suite standard invia solo
+5 richieste della sonda per endpoint, quindi la costanza si giudica nelle suite
+deep, full e custom.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `performance.summary` | Latenza, TTFT e throughput sono stati misurati. | Info | Non conteggiato |

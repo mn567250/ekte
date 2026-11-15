@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import usage_field
 from ekte.detectors.scale import DeductionScale, outcome
@@ -91,6 +92,7 @@ class BillingDetector(Detector):
                 SCALE.finding(
                     "billing.request-failed",
                     "no_response",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="Billing probe request failed",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",

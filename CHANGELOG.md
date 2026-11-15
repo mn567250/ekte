@@ -170,6 +170,36 @@ checkout's own `CHANGELOG.md` as plain text: unreleased and uncommitted
 entries included, because that is the code that runs. Installed packages have
 no `/changelog` route.
 
+### Reports: every result that could not judge says why and what to change ([#204](https://github.com/mn567250/ekte/issues/204))
+
+A check that is not counted because a request failed, too few samples were
+left or its dimension did not run now carries a recommendation naming what
+to change, in every UI language.
+
+- **Performance consistency** (latency, time to first token, throughput; chat,
+  embeddings and rerank) counts the probe requests it left out and why
+  (`requests`, `failed`, `cached`, `missing` in the evidence) and recommends
+  the fix for the main reason. A relay that ignores `stream: true` (no
+  streamed content delta, so no TTFT and no decode speed) is now named as
+  such, with `--performance-non-streaming` as the alternative. The standard
+  suite's 5-request probe, below the 10 samples consistency needs, points to
+  the deep, full and custom suites.
+- **Raw requests under a finding** list only the requests that finding rests
+  on: the consistency, load, cache, scaling and "no successful probe"
+  findings now name them, instead of showing every request of the detector.
+- **Failed probes across the detectors** (billing, capability, determinism,
+  model identity, protocol, response attributes, security headers, vision,
+  embeddings, rerank, prompt cache) get one shared recommendation per kind of
+  failure: timeout, HTTP 429, 400/422, 401/403, 404, 5xx, network, ekte
+  itself, or an empty answer (`ekte/detectors/advice.py`).
+- **Vague inconclusive results** (injected prompt, integrity canaries, no
+  identity evidence, the LLM judge, the context-window ladder, a skipped
+  fingerprint) say what to change, or that nothing needs to change.
+- **A dimension that did not run** says why and what would run it (the suite
+  it needs, a baseline, a judge or a disabled check) instead of "Not run in
+  this suite.", in the report and the Web UI.
+- A test enforces a recommendation on every not-counted inconclusive outcome.
+
 ### Metrics, filters and History/Analytics rework ([#117](https://github.com/mn567250/ekte/issues/117))
 
 History and Analytics now show the same numbers, computed once on the

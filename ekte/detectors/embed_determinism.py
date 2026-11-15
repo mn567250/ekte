@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.embedding import DET_MIN_COSINE, EmbeddingDetector, cosine_similarity, embed
 from ekte.detectors.scale import Scale, outcome
@@ -31,14 +32,17 @@ class EmbedDeterminismDetector(EmbeddingDetector):
         text = prompts.text("embed.determinism_input")
         # Two separate requests: a backend that varies between calls shows here.
         _r1, first, problem = await embed(ctx, [text])
+        last = _r1  # the call the problem is about
         if problem is None:
             _r2, second, problem = await embed(ctx, [text])
+            last = _r2
         if problem is not None:
             result.findings.append(
                 SCALE.finding(
                     "embed.determinism", "no_vector",
                     title="Determinism not measured",
                     summary=f"No vectors to compare: {problem}.",
+                    recommendation=advice.failure_advice(last),
                 )
             )
             result.status = Status.INCONCLUSIVE

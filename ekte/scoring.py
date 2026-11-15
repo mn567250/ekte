@@ -196,6 +196,7 @@ def build_dimensions(
     *,
     selected: list[str] | None = None,
     surface: str = "chat",
+    not_run: dict[str, str] | None = None,
 ) -> list[DimensionScore]:
     """Score every dimension of ``surface``. ``selected`` (a custom suite's
     dimensions) marks the rest as not selected rather than not run."""
@@ -240,7 +241,8 @@ def build_dimensions(
         if selected is not None and dim.value not in selected:
             reason = "Not selected in this custom run."
         elif not members:
-            reason = "Not run in this suite."
+            # Why it did not run and what would make it run, when known.
+            reason = (not_run or {}).get(dim.value) or "Not run in this suite."
         elif score is None:
             reason = "Ran but produced no numeric score (see findings)."
         else:

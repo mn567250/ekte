@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.embedding import EmbeddingDetector, embed
 from ekte.detectors.scale import Scale, outcome
@@ -60,6 +61,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
                     calls=[res],
                     title="Vector dimension not measured",
                     summary=f"No vector to measure: {problem}.",
+                    recommendation=advice.failure_advice(res),
                     evidence={"claimed": claimed},
                 )
             )

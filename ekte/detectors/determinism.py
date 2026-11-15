@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.scale import Scale, outcome
 from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
@@ -160,6 +161,7 @@ class DeterminismDetector(Detector):
                 SCALE.finding(
                     "determinism.temp1_variability",
                     "not_assessed",
+                    recommendation=advice.failure_advice(failed),
                     calls=outcomes,
                     title="Could not assess temperature=1.0 variability",
                     summary=(
@@ -218,6 +220,7 @@ class DeterminismDetector(Detector):
                 SCALE.finding(
                     "determinism.temp0_stability",
                     "not_assessed",
+                    recommendation=advice.failure_advice(failed),
                     calls=[third, fourth],
                     title="Could not assess temperature=0 stability",
                     summary=failed.error_message or f"HTTP {failed.status_code}",

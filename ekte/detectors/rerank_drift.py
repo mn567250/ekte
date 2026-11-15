@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Any
 
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.embedding import sha
 from ekte.detectors.rerank import (
@@ -81,6 +82,7 @@ class RerankDriftDetector(RerankDetector):
                     calls=[_res],
                     title="Rerank drift not measured",
                     summary=f"No ranking for the pinned probe: {problem}.",
+                    recommendation=advice.failure_advice(_res),
                 )
             )
             result.status = Status.INCONCLUSIVE
