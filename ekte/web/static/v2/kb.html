@@ -502,7 +502,6 @@
     if (m && sections[m[1]]) sections[m[1]].openAdd(focus);
   }
 
-  document.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = icon(el.getAttribute("data-icon")); });
   $("export-icon").innerHTML = icon("download");
   Object.keys(CONFIG).forEach(function (k) { sections[k] = S.mount($("panel-" + k), CONFIG[k], page); });
   tabs = window.EkteTabs.init(document.querySelector(".tabs[role=tablist]"), {

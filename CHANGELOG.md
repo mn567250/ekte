@@ -20,6 +20,31 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: tabs in two levels, selection in three looks ([#225](https://github.com/mn567250/ekte/issues/225))
+
+Main tabs, sub-tabs and segmented controls all showed their selection as the
+same solid green block, so navigation and filters looked alike, and in the
+dark theme these blocks were the brightest thing on the page. Each tab bar
+also had its own rules for icons, counts and widths.
+
+- **Primary tabs** (Audit, Monitors, Knowledge, Analytics): a sunken rail
+  with the selected tab as a raised card-coloured pill, like the current page
+  in the header. Every primary tab has an icon (Analytics' five tabs gained
+  theirs). Up to four tabs share the rail equally; five or more are as wide
+  as their labels.
+- **Secondary tabs** (Analytics' sections): text tabs on a hairline, the
+  selected one underlined.
+- **Choices inside a panel** (segmented controls, chips): a light green wash
+  with a green border and text. A solid green fill is kept for a view's one
+  main action.
+- **One count badge** on tabs, tinted blue while work is under way; the
+  "Running" tabs of Audit and Monitors behave alike (selectable, with an
+  empty state).
+- Analytics no longer repeats the selected tab's label as a heading above
+  each panel (screen readers still get it).
+- The Audit stepper (Configure, Scan, Report) is a plain progress line, so it
+  no longer looks like another row of tabs.
+
 ### One verdict scale for scores, grades and badges ([#228](https://github.com/mn567250/ekte/issues/228))
 
 A score, its grade and the verdict badge could show different colours for the
