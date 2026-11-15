@@ -1,7 +1,9 @@
 # Web front end
 
 The front end is plain HTML, CSS and browser JavaScript without modules or a
-build step. The pages live in `ekte/web/static/v2/` and share one header (`nav.js`), the report renderer
+build step. The pages live in `ekte/web/static/v2/` and share one header (`nav.js`;
+its version link comes from the server, which writes `data-version` and `data-changelog`
+onto `<header class="znav">` in `caching.stamp_version`), the report renderer
 (`report.js`), the theme switch (`theme.js`) and the styles (`tokens.css`, `ekte.css`,
 `fields.css`, `report.css`, `perf.css`). Shared scripts are served from the root:
 `lang.js` (language switch), `locales.js` (translation data), `i18n.js` (finding

@@ -9,6 +9,8 @@ Endpoints:
   GET  /v2, /v2/…            the former page addresses: redirect (308) to the
                              page at the root, keeping the query string
                              (deprecated, removed in 1.0.0)
+  GET  /changelog            only in a source checkout: its CHANGELOG.md as
+                             plain text (the header's version link)
   GET  /api/health          {ok, version}
   GET  /api/version         the change signal {data, live}: opaque tokens that
                             change with the history-backed data, and with the
@@ -151,7 +153,7 @@ from ekte.models import KnowledgeUsage, TargetConfig
 from ekte.perf.trend import attach_trends, strip_trends
 from ekte.runner import run_audit
 from ekte.scoring import weights_for
-from ekte.web import jobs
+from ekte.web import changelog, jobs
 from ekte.web.caching import (
     GZIP_MINIMUM_SIZE,
     CachedStaticFiles,
@@ -971,6 +973,19 @@ def create_app() -> FastAPI:
     # `?v=<hash>` URLs (written into pages by html_page) are cached immutably.
     app.mount("/static", CachedStaticFiles(directory=str(_STATIC_UI)), name="static")
     root_assets = CachedStaticFiles(directory=str(_STATIC))
+
+    # The header's version link in a source checkout: the checkout's own
+    # CHANGELOG.md, read on every request (ekte/web/changelog.py). An installed
+    # package has no such route; its link points to the release on GitHub.
+    changelog_file = changelog.source_changelog()
+    if changelog_file is not None:
+
+        @app.get(changelog.ROUTE, include_in_schema=False)
+        async def changelog_text() -> Any:
+            return FileResponse(
+                changelog_file, media_type="text/plain; charset=utf-8",
+                headers={"Cache-Control": "no-cache"},
+            )
 
     @app.get("/i18n.js")
     async def i18n_js(request: Request) -> Any:

@@ -115,6 +115,7 @@ same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
 | Endpoint | What it answers |
 |---|---|
 | `GET /`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility` | the pages (`/v2/…`, `/tools`, `/console`: 308 redirects until 1.0.0) |
+| `GET /changelog` | only in a source checkout: its `CHANGELOG.md` as plain text, the header's version link (`ekte/web/changelog.py`); an installed package links to the release's `CHANGELOG.md` on GitHub instead |
 | `GET /api/health` | `{ok, version}` |
 | `GET /api/version` | the change signal `{data, live}` (ETag, 304; see **Change signal** above) |
 | `POST /api/jobs` (`/api/v1/jobs`), `GET /api/jobs`, `GET /api/jobs/{id}` (`/api/v1/…`), `GET /api/jobs/{id}/events` (`/api/v1/…`), `POST /api/jobs/{id}/cancel` | background audits |

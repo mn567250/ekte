@@ -1097,7 +1097,7 @@ def test_every_metric_label_key_is_in_every_locale():
 # The fragments of the pages #150 reworked: every key is still a text the
 # pages or the server use (#161 removed the ones the rework left behind).
 _REWORKED_FRAGMENTS = ("v2-monitors", "v2-monitors-filter", "v2-monitors-links", "v2-filter-memory",
-                       "v2-live", "v2-links", "watch-filter")
+                       "v2-live", "v2-links", "watch-filter", "v2-version")
 
 
 def test_reworked_pages_carry_no_unused_locale_keys():

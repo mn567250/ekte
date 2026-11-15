@@ -4,6 +4,8 @@
   - link "ekte":
     - /url: /
     - text: ekte.
+  - link "v<version> Registro delle modifiche":
+    - /url: /changelog
   - combobox "Tema":
     - option "Automatico"
     - option "Chiaro" [selected]

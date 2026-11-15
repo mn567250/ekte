@@ -14,6 +14,8 @@
   language in the ``ekte_lang`` cookie (written by lang.js) the server puts
   that language into ``<html lang>`` and the ``<title>``, so the browser tab
   is right from the first byte. lang.js translates the rest of the markup.
+* **Version** (:func:`stamp_version`): the shared header carries the running
+  version and its changelog link, for nav.js.
 * **Cache-Control** (:class:`CachedStaticFiles`): an asset requested with its
   current ``?v=`` hash is ``immutable`` for a year (a new version gets a new
   URL); without it (or with a stale one) it is ``no-cache``, i.e. revalidated
@@ -196,6 +198,8 @@ _REF = re.compile(r"""(?P<pre>\b(?:src|href)=)(?P<q>["'])(?P<url>/[^"'?#\s<>]+)(
 # The page's <html lang="en"> and its <title data-en="…">…</title>.
 _HTML_LANG = re.compile(r'<html lang="en">')
 _TITLE = re.compile(r'<title data-en="(?P<en>[^"]*)">[^<]*</title>')
+# The shared header, <header class="znav" data-page="…">, up to its ">".
+_ZNAV = re.compile(r'(<header class="znav"[^>]*)>')
 
 # (page, language) -> (stamps of page + referenced assets, referenced asset
 # paths, body, etag, gzipped body)
@@ -240,9 +244,22 @@ def localize(html: str, lang: str) -> str:
     return _TITLE.sub(title, html, count=1)
 
 
+def stamp_version(html: str) -> str:
+    """``html`` with the running version and its changelog link on the shared
+    header (``data-version`` / ``data-changelog``, after its own attributes),
+    which nav.js renders as the header's version link (ekte/web/changelog.py)."""
+    from ekte.web import changelog
+
+    attrs = (
+        f' data-version="{_html.escape(changelog.version_label(), quote=True)}"'
+        f' data-changelog="{_html.escape(changelog.changelog_url(), quote=True)}"'
+    )
+    return _ZNAV.sub(lambda m: m[1] + attrs + ">", html, count=1)
+
+
 def _render(page: Path, lang: str) -> _Page:
     st = page.stat()
-    html = localize(page.read_text(encoding="utf-8"), lang)
+    html = stamp_version(localize(page.read_text(encoding="utf-8"), lang))
     deps: list[Path] = []
     stamps: list[_Stamp] = [_stamp(st)]
 

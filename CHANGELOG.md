@@ -159,6 +159,17 @@ falls exactly on the hour (it could read 06:59 for a 07:00 window). On a
 phone, the heatmap legend no longer breaks "100 %" into one character per
 line (Analytics too).
 
+### Web UI: the version in the header, linked to its changelog ([#202](https://github.com/mn567250/ekte/issues/202))
+
+The header of every page shows the running ekte version, as a link to its
+changelog. An installed package shows `v<version>` and links to
+`CHANGELOG.md` on GitHub at the release tag. A source checkout (an editable
+install such as `uv sync`, or ekte run from the source tree) shows
+`v<version>+dev` and links to the new `GET /changelog`, which serves the
+checkout's own `CHANGELOG.md` as plain text: unreleased and uncommitted
+entries included, because that is the code that runs. Installed packages have
+no `/changelog` route.
+
 ### Metrics, filters and History/Analytics rework ([#117](https://github.com/mn567250/ekte/issues/117))
 
 History and Analytics now show the same numbers, computed once on the

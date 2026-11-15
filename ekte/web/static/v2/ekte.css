@@ -138,6 +138,13 @@ main[tabindex="-1"]:focus { outline: none; }
 .znav .a11y .zicon { width: 16px; height: 16px; }
 .znav .a11y:hover { border-color: var(--ink-muted); color: var(--primary); }
 .znav .a11y[aria-current="page"] { color: var(--primary); border-color: var(--primary); }
+/* the running version, a link to its changelog (nav.js), as tall as the switches */
+.znav .ver {
+  display: inline-flex; align-items: center; flex: none; white-space: nowrap;
+  font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--ink-muted);
+  text-decoration: none; padding: 6px 4px; border-radius: var(--r-pill);
+}
+.znav .ver:hover { color: var(--primary); text-decoration: underline; }
 
 /* ---------- hero ---------- */
 .hero { padding: 24px 0 4px; }
