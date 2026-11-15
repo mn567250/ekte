@@ -258,7 +258,7 @@ def test_focus_order_matches_visual_order(open_page, page_id: str, lang: str, vi
 NOT_A_FUNCTION = r"^data-(en|a11y|id$|i$|msg$|l0$|w$|v$|f$|page$|theme$|step$|seg$|tip$|zp$|metric$)"
 # class tokens that only style a control (a component class like "rdel" or
 # "secret-eye" names its function)
-STYLE_CLASSES = r"^(btn|sm|lg|pri|primary|danger|danger-solid|ghost|link|linkbtn|in|mono|on|off|active|open|is-.*|has-.*|good|bad|warn|sky|grey|tag|badge|pill|more)$"
+STYLE_CLASSES = r"^(btn|sm|lg|pri|primary|danger|danger-solid|ghost|link|linkbtn|in|mono|on|off|active|open|is-.*|has-.*|good|bad|warn|sky|grey|tag|badge|pill|more|disclosure|lead)$"
 
 IDENTIFY_JS = """
 ([notFn, styleCls]) => {

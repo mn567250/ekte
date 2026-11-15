@@ -190,7 +190,7 @@
     }
     // a group's Disclosure, set by the page (filtering), not by the user
     function setGroup(g, open) {
-      var b = g.querySelector(":scope > .disclosure"), r = b && document.getElementById(b.getAttribute("aria-controls"));
+      var b = g.querySelector(".disclosure"), r = b && document.getElementById(b.getAttribute("aria-controls"));
       if (!b) return;
       b.setAttribute("aria-expanded", String(open));
       if (r) r.hidden = !open;

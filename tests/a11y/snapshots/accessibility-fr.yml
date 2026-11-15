@@ -127,7 +127,7 @@
             - rowheader "9.1.1.1"
             - cell:
               - group:
-                - text: Contenu non textuel
+                - button "Contenu non textuel" [expanded]
                 - paragraph: "Comment c'est testé : Les images, icônes, SVG et contrôles ont une alternative textuelle. La pertinence de chaque alternative est jugée par une personne."
                 - paragraph: "Tests automatisés : 30 exécutés, 30 réussis, 0 échoués, 156 ignorés"
                 - paragraph:

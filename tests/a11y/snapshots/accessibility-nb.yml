@@ -127,7 +127,7 @@
             - rowheader "9.1.1.1"
             - cell:
               - group:
-                - text: Ikke-tekstlig innhold
+                - button "Ikke-tekstlig innhold" [expanded]
                 - paragraph: "Slik testes det: Bilder, ikoner, SVG-er og kontroller har et tekstalternativ. Om hvert alternativ er meningsfylt, vurderes av en person."
                 - paragraph: "Automatiserte tester: 30 kjørt, 30 bestått, 0 ikke bestått, 156 hoppet over"
                 - paragraph:

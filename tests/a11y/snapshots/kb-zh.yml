@@ -93,7 +93,7 @@
     - heading "全部模型 244 个模型" [level=2]
     - paragraph: 检测时用来比对的模型资料。停用的模型不再参与匹配：检测它时将没有资料可比对。
     - group:
-      - text: 添加模型
+      - button "添加模型" [expanded]
       - paragraph: 让 AI 助手调研该模型，然后在这里检查它的回答，再保存。
       - heading "1 复制调研提示词" [level=3]
       - text: 模型 ID id
@@ -105,7 +105,7 @@
       - button "复制提示词"
       - status
       - group:
-        - text: 查看提示词
+        - button "查看提示词" [expanded]
         - textbox "提示词"
       - paragraph: 把它粘贴到你选择的 AI 助手中，它会返回一份 YAML 文档。
       - heading "2 上传或粘贴 YAML" [level=3]
@@ -118,9 +118,10 @@
       - button "检查"
       - button "保存到知识库" [disabled]
     - group:
-      - text: Ai2 (Allen Institute for AI)
-      - code: ai2
-      - text: 6 个模型
+      - button "Ai2 (Allen Institute for AI) ai2 6 个模型" [expanded]:
+        - text: Ai2 (Allen Institute for AI)
+        - code: ai2
+        - text: 6 个模型
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct

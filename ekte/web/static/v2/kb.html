@@ -45,8 +45,8 @@
     background: var(--sunken); border: 1px solid var(--line); font-size: var(--t-sm); font-family: var(--mono);
   }
   .prompt-disc { margin-top: 10px; }
-  .prompt-disc > .disclosure { width: auto; padding: 6px 0; }
-  .prompt-disc > .disclosure-body { padding: 4px 0 0; }
+  .prompt-disc .disclosure { width: auto; padding: 6px 0; }
+  .prompt-disc .disclosure-body { padding: 4px 0 0; }
   textarea.in.yaml { font-family: var(--mono); font-size: var(--t-sm); min-height: 180px; }
   textarea.in.prompt { font-family: var(--mono); font-size: var(--t-xs); min-height: 160px; }
   .scan[hidden] { display: none; }
@@ -80,10 +80,10 @@
   .grps { display: flex; flex-direction: column; gap: 10px; }
   .grp { padding: 0; }
   /* a group: a Disclosure in a list (chevron first) */
-  .card.grp > .disclosure { padding: 14px 16px; color: var(--ink); font-weight: 600; }
-  .card.grp > .disclosure .t { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
-  .card.grp > .disclosure .cnt { color: var(--ink-muted); font-weight: 500; font-size: var(--t-sm); }
-  .card.grp > .disclosure-body { padding: 0 10px 10px; }
+  .card.grp .disclosure { padding: 14px 16px; color: var(--ink); font-weight: 600; }
+  .card.grp .disclosure .t { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
+  .card.grp .disclosure .cnt { color: var(--ink-muted); font-weight: 500; font-size: var(--t-sm); }
+  .card.grp .disclosure-body { padding: 0 10px 10px; }
   .grp .item { box-shadow: none; border: 1px solid var(--line); }
   [data-kb="list"] { display: flex; flex-direction: column; gap: 10px; }
 </style>
@@ -118,7 +118,7 @@
       <section role="tabpanel" id="panel-models" aria-labelledby="tab-models" tabindex="0">
         <h2 class="form-title" data-kb="title" id="models-title" tabindex="-1"><span data-en="All models">All models</span> <span class="count" data-kb="count"></span></h2>
         <p class="hint" data-en="The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.">The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.</p>
-        <div class="disclosure-box add" data-kb="add" id="add-models">
+        <div class="disclosure-box add" role="group" data-kb="add" id="add-models">
           <button type="button" class="disclosure" data-disclosure aria-expanded="false" aria-controls="add-models-body"><span class="t"><span class="pico" data-icon="plus"></span><span data-en="Add a model">Add a model</span></span><span class="cv" data-icon="chevronDown"></span></button>
           <div class="disclosure-body add-body" id="add-models-body" hidden>
             <p class="hint" data-en="Let an AI assistant research the model, then check its answer here before it is stored.">Let an AI assistant research the model, then check its answer here before it is stored.</p>
@@ -132,7 +132,7 @@
       <section role="tabpanel" id="panel-providers" aria-labelledby="tab-providers" tabindex="0" hidden>
         <h2 class="form-title" data-kb="title" id="providers-title" tabindex="-1"><span data-en="All providers">All providers</span> <span class="count" data-kb="count"></span></h2>
         <p class="hint" data-en="The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.">The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.</p>
-        <div class="disclosure-box add" data-kb="add" id="add-providers">
+        <div class="disclosure-box add" role="group" data-kb="add" id="add-providers">
           <button type="button" class="disclosure" data-disclosure aria-expanded="false" aria-controls="add-providers-body"><span class="t"><span class="pico" data-icon="plus"></span><span data-en="Add a provider">Add a provider</span></span><span class="cv" data-icon="chevronDown"></span></button>
           <div class="disclosure-body add-body" id="add-providers-body" hidden><div data-kb="add-body"></div></div>
         </div>
@@ -143,7 +143,7 @@
       <section role="tabpanel" id="panel-relays" aria-labelledby="tab-relays" tabindex="0" hidden>
         <h2 class="form-title" data-kb="title" id="relays-title" tabindex="-1"><span data-en="All relays">All relays</span> <span class="count" data-kb="count"></span></h2>
         <p class="hint" data-en="Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.">Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.</p>
-        <div class="disclosure-box add" data-kb="add" id="add-relays">
+        <div class="disclosure-box add" role="group" data-kb="add" id="add-relays">
           <button type="button" class="disclosure" data-disclosure aria-expanded="false" aria-controls="add-relays-body"><span class="t"><span class="pico" data-icon="plus"></span><span data-en="Add a relay">Add a relay</span></span><span class="cv" data-icon="chevronDown"></span></button>
           <div class="disclosure-body add-body" id="add-relays-body" hidden><div data-kb="add-body"></div></div>
         </div>

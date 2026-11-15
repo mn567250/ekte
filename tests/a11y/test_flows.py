@@ -687,7 +687,7 @@ def test_kb_flow(browser, contexts, ekte, lang: str) -> None:
 
     # ---- models
     _kb_section_steps(flow, "models", "model", "model:openai/gpt-4o-mini", "model:openai/gpt-4o-mini")
-    flow.step("models: open the add form", lambda: press(page, "#add-models > summary"))
+    flow.step("models: open the add form", lambda: press(page, "#add-models > .disclosure"))
     flow.step("models: copy the prompt without a model id", lambda: (press(page, "#m-copy"), wait_text(page, "#m-copy-msg")))
     flow.step("models: check without YAML", lambda: (press(page, "#m-check"), wait_text(page, "#m-err")))
     flow.step("models: check invalid YAML", lambda: (
@@ -698,14 +698,14 @@ def test_kb_flow(browser, contexts, ekte, lang: str) -> None:
     flow.step("models: save it", lambda: (
         press(page, "#m-save"), wait_text(page, "#m-ok"),
         page.wait_for_selector('#models-list li[data-key="model:a11yflow/a11yflow-large"]', state="attached")))
-    page.evaluate("document.querySelector('#models-list details[data-group=a11yflow]').open = true")
+    page.evaluate("EkteDisclosure.toggle(document.querySelector('#models-list .grp[data-group=a11yflow] .disclosure'), true)")
     _kb_delete_steps(flow, "models")
 
     # ---- providers (arrow keys move between the tabs)
     flow.step("switch to the providers tab", lambda: (
         press(page, "#tab-models", "ArrowRight"), page.wait_for_selector("#panel-providers:not([hidden]) li.item")))
     _kb_section_steps(flow, "providers", "provider", "openai", "provider:openai")
-    flow.step("providers: open the add form", lambda: press(page, "#add-providers > summary"))
+    flow.step("providers: open the add form", lambda: press(page, "#add-providers > .disclosure"))
     flow.step("providers: check valid YAML", lambda: (
         page.fill("#p-yaml", KB_PROVIDER_YAML), press(page, "#p-check"), page.wait_for_selector("#p-save:not([disabled])")))
     flow.step("providers: save it", lambda: (
@@ -715,7 +715,7 @@ def test_kb_flow(browser, contexts, ekte, lang: str) -> None:
     # ---- relays (End jumps to the last tab)
     flow.step("switch to the relays tab", lambda: (
         press(page, "#tab-providers", "End"), page.wait_for_selector("#panel-relays:not([hidden])")))
-    flow.step("relays: open the add form", lambda: press(page, "#add-relays > summary"))
+    flow.step("relays: open the add form", lambda: press(page, "#add-relays > .disclosure"))
     flow.step("relays: save without a name", lambda: (press(page, "#r-save"), wait_text(page, "#r-err")))
     flow.step("relays: save with a bad URL", lambda: (
         page.fill("#r-name", "A11y Relay"), page.fill("#r-url", "relay.example"), press(page, "#r-save"),

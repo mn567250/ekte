@@ -31,15 +31,17 @@
   // The markup of one disclosure (button + region), for pages that build it:
   //   EkteDisclosure.html({ id, label, body, open, lead, cls, bodyCls })
   // label and body are markup; id names the region; lead: chevron first (a
-  // row or group in a list); cls: extra classes on the button.
+  // row or group in a list); cls: extra classes on the button. The pair sits
+  // in a group (role="group", as a <details> is exposed), so assistive tech
+  // and the accessibility snapshots see one unit.
   function html(o) {
     var open = !!o.open;
     var cv = window.ekteIcon ? window.ekteIcon("chevronDown") : "";
-    return '<button type="button" class="disclosure' + (o.lead ? " lead" : "") + (o.cls ? " " + o.cls : "") +
+    return '<div class="disc" role="group"><button type="button" class="disclosure' + (o.lead ? " lead" : "") + (o.cls ? " " + o.cls : "") +
       '" data-disclosure aria-expanded="' + open + '" aria-controls="' + o.id + '">' +
       '<span class="t">' + o.label + '</span><span class="cv" aria-hidden="true">' + cv + "</span></button>" +
       '<div class="disclosure-body' + (o.bodyCls ? " " + o.bodyCls : "") + '" id="' + o.id + '"' + (open ? "" : " hidden") + ">" +
-      o.body + "</div>";
+      o.body + "</div></div>";
   }
   function isOpen(btn) { return !!btn && btn.getAttribute("aria-expanded") === "true"; }
 

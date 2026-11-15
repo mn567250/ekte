@@ -93,7 +93,7 @@
     - heading "All models 244 models" [level=2]
     - paragraph: "The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile."
     - group:
-      - text: Add a model
+      - button "Add a model" [expanded]
       - paragraph: Let an AI assistant research the model, then check its answer here before it is stored.
       - heading "1 Copy the research prompt" [level=3]
       - text: Model id id
@@ -105,7 +105,7 @@
       - button "Copy prompt"
       - status
       - group:
-        - text: Show the prompt
+        - button "Show the prompt" [expanded]
         - textbox "Prompt"
       - paragraph: Paste it into the AI assistant of your choice. It answers with one YAML document.
       - heading "2 Upload or paste the YAML" [level=3]
@@ -118,9 +118,10 @@
       - button "Check"
       - button "Save to knowledge base" [disabled]
     - group:
-      - text: Ai2 (Allen Institute for AI)
-      - code: ai2
-      - text: 6 models
+      - button "Ai2 (Allen Institute for AI) ai2 6 models" [expanded]:
+        - text: Ai2 (Allen Institute for AI)
+        - code: ai2
+        - text: 6 models
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct
