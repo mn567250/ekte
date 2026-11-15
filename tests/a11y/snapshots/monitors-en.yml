@@ -62,14 +62,10 @@
       - option "Chat (1)"
       - option "Embeddings"
       - option "Reranking"
-    - group "Relay / provider":
-      - text: Relay / provider
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "Claimed model":
-      - text: Claimed model
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: Relay / provider
+    - button "Relay / provider All": All
+    - text: Claimed model
+    - button "Claimed model All": All
     - text: Suite
     - combobox "Suite":
       - option "All" [selected]

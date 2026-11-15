@@ -49,22 +49,10 @@
       - option "Chat (15)"
       - option "Embeddinger"
       - option "Rerank"
-    - group "Relé / leverandør":
-      - text: Relé / leverandør
-      - checkbox "Example Relay (9)"
-      - text: Example Relay (9)
-      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
-      - text: gateway.a-very-long-relay-hostname.example.org (5)
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "Oppgitt modell":
-      - text: Oppgitt modell
-      - checkbox "model-a (11)"
-      - text: model-a (11)
-      - checkbox "model-b (3)"
-      - text: model-b (3)
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: Relé / leverandør
+    - button "Relé / leverandør Alle": Alle
+    - text: Oppgitt modell
+    - button "Oppgitt modell Alle": Alle
     - text: Testsett
     - combobox "Testsett":
       - option "Alle" [selected]

@@ -49,22 +49,10 @@
       - option "Chat (15)"
       - option "Embeddings"
       - option "Reranking"
-    - group "Relay / Anbieter":
-      - text: Relay / Anbieter
-      - checkbox "Example Relay (9)"
-      - text: Example Relay (9)
-      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
-      - text: gateway.a-very-long-relay-hostname.example.org (5)
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "Angegebenes Modell":
-      - text: Angegebenes Modell
-      - checkbox "model-a (11)"
-      - text: model-a (11)
-      - checkbox "model-b (3)"
-      - text: model-b (3)
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: Relay / Anbieter
+    - button "Relay / Anbieter Alle": Alle
+    - text: Angegebenes Modell
+    - button "Angegebenes Modell Alle": Alle
     - text: Suite
     - combobox "Suite":
       - option "Alle" [selected]

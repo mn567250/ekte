@@ -638,23 +638,42 @@
         return !q || valueLabel(k, c.value, options).toLowerCase().indexOf(q) >= 0 || c.value.toLowerCase().indexOf(q) >= 0;
       });
     }
+    /* The search text never goes through HTML: the box is drawn empty and
+     * msFill() puts the text back, and names it in the "nothing matches"
+     * line, through the DOM. */
     function popHTML(k) {
-      var all = choices(k), shown = msShown(k), q = pop && pop.k === k ? pop.q : "", id = "ekf-" + k;
-      var find = all.length >= SEARCH_FROM
+      var id = "ekf-" + k;
+      var find = choices(k).length >= SEARCH_FROM
         ? '<label class="ekf-ms-q"><span class="sr-only">' + esc(tr(MS[k].find)) + '</span><input class="in" type="search" id="' + id +
-          '-q" data-fk="' + k + ':q" data-msq="' + k + '" value="' + esc(q) + '" placeholder="' + esc(tr(MS[k].find)) + '" autocomplete="off" /></label>'
+          '-q" data-fk="' + k + ':q" data-msq="' + k + '" placeholder="' + esc(tr(MS[k].find)) + '" autocomplete="off" /></label>'
         : "";
-      var acts = '<div class="ekf-ms-acts"><button type="button" class="linkbtn" data-fk="' + k + ':all" data-msa="all">' +
-        esc(q.trim() ? tr(["全选显示项", "Select shown"]) : tr(["全选", "Select all"])) + "</button>" +
+      var acts = '<div class="ekf-ms-acts"><button type="button" class="linkbtn" data-fk="' + k + ':all" data-msa="all"></button>' +
         '<button type="button" class="linkbtn" data-fk="' + k + ':none" data-msa="none">' + esc(tr(["清除", "Clear"])) + "</button></div>";
+      return '<div class="ekf-ms-head">' + find + acts + '</div><div class="ekf-ms-body">' + listHTML(k) + "</div>";
+    }
+    // the checkboxes the search leaves, or an empty "nothing matches" line
+    function listHTML(k) {
+      var shown = msShown(k), id = "ekf-" + k;
       var items = shown.map(function (c, i) {
         return '<li><label class="ekf-opt"><input type="checkbox" id="' + id + "-" + i + '" data-fk="' + esc(k + ":v:" + c.value) + '" data-m="' + k +
           '" value="' + esc(c.value) + '"' + (st[k].indexOf(c.value) >= 0 ? " checked" : "") + " /><span>" +
           esc(valueLabel(k, c.value, options)) + runs(c.runs) + "</span></label></li>";
       }).join("");
-      return '<div class="ekf-ms-head">' + find + acts + "</div>" +
-        (shown.length ? '<ul class="ekf-ms-list">' + items + "</ul>"
-          : '<p class="ekf-ms-none">' + esc(Tf("没有匹配“{q}”的项", "Nothing matches “{q}”", { q: q.trim() })) + "</p>");
+      return shown.length ? '<ul class="ekf-ms-list">' + items + "</ul>" : '<p class="ekf-ms-none"></p>';
+    }
+    // the parts that show the search text, set as text
+    function msFill(k) {
+      var p = section.querySelector("#ekf-" + k + "-p");
+      if (!p || !pop || pop.k !== k) return;
+      var q = pop.q, qi = p.querySelector("[data-msq]"), all = p.querySelector('[data-msa="all"]'), none = p.querySelector(".ekf-ms-none");
+      if (qi && qi.value !== q) qi.value = q;
+      if (all) all.textContent = q.trim() ? tr(["全选显示项", "Select shown"]) : tr(["全选", "Select all"]);
+      if (none) none.textContent = Tf("没有匹配“{q}”的项", "Nothing matches “{q}”", { q: q.trim() });
+    }
+    // after a change in the list: only the checkboxes are drawn again
+    function msList(k) {
+      var body = section.querySelector("#ekf-" + k + "-p .ekf-ms-body");
+      if (body) { body.innerHTML = listHTML(k); msFill(k); }
     }
     // a list that would stick out of the panel (or the viewport) opens to the
     // left of its button's right edge instead
@@ -672,6 +691,7 @@
       var p = section.querySelector("#ekf-" + k + "-p"), b = section.querySelector("#ekf-" + k + "-b");
       if (!p || !b) { pop = null; return; }
       p.innerHTML = popHTML(k);
+      msFill(k);
       p.hidden = false;
       b.setAttribute("aria-expanded", "true");
       place(k);
@@ -770,6 +790,7 @@
         // the list went away with its field (a page without it now): closed
         if (!section.querySelector("#ekf-" + pop.k + "-p")) pop = null;
         else {
+          msFill(pop.k);
           place(pop.k);
           // the caret stays at the end of the search text
           var qi = document.activeElement;
@@ -927,11 +948,7 @@
       if (mq && pop && pop.k === mq) {
         // only the list changes; the field and its caret stay
         pop.q = ev.target.value;
-        var at = ev.target.selectionStart, box = section.querySelector("#ekf-" + mq + "-p");
-        box.innerHTML = popHTML(mq);
-        var qi = box.querySelector("[data-msq]");
-        qi.focus();
-        try { qi.setSelectionRange(at, at); } catch (e) { /* ignore */ }
+        msList(mq);
         var n = msShown(mq).length;
         say(Tf("显示 {n} / {total} 项", "{n} of {total} shown", { n: num(n), total: num(choices(mq).length) }));
         return;
@@ -963,10 +980,9 @@
           var add = msShown(mk).map(function (c) { return c.value; });
           patch[mk] = st[mk].concat(add.filter(function (v) { return st[mk].indexOf(v) < 0; }));
         }
-        // the list is re-drawn with its new ticks; focus stays on the link
+        // the checkboxes are drawn again with their new ticks; focus stays on the link
         if (set(patch).length) {
-          var box = section.querySelector("#ekf-" + mk + "-p");
-          if (box) { box.innerHTML = popHTML(mk); var again = box.querySelector('[data-msa="' + a.getAttribute("data-msa") + '"]'); if (again) again.focus(); }
+          msList(mk);
         }
       }
     });

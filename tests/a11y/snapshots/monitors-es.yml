@@ -62,14 +62,10 @@
       - option "Chat (1)"
       - option "Embeddings"
       - option "Reordenación"
-    - group "Relay / proveedor":
-      - text: Relay / proveedor
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "Modelo declarado":
-      - text: Modelo declarado
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: Relay / proveedor
+    - button "Relay / proveedor Todos": Todos
+    - text: Modelo declarado
+    - button "Modelo declarado Todos": Todos
     - text: Suite
     - combobox "Suite":
       - option "Todos" [selected]

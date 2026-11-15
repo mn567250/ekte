@@ -57,22 +57,10 @@
       - option "Chat (15)"
       - option "Embeddings"
       - option "Reclassement"
-    - group "Relais / fournisseur":
-      - text: Relais / fournisseur
-      - checkbox "Example Relay (9)"
-      - text: Example Relay (9)
-      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
-      - text: gateway.a-very-long-relay-hostname.example.org (5)
-      - checkbox "127.0.0.1:9099 (1)"
-      - text: 127.0.0.1:9099 (1)
-    - group "Modèle annoncé":
-      - text: Modèle annoncé
-      - checkbox "model-a (11)"
-      - text: model-a (11)
-      - checkbox "model-b (3)"
-      - text: model-b (3)
-      - checkbox "gpt-4o (1)"
-      - text: gpt-4o (1)
+    - text: Relais / fournisseur
+    - button "Relais / fournisseur Tous": Tous
+    - text: Modèle annoncé
+    - button "Modèle annoncé Tous": Tous
     - text: Suite
     - combobox "Suite":
       - option "Tous" [selected]
