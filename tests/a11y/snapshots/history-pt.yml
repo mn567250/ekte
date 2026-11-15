@@ -176,7 +176,7 @@
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "26/09/2026, 08:02 Globalmente fiável Pontuação 70 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "26/09/2026, 08:02 Globalmente fiável Pontuação 70 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Esta execução foi gerada por um monitor" [disabled]
         - button "Eliminar entrada"
@@ -204,17 +204,17 @@
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "29/09/2026, 11:02 Gato por lebre Pontuação 60 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 11:02 Gato por lebre Pontuação 60 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Esta execução foi gerada por um monitor" [disabled]
         - button "Eliminar entrada"
       - listitem:
-        - button "29/09/2026, 10:02 Globalmente fiável Pontuação 66 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 10:02 Globalmente fiável Pontuação 66 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Esta execução foi gerada por um monitor" [disabled]
         - button "Eliminar entrada"
       - listitem:
-        - button "29/09/2026, 09:02 Gato por lebre Pontuação 58 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 09:02 Gato por lebre Pontuação 58 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Esta execução foi gerada por um monitor" [disabled]
         - button "Eliminar entrada"

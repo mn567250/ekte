@@ -176,7 +176,7 @@
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "26.09.2026, 08:02 Weitgehend vertrauenswürdig Score 70 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "26.09.2026, 08:02 Weitgehend vertrauenswürdig Score 70 Note D Überwachung check · standard openai · Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Dieser Lauf stammt von einer Überwachung" [disabled]
         - button "Eintrag löschen"
@@ -204,17 +204,17 @@
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "29.09.2026, 11:02 Etikettenschwindel Score 60 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 11:02 Etikettenschwindel Score 60 Note D Überwachung check · standard openai · Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Dieser Lauf stammt von einer Überwachung" [disabled]
         - button "Eintrag löschen"
       - listitem:
-        - button "29.09.2026, 10:02 Weitgehend vertrauenswürdig Score 66 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 10:02 Weitgehend vertrauenswürdig Score 66 Note D Überwachung check · standard openai · Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Dieser Lauf stammt von einer Überwachung" [disabled]
         - button "Eintrag löschen"
       - listitem:
-        - button "29.09.2026, 09:02 Etikettenschwindel Score 58 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 09:02 Etikettenschwindel Score 58 Note D Überwachung check · standard openai · Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Dieser Lauf stammt von einer Überwachung" [disabled]
         - button "Eintrag löschen"

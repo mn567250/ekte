@@ -176,7 +176,7 @@
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "26 sept. 2026, 08:02 Globalement fiable Score 70 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "26 sept. 2026, 08:02 Globalement fiable Score 70 Note D Surveillance check · standard openai · Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Cette exécution provient d’une surveillance" [disabled]
         - button "Supprimer l'entrée"
@@ -204,17 +204,17 @@
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "29 sept. 2026, 11:02 Tromperie sur la marchandise Score 60 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 11:02 Tromperie sur la marchandise Score 60 Note D Surveillance check · standard openai · Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Cette exécution provient d’une surveillance" [disabled]
         - button "Supprimer l'entrée"
       - listitem:
-        - button "29 sept. 2026, 10:02 Globalement fiable Score 66 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 10:02 Globalement fiable Score 66 Note D Surveillance check · standard openai · Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Cette exécution provient d’une surveillance" [disabled]
         - button "Supprimer l'entrée"
       - listitem:
-        - button "29 sept. 2026, 09:02 Tromperie sur la marchandise Score 58 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 09:02 Tromperie sur la marchandise Score 58 Note D Surveillance check · standard openai · Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Cette exécution provient d’une surveillance" [disabled]
         - button "Supprimer l'entrée"
