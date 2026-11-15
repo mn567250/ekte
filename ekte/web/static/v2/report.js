@@ -238,7 +238,7 @@
   function scoreC(v) {
     return v == null ? "grey" : v >= 85 ? "good" : v >= 70 ? "warn" : "bad";
   }
-  // the verdict's figures as compact KPI tiles (kpi.js, #208): the health
+  // the verdict's figures as compact KPI tiles (kpi.js, issue 208): the health
   // score (coloured by its band, the rating spoken with it) and the confidence
   function scoreTiles(v, sc, scoreTxt) {
     var K = window.EkteKpi;

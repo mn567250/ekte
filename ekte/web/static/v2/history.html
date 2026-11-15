@@ -92,7 +92,7 @@
   .gtitle .gu .glink .zicon { width: 13px; height: 13px; }
   /* group trends (one or two of score, grade, latency p50, TTFT p50, decode
      speed p50, error rate: GET /api/metrics history_trends), compact KPI
-     tiles (kpi.js / kpi.css, #208). Every tile has
+     tiles (kpi.js / kpi.css, issue 208). Every tile has
      a fixed size that depends only on its metric, never on its values or on
      which other trends are shown, so the trends line up across groups:
        [ sparkline (--sw, both rows) | caption over latest value (--vw) ]
@@ -1163,7 +1163,7 @@
       return { id: id, label: name, text: shown, unit: unit, family: last.family || "grey",
         slot: pts.length >= 2 ? sparkSVG(pts, lo, hi, label, true, SPARK_W, SPARK_H) : gap };
     });
-    // the KPI tiles' compact variant (kpi.js, #208), right-aligned
+    // the KPI tiles' compact variant (kpi.js, issue 208), right-aligned
     return window.EkteKpi.html(tiles, { variant: "compact", align: "end", cls: "trend", label: T("趋势图", "Trends") });
   }
 

@@ -17,7 +17,7 @@
 .zr .vpill { font-family: var(--disp); font-size: 14px; font-weight: 600; padding: 6px 14px; white-space: normal; }
 .zr .vmeta h2 { font-family: var(--disp); font-weight: 600; font-size: 21px; letter-spacing: -0.01em; margin: 11px 0 0; line-height: 1.18; }
 .zr .vmeta .sum { color: var(--ink-muted); font-size: 14.5px; line-height: 1.6; margin: 9px 0 0; }
-/* the verdict's figures: compact KPI tiles (kpi.css, #208) */
+/* the verdict's figures: compact KPI tiles (kpi.css, issue 208) */
 .zr .vscores { margin-top: 13px; }
 .zr .vscores .kpi { font-size: 18px; }
 

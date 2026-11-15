@@ -1,5 +1,5 @@
 /* ekte web UI v2 — KPI tiles: one look and one behaviour for every key
- * figure of the UI (#208): the Analytics key figures and panel headlines, the
+ * figure of the UI (issue 208): the Analytics key figures and panel headlines, the
  * live performance panel, the report's performance section and verdict
  * scores, and the History group trends.
  *

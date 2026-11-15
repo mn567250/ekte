@@ -703,7 +703,7 @@
     return stats && stats.p50 != null ? stats.p50 : null;
   }
   // The KPI tiles (window.EkteKpi, /static/kpi.js: the UI's one tile look,
-  // #208) of some { id, label, text, unit } tiles.
+  // issue 208) of some { id, label, text, unit } tiles.
   function kpiHTML(list, label) {
     var K = window.EkteKpi;
     return K ? '<div class="zp-kpis">' + K.html(list, { label: label }) + "</div>" : "";
