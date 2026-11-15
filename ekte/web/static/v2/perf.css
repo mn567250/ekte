@@ -14,7 +14,6 @@
   --zp-ink2: var(--ink-muted);
   --zp-faint: var(--ink-muted);
   --zp-grid: var(--line);
-  --zp-tile: var(--sunken);
   --zp-track: var(--sunken);
   --zp-tab: var(--surface);
   --zp-tab-on: var(--primary);
@@ -46,7 +45,6 @@
 :root .zp-seg button { transition: background 0.15s, color 0.15s; }
 :root .zp-seg button:not([aria-pressed="true"]):not(:disabled):hover { color: var(--ink); }
 :root .zp-tabs button:not(.on):hover { color: var(--ink); border-color: var(--line); }
-:root .zp-tl { letter-spacing: 0.3px; }
 /* the live probe bar has the audit progress bar's (.pbar) shape and motion */
 :root .zp-bar { height: 6px; }
 :root .zp-bar i { transition: width 0.4s ease; }

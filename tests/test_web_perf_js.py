@@ -18,6 +18,7 @@ _JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;  // no DOM: the style injection must be skipped
+require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 const perf = JSON.parse(process.argv[2]);
 const P = window.EktePerf;
@@ -116,7 +117,7 @@ def test_perf_js_css_colours_only_through_variables():
     assert defaults
     decls = dict(d.split(":", 1) for d in defaults.group(1).split(";"))
     assert all(k.startswith("--zp-") for k in decls)
-    assert decls["--zp-t"] == "#2a78d6" and decls["--zp-tile"] == "#f5f8f4"  # built-in defaults
+    assert decls["--zp-t"] == "#2a78d6" and decls["--zp-panel"] == "#fff"  # built-in defaults
     rest = css[defaults.end():]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b|rgba?\(|(?<![\w-])(white|black)(?![\w-])", rest)
     # v2 maps every property the injected CSS uses.
@@ -153,6 +154,7 @@ _LIVE_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };  // after load: style injection stays skipped
 const host = { innerHTML: "", contains: () => false, querySelector: () => null, querySelectorAll: () => [] };
@@ -177,8 +179,8 @@ def test_live_tiles_show_ttft_and_decode_speed_for_streamed_calls():
                       start_ms=i * 100.0, duration_ms=900.0, ttft_ms=250.0, decode_tps_local=80.0)
         for i in range(3)
     ])
-    assert "TTFT p50</div><div class=\"zp-tv\">250 ms" in html
-    assert "Decode speed p50</div><div class=\"zp-tv\">80.0 tok/s" in html
+    assert '<span class="kl">TTFT p50</span>' in html and 'data-kv="ttft_p50">250<small>ms</small>' in html
+    assert '<span class="kl">Decode speed p50</span>' in html and 'data-kv="decode_tps">80.0<small>tok/s</small>' in html
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
@@ -188,14 +190,15 @@ def test_live_tiles_fall_back_to_end_to_end_speed_without_streamed_calls():
                       start_ms=i * 100.0, duration_ms=1000.0, e2e_tps_local=42.0)
         for i in range(3)
     ])
-    assert "TTFT p50</div><div class=\"zp-tv\">—<" in html  # no first token without streaming
-    assert "End-to-end speed p50</div><div class=\"zp-tv\">42.0 tok/s" in html
+    assert 'data-kv="ttft_p50">—</span>' in html  # no first token without streaming
+    assert '<span class="kl">End-to-end speed p50</span>' in html and 'data-kv="decode_tps">42.0<small>tok/s</small>' in html
 
 
 _AXIS_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 const recs = JSON.parse(process.argv[2]);
 console.log(JSON.stringify({chart: window.EktePerf.chart(recs, "ttft"), axis: window.EktePerf.niceAxis(510)}));
@@ -234,6 +237,7 @@ global.document = undefined;
 let made = 0;
 const Real = Intl.NumberFormat;
 Intl.NumberFormat = function (locale, opts) { made++; return new Real(locale, opts); };
+require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 const P = window.EktePerf;
 const recs = JSON.parse(process.argv[2]);
@@ -277,6 +281,7 @@ _LIVE_OPEN_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };
 const out = {};
@@ -378,6 +383,7 @@ def _drive_live_panel(page) -> None:
     errors: list[str] = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.set_content('<!doctype html><html lang="en"><head><title>t</title></head><body><div id="host"></div></body></html>')
+    page.add_script_tag(content=(_STATIC / "v2" / "kpi.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "perf.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=_REC_JS)
     page.evaluate("""() => {
@@ -385,7 +391,7 @@ def _drive_live_panel(page) -> None:
       L.reset({probeTotal: 50, hasBaseline: true});
       for (let i = 0; i < 20; i++) L.records.push(mk(i, i !== 5));
       L.render();
-      window.firstTile = document.querySelector('.zp-tv');
+      window.firstTile = document.querySelector('.zp-kpis .kpi');
       window.firstTab = document.querySelector('.zp-tabs [data-metric="ttft"]');
       window.firstSummary = document.querySelector('.zp-data summary');
     }""")
@@ -395,10 +401,10 @@ def _drive_live_panel(page) -> None:
     page.focus('.zp-tabs [data-metric="ttft"]')
     page.evaluate("() => { L.records.push(mk(20)); L.render(); }")
     state = page.evaluate("""() => ({
-      sameTile: document.querySelector('.zp-tv') === firstTile,
+      sameTile: document.querySelector('.zp-kpis .kpi') === firstTile,
       sameTab: document.querySelector('.zp-tabs [data-metric="ttft"]') === firstTab,
       focus: document.activeElement.getAttribute('data-metric'),
-      requests: document.querySelector('.zp-tv').textContent,
+      requests: document.querySelector('.zp-kpis [data-kv=requests]').textContent,
       now: document.querySelector('.zp-bar').getAttribute('aria-valuenow'),
       width: document.querySelector('.zp-bar i').style.width,
       label: document.querySelector('.zp-chart').getAttribute('aria-label'),
@@ -475,6 +481,7 @@ _SCALE_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };
 const P = window.EktePerf;
@@ -564,6 +571,7 @@ _PARITY_JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;
+require(path.join(process.argv[1], "v2", "kpi.js"));
 require(path.join(process.argv[1], "perf.js"));
 console.log(JSON.stringify({chart: window.EktePerf.chart(JSON.parse(process.argv[2]), "latency")}));
 """
@@ -641,6 +649,7 @@ def _live_page(page, motion_off: bool = False) -> None:
     page.set_content('<!doctype html><html lang="en"' + (' data-motion="off"' if motion_off else "") +
                      '><head><title>t</title></head><body style="width:760px"><div id="host"></div></body></html>')
     page.add_style_tag(content=(_STATIC / "v2" / "chartmotion.css").read_text(encoding="utf-8"))
+    page.add_script_tag(content=(_STATIC / "v2" / "kpi.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "perf.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=(_STATIC / "v2" / "chartmotion.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=_MOTION_REC_JS)
@@ -752,7 +761,11 @@ def test_perf_js_endpoint_line_shows_network_and_ekte_failures():
     perf.target.local_errors = 1
     perf.target.retried = 3
     section = _render(perf.model_dump_json())["section"]
-    line = re.search(r'<p class="zp-muted">([^<]*succeeded[^<]*)</p>', section).group(1)
+    # successes, timeouts and 429s are tiles (#208); the line keeps the rest
+    tiles = section.split('<div class="zp-kpis">')[1].split("</ul>")[0]
+    for tid in ("latency_p50", "error_rate", "succeeded", "timeout_rate", "rate_limited_rate"):
+        assert f'data-id="{tid}"' in tiles, tid
+    line = re.search(r'<p class="zp-muted">([^<]*network failures[^<]*)</p>', section).group(1)
     assert "2 network failures (not the relay&#39;s)" in line or "2 network failures (not the relay's)" in line
     assert "1 ekte failures (not the relay" in line and "3 repeated" in line
 
