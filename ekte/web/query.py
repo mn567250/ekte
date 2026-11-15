@@ -867,11 +867,21 @@ def _grouped(
     names = [d[0] for d in cur.description]
     first = len(names) - sum(len(s.aggs) for s in specs)  # the metrics' aggregates come last
     rows = []
+    labels: Mapping[str, str] = {}
+    if "rl" in names:
+        # every relay as History, the filter chips and the monitors name it
+        # (history_api.relay_labels: a relay of no knowledge-base entry by its
+        # host, host and path when several share it), never its raw URL; read
+        # from the few relay_group rows, not the per-URL relay_map
+        from ekte.web.history_api import url_labels
+        labels = url_labels(str(k) for (k,) in conn.execute("SELECT relay_key FROM relay_group WHERE kind = 'url'"))
     for row in map(tuple, cur.fetchall()):
         r = dict(zip(names, row, strict=True))
         if not r["runs"]:  # without GROUP BY an empty selection still gives one row
             continue
         r["_aggs"] = row[first:]
+        if "rl" in r:
+            r["rl"] = labels.get(str(r["rk"]), r["rl"])
         rows.append(r)
     return specs, rows
 

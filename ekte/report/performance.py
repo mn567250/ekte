@@ -434,7 +434,7 @@ def time_ticks(
     out: list[tuple[float, str]] = []
     j = 0
     while (sec := step * j) <= x_max + 1e-9:
-        label = f"{fmt_num(sec)}s"
+        label = f"{fmt_num(sec)} s"  # a space before the unit, as the web UI (fmt.js)
         if j and x(sec) + len(label) * half_char > right:
             break
         out.append((x(sec), label))

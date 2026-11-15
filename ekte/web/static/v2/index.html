@@ -370,6 +370,7 @@
 </div>
 
 <script src="/i18n.js"></script>
+<script src="/static/fmt.js"></script>
 <script src="/static/kpi.js"></script>
 <script src="/perf.js"></script>
 <script src="/static/chartmotion.js"></script>
@@ -389,8 +390,9 @@
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return [].slice.call(document.querySelectorAll(s)); };
   var T = function (zh, en) { return window.EKTE_LANG ? EKTE_LANG.t(zh, en) : en; };
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   var Tf = function (zh, en, vars) {
-    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    return window.EkteFmt.fill(T(zh, en), vars);
   };
   var srv = function (s) { return window.EKTE_LANG ? EKTE_LANG.server(s) : s; };
   var ico = function (name, opts) { return window.ekteIcon ? ekteIcon(name, opts || {}) : ""; };
@@ -636,7 +638,7 @@
   // Wall-clock of the audit and of the check in progress (display only: the
   // times of finished checks come from the server).
   var clock = { t0: 0, timer: null, li: null, start: 0 };
-  function dur(ms) { return window.EkteReport ? EkteReport.duration(ms) : Math.round(ms) + " ms"; }
+  function dur(ms) { return EkteFmt.elapsed(ms); }
   function tick() {
     renderCount();
     var ms = clock.li && clock.li.querySelector(".ms");

@@ -1,0 +1,9 @@
+{
+ "strings": {
+  "milliseconds": "milisegundos",
+  "percent": "porcentaje",
+  "percentage points": "puntos porcentuales",
+  "tokens": "tokens",
+  "tokens per second": "tokens por segundo"
+ }
+}

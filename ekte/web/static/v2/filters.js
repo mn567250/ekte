@@ -149,8 +149,9 @@
     });
   }
   function tr(pair) { return typeof T === "function" ? T(pair[0], pair[1]) : pair[1]; }
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   function Tf(zh, en, vars) {
-    return tr([zh, en]).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    return window.EkteFmt.fill(tr([zh, en]), vars);
   }
   function isArr(v) { return Array.isArray(v); }
   function same(a, b) {

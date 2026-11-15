@@ -40,8 +40,9 @@
   "use strict";
 
   var T = function (zh, en) { return window.T ? window.T(zh, en) : en; };
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   var Tf = function (zh, en, vars) {
-    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    return window.EkteFmt.fill(T(zh, en), vars);
   };
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {

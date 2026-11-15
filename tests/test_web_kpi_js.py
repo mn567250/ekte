@@ -16,6 +16,7 @@ _JS = r"""
 const path = require("path");
 global.window = {};
 global.document = undefined;  // no DOM: html() and fromServer() only
+require(path.join(process.argv[1], "fmt.js"));
 require(path.join(process.argv[1], "kpi.js"));
 const K = window.EkteKpi;
 const cases = JSON.parse(process.argv[2]);

@@ -104,14 +104,23 @@ def _coverage(n: int, total: int) -> float | None:
 
 
 def _load(surface: str, resolver: RelayResolver | None = None) -> list[dict[str, Any]]:
+    from dataclasses import replace
+
+    from ekte.web.history_api import url_labels
+
     resolver = resolver or RelayResolver()
+    every = runs()
+    # an unsaved relay is named as History names it: by its host (host and
+    # path when several share it), over the URLs of every run (issue 229)
+    names = url_labels(g.key for g in map(resolver.resolve, every) if g.kind == "url" and g.key != UNKNOWN_RELAY)
     out = []
-    for run in runs():
+    for run in every:
         if run["surface"] != surface:
             continue
         t = analytics_store.parse_ts(run.get("started_at"))
         run["_t"] = t if t is not None and _T_MIN <= t < _T_MAX else None
-        run["_group"] = resolver.resolve(run)
+        g = resolver.resolve(run)
+        run["_group"] = replace(g, label=names[g.key]) if g.key in names else g
         out.append(run)
     return out
 

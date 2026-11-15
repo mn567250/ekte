@@ -39,10 +39,9 @@
   var L = window.EKTE_LANG;
 
   function T(zh, en) { return window.T ? window.T(zh, en) : en; }
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   function Tf(zh, en, vals) {
-    var s = T(zh, en);
-    Object.keys(vals || {}).forEach(function (k) { s = s.split("{" + k + "}").join(String(vals[k])); });
-    return s;
+    return window.EkteFmt.fill(T(zh, en), vals);
   }
   function icon(name, opts) { return typeof window.ekteIcon === "function" ? window.ekteIcon(name, opts) : ""; }
   function esc(s) {

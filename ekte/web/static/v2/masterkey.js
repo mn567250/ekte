@@ -34,12 +34,9 @@
     return typeof window.T === "function" ? window.T(zh, en) : en;
   }
   // T(zh, en) with {name} placeholders filled after translation.
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   function Tf(zh, en, vals) {
-    var s = T(zh, en);
-    Object.keys(vals || {}).forEach(function (k) {
-      s = s.split("{" + k + "}").join(String(vals[k]));
-    });
-    return s;
+    return window.EkteFmt.fill(T(zh, en), vals);
   }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {

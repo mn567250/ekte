@@ -75,12 +75,9 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
     });
   }
-  // Fill "{name}" placeholders of an already translated template.
-  function fill(s, vals) {
-    return String(s).replace(/\{(\w+)\}/g, function (m, k) {
-      return Object.prototype.hasOwnProperty.call(vals, k) ? vals[k] : m;
-    });
-  }
+  // Fill "{name}" placeholders of an already translated template (fmt.js,
+  // as on every page: numbers grouped in the UI locale, issue 229).
+  function fill(s, vals) { return window.EkteFmt.fill(s, vals); }
   function loc() {
     return window.EKTE_LANG && window.EKTE_LANG.locale ? window.EKTE_LANG.locale() : undefined;
   }
@@ -113,7 +110,7 @@
   }
   function num(v, unit) {
     if (v == null || isNaN(v)) return "—";
-    if (unit === "ratio") return fixed(v * 100, 1) + "%";
+    if (unit === "ratio") return window.EkteFmt.unit(v, "ratio");
     var a = Math.abs(v);
     if (v === 0 || a >= 100) return format(Math.round(v));
     return fixed(v, a >= 10 ? 1 : 2);
@@ -229,7 +226,7 @@
     for (var j = 0; ; j++) {
       var s = xa.step * j;
       if (s > xa.max + 1e-9) break;
-      var label = num(s) + "s", px = x(s);
+      var label = num(s) + " s", px = x(s);
       if (j && px + label.length * TICK_HALF > right) break;
       out.push({ label: label, x: px, anchor: j ? "middle" : "start" });
     }

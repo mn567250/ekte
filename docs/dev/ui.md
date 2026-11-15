@@ -31,6 +31,23 @@ tokens, on an unknown token and on a timing constant in a script;
 `tests/a11y/test_control_sizes.py` fails when a rendered field, select or
 button is not 32, 40 or 48 px tall.
 
+Every number, unit, count and relay name a page shows goes through
+`v2/fmt.js` (`window.EkteFmt`, loaded on every page right after `/i18n.js`):
+`num`, `unit` / `parts` (locale grouping, a space before the unit, the same
+decimals per unit: "1,300 ms", "12.5%", "4.2 tok/s"), `delta`, `unitName`
+(written out for axis captions: "milliseconds"), `runs` / `requests` /
+`models` ("1 run", "1,300 runs"), `elapsed`, `duration`, `bytes` and
+`relay` (the server's relay label, cut in the middle with "…" past 40
+characters, the full name in the title and for screen readers). Every page's
+`Tf(zh, en, vars)` fills its placeholders with `EkteFmt.fill`, so a number in
+a sentence is grouped too ("{n} runs"), except right after `#` (an id: "run
+#42"). The server names relays one way everywhere (`history_api.relay_labels`:
+a saved name, else the host, host and path when several share it), the
+Analytics series included. `tests/test_web_formatters.py` fails when a page
+does not load `fmt.js`, fills placeholders itself, glues a unit to a number,
+shows `String(Math.round(…))` or breaks names with `<wbr>` (CSS and SVG values
+are exempt; a reviewed exception carries `// fmt-ok: <reason>`).
+
 Every v2 page but Accessibility has one **page notice** right under its hero
 (`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
 in `ekte.css`): `EkteNotice.show(el, {level, title, detail, items, actions})`

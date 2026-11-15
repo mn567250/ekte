@@ -26,6 +26,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "fmt.js"));
 require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const el = { querySelectorAll: () => [], querySelector: () => null };
@@ -49,6 +50,7 @@ def _render(tmp_path: Path, lang: str, report: dict, opts: dict | None = None) -
     for name in ("lang.js", "i18n.js", "icons.js"):
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir(exist_ok=True)
+    shutil.copy(_STATIC / "v2" / "fmt.js", tmp_path / "v2" / "fmt.js")
     shutil.copy(_STATIC / "v2" / "kpi.js", tmp_path / "v2" / "kpi.js")
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     opts_file = tmp_path / "opts.json"
@@ -101,8 +103,8 @@ def test_report_severity_dots_meters_and_summary(tmp_path):
     assert re.findall(r'data-dl="(\w+)">([^<]+)<', foot) == [
         ("json", "JSON"), ("md", "Markdown"), ("html", "HTML"), ("pdf", "PDF")]
     assert 'role="group" aria-label="Download report"' in foot and 'class="dl-msg" role="status"' in foot
-    # report.js adds only EkteReport (EkteKpi is the KPI tiles it draws with, kpi.js)
-    assert [g for g in out["globals"] if g.startswith("Ekte")] == ["EkteKpi", "EkteReport"]
+    # report.js adds only EkteReport (EkteKpi: the KPI tiles it draws with, kpi.js; EkteFmt: the formatters, fmt.js)
+    assert [g for g in out["globals"] if g.startswith("Ekte")] == ["EkteFmt", "EkteKpi", "EkteReport"]
 
 
 @needs_node
@@ -193,6 +195,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "fmt.js"));
 require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const rep = JSON.parse(reportJson), D = window.EkteReport.download;
@@ -480,6 +483,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "fmt.js"));
 require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const R = window.EkteReport;
@@ -512,12 +516,14 @@ const path = require("path");
 const [dir, reportJson] = process.argv.slice(1);
 global.window = { addEventListener() {} };
 global.document = undefined;  // perf.js skips its style injection without a DOM
+require(path.join(dir, "v2", "fmt.js"));
 require(path.join(dir, "perf.js"));
 global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete",
                     querySelectorAll: () => [], addEventListener() {} };
 global.localStorage = { getItem: () => "en", setItem() {} };
 for (const m of ["locales.js", "lang.js", "i18n.js", "icons.js"]) require(path.join(dir, m));
 require(path.join(dir, "v2", "kpi.js"));
+require(path.join(dir, "v2", "fmt.js"));
 require(path.join(dir, "v2", "report.js"));
 const el = { querySelectorAll: () => [], querySelector: () => null };
 window.EkteReport.render(el, JSON.parse(reportJson), {});
@@ -570,6 +576,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "fmt.js"));
 require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const report = JSON.parse(reportJson);
@@ -600,6 +607,7 @@ def test_intl_formatters_are_cached_and_output_unchanged(tmp_path, lang):
     for name in ("lang.js", "i18n.js", "icons.js"):
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir()
+    shutil.copy(_STATIC / "v2" / "fmt.js", tmp_path / "v2" / "fmt.js")
     shutil.copy(_STATIC / "v2" / "kpi.js", tmp_path / "v2" / "kpi.js")
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
@@ -656,6 +664,7 @@ require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "fmt.js"));
 require(path.join(dir, "v2", "kpi.js"));
 require(path.join(dir, "v2", "report.js"));
 const report = JSON.parse(reportJson);
@@ -678,6 +687,7 @@ def test_download_drops_the_chart_trend_lines(tmp_path):
     for name in ("lang.js", "i18n.js", "icons.js"):
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir()
+    shutil.copy(_STATIC / "v2" / "fmt.js", tmp_path / "v2" / "fmt.js")
     shutil.copy(_STATIC / "v2" / "kpi.js", tmp_path / "v2" / "kpi.js")
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     report = perf_report().model_dump(mode="json")

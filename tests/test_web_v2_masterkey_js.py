@@ -14,6 +14,7 @@ _JS = r"""
 const path = require("path");
 global.window = { addEventListener() {}, dispatchEvent() {} };
 global.Event = function (t) { this.type = t; };
+require(path.join(process.argv[1], "fmt.js"));
 require(path.join(process.argv[1], "masterkey.js"));
 const M = window.EkteMasterKey;
 const out = {};

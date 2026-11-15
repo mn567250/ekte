@@ -20,6 +20,24 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: one formatter for numbers, units and relay names ([#229](https://github.com/mn567250/ekte/issues/229))
+
+History showed latency as "1300ms", Analytics as "1,900 ms"; the Analytics
+trend legend named relays by their full URL while the chips above it used
+the host. Every number, unit, count and relay name now goes through one
+module, `fmt.js`, and a test keeps pages from formatting by hand again.
+
+- **Numbers and units:** locale grouping and a space before the unit on every
+  page ("1,300 ms", "p50 1,300 ms", "45%"), the same decimals per unit;
+  counts in sentences are grouped too ("1,300 runs"). The audit performance
+  chart's time ticks read "100 s" on the page and in the exported report.
+- **Units written out** in chart axis captions ("milliseconds", "tokens per
+  second"); dense tables keep the short form.
+- **One relay name:** the Analytics series, legends, tables and notes use the
+  name History, the filters and Monitors use (a saved name, else the host),
+  never the raw URL; a long name is cut in the middle with "…" instead of
+  breaking mid-word, the full name in its tooltip and for screen readers.
+
 ### Web UI: one set of design tokens, enforced ([#213](https://github.com/mn567250/ekte/issues/213))
 
 Font sizes, letter-spacing, radii, control heights and motion were written

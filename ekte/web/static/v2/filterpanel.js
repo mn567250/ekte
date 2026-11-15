@@ -40,8 +40,9 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   function Tf(zh, en, vars) {
-    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+    return window.EkteFmt.fill(T(zh, en), vars);
   }
   var ico = function (n) { return window.ekteIcon ? window.ekteIcon(n, {}) : ""; };
   // the attributes a field is found again by after a re-render

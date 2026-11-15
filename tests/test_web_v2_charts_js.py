@@ -23,6 +23,7 @@ const path = require("path");
 const stub = () => ({ addEventListener() {}, setAttribute() {}, querySelector: stub });
 global.document = { addEventListener() {}, removeEventListener() {} };
 global.window = {};
+require(path.join(process.argv[1], "fmt.js"));
 require(path.join(process.argv[1], "charts.js"));
 const C = window.EkteCharts;
 const [kind, cfg] = JSON.parse(process.argv[2]);

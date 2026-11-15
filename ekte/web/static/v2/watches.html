@@ -229,6 +229,7 @@
   </main>
 </div>
 <script src="/i18n.js"></script>
+<script src="/static/fmt.js"></script>
 <script src="/icons.js"></script>
 <script src="/static/tabs.js"></script>
 <script src="/static/jobs.js"></script>
@@ -256,12 +257,9 @@
     });
   }
   // T(zh, en) with {name} placeholders filled after translation.
+  // placeholders through fmt.js (numbers grouped in the UI locale, issue 229)
   function Tf(zh, en, vals) {
-    var s = T(zh, en);
-    Object.keys(vals || {}).forEach(function (k) {
-      s = s.split("{" + k + "}").join(String(vals[k]));
-    });
-    return s;
+    return window.EkteFmt.fill(T(zh, en), vals);
   }
 
   // ---- vocabulary ------------------------------------------------------- //
@@ -289,10 +287,7 @@
       return new Date(ts * 1000).toLocaleString();
     }
   }
-  function fmtScore(v) {
-    var n = Number(v);
-    return isFinite(n) ? String(Math.round(n)) : "—";
-  }
+  function fmtScore(v) { return EkteFmt.num(v == null || v === "" ? NaN : Number(v)); }
   function langOptions(selected) {
     return L.langs().map(function (l) {
       return '<option value="' + esc(l.code) + '"' + (l.code === selected ? " selected" : "") + ">" + esc(l.label) + "</option>";
@@ -422,7 +417,7 @@
   }
   // The interval picker: the draft's setup and the configured card's editor share it.
   function intervalInput(w, s, small) {
-    var v = s.vals.interval != null ? s.vals.interval : (w.interval_sec ? String(Math.round(w.interval_sec / 60)) : "");
+    var v = s.vals.interval != null ? s.vals.interval : (w.interval_sec ? String(Math.round(w.interval_sec / 60)) : ""); // fmt-ok: a form field's value
     var floor = minMinutes(w);
     var steps = STEPS.filter(function (m) { return m >= floor; });
     if (!steps.length) steps = [STEPS[STEPS.length - 1]];
@@ -571,10 +566,7 @@
     return runs;
   }
   // fills {name} placeholders of an already escaped template with markup
-  function fill(tpl, vals) {
-    Object.keys(vals).forEach(function (k) { tpl = tpl.split("{" + k + "}").join(String(vals[k])); });
-    return tpl;
-  }
+  function fill(tpl, vals) { return EkteFmt.fill(tpl, vals); }
   function windowInput(w, s) {
     var v = s.vals.win || (s.vals.win = winDraft(w)), id = w.id;
     var presets = [["always", T("始终", "Always")], ["weekdays", T("工作日", "Weekdays")],
@@ -858,7 +850,7 @@
     var progress = running
       ? '<div class="mon-prog"><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"' +
         ' aria-label="' + esc(Tf("{name} 的运行进度", "Progress of {name}", { name: name })) + '"><span style="width:' + pct + '%"></span></div>' +
-        "<b>" + pct + "%</b></div>"
+        "<b>" + esc(EkteFmt.unit(pct / 100, "ratio", { digits: 0 })) + "</b></div>"
       : "";
     var langLabel = T("告警语言", "Alert language");
     var evLabel = T("原始请求/响应", "Raw requests/responses");
@@ -1156,7 +1148,7 @@
     if (bar.getAttribute("aria-valuenow") === v) return;
     bar.setAttribute("aria-valuenow", v);
     bar.firstChild.style.width = v + "%";
-    card.querySelector(".mon-prog b").textContent = v + "%";
+    card.querySelector(".mon-prog b").textContent = EkteFmt.unit(Number(v) / 100, "ratio", { digits: 0 });
   }
   // a run started or ended, a monitor changed (its key too: the notice's counts)
   window.addEventListener("ekte:live", function () { load(); loadSecret(); });

@@ -152,6 +152,8 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "jobs.js", ("audit", "monitors")),
     (_V2 + "jobs.css", ("audit", "monitors")),
     (_V2 + "fields.css", ("audit", "kb", "monitors")),
+    # numbers, units, counts, relay names and every Tf placeholder (issue 229)
+    (_V2 + "fmt.js", ALL),
     (_V2 + "nav.js", ALL),
     (_V2 + "theme.js", ALL),
     (_V2 + "tokens.css", ALL),

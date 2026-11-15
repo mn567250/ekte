@@ -31,6 +31,7 @@ global.document = { hidden: false, addEventListener() {}, activeElement: null };
 global.setTimeout = (fn, ms) => { timers.push(ms); return timers.length; };
 global.clearTimeout = () => {};
 global.fetch = (url) => { fetched.push(url); return Promise.resolve({ ok: true, json: () => ({ jobs: [] }) }); };
+require(path.join(process.argv[1], "fmt.js"));
 require(path.join(process.argv[1], "jobs.js"));
 const J = window.EkteJobs;
 const body = new Function("J", "timers", "fetched", "handlers", "streams",
