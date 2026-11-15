@@ -921,9 +921,13 @@
       }
       var m = el.getAttribute("data-m");
       if (m) {
-        // one value on or off; values the search hides stay as they are
-        var vals = st[m].filter(function (v) { return v !== el.value; });
-        if (el.checked) vals.push(el.value);
+        // one value on or off; values the search hides stay as they are. The
+        // value is the listed one, not the box's DOM text, so nothing typed
+        // into the page comes back as HTML
+        var hit = choices(m).filter(function (c) { return c.value === el.value; })[0];
+        if (!hit) return;
+        var vals = st[m].filter(function (v) { return v !== hit.value; });
+        if (el.checked) vals.push(hit.value);
         var p = {}; p[m] = vals;
         return set(p);
       }
