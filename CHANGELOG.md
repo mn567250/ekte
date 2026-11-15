@@ -220,6 +220,31 @@ empty space beside the shorter fields or cut off their last entry.
 - The URL keys, `(unknown)` handling and `/api/filters/options` are
   unchanged.
 
+### Web UI: every Analytics table can be sorted by its columns ([#207](https://github.com/mn567250/ekte/issues/207))
+
+Until now only the leaderboard on **Analytics** could be sorted. Every table
+on the page now has sort buttons in its column headers: the leaderboard, the
+**Show as table** tables under the trend, peak-hours, errors and billing
+charts, call outcomes per group, relay overhead, model integrity and the
+billing summary.
+
+- The first click sorts largest first (names, times and weekdays: A–Z or
+  earliest first), the second flips the direction, the third goes back to
+  the table's own order (the leaderboard's: best median score first).
+- Rows without a value stay last; ties keep their order. Weekdays, hours and
+  time buckets sort by their place in time, not by their names. Forecast rows
+  stay after the measured rows.
+- **Model integrity** check columns sort by verdict: failed, warnings,
+  passed, then not checked or inconclusive.
+- The sort is in the URL, one key per table (`lb.sort`, `cmpt.sort`,
+  `heatt.sort`, `errt.sort`, `errg.sort`, `ovh.sort`, `int.sort`,
+  `billt.sort`, `bills.sort`; value `<column>.<asc|desc>`), so **Copy link to
+  this view** keeps it; existing `lb.sort` links still work. A sort stays when
+  the grouping or metric changes, as long as the column is still shown.
+- Sorting redraws only that table without loading data again; the focus stays
+  on the button, `aria-sort` marks the sorted column, and screen readers
+  announce the new order.
+
 ### Metrics, filters and History/Analytics rework ([#117](https://github.com/mn567250/ekte/issues/117))
 
 History and Analytics now show the same numbers, computed once on the

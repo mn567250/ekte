@@ -53,6 +53,7 @@
   "{n} calls answered by the relay, from {runs} runs": "中转站作答 {n} 次调用，来自 {runs} 次检测",
   "{n} calls, {j} of them answered by the relay.": "共 {n} 次调用，其中 {j} 次由中转站作答。",
   "{n} groups without these values are not listed.": "{n} 个分组没有这些数据，未列出。",
-  "{n} runs match these filters.": "{n} 次检测符合筛选条件。"
+  "{n} runs match these filters.": "{n} 次检测符合筛选条件。",
+  "Default order": "默认顺序"
  }
 }

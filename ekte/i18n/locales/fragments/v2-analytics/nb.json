@@ -181,6 +181,7 @@
   "{n} calls answered by the relay, from {runs} runs": "{n} kall besvart av reléet, fra {runs} kjøringer",
   "{n} calls, {j} of them answered by the relay.": "{n} kall, {j} av dem besvart av reléet.",
   "{n} groups without these values are not listed.": "{n} grupper uten disse verdiene vises ikke.",
-  "{n} runs match these filters.": "{n} kjøringer samsvarer med disse filtrene."
+  "{n} runs match these filters.": "{n} kjøringer samsvarer med disse filtrene.",
+  "Default order": "Standard rekkefølge"
  }
 }
