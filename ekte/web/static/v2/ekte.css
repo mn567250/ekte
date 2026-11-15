@@ -275,6 +275,11 @@ select.in {
 }
 .hint { font-size: var(--t-xs); color: var(--ink-muted); margin-top: 6px; line-height: 1.45; }
 
+/* Selection has three looks, one per level (issue 225): a primary tab is a
+   raised surface pill, a secondary tab an underline, and a choice inside a
+   panel (segmented control, radio segment, chip) a primary-tint wash with a
+   primary border and text. A solid primary fill is kept for the one main
+   action of a view (.btn.primary, .cta). */
 /* segmented control: <div class="seg" role="group"><button aria-pressed="true">… */
 .seg { display: flex; gap: 7px; flex-wrap: wrap; }
 .seg button {
@@ -283,7 +288,7 @@ select.in {
   min-height: var(--h-md); padding: 6px 8px; transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 .seg button:hover:not(:disabled) { border-color: var(--line); color: var(--ink); }
-.seg button[aria-pressed="true"] { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
+.seg button[aria-pressed="true"] { color: var(--primary); background: var(--primary-tint); border-color: var(--primary); }
 .seg button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* native radios dressed as a segmented control (the audit's endpoint type,
@@ -307,7 +312,7 @@ select.in {
 .seg.radio input:hover { border-color: var(--ink-muted); }
 .seg.radio input:hover + label { color: var(--ink); }
 .seg.radio input:checked { border-color: var(--primary); }
-.seg.radio input:checked + label { color: var(--on-primary); background: var(--primary); }
+.seg.radio input:checked + label { color: var(--primary); background: var(--primary-tint); }
 .seg.radio input:disabled { cursor: not-allowed; }
 .seg.radio input:disabled + label { opacity: 0.6; }
 
@@ -319,7 +324,7 @@ select.in {
   min-height: var(--h-sm); padding: 4px 12px; transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 .chips button:hover:not(:disabled) { border-color: var(--line); color: var(--ink); }
-.chips button[aria-pressed="true"] { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
+.chips button[aria-pressed="true"] { color: var(--primary); background: var(--primary-tint); border-color: var(--primary); }
 .chips button[aria-pressed="true"]::before { content: "✓ "; }
 .chips button:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -460,32 +465,70 @@ select.in {
 .pico { display: inline-flex; vertical-align: -0.12em; }
 .pico .zicon { width: 1em; height: 1em; }
 
-/* ---------- tabs (driven by /static/tabs.js) ---------- */
-.tabs { display: flex; gap: 6px; padding: 6px; margin: 0 0 20px; background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-md); }
+/* ---------- tabs (driven by /static/tabs.js), issue 225 ----------
+ * Two levels, each with one look; no page styles [role=tab] itself
+ * (tests/test_web_tabs.py):
+ *   primary   <div class="tabs" role="tablist">: a sunken rail; the selected
+ *             tab is a raised surface pill with ink text (like the current
+ *             page in the header), never a solid fill
+ *   secondary <div class="tabs sub" role="tablist">: text tabs on a hairline
+ *             inside a panel; the selected one is underlined in primary
+ * Width: a rail of up to four tabs shares its width equally; five or more
+ * take their label's width (fixed padding) and wrap. Secondary tabs are
+ * always as wide as their label.
+ * Slots, used alike on every bar: an icon first (every tab of a primary bar
+ * has one), a count last: <span class="tab-count"> (a neutral pill; .live,
+ * info tint, for work under way, e.g. running audits). A tab with nothing
+ * in it (e.g. "Running" while nothing runs) stays selectable and its panel
+ * says so (an empty state), on every page. */
+.tabs { display: flex; gap: 4px; padding: 4px; margin: 0 0 20px; background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-md); }
 .tabs [role="tab"] {
   flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font-family: var(--disp); font-weight: 600; font-size: var(--t-md); color: var(--ink-muted); cursor: pointer;
-  background: transparent; border: 0; border-radius: var(--r-sm); padding: 11px 10px; text-align: center;
+  background: transparent; border: 0; border-radius: var(--r-sm); min-height: var(--h-md); padding: 8px 14px; text-align: center;
   transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
 }
 .tabs [role="tab"]:hover { color: var(--ink); }
-.tabs [role="tab"][aria-selected="true"] { color: var(--on-primary); background: var(--primary); box-shadow: var(--shadow-pop); }
-/* a tab tabs.js skips (aria-disabled), e.g. "Running" while nothing runs */
+.tabs [role="tab"][aria-selected="true"] { color: var(--ink); background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow-pop); }
+.tabs [role="tab"][aria-selected="true"] .zicon { color: var(--primary); }
+/* five or more tabs: each as wide as its label, wrapping onto a second row */
+.tabs:has(> [role="tab"]:nth-of-type(5)) { flex-wrap: wrap; }
+.tabs:has(> [role="tab"]:nth-of-type(5)) > [role="tab"] { flex: 0 0 auto; }
+/* a tab tabs.js skips (aria-disabled) */
 .tabs [role="tab"][aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
 .tabs [role="tab"][aria-disabled="true"]:hover { color: var(--ink-muted); }
 .tabs [role="tab"] .zicon { width: 15px; height: 15px; flex: none; }
+/* secondary tabs: text on a hairline, the selected one underlined */
+.tabs.sub { gap: 18px; padding: 0; margin: 0 0 18px; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; flex-wrap: wrap; }
+.tabs.sub [role="tab"] {
+  flex: 0 0 auto; font-family: var(--sans); font-size: var(--t-base); border-radius: 0; padding: 8px 2px;
+  margin-bottom: -1px; border-bottom: 2px solid transparent; box-shadow: none;
+}
+.tabs.sub [role="tab"][aria-selected="true"] { color: var(--ink); background: transparent; box-shadow: none; border-bottom-color: var(--primary); }
+/* the count slot */
+.tab-count {
+  min-width: 1.6em; padding: 1px 7px; border-radius: var(--r-pill); font-family: var(--sans); font-size: var(--t-xs); font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: 1.5; color: var(--ink-muted); background: color-mix(in srgb, var(--ink-muted) 16%, transparent);
+}
+.tab-count.live { color: var(--info); background: var(--info-tint); }
+.tab-count:empty, .tab-count[hidden] { display: none; }
 /* forced colours (Windows high contrast) drop backgrounds and shadows: give the
-   tabs a system-coloured border so their shape stays visible and mark the
-   selected one with the system highlight colours */
+   primary tabs a system-coloured border so their shape stays visible and mark
+   the selected one with the system highlight colours; secondary tabs keep
+   their underline in Highlight */
 @media (forced-colors: active) {
-  .tabs [role="tab"] { border: 1px solid ButtonText; padding: 10px 9px; }
+  .tabs [role="tab"] { border: 1px solid ButtonText; padding: 7px 13px; }
   .tabs [role="tab"][aria-selected="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
+  .tabs.sub [role="tab"] { border: 0; border-bottom: 2px solid transparent; padding: 8px 2px; }
+  .tabs.sub [role="tab"][aria-selected="true"] { forced-color-adjust: auto; background: Canvas; color: CanvasText; border-bottom-color: Highlight; }
 }
 /* phones: the tabs stay side by side; a long label (e.g. ES "Auditoría de
    embeddings") wraps onto a second line between words, not mid-word */
 @media (max-width: 480px) {
   .tabs { gap: 4px; padding: 4px; }
-  .tabs [role="tab"] { gap: 6px; padding: 9px 6px; font-size: var(--t-base); line-height: 1.25; text-wrap: balance; overflow-wrap: break-word; }
+  .tabs [role="tab"] { gap: 6px; padding: 8px 6px; font-size: var(--t-base); line-height: 1.25; text-wrap: balance; overflow-wrap: break-word; }
+  .tabs.sub { gap: 14px; padding: 0; }
+  .tabs.sub [role="tab"] { padding: 8px 2px; }
 }
 [role="tabpanel"][hidden] { display: none; }
 [role="tabpanel"] { animation: z-rise var(--dur-slow) var(--ease-out); }

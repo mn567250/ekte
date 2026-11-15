@@ -20,25 +20,21 @@
   /* ---------- page: audit (tokens only; light + dark) ---------- */
   [tabindex="-1"]:focus { outline: none; }
 
-  /* "New audit" / "Running" tabs (v2/tabs.js; the list is v2/jobs.js) */
-  .tabs .tcount {
-    min-width: 1.6em; padding: 1px 7px; border-radius: var(--r-pill); font-size: var(--t-xs); font-weight: 700;
-    font-variant-numeric: tabular-nums; background: var(--info-tint); color: var(--info);
-  }
-  .tabs .tcount[hidden] { display: none; }
+  /* "New audit" / "Running" tabs: ekte.css (.tabs, .tab-count; the list is v2/jobs.js) */
   #panel-running { padding-top: 4px; }
 
-  /* stepper */
-  .steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
+  /* stepper: a progress line, not a tab bar (issue 225): numbered steps
+     joined by a hairline, the current one in ink with a primary number */
+  .steps { display: flex; align-items: center; gap: 10px; list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
   .steps li {
     display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-sm); font-weight: 600; color: var(--ink-muted);
-    padding: 5px 11px 5px 6px; border-radius: var(--r-pill); border: 1px solid transparent;
   }
+  .steps li + li::before { content: ""; width: 22px; height: 1px; background: var(--line); margin-right: 3px; }
   .steps .n {
     width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: var(--t-2xs); font-weight: 700;
     background: var(--sunken); color: var(--ink-muted); border: 1px solid var(--line);
   }
-  .steps li[aria-current="step"] { color: var(--ink); background: var(--sunken); border-color: var(--line); }
+  .steps li[aria-current="step"] { color: var(--ink); }
   .steps li[aria-current="step"] .n { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
   .steps li.done { color: var(--ink-muted); }
   .steps li.done .n { background: var(--success-tint); color: var(--success); border-color: transparent; }
@@ -204,7 +200,7 @@
     <div class="card card-pad tab-card">
     <div class="tabs" role="tablist" aria-label="Audits" data-en-aria-label="Audits">
       <button type="button" role="tab" id="tab-new" aria-selected="true" aria-controls="panel-new" tabindex="0"><span class="pico" data-icon="search"></span><span data-en="New audit">New audit</span></button>
-      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">Running</span><span class="tcount" id="running-count" hidden></span></button>
+      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">Running</span><span class="tab-count live" id="running-count" hidden></span></button>
     </div>
 
     <section role="tabpanel" id="panel-new" aria-labelledby="tab-new" tabindex="0">
@@ -1080,7 +1076,6 @@
   });
 
   // ---------- init ----------
-  $$("[data-icon]").forEach(function (el) { el.innerHTML = ico(el.getAttribute("data-icon")); });
   $("#now").textContent = nowText();
   syncProbeMode();
   syncCmpBadge();

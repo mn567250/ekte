@@ -48,6 +48,21 @@ does not load `fmt.js`, fills placeholders itself, glues a unit to a number,
 shows `String(Math.round(…))` or breaks names with `<wbr>` (CSS and SVG values
 are exempt; a reviewed exception carries `// fmt-ok: <reason>`).
 
+**Tabs** (`tabs.js` for behaviour, styled in `ekte.css` only) have two
+levels: a primary bar `<div class="tabs" role="tablist">` (sunken rail, the
+selected tab a raised surface pill; every tab has an icon,
+`<span class="pico" data-icon="…">`, which `icons.js` fills on every page)
+and a secondary bar `<div class="tabs sub">` inside a tab's panel (text tabs,
+the selected one underlined). Up to four primary tabs share the rail equally,
+five or more take their label's width. A count in a tab is
+`<span class="tab-count">` (`.live` while work is under way). A choice inside
+a panel (`.seg`, `.seg.radio`, `.chips`) shows its selection as a
+primary-tint wash with a primary border; a solid primary fill is for a view's
+one main action. `tests/test_web_tabs.py` fails on a page that styles tabs
+itself, a tablist that is neither level, a primary tab without an icon or a
+count of another kind; `tests/a11y/test_tab_levels.py` measures the three
+looks and the equal widths in both themes.
+
 Every verdict, score and grade is shown on **one scale**, `ekte/risk_scale.py`:
 the risk levels clean / low / medium / high (plus inconclusive) with one word
 ("Consistent", "Mostly consistent", "Deviations found", "Likely substituted",

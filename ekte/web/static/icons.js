@@ -88,6 +88,8 @@
       '<path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3"/><path d="M12 16.5v.5"/>',
     // minus — not run / skipped
     minus: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>',
+    // a coin: Analytics' Billing tab
+    coin: '<circle cx="12" cy="12" r="9"/><path d="M14.6 9.4c-.5-.9-1.5-1.4-2.6-1.4-1.4 0-2.6.8-2.6 2s1.2 1.6 2.6 1.9 2.6.8 2.6 2-1.2 2.1-2.6 2.1c-1.2 0-2.2-.6-2.7-1.5M12 6v2M12 16v2"/>',
     // "about equal": the verdict scale's "mostly consistent" (ekte/risk_scale.py)
     approx: '<path d="M5 9.5c2.3-2 4.7-2 7 0s4.7 2 7 0M5 15c2.3-2 4.7-2 7 0s4.7 2 7 0"/>',
     // search — search
@@ -168,4 +170,19 @@
 
   window.EKTE_ICONS = ICONS;
   window.ekteIcon = ekteIcon;
+
+  // Static markup names its icons: <span class="pico" data-icon="bell"></span>
+  // is filled here once the page is parsed, on every page (no page keeps a
+  // loop of its own; e.g. the tab icons, issue 225).
+  function fillIcons(root) {
+    var els = (root || document).querySelectorAll("[data-icon]");
+    for (var i = 0; i < els.length; i++) {
+      if (!els[i].firstChild) els[i].innerHTML = ekteIcon(els[i].getAttribute("data-icon"));
+    }
+  }
+  window.ekteFillIcons = fillIcons;
+  if (typeof document !== "undefined" && document.querySelectorAll) {
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { fillIcons(); });
+    else fillIcons();
+  }
 })();

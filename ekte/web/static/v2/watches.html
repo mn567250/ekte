@@ -147,8 +147,6 @@
   .empty.boxed { border: 1.5px dashed var(--line); border-radius: var(--r-md); }
   .empty p { margin: 8px 0 0; }
   .empty a { font-weight: 700; }
-  .tabs [role="tab"] .count:empty { display: none; }
-  .tabs [role="tab"] .count { font-variant-numeric: tabular-nums; }
   /* nested in the .tab-card: a quieter item surface instead of a second card shadow */
   .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: var(--r-md); }
   .tab-card .section-title { margin-top: 0; }
@@ -209,7 +207,7 @@
     <div class="card card-pad tab-card">
       <div class="tabs" role="tablist" aria-label="Monitor views" data-en-aria-label="Monitor views">
         <button type="button" role="tab" id="tab-configure" aria-selected="true" aria-controls="panel-configure" tabindex="0"><span class="pico" data-icon="bell"></span><span data-en="Configure">Configure</span></button>
-        <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">Running</span> <span class="count" id="run-count"></span></button>
+        <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">Running</span><span class="tab-count live" id="run-count"></span></button>
       </div>
 
       <section role="tabpanel" id="panel-configure" aria-labelledby="tab-configure" tabindex="0">
@@ -1773,7 +1771,6 @@
   window.addEventListener("ekte:masterkey", function () { loadSecret(); });
 
   // ---------- tabs: Configure / Running (v2/tabs.js, v2/jobs.js) ----------
-  document.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = icon(el.getAttribute("data-icon")); });
   var tabs = window.EkteTabs.init(document.querySelector(".tabs[role=tablist]"), {
     // #w-<id> deep links name a monitor in the Configure tab
     fromHash: function (h) { return /^w-/.test(h) ? "configure" : h; },
