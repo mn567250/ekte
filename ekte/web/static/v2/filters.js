@@ -615,7 +615,7 @@
       return out;
     }
 
-    /* relay / model (kind "multi", #205): a button that opens a group of
+    /* relay / model (kind "multi", issue 205): a button that opens a group of
      * checkboxes. pop = { k, q } while one is open (q: its search text); it
      * survives render(), so new option counts keep the list open. Ticking
      * every value keeps them all (the URL lists each): only an empty
@@ -724,7 +724,7 @@
       if (f.kind === "multi") {
         if (!choices(k).length) return ""; // nothing to choose from
         var isOpen = !!(pop && pop.k === k), n = st[k].length, id = "ekf-" + k;
-        // a button like the selects; it opens a group of checkboxes (#205)
+        // a button like the selects; it opens a group of checkboxes (issue 205)
         return '<div class="ekf-ms" data-ms="' + k + '"><span class="ekf-lbl" id="' + id + '-l">' + label + "</span>" +
           '<button type="button" class="in ekf-ms-btn" id="' + id + '-b" data-fk="' + k + ':btn" aria-haspopup="true" aria-expanded="' + isOpen +
           '" aria-controls="' + id + '-p" aria-labelledby="' + id + "-l " + id + '-t">' +
