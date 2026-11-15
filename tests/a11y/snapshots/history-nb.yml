@@ -176,7 +176,7 @@
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "26. sep. 2026, 08:02 Stort sett pålitelig Score 70 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "26. sep. 2026, 08:02 Stort sett pålitelig Score 70 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
@@ -204,17 +204,17 @@
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
       - listitem:
-        - button "29. sep. 2026, 11:02 Falsk vare Score 60 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 11:02 Falsk vare Score 60 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
       - listitem:
-        - button "29. sep. 2026, 10:02 Stort sett pålitelig Score 66 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 10:02 Stort sett pålitelig Score 66 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
       - listitem:
-        - button "29. sep. 2026, 09:02 Falsk vare Score 58 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "29. sep. 2026, 09:02 Falsk vare Score 58 Karakter D Overvåking check · standard openai · Strømming p50 <duration>"
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"

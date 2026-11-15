@@ -176,7 +176,7 @@
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 26, 2026, 8:02 AM Mostly trustworthy Score 70 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Sep 26, 2026, 8:02 AM Mostly trustworthy Score 70 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
@@ -204,17 +204,17 @@
         - button "Schedule as monitor"
         - button "Delete entry"
       - listitem:
-        - button "Sep 29, 2026, 11:02 AM Bait-and-switch Score 60 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 11:02 AM Bait-and-switch Score 60 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
       - listitem:
-        - button "Sep 29, 2026, 10:02 AM Mostly trustworthy Score 66 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 10:02 AM Mostly trustworthy Score 66 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
       - listitem:
-        - button "Sep 29, 2026, 9:02 AM Bait-and-switch Score 58 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Sep 29, 2026, 9:02 AM Bait-and-switch Score 58 Grade D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"

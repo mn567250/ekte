@@ -104,7 +104,10 @@ rapporti di fatturazione) con la variazione rispetto al periodo precedente di
 pari durata; un grafico di qualsiasi metrica per relay, modello o relay ×
 modello, per ora, giorno o settimana (linea mediana con la fascia p25–p75, fino
 a quattro serie, ogni grafico anche come tabella di dati); e una classifica dei
-relay per un modello o dei modelli di un relay. I relay sono raggruppati per
+relay per un modello o dei modelli di un relay. Le tabelle larghe mostrano
+prima le colonne principali; **Altre colonne** sopra una tabella aggiunge le
+altre, e i nomi delle righe restano visibili quando la tabella scorre in
+orizzontale. I relay sono raggruppati per
 voce della base di conoscenza (relay salvati e fornitori), quindi rinominare un relay
 ne raggruppa di nuovo la cronologia. Gli intervalli con meno di 3 esecuzioni
 sono attenuati — un singolo audit può essere un valore anomalo; un monitor

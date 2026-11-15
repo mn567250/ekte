@@ -214,3 +214,88 @@ def test_forecast_rows_stay_after_the_measured_rows(open_page) -> None:
         if fc != sorted(fc):
             issues.append(f"sorted {dir_}, a forecast row is among the measured rows: {fc}")
     assert_no_issues(issues, "analytics [en]", "sort-forecast")
+
+
+FIT_JS = """(id) => {
+  const box = document.querySelector(`#dtw-${id} .tscroll`);
+  const first = box.querySelector("tbody tr > :first-child");
+  const x0 = first.getBoundingClientRect().left;
+  const over = box.scrollWidth - box.clientWidth;
+  box.scrollLeft = 400;
+  const x1 = first.getBoundingClientRect().left;
+  box.scrollLeft = 0;
+  return { over, still: Math.abs(x1 - x0) < 1 };
+}"""
+
+
+@pytest.mark.bitv("9.1.3.2", "9.1.4.10")
+@pytest.mark.parametrize(("tid", "query", "cap", "key", "col"), TABLES, ids=[t[0] for t in TABLES])
+def test_wide_tables_fit_and_keep_their_first_column(open_page, tid: str, query: str, cap: str, key: str, col: str) -> None:
+    """#220: at 1280 px every table shows its default columns without
+    scrolling sideways; on a narrow screen the row names stay in view while
+    the rest of the table scrolls."""
+    issues: list[str] = []
+    page, _ = _open(open_page, query)
+    settle(page)
+    fit = page.evaluate(FIT_JS, tid)
+    if fit["over"] > 0:
+        issues.append(f"{tid}: {fit['over']} px of columns hidden to the right at 1280 px")
+    narrow, _ = _open(open_page, query, viewport={"width": 390, "height": 844})
+    settle(narrow)
+    fit = narrow.evaluate(FIT_JS, tid)
+    if fit["over"] > 0 and not fit["still"]:
+        issues.append(f"{tid}: the first column scrolls away at 390 px")
+    assert_no_issues(issues, "analytics [en]", f"table-fit-{tid}")
+
+
+@pytest.mark.bitv("9.1.3.1", "9.4.1.2", "9.4.1.3")
+def test_more_columns_chips_show_and_hide_a_column(open_page) -> None:
+    """#220: the leaderboard's other metrics are "More columns" chips; a chip
+    adds its column (and removes it again), keeps the focus, writes the URL
+    (no request) and announces the change."""
+    issues: list[str] = []
+    page, calls = _open(open_page, "?os=lb")
+    settle(page)
+
+    def heads() -> list[str]:
+        return [(t or "").strip() for t in page.locator("#lbcap").locator("xpath=..").locator("thead th").all_text_contents()]
+
+    before = heads()
+    chip = page.locator("#dtw-lb [data-cols]").first
+    ref, label = chip.get_attribute("data-cols") or "", (chip.inner_text() or "").strip()
+    n = len(calls)
+    chip.click()
+    if label not in heads():
+        issues.append(f"the {label} column was not added: {heads()}")
+    again = page.locator(f'[data-cols="{ref}"]')
+    if again.get_attribute("aria-pressed") != "true":
+        issues.append("the chip is not pressed")
+    if page.evaluate("document.activeElement && document.activeElement.dataset.cols") != ref:
+        issues.append("the focus left the chip")
+    if _query(page).get("lb.cols") != [ref.split(":", 1)[1]]:
+        issues.append(f"lb.cols in the URL: {_query(page).get('lb.cols')}")
+    if "shown" not in (page.locator("#panel-board .sortst, .panel:not([hidden]) .sortst").first.text_content() or ""):
+        issues.append("the new column is not announced")
+    if len(calls) != n:
+        issues.append(f"showing a column made requests: {calls[n:]}")
+    again.click()
+    if heads() != before:
+        issues.append(f"the column did not go away again: {heads()}")
+    if "lb.cols" in _query(page):
+        issues.append("lb.cols stays in the URL with no extra column")
+    assert_no_issues(issues, "analytics [en]", "more-columns")
+
+
+def test_billing_tiles_come_before_the_metric_picker(open_page) -> None:
+    """#217: the Metric select drives the chart, not the key figures, so it
+    sits between the tiles and the chart, with room above it."""
+    page, _ = _open(open_page, "?tab=billing")
+    settle(page)
+    box = page.evaluate("""() => {
+      const r = (s) => document.querySelector(s).getBoundingClientRect();
+      return { tiles: r("#bill-head .kpis").bottom, select: r("#bill-ctl select").top, chart: r("#bill-chart").top };
+    }""")
+    issues = []
+    if not box["tiles"] + 12 <= box["select"] < box["chart"]:
+        issues.append(f"order or spacing of tiles, Metric and chart: {box}")
+    assert_no_issues(issues, "analytics [en]", "billing-order")

@@ -103,7 +103,9 @@ faturação) com a variação face ao período anterior de igual duração; um g
 de qualquer métrica por relay, modelo ou relay × modelo, por hora, dia ou
 semana (linha mediana com a faixa p25–p75, até quatro séries, cada gráfico
 também como tabela de dados); e uma classificação dos relays de um modelo ou
-dos modelos de um relay. Os relays são agrupados pela sua entrada na base de
+dos modelos de um relay. As tabelas largas mostram primeiro as colunas
+principais; **Mais colunas** acima de uma tabela acrescenta as restantes, e os
+nomes das linhas ficam visíveis quando a tabela desliza na horizontal. Os relays são agrupados pela sua entrada na base de
 conhecimento (relays guardados e fornecedores), por isso renomear um relay
 reagrupa o seu histórico. Intervalos com menos de 3 execuções aparecem
 esbatidos — uma única auditoria pode ser um valor atípico; um monitor dá

@@ -97,7 +97,9 @@ suksessrate, TTFT, dekodehastighet, faktureringsforhold) med endringen mot like
 lang periode før; et diagram over et hvilket som helst måltall per relé, modell
 eller relé × modell per time, dag eller uke (medianlinje med båndet p25–p75,
 opptil fire serier, hvert diagram også som datatabell); og en rangeringsliste over
-releene for en modell, eller modellene for et relé. Releer grupperes etter
+releene for en modell, eller modellene for et relé. Brede tabeller viser
+hovedkolonnene først; **Flere kolonner** over en tabell legger til resten, og
+radnavnene blir stående synlige når tabellen rulles sidelengs. Releer grupperes etter
 oppføringen sin i kunnskapsbasen (lagrede releer og leverandører), så å gi nytt
 navn til et relé grupperer historikken på nytt. Intervaller med færre enn 3
 kjøringer tegnes blekere — én enkelt revisjon kan være et avvik; en overvåking gir

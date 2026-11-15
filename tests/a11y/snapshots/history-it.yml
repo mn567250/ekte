@@ -176,7 +176,7 @@
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "26 set 2026, 08:02 Per lo più affidabile Punteggio 70 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "26 set 2026, 08:02 Per lo più affidabile Punteggio 70 Voto D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
         - button "Elimina voce"
@@ -204,17 +204,17 @@
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "29 set 2026, 11:02 Merce non conforme Punteggio 60 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 11:02 Merce non conforme Punteggio 60 Voto D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
         - button "Elimina voce"
       - listitem:
-        - button "29 set 2026, 10:02 Per lo più affidabile Punteggio 66 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 10:02 Per lo più affidabile Punteggio 66 Voto D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
         - button "Elimina voce"
       - listitem:
-        - button "29 set 2026, 09:02 Merce non conforme Punteggio 58 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 09:02 Merce non conforme Punteggio 58 Voto D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
         - button "Elimina voce"

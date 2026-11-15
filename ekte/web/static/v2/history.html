@@ -237,7 +237,7 @@
     .c-date, .c-mode { align-self: auto; }
     .c-score, .c-grade { text-align: left; }
     .c-mode .perf, .c-mode .proto { display: inline; margin: 0; }
-    .c-mode .perf::before, .c-mode .proto::before { content: " · "; }
+    .c-mode .perf::before, .c-mode .proto::before { content: "\00a0·\00a0"; }
     .rline { align-items: start; }
     .rdel, .rsched, .rrerun { margin-top: 4px; }
     /* the title keeps the full width; the fixed-size trend tiles stack below it */
@@ -1179,6 +1179,8 @@
   var detectLabel = function (v) { return v === "auto" ? T("自动识别", "auto-detected") : T("手动指定", "set manually"); };
   function surfaceOf(r) { return (r && r.surface) || "chat"; }
   // a badge for every surface but chat (the default, most rows)
+  // a list separator that never ends or starts a line
+  var SEP = "\u00a0·\u00a0";
   function surfaceHTML(r) {
     var s = surfaceOf(r);
     return s === "chat" ? "" : ' <span class="badge machine-soft">' + esc(surfaceLabel(s)) + "</span>";
@@ -1196,7 +1198,10 @@
       esc(EKTE_I18N.label("RISK_LEVEL", lvl)) + "</span></span>" +
       '<span class="c-score f-' + esc(fam(r, "score")) + '"><span class="sr-only">' + esc(T("健康分", "Score")) + " </span>" + num(r.score) + "</span>" +
       '<span class="c-grade f-' + esc(fam(r, "grade")) + '"><span class="sr-only">' + esc(T("评级", "Grade")) + " </span>" + esc(r.grade || "–") + "</span>" +
-      '<span class="c-mode"><b>' + esc(r.mode || "check") + "</b>" + surfaceHTML(r) + (byMonitor(r) ? ' <span class="badge sky">' + ico("bell") + " " + esc(T("监控", "Monitor")) + "</span>" : "") + (r.suite ? " · " + esc(r.suite) : "") + protoHTML(r) +
+      // the badge leads the line and every " · " is glued to both neighbours
+      // (no-break spaces): a line never starts or ends with a separator
+      '<span class="c-mode">' + (byMonitor(r) ? '<span class="badge sky">' + ico("bell") + " " + esc(T("监控", "Monitor")) + "</span> " : "") +
+      "<b>" + esc(r.mode || "check") + "</b>" + surfaceHTML(r) + (r.suite ? SEP + esc(r.suite) : "") + protoHTML(r) +
       (typeof r.latency_p50_ms === "number" ? '<span class="perf" title="' + esc(T("延迟 p50", "Latency p50")) + '">p50 ' + Math.round(r.latency_p50_ms) + " ms</span>" : "") + "</span>" +
       '<span class="c-cv" aria-hidden="true">' + ico("chevronDown") + "</span></button>" +
       rerunBtnHTML(r) + schedBtnHTML(r) +
@@ -1212,7 +1217,7 @@
     var bits = [];
     if (r.api) bits.push(esc(r.api) + (r.detect ? " (" + esc(detectLabel(r.detect)) + ")" : ""));
     if (r.stream_mode && surfaceOf(r) === "chat") bits.push(esc(streamLabel(r.stream_mode)));
-    return bits.length ? '<span class="proto">' + bits.join(" · ") + "</span>" : "";
+    return bits.length ? '<span class="proto">' + bits.join(SEP) + "</span>" : "";
   }
 
   // A run a monitor produced already has its monitor: offer no second one.

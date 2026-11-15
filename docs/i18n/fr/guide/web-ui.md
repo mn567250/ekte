@@ -105,6 +105,9 @@ précède ; un graphique de n'importe quelle métrique par relais, modèle ou
 relais × modèle, par heure, jour ou semaine (ligne médiane avec la bande
 p25–p75, jusqu'à quatre séries, chaque graphique aussi en tableau de données) ;
 et un classement des relais pour un modèle, ou des modèles d'un relais. Les
+tableaux larges affichent d'abord leurs colonnes principales ; **Plus de
+colonnes** au-dessus d'un tableau ajoute les autres, et les noms des lignes
+restent visibles quand le tableau défile horizontalement. Les
 relais sont regroupés selon leur entrée de la base de connaissances (relais
 enregistrés et fournisseurs) : renommer un relais regroupe son historique. Les
 intervalles de moins de 3 exécutions sont atténués — un audit isolé peut être

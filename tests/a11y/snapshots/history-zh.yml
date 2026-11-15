@@ -176,7 +176,7 @@
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月26日 08:02 基本可信 健康分 70 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "2026年9月26日 08:02 基本可信 健康分 70 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
@@ -204,17 +204,17 @@
         - button "设为监控"
         - button "删除此记录"
       - listitem:
-        - button "2026年9月29日 11:02 货不对板 健康分 60 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 11:02 货不对板 健康分 60 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
       - listitem:
-        - button "2026年9月29日 10:02 基本可信 健康分 66 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 10:02 基本可信 健康分 66 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
       - listitem:
-        - button "2026年9月29日 09:02 货不对板 健康分 58 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "2026年9月29日 09:02 货不对板 健康分 58 评级 D 监控 check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"

@@ -176,7 +176,7 @@
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "26 sept 2026, 8:02 Mayormente fiable Puntuación 70 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "26 sept 2026, 8:02 Mayormente fiable Puntuación 70 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"
@@ -204,17 +204,17 @@
         - button "Programar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "29 sept 2026, 11:02 Gato por liebre Puntuación 60 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 11:02 Gato por liebre Puntuación 60 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"
       - listitem:
-        - button "29 sept 2026, 10:02 Mayormente fiable Puntuación 66 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 10:02 Mayormente fiable Puntuación 66 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"
       - listitem:
-        - button "29 sept 2026, 9:02 Gato por liebre Puntuación 58 Nota D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "29 sept 2026, 9:02 Gato por liebre Puntuación 58 Nota D Monitor check · standard openai · Streaming p50 <duration>"
         - button "Repetir auditoría"
         - button "Esta ejecución la generó un monitor" [disabled]
         - button "Eliminar entrada"

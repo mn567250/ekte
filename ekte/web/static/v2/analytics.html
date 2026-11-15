@@ -73,6 +73,8 @@
 
   /* comparison chart */
   .ctl { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 12px; align-items: end; }
+  /* billing: the key figures come first, the chart's metric picker below them */
+  #bill-head:not(:empty) + #bill-ctl:not(:empty) { margin-top: 16px; }
   /* peak hours: four options in one row, each as wide as its longest text
      needs (metric and relay names are long, time blocks short); they wrap
      only when even that does not fit */
@@ -114,25 +116,35 @@
     background:
       linear-gradient(to right, var(--surface) 30%, transparent) left / 24px 100% no-repeat local,
       linear-gradient(to left, var(--surface) 30%, transparent) right / 24px 100% no-repeat local,
-      radial-gradient(farthest-side at 0 50%, var(--border), transparent) left / 10px 100% no-repeat scroll,
-      radial-gradient(farthest-side at 100% 50%, var(--border), transparent) right / 10px 100% no-repeat scroll;
+      radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--shadow) 55%, transparent), transparent) left / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--shadow) 55%, transparent), transparent) right / 12px 100% no-repeat scroll;
   }
   .tscroll:focus-visible { outline-offset: -2px; }
+  /* the row names stay in view while a wide table scrolls (issue 220) */
+  .dt tr > :first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--line); }
+  /* "More columns": the chips that add a wide table's other columns */
+  .colpick { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 0 0 10px; }
+  .colpick .chips { gap: 6px; }
+  .colpick .chips button { padding: 5px 10px; font-size: 12px; }
   table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--ink-muted); }
   .dt caption { text-align: left; font-size: 12px; color: var(--ink-muted); padding: 6px 12px; caption-side: top; }
-  .dt th, .dt td { padding: 7px 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
+  .dt th, .dt td { padding: 7px 8px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
   .dt thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); border-top: 0; white-space: nowrap; }
   .dt td.n, .dt th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dt tbody th { font-weight: 600; color: var(--ink); min-width: 12em; max-width: 24em; }
   .dt td.when { white-space: nowrap; }
-  .dt td.ser { min-width: 12em; max-width: 18em; color: var(--ink); }
+  /* column headers wrap between words, so a long label ("Success rate")
+     does not make its column wider than its values (issue 220) */
+  .dt thead th, .dt thead th.n { white-space: normal; vertical-align: bottom; }
+  .dt thead .sortb { white-space: normal; text-align: inherit; }
+  .dt td.ser { min-width: 10em; max-width: 18em; color: var(--ink); }
   .dt td .cn { display: block; font-size: 11px; color: var(--ink-muted); }
   .dt tr.low > * { color: var(--ink-muted); }
   .dt tr.low td.nt { color: var(--warning); }
   /* forecast rows: an estimate, not a measurement */
   .dt tr.fcrow > * { color: var(--ink-muted); font-style: italic; }
   .note .fcv.good { color: var(--success); font-weight: 600; } .note .fcv.bad { color: var(--danger); font-weight: 600; }
-  .dt td.nt { min-width: 16em; }
+  .dt td.nt { min-width: 8em; }
   .dt .badge { margin-top: 3px; }
   .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink-muted); overflow-wrap: anywhere; }
 
@@ -296,6 +308,7 @@
           <h2 id="bill-h" data-en="Billing and tokens">Billing and tokens</h2>
           <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.">Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.</p>
           <div class="pbody">
+            <div id="bill-head"></div>
             <div id="bill-ctl"></div>
             <div id="bill-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
@@ -356,6 +369,12 @@
   function unitOf(format) { return FORMAT_UNIT[format] || format; }
   var GROUP_L = { relay: ["中转站", "Relay"], model: ["模型", "Model"], relay_model: ["中转站 × 模型", "Relay × model"], all: ["全部", "All"] };
   var groupName = function (g) { return T((GROUP_L[g] || GROUP_L.relay)[0], (GROUP_L[g] || GROUP_L.relay)[1]); };
+  // the same names inside a sentence ("Summary by relay"); groupName is for
+  // labels and column headers
+  var GROUP_N = { relay: ["中转站", "relay"], model: ["模型", "model"], relay_model: ["中转站 × 模型", "relay × model"], all: ["全部", "all"] };
+  var groupNoun = function (g) { return T((GROUP_N[g] || GROUP_N.relay)[0], (GROUP_N[g] || GROUP_N.relay)[1]); };
+  // "1 run" / "{n} runs" (legends)
+  var runsText = function (n) { return n === 1 ? T("1 次检测", "1 run") : Tf("{n} 次检测", "{n} runs", { n: n }); };
   var BUCKETS = ["hour", "day", "week"];
   var BUCKET_MS = { hour: 36e5, day: 864e5, week: 6048e5 };
   // forecast horizons (buckets ahead) per bucket size, as the series endpoint allows
@@ -375,6 +394,11 @@
   var bucketName = function (b) {
     return b === "hour" ? T("按小时", "By hour") : b === "week" ? T("按周", "By week") :
       b === "dow_hour" ? T("按星期几和小时", "By weekday and hour") : T("按天", "By day");
+  };
+  // the same inside a sentence ("Score (relay, by day)")
+  var bucketNoun = function (b) {
+    return b === "hour" ? T("按小时", "by hour") : b === "week" ? T("按周", "by week") :
+      b === "dow_hour" ? T("按星期几和小时", "by weekday and hour") : T("按天", "by day");
   };
   function lowHint() {
     return Tf("此时间段少于 {min} 次检测——单次检测可能是离群值，因此淡化显示。",
@@ -407,6 +431,9 @@
   var ERR_BUCKETS = BUCKETS.concat(["dow_hour"]);
   var BLOCKS = ["1", "2", "3", "4", "6"];
   var FOLDS = ["week", "4weeks", "month_week"];
+  // the call-outcome tables show the calls and the relay's rates; the counts
+  // per outcome and the impaired share are "More columns"
+  var ERR_BASE = ["calls", "success_rate", "relay_error_rate", "rate_limited_rate", "timeout_rate"];
   var BILL_METRICS = ["billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"];
   var BOARD_BY = ["relay", "model", "relay_model"];
   var DEFAULTS = {
@@ -419,6 +446,8 @@
     // the viewer's sort of each table ("<column>.<asc|desc>"; none: the table's own order)
     "lb.sort": "", "cmpt.sort": "", "heatt.sort": "", "errt.sort": "", "errg.sort": "", "ovh.sort": "", "int.sort": "",
     "billt.sort": "", "bills.sort": "",
+    // the columns the viewer added to a wide table (issue 220; base columns always show)
+    "lb.cols": [], "errt.cols": [], "errg.cols": [], "int.cols": [], "bills.cols": [],
   };
   var F = null; // the filters.js instance
   var state = { opts: null, charts: {}, still: false, pairs: null };
@@ -808,7 +837,7 @@
         return { v: String(n), t: aheadName(one("trend.bucket", BUCKETS), n) };
       }), String(ahead(one("trend.bucket", BUCKETS)))) +
       "</div>" +
-      (cands.length > 1 ? '<div class="pick"><span class="flab" id="pick-l">' + esc(Tf("对比的数据系列（最多 {n} 个，按{group}）", "Series to compare (up to {n}, by {group})", { n: 4, group: groupName(group()) })) + "</span>" +
+      (cands.length > 1 ? '<div class="pick"><span class="flab" id="pick-l">' + esc(Tf("对比的数据系列（最多 {n} 个，按{group}）", "Series to compare (up to {n}, by {group})", { n: 4, group: groupNoun(group()) })) + "</span>" +
         '<div class="chips" role="group" aria-labelledby="pick-l">' + cands.map(function (c) {
           var on = shown.indexOf(c.key) >= 0;
           var dis = (on && shown.length === 1) || (!on && full);
@@ -924,7 +953,7 @@
     var anyFc = withData.some(function (x) { return x.fc; });
     var legend = '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + series.map(function (x) {
       return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm">' + brk(x.label) + "</span>" +
-        '<span class="sub">' + esc(x.points.length ? Tf("{n} 次检测", "{n} runs", { n: x.raw.n }) : T("无数据", "no data")) + "</span></li>";
+        '<span class="sub">' + esc(x.points.length ? runsText(x.raw.n) : T("无数据", "no data")) + "</span></li>";
     }).join("") + (anyFc ? "<li>" + C.dashKey("fc") + '<span class="nm">' + esc(T("预测", "Forecast")) + "</span>" +
       '<span class="sub">' + esc(T("虚线，区间越往后越宽", "dashed, its band widening ahead")) + "</span></li>" : "") + "</ul>";
     if (!withData.length) {
@@ -945,7 +974,7 @@
     var anyLow = withData.some(function (x) { return x.points.some(function (pt) { return pt.low; }); });
     var desc = Tf("{metric}（{group}，{bucket}），{n} 个数据系列：{list}。下方表格列出全部数值。",
       "{metric} ({group}, {bucket}), {n} series: {list}. The table below lists every value.", {
-        metric: name, group: groupName(s.group), bucket: bucketName(bucket), n: withData.length,
+        metric: name, group: groupNoun(s.group), bucket: bucketNoun(bucket), n: withData.length,
         list: withData.map(function (x) {
           var a = x.points[0], b = x.points[x.points.length - 1];
           return Tf("{label} 从 {first} 到 {last}", "{label} from {first} to {last}", { label: x.label, first: fmt(a.v, m.unit), last: fmt(b.v, m.unit) });
@@ -1006,8 +1035,16 @@
   // without value() has no sort button), first ("asc" for text and time,
   // else "desc": the direction of its first click).
   // A sort click redraws only that table, from the spec of its last draw.
+  // Wide tables (issue 220): base (the column keys always shown) and colsKey (the
+  // URL key listing the other columns the viewer switched on in the "More
+  // columns" chips above the table). Without base every column shows.
   var TABLES = {};
-  function colOf(spec, k) { return spec.cols.filter(function (c) { return c.key === k; })[0] || null; }
+  function shownCols(spec) {
+    if (!spec.base) return spec.cols;
+    var on = list(spec.colsKey);
+    return spec.cols.filter(function (c) { return spec.base.indexOf(c.key) >= 0 || on.indexOf(c.key) >= 0; });
+  }
+  function colOf(spec, k) { return shownCols(spec).filter(function (c) { return c.key === k; })[0] || null; }
   function sortOf(spec) {
     var v = String([].concat(S(spec.sortKey))[0] || ""), at = v.lastIndexOf(".");
     var dir = v.slice(at + 1), col = at > 0 ? colOf(spec, v.slice(0, at)) : null;
@@ -1035,7 +1072,7 @@
     }).map(function (x) { return x.r; });
   }
   function headHTML(spec, sort) {
-    return spec.cols.map(function (c) {
+    return shownCols(spec).map(function (c) {
       var cls = ((c.num ? "n" : "") + (c.cls ? " " + c.cls : "")).trim(), attr = cls ? ' class="' + cls + '"' : "";
       if (!c.value) return '<th scope="col"' + attr + ">" + esc(c.label) + "</th>";
       var on = sort && sort.key === c.key;
@@ -1049,16 +1086,48 @@
   function bodyHTML(spec, sort) {
     return sortedRows(spec, sort).map(function (r) {
       var cls = spec.rowClass ? spec.rowClass(r) : "";
-      return "<tr" + (cls ? ' class="' + cls + '"' : "") + ">" + spec.cols.map(function (c) { return c.cell(r); }).join("") + "</tr>";
+      return "<tr" + (cls ? ' class="' + cls + '"' : "") + ">" + shownCols(spec).map(function (c) { return c.cell(r); }).join("") + "</tr>";
     }).join("");
   }
-  function dataTable(spec) {
-    TABLES[spec.id] = spec;
+  // the "More columns" chips: one per column outside base, pressed when shown
+  function pickHTML(spec) {
+    var extra = spec.base ? spec.cols.filter(function (c) { return spec.base.indexOf(c.key) < 0; }) : [];
+    if (!extra.length) return "";
+    var on = list(spec.colsKey), lid = spec.id + "-cols";
+    return '<div class="colpick"><span class="flab" id="' + lid + '">' + esc(T("更多列", "More columns")) + "</span>" +
+      '<div class="chips" role="group" aria-labelledby="' + lid + '">' + extra.map(function (c) {
+        return '<button type="button" data-cols="' + esc(spec.id + ":" + c.key) + '" aria-pressed="' + (on.indexOf(c.key) >= 0) + '">' + esc(c.label) + "</button>";
+      }).join("") + "</div></div>";
+  }
+  function tableInner(spec) {
     var sort = sortOf(spec);
-    return '<div class="tscroll' + (spec.wrap ? " " + spec.wrap : "") + '" tabindex="0" role="region" aria-labelledby="' + spec.cap + '">' +
+    return pickHTML(spec) + '<div class="tscroll' + (spec.wrap ? " " + spec.wrap : "") + '" tabindex="0" role="region" aria-labelledby="' + spec.cap + '">' +
       '<table class="dt"><caption id="' + spec.cap + '">' + esc(spec.caption) + "</caption><thead><tr>" + headHTML(spec, sort) +
       "</tr></thead><tbody>" + bodyHTML(spec, sort) + "</tbody></table></div>";
   }
+  function dataTable(spec) {
+    TABLES[spec.id] = spec;
+    return '<div class="dtw" id="dtw-' + esc(spec.id) + '">' + tableInner(spec) + "</div>";
+  }
+  // A column chip shows or hides its column: the list lives in the URL (no
+  // request) and only that table is redrawn, the focus staying on the chip
+  $("main").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-cols]");
+    if (!b) return;
+    var ref = b.getAttribute("data-cols"), at = ref.indexOf(":"), spec = TABLES[ref.slice(0, at)], key = ref.slice(at + 1);
+    var host = spec && document.getElementById("dtw-" + spec.id);
+    if (!host || !host.contains(b)) return;
+    var on = list(spec.colsKey), show = on.indexOf(key) < 0;
+    on = show ? on.concat([key]) : on.filter(function (k) { return k !== key; });
+    var patch = {}; patch[spec.colsKey] = on.length ? on : null;
+    quietly(patch);
+    host.innerHTML = tableInner(spec);
+    var again = host.querySelector('[data-cols="' + CSS.escape(ref) + '"]');
+    if (again) again.focus();
+    var col = spec.cols.filter(function (c) { return c.key === key; })[0];
+    var panel = host.closest(".panel"), st = panel && panel.querySelector(".sortst");
+    if (st && col) st.textContent = show ? Tf("已显示“{col}”列", "Column “{col}” shown", { col: col.label }) : Tf("已隐藏“{col}”列", "Column “{col}” hidden", { col: col.label });
+  });
   // A sort button: its first direction, then the other, then the table's own order
   $("main").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-sort]");
@@ -1136,7 +1205,7 @@
         cell: function (r) { return '<td class="nt">' + (r.fc ? esc(T("预测（估计）", "Forecast (estimate)")) : r.p.low ? esc(hint) : "") + "</td>"; } });
     return discHTML(o.pfx, o.key, {
       id: o.id, sortKey: o.id + ".sort", cols: cols, rows: rows,
-      caption: Tf("{metric}（{group}，{bucket}）", "{metric} ({group}, {bucket})", { metric: name, group: groupName(o.group), bucket: bucketName(o.bucket) }),
+      caption: Tf("{metric}（{group}，{bucket}）", "{metric} ({group}, {bucket})", { metric: name, group: groupNoun(o.group), bucket: bucketNoun(o.bucket) }),
       rowClass: function (r) { return r.fc ? "fcrow" : r.p.low ? "low" : ""; },
       pin: function (r) { return r.fc; },
     });
@@ -1195,6 +1264,7 @@
     // without a sort of the viewer's: the server's order, best median score first
     body.innerHTML = (b.rows.some(function (r) { return r.low_n; }) ? fewNote(fewRows()) : "") +
       dataTable({ id: "lb", cap: "lbcap", wrap: "lbtab", sortKey: "lb.sort", cols: cols, rows: b.rows, rowClass: lowRow,
+        colsKey: "lb.cols", base: ["label", "runs"].concat((b.metrics || []).slice(0, 4).map(function (m) { return m.id; })),
         caption: Tf("排行：{group}（{period}）", "Ranking: {group} ({period})", { group: groupName(b.by), period: periodOf(b) }) });
   }
 
@@ -1396,7 +1466,7 @@
           when: worst ? when(worst) : "—" })
       : Tf("每个时间段中转站作答的调用中未成功的占比（{bucket}），按结果堆叠。中转站错误率总计 {share}；最高 {max}（{when}）。下方表格列出全部数值。",
         "Share of the relay's answered calls that did not succeed, per time bucket ({bucket}), stacked by outcome. Relay error rate {share} overall; highest {max} ({when}). The tables below list every value.", {
-          bucket: bucketName(eb), share: pct(tot.relay_error_rate), max: worst ? pct(worst.raw.relay_error_rate) : "—",
+          bucket: bucketNoun(eb), share: pct(tot.relay_error_rate), max: worst ? pct(worst.raw.relay_error_rate) : "—",
           when: worst ? when(worst) : "—" });
     var first = bars.length ? Math.min.apply(null, bars.map(function (b) { return b.t; })) : null;
     var classes = d.classes;
@@ -1422,8 +1492,8 @@
       '<div class="chartbox" id="err-chart"></div>' +
       '<div class="notes">' + impNote + (bars.some(function (b) { return b.low; }) ? fewNote(grid ? hatchedHint() : lowHint()) : "") + "</div>" +
       discHTML("et", "table.errors", {
-        id: "errt", sortKey: "errt.sort", rows: bars, rowClass: lowRow,
-        caption: Tf("每个时间段的调用结果（{bucket}）", "Call outcomes per time bucket ({bucket})", { bucket: bucketName(eb) }),
+        id: "errt", sortKey: "errt.sort", rows: bars, rowClass: lowRow, colsKey: "errt.cols", base: ERR_BASE.concat(["time", "note"]),
+        caption: Tf("每个时间段的调用结果（{bucket}）", "Call outcomes per time bucket ({bucket})", { bucket: bucketNoun(eb) }),
         // the time sorts by the bucket's start (weekday x hour: its place in the week)
         cols: [{ key: "time", label: T("时间段", "Time bucket"), first: "asc", value: function (b) { return b.t; },
           cell: function (b) { return '<td class="when">' + esc(when(b)) + "</td>"; } }]
@@ -1432,10 +1502,10 @@
             { key: "note", label: T("说明", "Note"), cell: function (b) { return '<td class="nt">' + (b.low ? esc(grid ? cellHint() : lowHint()) : "") + "</td>"; } },
           ]),
       }) +
-      '<h3 class="subh" id="eg-h">' + esc(Tf("按{group}", "By {group}", { group: gName })) + "</h3>" +
+      '<h3 class="subh" id="eg-h">' + esc(Tf("按{group}", "By {group}", { group: groupNoun(d.group) })) + "</h3>" +
       dataTable({
-        id: "errg", cap: "eg-cap", wrap: "etab", sortKey: "errg.sort", rows: d.groups, rowClass: lowRow,
-        caption: Tf("每个{group}的调用结果", "Call outcomes per {group}", { group: gName }),
+        id: "errg", cap: "eg-cap", wrap: "etab", sortKey: "errg.sort", rows: d.groups, rowClass: lowRow, colsKey: "errg.cols", base: ERR_BASE.concat(["label"]),
+        caption: Tf("每个{group}的调用结果", "Call outcomes per {group}", { group: groupNoun(d.group) }),
         cols: [labelCol(gName), { key: "covered", label: T("有记录的检测", "Runs with records"), num: true, value: function (r) { return r.covered; },
           cell: function (r) { return count(r.covered + " / " + r.runs); } }].concat(callCols(function (r) { return r; })),
       });
@@ -1518,6 +1588,7 @@
     var head = kpiHead("int", p.data[1]);
     body.innerHTML = head.html + (d.rows.some(function (r) { return r.low_n; }) ? fewNote(fewRows()) : "") +
       dataTable({ id: "int", cap: "int-cap", wrap: "itab", sortKey: "int.sort", cols: cols, rows: d.rows,
+        colsKey: "int.cols", base: ["label", "runs"].concat(d.checks.slice(0, 3).map(function (c) { return "check:" + c; })),
         caption: T("每个中转站 × 模型的检查结果（n = 有结论的检测次数）", "Check results per relay × model (n = runs with a verdict)") });
     head.count();
   }
@@ -1549,29 +1620,33 @@
     ]);
   }
   function renderBilling() {
-    var p = PANEL.bill, body = $("#bill-body");
+    // order: the key figures, then the metric picker, then the chart it
+    // drives (the picker does not change the tiles above it)
+    var p = PANEL.bill, body = $("#bill-body"), headHost = $("#bill-head");
     if (!applies("billing_ratio_prompt")) {
       // billing and token shares are measured on chat audits only
+      headHost.innerHTML = "";
       $("#bill-ctl").innerHTML = "";
       body.innerHTML = '<div class="empty-data">' + esc(T("计费与 token 指标只适用于对话检测。", "Billing and token metrics apply to chat audits only.")) + "</div>";
       return;
     }
     ctlHTML($("#bill-ctl"), '<div class="ctl">' +
       selectCtl("bill.metric", T("指标", "Metric"), BILL_METRICS.map(function (id) { return { v: id, t: metricName(id) }; }), billMetric()) + "</div>");
-    if (p.err) { body.innerHTML = errBox(T("无法读取计费数据：", "Could not load billing: "), p.err); return; }
+    if (p.err) { headHost.innerHTML = ""; body.innerHTML = errBox(T("无法读取计费数据：", "Could not load billing: "), p.err); return; }
     if (!p.data || !p.data[0]) return;
     var s = p.data[0], sum = p.data[1], m = s.metric, name = metricName(m.id), ratio = m.id.indexOf("billing_ratio") === 0;
     var series = chartSeries(s), cfg = null;
     var withData = series.filter(function (x) { return x.points.length; });
     var cov = (sum.rows || []).reduce(function (a, r) { a.n += r.metrics[m.id].n; a.runs += r.runs; return a; }, { n: 0, runs: 0 });
     var head = kpiHead("bill", p.data[2]);
-    var html = head.html + '<p class="cov">' + esc(Tf("{n} / {runs} 次检测有“{metric}”的数据。", "“{metric}” data from {n} of {runs} runs.", { metric: name, n: cov.n, runs: cov.runs })) + "</p>";
+    headHost.innerHTML = head.html;
+    var html = '<p class="cov">' + esc(Tf("{n} / {runs} 次检测有“{metric}”的数据。", "“{metric}” data from {n} of {runs} runs.", { metric: name, n: cov.n, runs: cov.runs })) + "</p>";
     if (withData.length) {
       var unit = C.unitName(m.unit);
       var first = Math.min.apply(null, withData.map(function (x) { return x.points[0].t; }));
       html += '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + withData.map(function (x) {
         return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm">' + brk(x.label) + '</span><span class="sub">' +
-          esc(Tf("{n} 次检测", "{n} runs", { n: x.raw.n })) + "</span></li>";
+          esc(runsText(x.raw.n)) + "</span></li>";
       }).join("") + "</ul>" +
         '<div class="axcap" aria-hidden="true"><span>' + esc(name + (unit ? " · " + unit : "")) + "</span><span>" +
         esc(Tf("时间（{tz}）", "Time ({tz})", { tz: s.tz })) + "</span></div>" +
@@ -1580,7 +1655,7 @@
         tableHTML(withData, m, name, { pfx: "bt", id: "billt", key: "table.bill", group: s.group, bucket: "day" });
       cfg = {
         id: "billc", title: Tf("{metric}随时间变化", "{metric} over time", { metric: name }), unit: m.unit, bucketMs: BUCKET_MS.day,
-        desc: Tf("{metric}（按天，{group}）。", "{metric} (by day, {group}).", { metric: name, group: groupName(s.group) }) + " " +
+        desc: Tf("{metric}（按天，{group}）。", "{metric} (by day, {group}).", { metric: name, group: groupNoun(s.group) }) + " " +
           (ratio ? T("虚线标出 100%（报告的与统计的 token 一致）。", "A dashed line marks 100% (reported = counted tokens).") + " " : "") +
           T("下方表格列出全部数值。", "The table below lists every value."),
         domain: domainOf(s, first, BUCKET_MS.day),
@@ -1603,9 +1678,10 @@
     sum.metrics.forEach(function (x) { units[x.id] = x.unit; });
     if (sum.rows.length) {
       var gName = groupName(sum.group);
-      html += '<h3 class="subh">' + esc(Tf("按{group}汇总", "Summary by {group}", { group: gName })) + "</h3>" +
+      html += '<h3 class="subh">' + esc(Tf("按{group}汇总", "Summary by {group}", { group: groupNoun(sum.group) })) + "</h3>" +
         dataTable({
           id: "bills", cap: "bs-cap", wrap: "btab", sortKey: "bills.sort", rows: sum.rows, rowClass: lowRow,
+          colsKey: "bills.cols", base: ["label", "runs", "billing_ratio_prompt", "billing_ratio_completion"],
           caption: T("所选范围内的中位数（n = 测得该值的检测次数）", "Medians over the selected range (n = runs that measured a value)"),
           cols: [labelCol(gName), runsCol()].concat(BILL_METRICS.map(function (k) {
             return { key: k, label: metricName(k), num: true, value: function (r) { return metricValue(r.metrics[k]); },
@@ -1645,7 +1721,7 @@
       '<li><span class="sw s1" aria-hidden="true"></span><span class="nm">' + esc(metricName("network_rtt")) + "</span></li></ul>" +
       dataTable({
         id: "ovh", cap: "ovh-cap", wrap: "otab", sortKey: "ovh.sort", rows: rows, rowClass: lowRow,
-        caption: Tf("每个{group}的中位数，条形按同一比例绘制", "Medians per {group}, bars on one shared scale", { group: gName }),
+        caption: Tf("每个{group}的中位数，条形按同一比例绘制", "Medians per {group}, bars on one shared scale", { group: groupNoun(d.group) }),
         cols: [labelCol(gName), runsCol()].concat([["relay_overhead", "s0"], ["network_rtt", "s1"]].map(function (k) {
           return { key: k[0], label: metricName(k[0]), num: true, value: function (r) { return metricValue(r.metrics[k[0]]); },
             cell: function (r) { return cell(r.metrics[k[0]], k[1]); } };

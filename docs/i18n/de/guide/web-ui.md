@@ -105,7 +105,9 @@ Abrechnungsverhältnisse) mit der Änderung gegenüber dem gleich langen Zeitrau
 davor; ein Diagramm jeder Kennzahl pro Relay, Modell oder Relay × Modell nach
 Stunde, Tag oder Woche (Median-Linie mit p25–p75-Band, bis zu vier Reihen, jedes
 Diagramm auch als Datentabelle); und eine Rangliste der Relays für ein Modell
-oder der Modelle eines Relays. Relays werden nach ihrem Eintrag in der
+oder der Modelle eines Relays. Breite Tabellen zeigen zuerst ihre wichtigsten
+Spalten; **Weitere Spalten** über einer Tabelle blendet die übrigen ein, und die
+Zeilennamen bleiben sichtbar, während eine Tabelle seitlich scrollt. Relays werden nach ihrem Eintrag in der
 Wissensbasis gruppiert (gespeicherte Relays und Anbieter), ein umbenanntes Relay
 gruppiert also seinen Verlauf neu. Abschnitte mit weniger als 3 Läufen werden
 blass gezeichnet — ein einzelnes Audit kann ein Ausreißer sein; eine

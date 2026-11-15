@@ -182,6 +182,19 @@
   "{n} calls, {j} of them answered by the relay.": "{n} kall, {j} av dem besvart av reléet.",
   "{n} groups without these values are not listed.": "{n} grupper uten disse verdiene vises ikke.",
   "{n} runs match these filters.": "{n} kjøringer samsvarer med disse filtrene.",
-  "Default order": "Standard rekkefølge"
+  "Default order": "Standard rekkefølge",
+  "1 run": "1 kjøring",
+  "1 request": "1 forespørsel",
+  "relay": "relé",
+  "model": "modell",
+  "relay × model": "relé × modell",
+  "all": "alle",
+  "by hour": "per time",
+  "by day": "per dag",
+  "by week": "per uke",
+  "by weekday and hour": "per ukedag og time",
+  "More columns": "Flere kolonner",
+  "Column “{col}” shown": "Kolonnen «{col}» vises",
+  "Column “{col}” hidden": "Kolonnen «{col}» skjult"
  }
 }

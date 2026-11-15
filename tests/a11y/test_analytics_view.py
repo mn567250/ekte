@@ -326,10 +326,13 @@ def test_errors_tab_keeps_ekte_and_network_failures_apart(open_page) -> None:
     shown apart."""
     page, _ = _open(open_page, "?tab=reliability")
     issues: list[str] = []
-    table = page.locator("#err-body table:has(#eg-cap)")
-    head = [(t or "").strip() for t in table.locator("thead th").all_text_contents()]
     want = ["Success", "Rate limited (429)", "Relay timeout", "Relay server error (5xx)", "Relay client error (4xx)",
             "Other relay failure", "Network", "ekte"]
+    # the counts per outcome are "More columns" (#220): switch them on
+    for name in want:
+        page.locator("#dtw-errg [data-cols]", has_text=re.compile(f"^{re.escape(name)}$")).click()
+    table = page.locator("#err-body table:has(#eg-cap)")
+    head = [(t or "").strip() for t in table.locator("thead th").all_text_contents()]
     got = [h for h in head if h in want]
     if got != want:
         issues.append(f"outcome columns {got}")
