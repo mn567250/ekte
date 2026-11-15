@@ -15,21 +15,86 @@
  * data-theme="light" / "dark"; theme.js sets it from the header's theme switch.
  */
 
+/* tokens:begin
+ * The design tokens besides colour (colours: tokens.css). This block is the
+ * ONE place a font size, letter-spacing, radius, control height, duration or
+ * easing is written as a number; every stylesheet, page and script under
+ * ekte/web/static uses var(--…) for them. tests/test_web_design_tokens.py
+ * fails on a literal anywhere else (issue 213).
+ */
 :root {
-  /* type */
-  /* System font stacks only: the app is local-only, so no web fonts are
-   * fetched (works offline / behind firewalls, nothing leaves the machine).
-   * Latin faces first, then CJK faces, then the generic family. */
+  /* type: system font stacks only. The app is local-only, so no web fonts
+   * are fetched (works offline / behind firewalls, nothing leaves the
+   * machine). Latin faces first, then CJK faces, then the generic family. */
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --disp: var(--sans);
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  /* shape */
-  --r-card: 22px;
-  --r-field: 13px;
-  --r-btn: 15px;
+  /* type scale: chart ticks and meta, small, secondary, body, fields,
+     titles, key figures, large figures; the page title; the report grade */
+  --t-2xs: 11px;
+  --t-xs: 12px;
+  --t-sm: 13px;
+  --t-base: 14px;
+  --t-md: 15px;
+  --t-lg: 17px;
+  --t-xl: 22px;
+  --t-2xl: 26px;
+  --t-hero: clamp(28px, 5vw, 40px);
+  --t-display: 84px;
+  --t-display-sm: 64px;
+  /* letter-spacing: uppercase labels open up, large type tightens */
+  --track-label: 0.04em;
+  --track-heading: -0.01em;
+  --track-hero: -0.015em;
+  --track-display: -0.035em;
+  /* the uppercase label (form fields, table headers, key figures, card
+     sections): font-size var(--label-size), font-weight var(--label-weight),
+     letter-spacing var(--track-label), text-transform uppercase */
+  --label-size: var(--t-2xs);
+  --label-weight: 700;
+  /* spacing (4 px steps) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  /* radius by role: chart keys, chips and code, controls, inner panels and
+     nested cards, page cards, pills and bars. Nested corners: inner = outer
+     minus the padding, rounded to a token. */
+  --r-2xs: 3px;
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 22px;
   --r-pill: 999px;
+  /* control heights: dense rows and inline edits, the default, the audit form */
+  --h-sm: 32px;
+  --h-md: 40px;
+  --h-lg: 48px;
+  /* motion: hover and colour, small moves (chevrons, switches), panels and
+     chart parts entering, chart lines drawing; one heat-grid colour step and
+     the stagger between meters (chartmotion.js reads these too); the endless loops (busy
+     markers); none (reduced motion) */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+  --dur-slower: 600ms;
+  --dur-step: 110ms;
+  --dur-stagger: 90ms;
+  --dur-blink: 1s;
+  --dur-spin: 1.5s;
+  --dur-wait: 1.6s;
+  --dur-ripple: 2.4s;
+  --dur-none: 0.001ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.25);
+  /* layout */
   --wrap: 760px;
 }
+/* tokens:end */
 
 /* ---------- base ---------- */
 *,
@@ -63,17 +128,17 @@ button { font: inherit; color: inherit; }
 .skip-link {
   position: absolute; left: 16px; top: -100px; z-index: 1000;
   padding: 8px 14px; border-radius: var(--r-pill); background: var(--ink); color: var(--bg);
-  font-size: 13px; font-weight: 600; text-decoration: none;
+  font-size: var(--t-sm); font-weight: 600; text-decoration: none;
 }
 .skip-link:focus { top: 8px; }
 main[tabindex="-1"]:focus { outline: none; }
 .znav { display: flex; align-items: center; gap: 12px; padding: 18px 0 6px; min-width: 0; }
 .znav .logo {
   display: flex; align-items: center; gap: 9px; flex: 0 0 auto; text-decoration: none; color: var(--ink);
-  font-family: var(--disp); font-weight: 700; font-size: 21px; letter-spacing: -0.01em;
+  font-family: var(--disp); font-weight: 700; font-size: var(--t-xl); letter-spacing: var(--track-heading);
 }
 .znav .logo .b {
-  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: var(--r-sm); display: grid; place-items: center;
   background: var(--primary); color: var(--on-primary); box-shadow: 0 8px 22px -10px var(--primary);
 }
 .znav .logo .b .zicon { width: 18px; height: 18px; }
@@ -85,8 +150,8 @@ main[tabindex="-1"]:focus { outline: none; }
 .znav .links::-webkit-scrollbar { display: none; }
 .znav .links a {
   display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; white-space: nowrap;
-  font-size: 13px; font-weight: 600; color: var(--ink-muted); text-decoration: none;
-  padding: 7px 11px; border-radius: var(--r-pill); transition: background 0.15s, color 0.15s;
+  font-size: var(--t-sm); font-weight: 600; color: var(--ink-muted); text-decoration: none;
+  padding: 7px 11px; border-radius: var(--r-pill); transition: background var(--dur-fast), color var(--dur-fast);
 }
 .znav .links a:hover { background: var(--sunken); color: var(--ink); }
 .znav .links a[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
@@ -104,7 +169,7 @@ main[tabindex="-1"]:focus { outline: none; }
 
 /* ---------- pills / language switch ---------- */
 .pill {
-  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted);
+  display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-xs); color: var(--ink-muted);
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 12px;
   text-decoration: none; white-space: nowrap;
 }
@@ -113,9 +178,9 @@ main[tabindex="-1"]:focus { outline: none; }
 .theme-sel,
 .motion-sel {
   appearance: none; -webkit-appearance: none; cursor: pointer;
-  font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink-muted);
+  font-family: var(--sans); font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill);
-  padding: 6px 26px 6px 12px; transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: var(--h-sm); padding: 4px 26px 4px 12px; transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position: right 13px center, right 9px center;
   background-size: 4px 4px, 4px 4px;
@@ -131,9 +196,9 @@ main[tabindex="-1"]:focus { outline: none; }
    focus keeps the global teal outline (the current-page state already has a teal border) */
 .znav .a11y {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 30px; height: 30px; color: var(--ink-muted); text-decoration: none;
+  width: var(--h-sm); height: var(--h-sm); color: var(--ink-muted); text-decoration: none;
   background: var(--surface); border: 1px solid var(--border); border-radius: 50%;
-  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast), color var(--dur-fast);
 }
 .znav .a11y .zicon { width: 16px; height: 16px; }
 .znav .a11y:hover { border-color: var(--ink-muted); color: var(--primary); }
@@ -141,7 +206,7 @@ main[tabindex="-1"]:focus { outline: none; }
 /* the running version, a link to its changelog (nav.js), as tall as the switches */
 .znav .ver {
   display: inline-flex; align-items: center; flex: none; white-space: nowrap;
-  font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--ink-muted);
+  font-family: var(--mono); font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted);
   text-decoration: none; padding: 6px 4px; border-radius: var(--r-pill);
 }
 .znav .ver:hover { color: var(--primary); text-decoration: underline; }
@@ -149,24 +214,24 @@ main[tabindex="-1"]:focus { outline: none; }
 /* ---------- hero ---------- */
 .hero { padding: 24px 0 4px; }
 .hero h1 {
-  font-family: var(--disp); font-weight: 700; font-size: clamp(28px, 5vw, 40px);
-  line-height: 1.12; letter-spacing: -0.015em; margin: 0; overflow-wrap: anywhere;
+  font-family: var(--disp); font-weight: 700; font-size: var(--t-hero);
+  line-height: 1.12; letter-spacing: var(--track-hero); margin: 0; overflow-wrap: anywhere;
 }
 /* Negative tracking was tuned for Latin display faces; CJK glyphs are
  * full-width and look cramped with it, so Chinese headings use none. */
 :lang(zh) .hero h1, :lang(zh) .znav .logo { letter-spacing: 0; }
 .hero h1 .u { background: linear-gradient(transparent 62%, var(--highlight) 0); padding: 0 4px; color: inherit; }
-.hero p { color: var(--ink-muted); font-size: 15.5px; line-height: 1.6; margin: 12px 0 0; }
+.hero p { color: var(--ink-muted); font-size: var(--t-md); line-height: 1.6; margin: 12px 0 0; }
 
 /* ---------- cards ---------- */
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--shadow-card); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-card); }
 .card-pad { padding: 24px; }
 @media (max-width: 520px) { .card-pad { padding: 18px; } }
 /* the page's main block: a card whose first child is the tab switch
    (.tabs[role=tablist]); the selected tab's panel opens inside it */
 .tab-card { margin-top: 20px; }
-.section-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 28px 0 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
-.section-title .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+.section-title { font-family: var(--disp); font-weight: 600; font-size: var(--t-lg); margin: 28px 0 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.section-title .count { font-family: var(--sans); font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
 
 /* ---------- form fields ---------- */
 .grp { margin-bottom: 14px; min-width: 0; }
@@ -176,26 +241,30 @@ main[tabindex="-1"]:focus { outline: none; }
 .lab-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 7px; flex-wrap: wrap; }
 .lab {
   display: inline-flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 0 0 7px;
-  font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--ink-muted); text-transform: uppercase;
+  font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); color: var(--ink-muted); text-transform: uppercase;
 }
 .lab-row .lab { margin: 0; }
 /* a technical key shown next to a human label — never uppercased */
 .key {
-  font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none;
-  color: var(--ink-muted); background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px;
+  font-family: var(--mono); font-size: var(--t-2xs); font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--ink-muted); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 0 5px;
 }
 /* "optional" suffix on a label */
-.opt { font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-muted); }
-.aside { font-size: 11.5px; color: var(--ink-muted); }
+.opt { font-size: var(--t-xs); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-muted); }
+.aside { font-size: var(--t-xs); color: var(--ink-muted); }
 .in {
   width: 100%; min-width: 0; border: 1.5px solid var(--border); background: var(--surface); color: var(--ink);
-  border-radius: var(--r-field); font-family: var(--sans); font-weight: 500; font-size: 15.5px;
-  padding: 12px 14px; outline: none; transition: border-color 0.16s, box-shadow 0.16s, background 0.16s;
+  border-radius: var(--r-sm); font-family: var(--sans); font-weight: 500; font-size: var(--t-md);
+  min-height: var(--field-h, var(--h-md)); padding: 6px 14px;
+  outline: none; transition: border-color var(--dur-fast), box-shadow var(--dur-fast), background var(--dur-fast);
 }
+/* control heights (issue 213): three sizes, --h-sm / --h-md / --h-lg. A field
+   or button takes --field-h / --btn-h from its context (default --h-md), as a
+   minimum: larger text (zoom, text-spacing overrides) still fits. */
 .in::placeholder { color: var(--ink-muted); font-weight: 400; font-style: italic; opacity: 1; }
 .in:hover { border-color: var(--ink-muted); }
 .in:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-tint); background: var(--surface); }
-.in.mono, textarea.in { font-family: var(--mono); font-size: 13px; }
+.in.mono, textarea.in { font-family: var(--mono); font-size: var(--t-sm); }
 select.in {
   appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 36px;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%), linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
@@ -204,25 +273,50 @@ select.in {
   background-repeat: no-repeat;
   text-overflow: ellipsis;
 }
-.hint { font-size: 12px; color: var(--ink-muted); margin-top: 6px; line-height: 1.45; }
+.hint { font-size: var(--t-xs); color: var(--ink-muted); margin-top: 6px; line-height: 1.45; }
 
 /* segmented control: <div class="seg" role="group"><button aria-pressed="true">… */
 .seg { display: flex; gap: 7px; flex-wrap: wrap; }
 .seg button {
-  flex: 1 1 0; min-width: 64px; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
-  color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: 11px;
-  padding: 10px 8px; transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex: 1 1 0; min-width: 64px; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: var(--t-sm);
+  color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-sm);
+  min-height: var(--h-md); padding: 6px 8px; transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 .seg button:hover:not(:disabled) { border-color: var(--line); color: var(--ink); }
 .seg button[aria-pressed="true"] { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
 .seg button:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* native radios dressed as a segmented control (the audit's endpoint type,
+   the monitors' key storage): <div class="seg radio"><span><input type=radio>
+   <label>…</label></span>…; one column per option, stacked on phones so a
+   long label (e.g. "Riordinamento") does not push a 320 px page sideways */
+.seg.radio { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(min-content, 1fr); }
+@media (max-width: 480px) { .seg.radio { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); } }
+.seg.radio > span { position: relative; display: grid; }
+.seg.radio label {
+  display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: var(--t-sm);
+  color: var(--ink-muted); background: var(--surface); border: 1.5px solid transparent; border-radius: var(--r-sm);
+  min-height: var(--h-md); padding: 6px 8px; transition: background var(--dur-fast), color var(--dur-fast);
+}
+/* the radio itself covers its option: it draws the boundary (3:1, like the
+   text fields) and carries the focus ring */
+.seg.radio input {
+  appearance: none; position: absolute; inset: 0; z-index: 1; margin: 0; cursor: pointer;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm); background: transparent; transition: border-color var(--dur-fast);
+}
+.seg.radio input:hover { border-color: var(--ink-muted); }
+.seg.radio input:hover + label { color: var(--ink); }
+.seg.radio input:checked { border-color: var(--primary); }
+.seg.radio input:checked + label { color: var(--on-primary); background: var(--primary); }
+.seg.radio input:disabled { cursor: not-allowed; }
+.seg.radio input:disabled + label { opacity: 0.6; }
+
 /* multi-select chips: <div class="chips" role="group"><button aria-pressed="true">… (each toggles) */
 .chips { display: flex; gap: 7px; flex-wrap: wrap; }
 .chips button {
-  cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 12.5px;
+  cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: var(--t-sm);
   color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-pill);
-  padding: 7px 12px; transition: background 0.15s, color 0.15s, border-color 0.15s;
+  min-height: var(--h-sm); padding: 4px 12px; transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 .chips button:hover:not(:disabled) { border-color: var(--line); color: var(--ink); }
 .chips button[aria-pressed="true"] { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
@@ -232,15 +326,15 @@ select.in {
 /* switch: <label class="switch"><input type="checkbox" role="switch"><span></span> text</label>
    The input itself is the visible track (so the focused element is the one on
    screen, with its own focus ring); the span is only the knob drawn over it. */
-.switch { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; color: var(--ink-muted); }
+.switch { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: var(--t-base); color: var(--ink-muted); }
 .switch input {
   -webkit-appearance: none; appearance: none; margin: 0; cursor: pointer;
   position: relative; width: 38px; height: 22px; flex: 0 0 38px; border-radius: var(--r-pill);
-  background: var(--sunken); border: 1px solid var(--border); transition: background 0.15s;
+  background: var(--sunken); border: 1px solid var(--border); transition: background var(--dur-fast);
 }
 .switch span {
   position: absolute; left: 3px; top: 50%; margin-top: -8px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--surface); box-shadow: 0 1px 3px var(--shadow); transition: transform 0.15s; pointer-events: none;
+  background: var(--surface); box-shadow: 0 1px 3px var(--shadow); transition: transform var(--dur-fast); pointer-events: none;
 }
 /* off: an --ink-muted knob on the --sunken track (a --surface knob all but
    vanished there in dark mode); on: a --surface knob on the --primary track */
@@ -258,24 +352,24 @@ select.in {
 }
 
 /* disclosure (accordion): <button class="disclosure" aria-expanded aria-controls> */
-.disclosure-box { border: 1.5px dashed var(--line); border-radius: 14px; overflow: hidden; }
+.disclosure-box { border: 1.5px dashed var(--line); border-radius: var(--r-md); overflow: hidden; }
 .disclosure-box.open { border-style: solid; background: var(--sunken); }
 .disclosure {
   width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left;
-  background: none; border: 0; cursor: pointer; font-family: var(--sans); font-weight: 700; font-size: 13.5px;
+  background: none; border: 0; cursor: pointer; font-family: var(--sans); font-weight: 700; font-size: var(--t-base);
   color: var(--ink-muted); padding: 13px 14px;
 }
 .disclosure[aria-expanded="true"] { color: var(--primary); }
-.disclosure .cv { display: inline-flex; transition: transform 0.25s; }
+.disclosure .cv { display: inline-flex; transition: transform var(--dur-base); }
 .disclosure[aria-expanded="true"] .cv { transform: rotate(180deg); }
 .disclosure-body { padding: 2px 14px 14px; }
 .disclosure-body[hidden] { display: none; }
 
 /* ---------- buttons ---------- */
 .cta {
-  width: 100%; border: 0; border-radius: var(--r-btn); padding: 15px 16px; cursor: pointer;
-  font-family: var(--disp); font-weight: 600; font-size: 17px; color: var(--on-primary); background: var(--primary);
-  display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.16s;
+  width: 100%; border: 0; border-radius: var(--r-sm); min-height: var(--h-lg); padding: 8px 16px; cursor: pointer;
+  font-family: var(--disp); font-weight: 600; font-size: var(--t-lg); color: var(--on-primary); background: var(--primary);
+  display: flex; align-items: center; justify-content: center; gap: 8px; transition: background var(--dur-fast);
 }
 .cta:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--primary-strong); }
 /* aria-disabled: busy but still focusable (focus must not fall to <body>) */
@@ -283,28 +377,28 @@ select.in {
 .cta .zicon { width: 1em; height: 1em; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; text-decoration: none;
-  border-radius: var(--r-field); padding: 10px 16px; font-family: var(--disp); font-weight: 600; font-size: 14px;
+  border-radius: var(--r-sm); min-height: var(--btn-h, var(--h-md)); padding: 6px 16px; font-family: var(--disp); font-weight: 600; font-size: var(--t-base);
   border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
 }
 .btn:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--line); }
 .btn.pri { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .btn.pri:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--primary-strong); border-color: var(--primary-strong); }
 .btn.danger { color: var(--danger); }
 .btn.danger:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--danger-tint); border-color: var(--danger); }
-.btn.sm { padding: 6px 11px; font-size: 12.5px; border-radius: 10px; }
+.btn.sm { min-height: var(--h-sm); padding: 4px 11px; font-size: var(--t-sm); border-radius: var(--r-sm); }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 .btn .zicon { width: 1em; height: 1em; }
 .linkbtn {
   background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--sans); font-weight: 700;
-  font-size: 12.5px; color: var(--primary);
+  font-size: var(--t-sm); color: var(--primary);
 }
 .linkbtn:hover { text-decoration: underline; }
 
 /* ---------- status badges ---------- */
 .badge {
   display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border-radius: var(--r-pill);
-  font-family: var(--sans); font-weight: 700; font-size: 11.5px; padding: 3px 10px;
+  font-family: var(--sans); font-weight: 700; font-size: var(--t-xs); padding: 3px 10px;
 }
 .badge .zicon { width: 1em; height: 1em; }
 .badge.good { color: var(--success); background: var(--success-tint); }
@@ -319,28 +413,28 @@ select.in {
 .badge.human-soft { color: var(--human); background: var(--human-tint); }
 
 /* ---------- messages ---------- */
-.reassure { text-align: center; font-size: 12.5px; color: var(--ink-muted); margin-top: 13px; line-height: 1.5; }
+.reassure { text-align: center; font-size: var(--t-sm); color: var(--ink-muted); margin-top: 13px; line-height: 1.5; }
 .reassure b { color: var(--ink-muted); }
 .errbox {
   background: var(--danger-tint); border: 1px solid var(--danger); color: var(--danger);
-  border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 14px; line-height: 1.5;
+  border-radius: var(--r-md); padding: 14px 16px; margin-top: 14px; font-size: var(--t-base); line-height: 1.5;
 }
 /* the page notice (notice.js): one per page, right under the hero; icon, text
    and buttons share one vertical centre line; the level
    sets tint, border and icon colour, the text stays --ink for contrast */
 .znote {
   display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap;
-  margin: 18px 0 0; padding: 12px 14px; border-radius: 14px;
+  margin: 18px 0 0; padding: 12px 14px; border-radius: var(--r-md);
   border: 1px solid var(--line); background: var(--sunken);
 }
 .znote[hidden] { display: none; }
 .znote .ico { display: inline-flex; }
 .znote .ico .zicon { width: 18px; height: 18px; }
-.znote .txt { flex: 1 1 260px; min-width: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
+.znote .txt { flex: 1 1 260px; min-width: 0; font-size: var(--t-base); line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
 .znote .txt b { font-weight: 700; }
 .znote .meta { color: var(--ink-muted); }
 .znote .txt ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-muted); }
-.znote .txt code { font-size: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+.znote .txt code { font-size: var(--t-xs); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 0 5px; }
 .znote .act { display: flex; gap: 6px; flex-wrap: wrap; }
 .znote.info { background: var(--info-tint); border-color: var(--info); }
 .znote.info .ico { color: var(--info); }
@@ -350,12 +444,12 @@ select.in {
 .znote.warning .ico { color: var(--warning); }
 .znote.critical { background: var(--danger-tint); border-color: var(--danger); }
 .znote.critical .ico { color: var(--danger); }
-.empty { text-align: center; padding: 36px 20px; color: var(--ink-muted); font-size: 14.5px; }
+.empty { text-align: center; padding: 36px 20px; color: var(--ink-muted); font-size: var(--t-md); }
 .empty .zicon { width: 28px; height: 28px; color: var(--ink-muted); }
-.foot { text-align: center; color: var(--ink-muted); font-size: 12px; padding: 16px 0 32px; line-height: 1.6; }
-.foot code { font-size: 11.5px; }
+.foot { text-align: center; color: var(--ink-muted); font-size: var(--t-xs); padding: 16px 0 32px; line-height: 1.6; }
+.foot code { font-size: var(--t-xs); }
 /* the shared disclaimer footer (nav.js): all local, black box */
-.zdisc { text-align: center; color: var(--ink-muted); font-size: 12px; line-height: 1.6; padding: 16px 0 32px; }
+.zdisc { text-align: center; color: var(--ink-muted); font-size: var(--t-xs); line-height: 1.6; padding: 16px 0 32px; }
 .zdisc p { margin: 0 0 4px; }
 /* a page without a footer keeps the same space below its last card as one with
    (the footer's one-line .foot: 12px margins, 16px + 32px padding, ~19px text) */
@@ -366,12 +460,12 @@ select.in {
 .pico .zicon { width: 1em; height: 1em; }
 
 /* ---------- tabs (driven by /static/tabs.js) ---------- */
-.tabs { display: flex; gap: 6px; padding: 6px; margin: 0 0 20px; background: var(--sunken); border: 1px solid var(--line); border-radius: 16px; }
+.tabs { display: flex; gap: 6px; padding: 6px; margin: 0 0 20px; background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-md); }
 .tabs [role="tab"] {
   flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: var(--disp); font-weight: 600; font-size: 15px; color: var(--ink-muted); cursor: pointer;
-  background: transparent; border: 0; border-radius: 11px; padding: 11px 10px; text-align: center;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  font-family: var(--disp); font-weight: 600; font-size: var(--t-md); color: var(--ink-muted); cursor: pointer;
+  background: transparent; border: 0; border-radius: var(--r-sm); padding: 11px 10px; text-align: center;
+  transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
 }
 .tabs [role="tab"]:hover { color: var(--ink); }
 .tabs [role="tab"][aria-selected="true"] { color: var(--on-primary); background: var(--primary); box-shadow: var(--shadow-pop); }
@@ -390,29 +484,29 @@ select.in {
    embeddings") wraps onto a second line between words, not mid-word */
 @media (max-width: 480px) {
   .tabs { gap: 4px; padding: 4px; }
-  .tabs [role="tab"] { gap: 6px; padding: 9px 6px; font-size: 14px; line-height: 1.25; text-wrap: balance; overflow-wrap: break-word; }
+  .tabs [role="tab"] { gap: 6px; padding: 9px 6px; font-size: var(--t-base); line-height: 1.25; text-wrap: balance; overflow-wrap: break-word; }
 }
 [role="tabpanel"][hidden] { display: none; }
-[role="tabpanel"] { animation: z-rise 0.35s cubic-bezier(0.2, 0.85, 0.25, 1); }
-[role="tabpanel"]:focus-visible { outline-offset: 6px; border-radius: 6px; }
+[role="tabpanel"] { animation: z-rise var(--dur-slow) var(--ease-out); }
+[role="tabpanel"]:focus-visible { outline-offset: 6px; border-radius: var(--r-xs); }
 
 /* ---------- motion ---------- */
 .view { display: none; }
-.view.show { display: block; animation: z-rise 0.45s cubic-bezier(0.2, 0.85, 0.25, 1); }
+.view.show { display: block; animation: z-rise var(--dur-slow) var(--ease-out); }
 @keyframes z-rise { from { opacity: 0; transform: translateY(10px); } }
 /* the header's motion switch (theme.js: data-motion="off") stops the same as
    prefers-reduced-motion: every animation and transition, spinners included */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.001ms !important;
+    animation-duration: var(--dur-none) !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-duration: var(--dur-none) !important;
     scroll-behavior: auto !important;
   }
 }
 :root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after {
-  animation-duration: 0.001ms !important;
+  animation-duration: var(--dur-none) !important;
   animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
+  transition-duration: var(--dur-none) !important;
   scroll-behavior: auto !important;
 }

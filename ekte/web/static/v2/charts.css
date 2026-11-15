@@ -9,12 +9,12 @@
 
 .chartbox { position: relative; min-width: 0; }
 .tchart { display: block; max-width: 100%; height: auto; overflow: visible; font-family: var(--sans); }
-.tchart text { font-size: 11px; fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.tchart text { font-size: var(--t-2xs); fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .tchart .grid line { stroke: var(--line); stroke-width: 1; }
 .tchart .grid line.zero, .tchart .xaxis line { stroke: var(--border); stroke-width: 1; }
 .tchart .xaxis .tick { stroke: var(--border); }
 .tchart .marks line { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 3 3; }
-.tchart .marks text { fill: var(--ink-muted); font-weight: 700; font-size: 10px; }
+.tchart .marks text { fill: var(--ink-muted); font-weight: 700; font-size: var(--t-2xs); }
 .tchart .ser .band { fill: var(--c); opacity: 0.16; stroke: none; }
 .tchart .ser .whisk { stroke: var(--c); stroke-width: 6; stroke-linecap: round; opacity: 0.22; }
 .tchart .ser .line { fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
@@ -28,7 +28,7 @@
 .tchart .ser .fline { fill: none; stroke: var(--c); stroke-width: 2; stroke-dasharray: 6 4; stroke-linejoin: round; stroke-linecap: round; }
 .tchart .fcarea rect { fill: var(--sunken); opacity: 0.55; }
 .tchart .fcarea line { stroke: var(--border); stroke-width: 1; stroke-dasharray: 1 3; stroke-linecap: round; }
-.tchart .fcarea text { fill: var(--ink-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.tchart .fcarea text { fill: var(--ink-muted); font-size: var(--label-size); font-weight: var(--label-weight); text-transform: uppercase; letter-spacing: var(--track-label); }
 .tchart .cross { stroke: var(--ink-muted); stroke-width: 1; pointer-events: none; }
 .tchart .hit { fill: transparent; }
 
@@ -42,17 +42,17 @@
 
 .ctip {
   position: absolute; top: 8px; z-index: 5; width: max-content; max-width: min(300px, 90%);
-  padding: 9px 11px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line);
-  box-shadow: var(--shadow-pop); font-size: 12px; color: var(--ink-muted); line-height: 1.4;
+  padding: 9px 11px; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line);
+  box-shadow: var(--shadow-pop); font-size: var(--t-xs); color: var(--ink-muted); line-height: 1.4;
 }
 .ctip[hidden] { display: none; }
 .ctip .when { margin: 0 0 6px; font-weight: 700; color: var(--ink); }
 .ctip ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .ctip li { display: flex; gap: 7px; align-items: flex-start; }
 .ctip li .ckey { margin-top: 3px; }
-.ctip b { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ctip b { color: var(--ink); font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
 .ctip .nm { overflow-wrap: anywhere; }
-.ctip .sub { display: block; color: var(--ink-muted); font-size: 11.5px; }
+.ctip .sub { display: block; color: var(--ink-muted); font-size: var(--t-xs); }
 .ctip .mk { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); color: var(--ink-muted); }
 
 /* reference line (e.g. 100 % billing ratio) */
@@ -64,11 +64,11 @@
 .sbars .seg { fill: var(--c); }
 .sbars .bar.low .seg { opacity: 0.45; }
 .sbars .hit { fill: transparent; }
-.ctip .sw, .sw { display: inline-block; flex: none; width: 11px; height: 11px; border-radius: 3px; background: var(--c); margin-top: 3px; }
+.ctip .sw, .sw { display: inline-block; flex: none; width: 11px; height: 11px; border-radius: var(--r-2xs); background: var(--c); margin-top: 3px; }
 
 /* weekday x hour heatmap */
 .hmap { display: block; max-width: 100%; height: auto; font-family: var(--sans); }
-.hmap text { font-size: 11px; fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.hmap text { font-size: var(--t-2xs); fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
 /* a week of a fold, above its weekdays */
 .hmap text.hg { font-weight: 600; fill: var(--ink); }
 .hmap .q1 { fill: var(--heat-1); } .hmap .q2 { fill: var(--heat-2); } .hmap .q3 { fill: var(--heat-3); }
@@ -77,7 +77,7 @@
 /* hatching in ink: it shows on the faint low steps too */
 .hmap pattern line { stroke: var(--ink-muted); stroke-opacity: 0.55; stroke-width: 1.6; }
 .hmap .none { fill: var(--sunken); }
-.hlegend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12px; color: var(--ink-muted); }
+.hlegend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: var(--t-xs); color: var(--ink-muted); }
 .hlegend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 /* the scale's end values never break inside ("100 %"); its caption wraps under it on a phone */
 .hlegend .hv { white-space: nowrap; }
@@ -101,8 +101,8 @@
 .donut .arc { fill: none; stroke: var(--c); }
 .donut-box .dc { position: absolute; inset: 34px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; line-height: 1.15; font-family: var(--sans); }
-.donut-box .dv { font-size: 26px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.donut-box .dl { font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+.donut-box .dv { font-size: var(--t-2xl); font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.donut-box .dl { font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted); }
 
 /* meter: a thin bar of parts of a total on an empty track */
 .meter { display: flex; height: 8px; border-radius: var(--r-pill); background: var(--sunken); overflow: hidden; }

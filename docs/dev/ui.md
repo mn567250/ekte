@@ -13,6 +13,24 @@ Every color of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal color.
 
+Every other design value is a token too, in the one block of `v2/ekte.css`
+between `tokens:begin` and `tokens:end`: the type scale (`--t-2xs` 11 px …
+`--t-2xl` 26 px, `--t-hero`, `--t-display`), letter-spacing (`--track-*`),
+the uppercase label (`--label-size`, `--label-weight`, `--track-label`),
+spacing (`--s-1` … `--s-7`, 4 px steps), radius by role (`--r-2xs` chart keys,
+`--r-xs` chips and code, `--r-sm` controls, `--r-md` inner panels, `--r-lg`
+page cards, `--r-pill`), control heights (`--h-sm` 32, `--h-md` 40, `--h-lg`
+48 px) and motion (`--dur-*`, `--ease-*`). A field or button takes its height
+from its context's `--field-h` / `--btn-h` (default `--h-md`) as a minimum;
+the audit form sets `--h-lg`, dense rows `--h-sm`. `chartmotion.js` reads its
+timings from the `--dur-*` tokens at run time. `tests/test_web_design_tokens.py`
+fails on a literal font size, letter-spacing, radius, duration or easing
+anywhere under `ekte/web/static` (CSS, `<style>` blocks, style attributes and
+CSS in scripts) outside that block, on an uppercase label without the label
+tokens, on an unknown token and on a timing constant in a script;
+`tests/a11y/test_control_sizes.py` fails when a rendered field, select or
+button is not 32, 40 or 48 px tall.
+
 Every v2 page but Accessibility has one **page notice** right under its hero
 (`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
 in `ekte.css`): `EkteNotice.show(el, {level, title, detail, items, actions})`

@@ -44,12 +44,26 @@
   }
 
   // x of a marker from its path data ("M12.3,45.6…"): string work, no layout
-  var SWEEP = 600; // ms for the left-to-right reveal of a line chart
-  var SEG = 170;   // ms between the segments of one stacked bar
-  var STEP = 110;  // ms per colour step of a heat-grid cell (as --zm-step in the CSS)
-  var WAVE = 420;  // ms from the first heat-grid cell starting to the last
-  var RINGT = 700; // ms for a donut to draw all the way round
-  var METER = 90;  // ms between the meters of one host
+  // The timings (ms) are the design tokens of ekte.css (issue 213), read once
+  // on first use, so this script and the stylesheets cannot drift apart:
+  // sweep (the left-to-right reveal of a line chart), seg (between the
+  // segments of one stacked bar), step (per colour step of a heat-grid cell,
+  // as in chartmotion.css), wave (from the first heat-grid cell starting to
+  // the last), ring (a donut drawing all the way round), meter (between the
+  // meters of one host), rescale (a chart moving to a new scale), count (a
+  // KPI figure counting up).
+  var TIMES = null;
+  function tm() {
+    if (TIMES) return TIMES;
+    var cs = getComputedStyle(document.documentElement);
+    var ms = function (name) {
+      var v = cs.getPropertyValue(name).trim(), n = parseFloat(v);
+      return isNaN(n) ? 0 : /ms$/.test(v) ? n : n * 1000;
+    };
+    TIMES = { sweep: ms("--dur-slower"), seg: ms("--dur-fast"), step: ms("--dur-step"), wave: ms("--dur-slow"),
+      ring: ms("--dur-slower"), meter: ms("--dur-stagger"), rescale: ms("--dur-slow"), count: ms("--dur-slower") };
+    return TIMES;
+  }
   var NS = "http://www.w3.org/2000/svg";
 
   function pairs(d) {
@@ -112,7 +126,7 @@
     var touched = [], anims = [], until = 1150, i;
     // stacked bars are drawn as "tchart sbars": test for them first
     if (svg.classList.contains("tchart") && !svg.classList.contains("sbars")) {
-      // One sweep from left to right over SWEEP ms: each line segment draws
+      // One sweep from left to right over tm().sweep ms: each line segment draws
       // while the sweep crosses it (a segment after a gap waits its turn) and
       // each marker pops in as the sweep reaches its x. The line is drawn by
       // its dash; with pathLength="1" nothing is measured.
@@ -124,7 +138,7 @@
         ends[i] = [px(lines[i]), last ? parseFloat(last[1]) : px(lines[i])];
         lo = Math.min(lo, ends[i][0]); hi = Math.max(hi, ends[i][1]);
       }
-      var at = function (x) { return Math.round(((x - lo) / (hi - lo || 1)) * SWEEP); };
+      var at = function (x) { return Math.round(((x - lo) / (hi - lo || 1)) * tm().sweep); };
       for (i = 0; i < lines.length; i++) {
         lines[i].setAttribute("pathLength", "1"); lines[i].zmPL = true;
         lines[i].style.setProperty("--zm-d", at(ends[i][0]) + "ms");
@@ -148,7 +162,7 @@
         // bars start left to right; inside a bar the segments grow in drawing
         // order, which is bottom to top (each starts as the one below it ends)
         var b0 = Math.round((i / Math.max(1, bars.length - 1)) * 300), segs = bars[i].querySelectorAll(".seg");
-        for (var j = 0; j < segs.length; j++) { segs[j].style.setProperty("--zm-d", (b0 + j * SEG) + "ms"); touched.push(segs[j]); }
+        for (var j = 0; j < segs.length; j++) { segs[j].style.setProperty("--zm-d", (b0 + j * tm().seg) + "ms"); touched.push(segs[j]); }
       }
     } else if (svg.classList.contains("zp-chart")) {
       // perf.js request timeline: the same sweep as a line chart above. Dots
@@ -167,7 +181,7 @@
         te[i] = [px(tl[i]), lm ? parseFloat(lm[1]) : px(tl[i])];
         m0 = Math.min(m0, te[i][0]); m1 = Math.max(m1, te[i][1]);
       }
-      var zat = function (x) { return Math.round(((x - m0) / (m1 - m0 || 1)) * SWEEP); };
+      var zat = function (x) { return Math.round(((x - m0) / (m1 - m0 || 1)) * tm().sweep); };
       for (i = 0; i < marks.length; i++) {
         marks[i].style.setProperty("--zm-d", Math.max(0, zat(mx[i]) - 60) + "ms");
         touched.push(marks[i]);
@@ -199,8 +213,8 @@
         x0 = Math.min(x0, cx[i]); x1 = Math.max(x1, cx[i]); y0 = Math.min(y0, cy[i]); y1 = Math.max(y1, cy[i]);
       }
       for (i = 0; i < cells.length; i++) {
-        var delay = Math.round(((cx[i] - x0) / (x1 - x0 || 1) * 0.6 + (y1 - cy[i]) / (y1 - y0 || 1) * 0.4) * WAVE);
-        var q = /\bq(\d)\b/.exec(cells[i].getAttribute("class")), done = delay + (q ? +q[1] : 1) * STEP;
+        var delay = Math.round(((cx[i] - x0) / (x1 - x0 || 1) * 0.6 + (y1 - cy[i]) / (y1 - y0 || 1) * 0.4) * tm().wave);
+        var q = /\bq(\d)\b/.exec(cells[i].getAttribute("class")), done = delay + (q ? +q[1] : 1) * tm().step;
         cells[i].style.setProperty("--zm-d", delay + "ms");
         touched.push(cells[i]);
         var h = cells[i].nextElementSibling; // a few-runs cell's hatching shows once the cell is filled
@@ -209,14 +223,14 @@
       }
       until = Math.max(until, last + 100);
     } else if (svg.classList.contains("donut")) {
-      // one turn over RINGT ms: each arc draws by its dash (pathLength 100, set
+      // one turn over tm().ring ms: each arc draws by its dash (pathLength 100, set
       // by charts.js) while the turn passes it, so the parts follow each other
       var arcs = svg.querySelectorAll(".arc"), pos = 0;
       for (i = 0; i < arcs.length; i++) {
         var len = parseFloat(arcs[i].getAttribute("stroke-dasharray")) || 0;
         arcs[i].style.setProperty("--zm-len", len);
-        arcs[i].style.setProperty("--zm-d", Math.round((pos / 100) * RINGT) + "ms");
-        arcs[i].style.setProperty("--zm-t", Math.max(60, Math.round((len / 100) * RINGT)) + "ms");
+        arcs[i].style.setProperty("--zm-d", Math.round((pos / 100) * tm().ring) + "ms");
+        arcs[i].style.setProperty("--zm-t", Math.max(60, Math.round((len / 100) * tm().ring)) + "ms");
         touched.push(arcs[i]);
         pos += len;
       }
@@ -237,7 +251,7 @@
     for (var i = 0; i < ms.length; i++) {
       var segs = ms[i].querySelectorAll(".mseg");
       for (var j = 0; j < segs.length; j++) {
-        var d = i * METER + j * SEG;
+        var d = i * tm().meter + j * tm().seg;
         segs[j].style.setProperty("--zm-d", d + "ms");
         touched.push(segs[j]);
         last = Math.max(last, d);
@@ -277,7 +291,6 @@
   // the new one (SMIL on d, as grow() above); one that gained a request grows
   // its new segment out of its old end. One whose points do not match (cut at
   // a focused range's top edge, new) fades in. `fresh` marks pop in.
-  var RESCALE = 420; // ms
   function at2(el) {
     if (el.tagName === "circle") return [parseFloat(el.getAttribute("cx")) || 0, parseFloat(el.getAttribute("cy")) || 0];
     if (el.tagName === "text") return [parseFloat(el.getAttribute("x")) || 0, parseFloat(el.getAttribute("y")) || 0];
@@ -313,7 +326,7 @@
     a.setAttribute("keyTimes", "0;1");
     a.setAttribute("calcMode", "spline");
     a.setAttribute("keySplines", "0.2 0.8 0.2 1");
-    a.setAttribute("dur", RESCALE + "ms");
+    a.setAttribute("dur", tm().rescale + "ms");
     a.setAttribute("begin", "indefinite");
     a.setAttribute("fill", "remove");
     el.appendChild(a);
@@ -361,10 +374,9 @@
     if (!touched.length && !anims.length) return;
     cls.split(" ").forEach(function (c) { svg.classList.add(c); });
     for (i = 0; i < anims.length; i++) anims[i].beginElement();
-    cleanup(svg, RESCALE + 60, cls, touched, anims);
+    cleanup(svg, tm().rescale + 60, cls, touched, anims);
   }
 
-  var COUNT = 700; // ms for a KPI figure to count up
   function count(items, show) {
     function paint(k) {
       // ease-out cubic: fast at first, settling on the value; whole-number
@@ -380,14 +392,14 @@
     // an empty Web Animation is the clock: it shows in document.getAnimations(),
     // so whatever waits for the page's animations also waits for the count,
     // and the final value lands the moment it ends
-    var clock = host.animate([], { duration: COUNT });
+    var clock = host.animate([], { duration: tm().count });
     clock.finished.then(function () { paint(1); }, function () { /* replaced */ });
     paint(0);
     function step() {
       // a newer render replaced these elements: stop
       if (!host.isConnected) { clock.cancel(); return; }
       if (clock.playState === "finished") return;
-      paint(Math.min(1, (clock.currentTime || 0) / COUNT));
+      paint(Math.min(1, (clock.currentTime || 0) / tm().count));
       window.requestAnimationFrame(step);
     }
     window.requestAnimationFrame(step);

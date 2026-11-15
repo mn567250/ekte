@@ -34,20 +34,20 @@
    * sub-tab switch first, then the selected sub-panel inside the same card */
   #views > .tab-card { min-width: 0; }
   .panel { min-width: 0; }
-  .panel h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.2px; margin: 0; }
-  .psub { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
-  .pbody { margin-top: 14px; min-width: 0; transition: opacity 0.2s; }
+  .panel h2 { font-family: var(--disp); font-weight: 600; font-size: var(--t-lg); letter-spacing: var(--track-heading); margin: 0; }
+  .psub { margin: 4px 0 0; font-size: var(--t-sm); color: var(--ink-muted); line-height: 1.5; }
+  .pbody { margin-top: 14px; min-width: 0; transition: opacity var(--dur-base); }
   /* refetch keeps the frame: the previous numbers stay, dimmed */
   [aria-busy="true"] .pbody { opacity: 0.55; }
-  .state { padding: 14px 0; color: var(--ink-muted); font-size: 14px; }
-  .state.loading { font-family: var(--mono); font-size: 13px; color: var(--ink-muted); }
+  .state { padding: 14px 0; color: var(--ink-muted); font-size: var(--t-base); }
+  .state.loading { font-family: var(--mono); font-size: var(--t-sm); color: var(--ink-muted); }
   .errbox { margin-top: 0; }
 
   /* panel controls */
-  .flab { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
+  .flab { font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); }
   .ctl label, .lbctl label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .ctl label > span, .lbctl label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
-  .ctl .in, .lbctl .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
+  .ctl label > span, .lbctl label > span { font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
+  .ctl .in, .lbctl .in { font-size: var(--t-base); padding: 8px 11px; border-radius: var(--r-sm); }
   .ctl select.in, .lbctl select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
 
   /* tabs */
@@ -57,8 +57,8 @@
   .atabs { flex-wrap: wrap; }
   .atabs [role="tab"] { flex: 1 1 auto; overflow-wrap: anywhere; }
   /* sections within a tab: a smaller, content-width second row */
-  .subtabs { width: 100%; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 18px; border-radius: 13px; }
-  .subtabs [role="tab"] { flex: 1 1 0; font-size: 13.5px; padding: 7px 14px; border-radius: 9px; overflow-wrap: anywhere; }
+  .subtabs { width: 100%; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 18px; border-radius: var(--r-md); }
+  .subtabs [role="tab"] { flex: 1 1 0; font-size: var(--t-base); padding: 7px 14px; border-radius: var(--r-sm); overflow-wrap: anywhere; }
 
   /* a panel's headline tiles (kpi.js, kpi.css) and what they compare with */
   .kpihead { margin: 0 0 14px; }
@@ -86,7 +86,7 @@
   .pick { margin-top: 12px; }
   .pick .chips { margin-top: 6px; }
   .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
-  .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink-muted); }
+  .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--t-sm); color: var(--ink-muted); }
   .legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }
   /* long relay URLs wrap only after "/" and "." (<wbr>, see brk()), never
      mid-word; a single overlong part still breaks rather than overflow */
@@ -94,17 +94,17 @@
   .legend .nm { color: var(--ink); font-weight: 600; }
   .lbl { display: block; }
   .legend .sub { color: var(--ink-muted); white-space: nowrap; }
-  .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-muted); margin: 4px 0 2px; }
+  .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: var(--t-xs); color: var(--ink-muted); margin: 4px 0 2px; }
   .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
-  .note { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); padding: 9px 12px; border-radius: 12px; background: var(--sunken); border: 1px solid var(--line); }
+  .note { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--t-sm); line-height: 1.5; color: var(--ink-muted); padding: 9px 12px; border-radius: var(--r-sm); background: var(--sunken); border: 1px solid var(--line); }
   .note .zicon { width: 14px; height: 14px; flex: none; margin-top: 2px; }
   .note.warn { color: var(--warning); background: var(--warning-tint); border-color: transparent; }
   .note ul { margin: 4px 0 0; padding-left: 18px; }
   .note > span { min-width: 0; overflow-wrap: anywhere; }
-  .empty-data { padding: 30px 12px; text-align: center; color: var(--ink-muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 14px; }
+  .empty-data { padding: 30px 12px; text-align: center; color: var(--ink-muted); font-size: var(--t-base); border: 1px dashed var(--line); border-radius: var(--r-md); }
 
   /* data tables (chart table + leaderboard) */
-  .tdisc { margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; }
+  .tdisc { margin-top: 12px; border: 1px solid var(--line); border-radius: var(--r-md); }
   .tdisc .disclosure { padding: 10px 14px; }
   .tdisc .disclosure .zicon { width: 15px; height: 15px; }
   .tdisc .tbody { padding: 0 2px 6px; }
@@ -112,7 +112,7 @@
   /* wide tables scroll inside this focusable region (never the page); edge
      shadows show there is more to the side */
   .tscroll {
-    overflow-x: auto; max-width: 100%; border-radius: 10px;
+    overflow-x: auto; max-width: 100%; border-radius: var(--r-sm);
     background:
       linear-gradient(to right, var(--surface) 30%, transparent) left / 24px 100% no-repeat local,
       linear-gradient(to left, var(--surface) 30%, transparent) right / 24px 100% no-repeat local,
@@ -125,11 +125,11 @@
   /* "More columns": the chips that add a wide table's other columns */
   .colpick { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 0 0 10px; }
   .colpick .chips { gap: 6px; }
-  .colpick .chips button { padding: 5px 10px; font-size: 12px; }
-  table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--ink-muted); }
-  .dt caption { text-align: left; font-size: 12px; color: var(--ink-muted); padding: 6px 12px; caption-side: top; }
+  .colpick .chips button { padding: 5px 10px; font-size: var(--t-xs); }
+  table.dt { border-collapse: collapse; width: 100%; font-size: var(--t-xs); color: var(--ink-muted); }
+  .dt caption { text-align: left; font-size: var(--t-xs); color: var(--ink-muted); padding: 6px 12px; caption-side: top; }
   .dt th, .dt td { padding: 7px 8px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
-  .dt thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); border-top: 0; white-space: nowrap; }
+  .dt thead th { font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); border-top: 0; white-space: nowrap; }
   .dt td.n, .dt th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dt tbody th { font-weight: 600; color: var(--ink); min-width: 12em; max-width: 24em; }
   .dt td.when { white-space: nowrap; }
@@ -138,7 +138,7 @@
   .dt thead th, .dt thead th.n { white-space: normal; vertical-align: bottom; }
   .dt thead .sortb { white-space: normal; text-align: inherit; }
   .dt td.ser { min-width: 10em; max-width: 18em; color: var(--ink); }
-  .dt td .cn { display: block; font-size: 11px; color: var(--ink-muted); }
+  .dt td .cn { display: block; font-size: var(--t-2xs); color: var(--ink-muted); }
   .dt tr.low > * { color: var(--ink-muted); }
   .dt tr.low td.nt { color: var(--warning); }
   /* forecast rows: an estimate, not a measurement */
@@ -146,49 +146,49 @@
   .note .fcv.good { color: var(--success); font-weight: 600; } .note .fcv.bad { color: var(--danger); font-weight: 600; }
   .dt td.nt { min-width: 8em; }
   .dt .badge { margin-top: 3px; }
-  .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink-muted); overflow-wrap: anywhere; }
+  .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: var(--t-2xs); color: var(--ink-muted); overflow-wrap: anywhere; }
 
   /* leaderboard */
   .lbctl { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
   .lbctl .seg { flex: 1 1 260px; }
-  .lbctl .seg button { padding: 8px 10px; font-size: 12.5px; }
+  .lbctl .seg button { padding: 8px 10px; font-size: var(--t-sm); }
   .lbctl label { flex: 1 1 200px; }
   .lbtab { margin-top: 14px; border: 1px solid var(--line); }
   .sortb {
     display: inline-flex; align-items: center; gap: 3px; padding: 3px 4px; margin: -3px -4px; cursor: pointer; white-space: nowrap;
-    font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; border-radius: 6px;
+    font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; border-radius: var(--r-xs);
   }
   .sortb:hover { color: var(--ink); background: var(--sunken); }
-  .sortb .zicon { width: 12px; height: 12px; flex: none; opacity: 0; transition: transform 0.2s; }
+  .sortb .zicon { width: 12px; height: 12px; flex: none; opacity: 0; transition: transform var(--dur-base); }
   th[aria-sort] .sortb { color: var(--ink); }
   th[aria-sort] .sortb .zicon { opacity: 1; }
   th[aria-sort="ascending"] .sortb .zicon { transform: rotate(180deg); }
   .dt th.n .sortb { flex-direction: row-reverse; }
 
-  .cov { margin: 12px 0 10px; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
+  .cov { margin: 12px 0 10px; font-size: var(--t-sm); color: var(--ink-muted); line-height: 1.5; }
 
   /* errors: category legend, breakdown table */
   .legend .sw { margin-top: 0; }
   .etab, .itab, .btab, .otab { margin-top: 14px; border: 1px solid var(--line); }
   .dt h3 { margin: 0; font: inherit; }
-  .subh { margin: 18px 0 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+  .subh { margin: 18px 0 0; font-size: var(--t-base); font-weight: 700; color: var(--ink); }
 
   /* integrity matrix */
   /* position: the sr-only name (absolute) stays inside the scrolling table */
   .dt td.chk { min-width: 8.5em; position: relative; }
   .dt td.chk .badge { margin-top: 0; }
   .dt td.chk.low .badge { opacity: 0.7; }
-  .dt td .few { display: block; font-size: 11px; color: var(--warning); }
+  .dt td .few { display: block; font-size: var(--t-2xs); color: var(--warning); }
 
   /* relay overhead: bars in the table itself */
-  .hbar { display: block; height: 8px; margin-top: 5px; border-radius: 4px; background: var(--sunken); min-width: 8em; }
-  .hbar > span { display: block; height: 8px; border-radius: 4px; background: var(--c); min-width: 2px; }
+  .hbar { display: block; height: 8px; margin-top: 5px; border-radius: var(--r-pill); background: var(--sunken); min-width: 8em; }
+  .hbar > span { display: block; height: 8px; border-radius: var(--r-pill); background: var(--c); min-width: 2px; }
   .dt td.bar { min-width: 11em; }
 
   .empty-box { text-align: center; padding: 44px 22px 40px; margin-top: 22px; }
   .empty-box .ic { color: var(--ink-muted); margin-bottom: 10px; }
   .empty-box .ic .zicon { width: 34px; height: 34px; }
-  .empty-box p { margin: 0 0 16px; color: var(--ink-muted); font-size: 15px; }
+  .empty-box p { margin: 0 0 16px; color: var(--ink-muted); font-size: var(--t-md); }
 
   @media (max-width: 600px) {
     .ctl { grid-template-columns: 1fr; }
