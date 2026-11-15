@@ -42,9 +42,6 @@
     - link "检测历史":
       - /url: /history
     - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
-  - status:
-    - text: "API 密钥不会被保存 你输入的密钥只留在 ekte serve 的内存中，从不写入磁盘；重启后需重新输入。env: 变量引用照常工作。"
-    - button "更改"
   - group "API 密钥保存方式":
     - text: API 密钥保存方式
     - radio "不保存密钥" [checked]
@@ -168,8 +165,7 @@
         - text: 在分析中打开
       - form "设置后即可启用":
         - heading "设置后即可启用" [level=4]
-        - paragraph: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。
-        - text: 检测间隔
+        - text: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。 检测间隔
         - combobox "检测间隔":
           - option "请选择…" [selected]
           - option "每 5 分钟"
@@ -194,7 +190,6 @@
         - button "启用监控"
       - button "立即运行"
       - button "删除"
-    - paragraph: 全程本地运行。API Key 不会被保存：它只留在 ekte serve 的内存中，绝不写入磁盘、出现在监控列表里或发给浏览器。ekte serve 重启后请重新输入。
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
   - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

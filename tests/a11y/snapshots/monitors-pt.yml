@@ -42,9 +42,6 @@
     - link "Histórico":
       - /url: /history
     - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa o seu limite ou piora em relação à última vez, o ekte alerta os seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
-  - status:
-    - text: As chaves de API não são guardadas As chaves que introduz ficam apenas na memória do ekte serve e nunca são escritas no disco; introduza-as novamente após um reinício. As referências env:VAR continuam a funcionar.
-    - button "Alterar"
   - group "Armazenamento das chaves de API":
     - text: Armazenamento das chaves de API
     - radio "Não guardar chaves" [checked]
@@ -168,8 +165,7 @@
         - text: Abrir em Análises
       - form "Conclua a configuração para ativá-lo":
         - heading "Conclua a configuração para ativá-lo" [level=4]
-        - paragraph: A configuração vem da execução no Histórico. Defina com que frequência é executado e ative-o.
-        - text: Intervalo de verificação
+        - text: A configuração vem da execução no Histórico. Defina com que frequência é executado e ative-o. Intervalo de verificação
         - combobox "Intervalo de verificação":
           - option "Escolher…" [selected]
           - option "a cada 5 min"
@@ -194,7 +190,6 @@
         - button "Ativar monitor"
       - button "Executar agora"
       - button "Eliminar"
-    - paragraph: "Tudo corre localmente. A chave de API não é guardada: fica apenas na memória do ekte serve e nunca é escrita no disco, mostrada na lista de monitores ou enviada ao navegador. Introduza-a novamente quando o ekte serve reiniciar."
 - contentinfo:
   - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
   - paragraph: "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."
