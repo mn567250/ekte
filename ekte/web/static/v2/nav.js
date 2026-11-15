@@ -20,6 +20,12 @@
  * to the accessibility conformance report (/accessibility), so it sits in
  * the same place on every page (BITV 9.3.2.3). Its accessible name comes from
  * aria-label (the icon is aria-hidden), its tooltip from title.
+ *
+ * The first item of .tail is the running version (v0.34.0, or v0.34.0+dev in
+ * a source checkout), a link to its changelog. The server writes both onto the
+ * header as data-version / data-changelog (ekte/web/changelog.py); without
+ * them there is no link. The accessible name is the visible version plus a
+ * visually hidden "Changelog" (BITV 9.2.5.3 label in name).
  */
 (function () {
   "use strict";
@@ -56,11 +62,17 @@
         '<span data-en="' + esc(l[3]) + '">' + esc(l[3]) + "</span></a>"
       );
     }).join("");
+    var version = header.getAttribute("data-version");
+    var changelog = header.getAttribute("data-changelog");
+    var versionLink = version && changelog
+      ? '<a class="ver" href="' + esc(changelog) + '" title="Changelog" data-en-title="Changelog">' +
+        esc(version) + ' <span class="sr-only" data-en="Changelog">Changelog</span></a>'
+      : "";
     header.innerHTML =
       '<a class="skip-link" href="#main" data-en="Skip to main content">Skip to main content</a>' +
       '<a class="logo" href="/" aria-label="ekte"><span class="b">' + ico("logo", { size: 18 }) +
       "</span><span>ekte<b>.</b></span></a>" +
-      '<div class="tail">' +
+      '<div class="tail">' + versionLink +
       '<select class="theme-sel" aria-label="Theme" title="Theme" data-en-aria-label="Theme" data-en-title="Theme">' +
       '<option value="system" data-en="Auto theme">Auto theme</option>' +
       '<option value="light" data-en="Light">Light</option>' +

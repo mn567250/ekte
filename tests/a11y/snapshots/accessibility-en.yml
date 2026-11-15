@@ -4,6 +4,8 @@
   - link "ekte":
     - /url: /
     - text: ekte.
+  - link "v<version> Changelog":
+    - /url: /changelog
   - combobox "Theme":
     - option "Auto theme"
     - option "Light" [selected]

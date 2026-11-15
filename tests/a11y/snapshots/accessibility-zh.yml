@@ -4,6 +4,8 @@
   - link "ekte":
     - /url: /
     - text: ekte.
+  - link "v<version> 更新日志":
+    - /url: /changelog
   - combobox "主题":
     - option "跟随系统"
     - option "浅色" [selected]

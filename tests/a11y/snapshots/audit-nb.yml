@@ -4,6 +4,8 @@
   - link "ekte":
     - /url: /
     - text: ekte.
+  - link "v<version> Endringslogg":
+    - /url: /changelog
   - combobox "Tema":
     - option "Automatisk tema"
     - option "Lyst" [selected]
