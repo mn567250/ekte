@@ -32,12 +32,11 @@
   .kb-tools + .kb-card { margin-top: 12px; }
   [data-kb="add"] + [data-kb="list"] { margin-top: 14px; }
 
-  /* add form: a disclosure so the lists come first */
-  .add { margin: 12px 0 4px; border: 1px dashed var(--line); border-radius: var(--r-md); }
-  .add > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .add > summary .zicon { width: 15px; height: 15px; }
-  .add[open] > summary { border-bottom: 1px solid var(--line); }
-  .add-body { padding: 4px 14px 16px; }
+  /* add form: a Disclosure (ekte.css; dashed: an "add" affordance) so the lists come first */
+  .disclosure-box.add { margin: 12px 0 4px; }
+  .disclosure-box.add .disclosure .t { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); }
+  .disclosure-box.add .disclosure .zicon { width: 15px; height: 15px; }
+  .add-body { padding: 4px 14px 16px; border-top: 1px solid var(--line); }
   .step { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
   .step:first-child { margin-top: 8px; padding-top: 0; border-top: 0; }
   .step h3 { font-size: var(--t-md); font-weight: 700; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
@@ -45,7 +44,9 @@
     display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%;
     background: var(--sunken); border: 1px solid var(--line); font-size: var(--t-sm); font-family: var(--mono);
   }
-  details.inline { margin-top: 10px; }
+  .prompt-disc { margin-top: 10px; }
+  .prompt-disc > .disclosure { width: auto; padding: 6px 0; }
+  .prompt-disc > .disclosure-body { padding: 4px 0 0; }
   textarea.in.yaml { font-family: var(--mono); font-size: var(--t-sm); min-height: 180px; }
   textarea.in.prompt { font-family: var(--mono); font-size: var(--t-xs); min-height: 160px; }
   .scan[hidden] { display: none; }
@@ -78,9 +79,11 @@
   .switch:has(input:disabled) { cursor: not-allowed; }
   .grps { display: flex; flex-direction: column; gap: 10px; }
   .grp { padding: 0; }
-  .grp > summary { cursor: pointer; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 600; }
-  .grp > summary .cnt { color: var(--ink-muted); font-weight: 500; font-size: var(--t-sm); }
-  .grp > .items { padding: 0 10px 10px; }
+  /* a group: a Disclosure in a list (chevron first) */
+  .card.grp > .disclosure { padding: 14px 16px; color: var(--ink); font-weight: 600; }
+  .card.grp > .disclosure .t { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
+  .card.grp > .disclosure .cnt { color: var(--ink-muted); font-weight: 500; font-size: var(--t-sm); }
+  .card.grp > .disclosure-body { padding: 0 10px 10px; }
   .grp .item { box-shadow: none; border: 1px solid var(--line); }
   [data-kb="list"] { display: flex; flex-direction: column; gap: 10px; }
 </style>
@@ -115,13 +118,13 @@
       <section role="tabpanel" id="panel-models" aria-labelledby="tab-models" tabindex="0">
         <h2 class="form-title" data-kb="title" id="models-title" tabindex="-1"><span data-en="All models">All models</span> <span class="count" data-kb="count"></span></h2>
         <p class="hint" data-en="The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.">The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.</p>
-        <details class="add" data-kb="add" id="add-models">
-          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a model">Add a model</span></summary>
-          <div class="add-body">
+        <div class="disclosure-box add" data-kb="add" id="add-models">
+          <button type="button" class="disclosure" data-disclosure aria-expanded="false" aria-controls="add-models-body"><span class="t"><span class="pico" data-icon="plus"></span><span data-en="Add a model">Add a model</span></span><span class="cv" data-icon="chevronDown"></span></button>
+          <div class="disclosure-body add-body" id="add-models-body" hidden>
             <p class="hint" data-en="Let an AI assistant research the model, then check its answer here before it is stored.">Let an AI assistant research the model, then check its answer here before it is stored.</p>
             <div data-kb="add-body"></div>
           </div>
-        </details>
+        </div>
         <div data-kb="list" id="models-list"><p class="empty" data-en="Loading…">Loading…</p></div>
       </section>
 
@@ -129,10 +132,10 @@
       <section role="tabpanel" id="panel-providers" aria-labelledby="tab-providers" tabindex="0" hidden>
         <h2 class="form-title" data-kb="title" id="providers-title" tabindex="-1"><span data-en="All providers">All providers</span> <span class="count" data-kb="count"></span></h2>
         <p class="hint" data-en="The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.">The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.</p>
-        <details class="add" data-kb="add" id="add-providers">
-          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a provider">Add a provider</span></summary>
-          <div class="add-body"><div data-kb="add-body"></div></div>
-        </details>
+        <div class="disclosure-box add" data-kb="add" id="add-providers">
+          <button type="button" class="disclosure" data-disclosure aria-expanded="false" aria-controls="add-providers-body"><span class="t"><span class="pico" data-icon="plus"></span><span data-en="Add a provider">Add a provider</span></span><span class="cv" data-icon="chevronDown"></span></button>
+          <div class="disclosure-body add-body" id="add-providers-body" hidden><div data-kb="add-body"></div></div>
+        </div>
         <div data-kb="list" id="providers-list"><p class="empty" data-en="Loading…">Loading…</p></div>
       </section>
 
@@ -140,10 +143,10 @@
       <section role="tabpanel" id="panel-relays" aria-labelledby="tab-relays" tabindex="0" hidden>
         <h2 class="form-title" data-kb="title" id="relays-title" tabindex="-1"><span data-en="All relays">All relays</span> <span class="count" data-kb="count"></span></h2>
         <p class="hint" data-en="Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.">Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.</p>
-        <details class="add" data-kb="add" id="add-relays">
-          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a relay">Add a relay</span></summary>
-          <div class="add-body"><div data-kb="add-body"></div></div>
-        </details>
+        <div class="disclosure-box add" data-kb="add" id="add-relays">
+          <button type="button" class="disclosure" data-disclosure aria-expanded="false" aria-controls="add-relays-body"><span class="t"><span class="pico" data-icon="plus"></span><span data-en="Add a relay">Add a relay</span></span><span class="cv" data-icon="chevronDown"></span></button>
+          <div class="disclosure-body add-body" id="add-relays-body" hidden><div data-kb="add-body"></div></div>
+        </div>
         <div data-kb="list" id="relays-list"><p class="empty" data-en="Loading…">Loading…</p></div>
       </section>
     </div>
@@ -154,6 +157,7 @@
 <script src="/icons.js"></script>
 <script src="/static/nav.js"></script>
 <script src="/static/notice.js"></script>
+<script src="/static/disclosure.js"></script>
 <script src="/static/tabs.js"></script>
 <script src="/static/filterpanel.js"></script>
 <script src="/static/kbview.js"></script>
@@ -466,7 +470,7 @@
     if (!data) {
       if (loadErr) {
         Object.keys(CONFIG).forEach(function (k) {
-          $(k + "-list").innerHTML = '<p class="empty">' + esc(T("加载失败，请刷新重试。", "Failed to load — please refresh and try again.")) + "</p>";
+          $(k + "-list").innerHTML = EkteNotice.empty(T("加载失败，请刷新重试。", "Failed to load — please refresh and try again."), { icon: "warning" });
         });
       }
       return;

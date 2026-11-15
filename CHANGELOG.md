@@ -20,6 +20,28 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: one Table, one Disclosure and one EmptyState ([#227](https://github.com/mn567250/ekte/issues/227))
+
+Tables, expanders and empty states each came in four or five versions, with
+their own padding, headers, chevrons, borders and elements.
+
+- **Table:** every data table (Analytics, the report's check details, the
+  performance data, the Accessibility steps) is `ekte.css`'s `.tbl`: a
+  label-style header, even cell padding (denser in wide analysis tables),
+  numbers right-aligned in tabular figures with their sample size muted
+  below. History's column header lines up with its rows without the
+  negative-margin hack.
+- **Disclosure:** always a button and a region, never a native `<details>`
+  (whose looks and screen-reader output differ between browsers): the
+  Knowledge base's add forms, groups and prompt, the Accessibility steps and
+  the performance data table moved over. The chevron sits on the right of a
+  standalone block and first in a list; frames are solid, dashed only for an
+  "add" affordance (the Audit page's "Compare against a trusted baseline" is
+  no longer dashed).
+- **EmptyState:** an icon, one sentence and an optional action, centred, on
+  every page (no audits yet, nothing matching the filters, no data in the
+  range, nothing running, no findings).
+
 ### Web UI: one Callout and one Note for messages ([#226](https://github.com/mn567250/ekte/issues/226))
 
 Messages came in many boxes of their own (`.errbox`, `.infobox`, `.okbox`,

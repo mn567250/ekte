@@ -49,11 +49,6 @@
 :root .zp-bar { height: 6px; }
 :root .zp-bar i { transition: width var(--dur-slow) var(--ease-out); }
 /* the ten-column stat table fits the 760px card without scrolling */
-:root .zp-table th,
-:root .zp-table td { padding-left: 5px; padding-right: 5px; }
-:root .zp-table th:first-child,
-:root .zp-table td:first-child { padding-left: 0; }
-:root .zp-table th { letter-spacing: var(--track-label); }
 :root .zp-h { font-family: var(--disp); font-weight: 600; }
 :root .zp-tip { font-family: var(--mono); box-shadow: var(--shadow-pop); }
 
@@ -73,8 +68,8 @@
   white-space: normal;
   margin: 2px 0 4px;
 }
-:root .zp-data summary { display: inline-block; font-weight: 600; color: var(--ink-muted); }
-:root .zp-data summary:hover { color: var(--ink); }
+:root .zp-data > .disclosure { font-weight: 600; color: var(--ink-muted); }
+:root .zp-data > .disclosure:hover { color: var(--ink); }
 :root .zp-data-scroll {
   border: 1px solid var(--line);
   border-radius: var(--r-sm);

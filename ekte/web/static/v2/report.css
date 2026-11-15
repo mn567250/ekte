@@ -45,7 +45,6 @@
 /* report.warnings: .znote.warning tiles (ekte.css), one per warning */
 .zr .zr-warns ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .zr .zr-warns .znote { margin: 0; }
-.zr .none { color: var(--ink-muted); font-size: var(--t-base); margin: 0; }
 
 /* dimension meters */
 .zr-dim { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px dotted var(--line); font-size: var(--t-base); }
@@ -162,14 +161,10 @@
 .zr-grp code { font-family: var(--mono); font-size: var(--t-xs); overflow-wrap: anywhere; }
 .zr-sub { list-style: none; margin: 6px 0 0; padding: 0; font-size: var(--t-sm); color: var(--ink-muted); }
 .zr-sub li { padding: 2px 0; }
+/* the table is ekte.css's Table (.tbl, issue 227); this is only its frame */
 .zr-at { margin-top: 7px; border: 1px solid var(--line); border-radius: var(--r-sm); overflow-x: auto; }
 .zr-at[hidden] { display: none; }
-.zr-at table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
-.zr-at th { text-align: left; font-weight: 600; color: var(--ink-muted); background: var(--sunken); }
-.zr-at th, .zr-at td { padding: 5px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
-.zr-at tr:last-child td { border-bottom: 0; }
 .zr-at td:first-child { white-space: nowrap; }
-.zr-at .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* execution log: detectors in run order, outcome and wall-clock time */
 .zr-exec .how { color: var(--ink-muted); font-size: var(--t-sm); line-height: 1.55; margin: 0 0 4px; }

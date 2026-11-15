@@ -93,10 +93,10 @@
   .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; }
   .notes .znote.inline { margin: 0; }
   /* .note (the inline Note) and the Callout (.znote.inline) are ekte.css's */
-  .empty-data { padding: 30px 12px; text-align: center; color: var(--ink-muted); font-size: var(--t-base); border: 1px dashed var(--line); border-radius: var(--r-md); }
 
   /* data tables (chart table + leaderboard) */
-  .tdisc { margin-top: 12px; border: 1px solid var(--line); border-radius: var(--r-md); }
+  /* "Show as table": a standalone Disclosure in its frame (ekte.css) */
+  .tdisc { margin-top: 12px; }
   .tdisc .disclosure { padding: 10px 14px; }
   .tdisc .disclosure .zicon { width: 15px; height: 15px; }
   .tdisc .tbody { padding: 0 2px 6px; }
@@ -118,19 +118,15 @@
   .colpick { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 0 0 10px; }
   .colpick .chips { gap: 6px; }
   .colpick .chips button { padding: 5px 10px; font-size: var(--t-xs); }
-  table.dt { border-collapse: collapse; width: 100%; font-size: var(--t-xs); color: var(--ink-muted); }
-  .dt caption { text-align: left; font-size: var(--t-xs); color: var(--ink-muted); padding: 6px 12px; caption-side: top; }
-  .dt th, .dt td { padding: 7px 8px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
-  .dt thead th { font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); border-top: 0; white-space: nowrap; }
-  .dt td.n, .dt th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .dt tbody th { font-weight: 600; color: var(--ink); min-width: 12em; max-width: 24em; }
+  /* the tables are ekte.css's Table (<table class="tbl dense dt">, issue 227);
+     what follows is only this page's cells */
+  .dt tbody th { min-width: 12em; max-width: 24em; }
   .dt td.when { white-space: nowrap; }
   /* column headers wrap between words, so a long label ("Success rate")
      does not make its column wider than its values (issue 220) */
-  .dt thead th, .dt thead th.n { white-space: normal; vertical-align: bottom; }
+  .dt thead th { white-space: normal; }
   .dt thead .sortb { white-space: normal; text-align: inherit; }
   .dt td.ser { min-width: 10em; max-width: 18em; color: var(--ink); }
-  .dt td .cn { display: block; font-size: var(--t-2xs); color: var(--ink-muted); }
   .dt tr.low > * { color: var(--ink-muted); }
   .dt tr.low td.nt { color: var(--warning); }
   /* forecast rows: an estimate, not a measurement */
@@ -177,10 +173,7 @@
   .hbar > span { display: block; height: 8px; border-radius: var(--r-pill); background: var(--c); min-width: 2px; }
   .dt td.bar { min-width: 11em; }
 
-  .empty-box { text-align: center; padding: 44px 22px 40px; margin-top: 22px; }
-  .empty-box .ic { color: var(--ink-muted); margin-bottom: 10px; }
-  .empty-box .ic .zicon { width: 34px; height: 34px; }
-  .empty-box p { margin: 0 0 16px; color: var(--ink-muted); font-size: var(--t-md); }
+  #empty { margin-top: 22px; }
 
   @media (max-width: 600px) {
     .ctl { grid-template-columns: 1fr; }
@@ -200,7 +193,7 @@
     <div class="znote" id="note" hidden></div>
     <p class="sr-only" id="live" role="status"></p>
 
-    <section class="card empty-box" id="empty" hidden></section>
+    <section class="card" id="empty" hidden></section>
 
     <section class="card filters" id="filters" hidden></section>
 
@@ -725,9 +718,8 @@
   function renderEmpty() {
     var box = $("#empty");
     box.hidden = false;
-    box.innerHTML = '<div class="ic">' + ico("bars") + "</div><p>" +
-      esc(T("还没有检测记录，暂无可分析的数据。", "No audits recorded yet, so there is nothing to analyse.")) +
-      '</p><a class="btn pri" href="/">' + esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a>";
+    box.innerHTML = EkteNotice.empty(T("还没有检测记录，暂无可分析的数据。", "No audits recorded yet, so there is nothing to analyse."), {
+      icon: "bars", action: '<a class="btn pri" href="/">' + esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a>" });
     say("");
   }
 
@@ -785,8 +777,8 @@
         { period: period, prev: dayRange(s.previous.from, s.previous.to) })
       : period) + (few ? ' <span id="kpi-few">' + esc(fewKpiText(s)) + "</span>" : "");
     if (!s.runs) {
-      body.innerHTML = '<div class="empty-data"><p>' + esc(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range.")) + "</p>" +
-        (!$("#freset").hidden ? '<button type="button" class="btn sm" id="kreset">' + esc(T("重置筛选", "Reset filters")) + "</button>" : "") + "</div>";
+      body.innerHTML = EkteNotice.empty(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range."), {
+        action: !$("#freset").hidden ? '<button type="button" class="btn sm" id="kreset">' + esc(T("重置筛选", "Reset filters")) + "</button>" : "" });
       return;
     }
     // always 4 columns x 3 rows (2 columns on phones), in the server's
@@ -947,8 +939,7 @@
     }).join("") + (anyFc ? "<li>" + C.dashKey("fc") + '<span class="nm">' + esc(T("预测", "Forecast")) + "</span>" +
       '<span class="sub">' + esc(T("虚线，区间越往后越宽", "dashed, its band widening ahead")) + "</span></li>" : "") + "</ul>";
     if (!withData.length) {
-      body.innerHTML = (series.length ? legend : "") + '<div class="empty-data">' +
-        esc(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name })) + "</div>";
+      body.innerHTML = (series.length ? legend : "") + EkteNotice.empty(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name }));
       return;
     }
     var marks = [], seen = {};
@@ -1092,7 +1083,7 @@
   function tableInner(spec) {
     var sort = sortOf(spec);
     return pickHTML(spec) + '<div class="tscroll' + (spec.wrap ? " " + spec.wrap : "") + '" tabindex="0" role="region" aria-labelledby="' + spec.cap + '">' +
-      '<table class="dt"><caption id="' + spec.cap + '">' + esc(spec.caption) + "</caption><thead><tr>" + headHTML(spec, sort) +
+      '<table class="tbl dense dt"><caption id="' + spec.cap + '">' + esc(spec.caption) + "</caption><thead><tr>" + headHTML(spec, sort) +
       "</tr></thead><tbody>" + bodyHTML(spec, sort) + "</tbody></table></div>";
   }
   function dataTable(spec) {
@@ -1163,7 +1154,7 @@
   function discHTML(pfx, key, spec) {
     var open = S(key) === "1";
     spec.cap = pfx + "cap";
-    return '<div class="tdisc"><button type="button" class="disclosure" id="' + pfx + 'tog" data-tog="' + key + '" aria-expanded="' + open + '" aria-controls="' + pfx + 'body">' +
+    return '<div class="disclosure-box tdisc"><button type="button" class="disclosure" id="' + pfx + 'tog" data-tog="' + key + '" aria-expanded="' + open + '" aria-controls="' + pfx + 'body">' +
       "<span>" + esc(T("以表格显示", "Show as table")) + '</span><span class="cv" aria-hidden="true">' + ico("chevronDown") + "</span></button>" +
       '<div class="tbody" id="' + pfx + 'body"' + (open ? "" : " hidden") + ">" + dataTable(spec) + "</div></div>";
   }
@@ -1238,12 +1229,12 @@
     }
     if (!b) return;
     if (!b.rows.length) {
-      body.innerHTML = '<div class="empty-data">' + esc(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range.")) + "</div>";
+      body.innerHTML = EkteNotice.empty(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range."));
       return;
     }
     var cell = function (c, unit, runs) {
       if (!c) return '<td class="n">—</td>';
-      return '<td class="n">' + esc(fmt(c.value, unit)) + '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + (c.n < runs ? " / " + esc(EkteFmt.num(runs)) : "") + "</span></td>";
+      return '<td class="n">' + esc(fmt(c.value, unit)) + '<span class="sub">n=' + esc(EkteFmt.num(c.n)) + (c.n < runs ? " / " + esc(EkteFmt.num(runs)) : "") + "</span></td>";
     };
     var cols = [labelCol(groupName(b.by)), runsCol()].concat((b.metrics || []).map(function (m) {
       return { key: m.id, label: metricName(m.id, "short_label_key"), num: true,
@@ -1348,7 +1339,7 @@
       "Days 29–31 exist only in some months, so their cells hold fewer runs."));
     var who = key ? (ser && ser.label) || relayName(key) : T("全部检测", "All runs");
     if (!cells.length) {
-      body.innerHTML = '<div class="empty-data">' + esc(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name })) + "</div>";
+      body.innerHTML = EkteNotice.empty(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name }));
       return;
     }
     cells.sort(function (a, b) { return a.g - b.g || a.dow - b.dow || a.hour - b.hour; });
@@ -1424,7 +1415,7 @@
       (d.covered < d.runs ? " " + esc(T("较早的检测保存时没有请求记录，不计入统计。", "Older runs were saved without request records and are left out.")) : "") +
       (tot.requests ? " " + esc(Tf("共 {n} 次调用，其中 {j} 次由中转站作答。", "{n} calls, {j} of them answered by the relay.", { n: tot.requests, j: tot.judged })) : "") + "</p>";
     if (!tot.requests) {
-      body.innerHTML = cov + '<div class="empty-data">' + esc(T("此时间范围内没有请求记录。", "No request records in this range.")) + "</div>";
+      body.innerHTML = cov + EkteNotice.empty(T("此时间范围内没有请求记录。", "No request records in this range."));
       return;
     }
     // the relay's rates (over the calls it answered), then, after a divider,
@@ -1537,7 +1528,7 @@
   // a check's cell: the detectors' own verdict counts (pass / warn / fail)
   function chip(cell) {
     if (!cell || !cell.n) {
-      return '<td class="chk">—<span class="cn">' + esc(cell && cell.other ? Tf("{n} 次无结论", "{n} inconclusive", { n: cell.other }) : T("未检查", "not checked")) + "</span></td>";
+      return '<td class="chk">—<span class="sub">' + esc(cell && cell.other ? Tf("{n} 次无结论", "{n} inconclusive", { n: cell.other }) : T("未检查", "not checked")) + "</span></td>";
     }
     var st = cell.fail ? ["bad", "x", T("有失败", "Failed")] : cell.warn ? ["warn", "warning", T("有警告", "Warnings")] : ["good", "check", T("通过", "Passed")];
     var counts = Tf("{p} / {n} 通过", "{p} of {n} passed", { p: cell.pass, n: cell.n }) +
@@ -1549,7 +1540,7 @@
     if (cell.low_n) name += " · " + T("检测较少", "few runs");
     return '<td class="chk' + (cell.low_n ? " low" : "") + '"><span class="sr-only">' + esc(name) + "</span>" +
       '<span aria-hidden="true"><span class="badge ' + st[0] + '">' + ico(st[1]) + esc(st[2]) + "</span>" +
-      '<span class="cn">' + esc(counts) + "</span>" +
+      '<span class="sub">' + esc(counts) + "</span>" +
       (cell.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</span></td>";
   }
   function renderIntegrity() {
@@ -1557,12 +1548,12 @@
     if (p.err) { body.innerHTML = errBox(T("无法读取模型真实性：", "Could not load model integrity: "), p.err); return; }
     if (!d) return;
     if (!d.rows.length) {
-      body.innerHTML = '<div class="empty-data">' + esc(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range.")) + "</div>";
+      body.innerHTML = EkteNotice.empty(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range."));
       return;
     }
     // the context column only when some run measured the context window
     var ctx = d.has_context !== false;
-    var nc = function (c) { return '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + "</span>" + (c.n && c.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : ""); };
+    var nc = function (c) { return '<span class="sub">n=' + esc(EkteFmt.num(c.n)) + "</span>" + (c.n && c.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : ""); };
     var cols = [labelCol(T("中转站 × 模型", "Relay × model")), runsCol()].concat(d.checks.map(function (c) {
       return { key: "check:" + c, label: checkName(c), value: function (r) { return severity(r.checks[c]); }, cell: function (r) { return chip(r.checks[c]); } };
     }), [{ key: "model_mismatch_rate", label: metricName("model_mismatch_rate"), num: true, value: function (r) { return metricValue(r.model_mismatch); },
@@ -1572,7 +1563,7 @@
         cell: function (r) {
           var cx = r.context;
           return '<td class="n">' + esc(fmt(cx.value, "ratio")) +
-            (cx.n ? '<span class="cn">' + esc(fmt(cx.effective, "tokens") + " / " + fmt(cx.claimed, "tokens")) + "</span>" : "") + nc(cx) + "</td>";
+            (cx.n ? '<span class="sub">' + esc(fmt(cx.effective, "tokens") + " / " + fmt(cx.claimed, "tokens")) + "</span>" : "") + nc(cx) + "</td>";
         } });
     }
     var head = kpiHead("int", p.data[1]);
@@ -1617,7 +1608,7 @@
       // billing and token shares are measured on chat audits only
       headHost.innerHTML = "";
       $("#bill-ctl").innerHTML = "";
-      body.innerHTML = '<div class="empty-data">' + esc(T("计费与 token 指标只适用于对话检测。", "Billing and token metrics apply to chat audits only.")) + "</div>";
+      body.innerHTML = EkteNotice.empty(T("计费与 token 指标只适用于对话检测。", "Billing and token metrics apply to chat audits only."));
       return;
     }
     ctlHTML($("#bill-ctl"), '<div class="ctl">' +
@@ -1662,7 +1653,7 @@
         cfg.yMax = vhi + pad;
       }
     } else {
-      html += '<div class="empty-data">' + esc(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name })) + "</div>";
+      html += EkteNotice.empty(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name }));
     }
     var units = {};
     sum.metrics.forEach(function (x) { units[x.id] = x.unit; });
@@ -1675,7 +1666,7 @@
           caption: T("所选范围内的中位数（n = 测得该值的检测次数）", "Medians over the selected range (n = runs that measured a value)"),
           cols: [labelCol(gName), runsCol()].concat(BILL_METRICS.map(function (k) {
             return { key: k, label: metricName(k), num: true, value: function (r) { return metricValue(r.metrics[k]); },
-              cell: function (r) { var c = r.metrics[k]; return '<td class="n">' + esc(fmt(c.value, units[k])) + '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + "</span></td>"; } };
+              cell: function (r) { var c = r.metrics[k]; return '<td class="n">' + esc(fmt(c.value, units[k])) + '<span class="sub">n=' + esc(EkteFmt.num(c.n)) + "</span></td>"; } };
           })),
         });
     }
@@ -1694,7 +1685,7 @@
     if (!d) return;
     var rows = d.rows.filter(function (r) { return r.metrics.relay_overhead.n || r.metrics.network_rtt.n; });
     if (!rows.length) {
-      body.innerHTML = '<div class="empty-data">' + esc(T("此时间范围内没有测得中转处理耗时或网络往返。", "No relay processing time or network round trip measured in this range.")) + "</div>";
+      body.innerHTML = EkteNotice.empty(T("此时间范围内没有测得中转处理耗时或网络往返。", "No relay processing time or network round trip measured in this range."));
       return;
     }
     // bar lengths on one shared scale (drawing only)
@@ -1702,7 +1693,7 @@
     rows.forEach(function (r) { ["relay_overhead", "network_rtt"].forEach(function (k) { max = Math.max(max, r.metrics[k].value || 0); }); });
     var cell = function (c, cls) {
       var w = typeof c.value === "number" && max ? Math.max(1, (c.value / max) * 100) : 0;
-      return '<td class="n bar">' + esc(fmt(c.value, "ms")) + '<span class="cn">n=' + esc(EkteFmt.num(c.n)) + "</span>" +
+      return '<td class="n bar">' + esc(fmt(c.value, "ms")) + '<span class="sub">n=' + esc(EkteFmt.num(c.n)) + "</span>" +
         (w ? '<span class="hbar ' + cls + '" aria-hidden="true"><span style="width:' + w.toFixed(1) + '%"></span></span>' : "") + "</td>";
     };
     var gName = groupName(d.group), head = kpiHead("ovh", p.data[1]);
@@ -1923,7 +1914,6 @@
       paintNote();
       var box = $("#empty");
       box.hidden = false;
-      box.classList.remove("empty-box");
       // the notice announces the failure: this box is no second alert
       box.innerHTML = EkteNotice.callout("critical", esc(T("无法读取分析数据：", "Could not load analytics: ")) + esc(errText(e)) +
         "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")), { role: false });

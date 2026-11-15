@@ -156,6 +156,8 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "fmt.js", ALL),
     # the verdict scale: words, colours and icons of every verdict (issue 228)
     ("ekte/risk_scale.py", ALL),
+    # the Disclosure behaviour (issue 227): the pages that load it
+    (_V2 + "disclosure.js", ("kb", "accessibility")),
     (_V2 + "nav.js", ALL),
     (_V2 + "theme.js", ALL),
     (_V2 + "tokens.css", ALL),

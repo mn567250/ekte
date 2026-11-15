@@ -53,8 +53,7 @@
   fieldset.grp { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   fieldset.grp > legend { padding: 0; }
   .cmp { margin: 4px 0 16px; }
-  .cmp .disclosure { justify-content: flex-start; }
-  .cmp .disclosure > .pico { flex: none; }
+  /* a standalone Disclosure (ekte.css): chevron on the right */
   .cmp .disclosure .t { flex: 1; display: inline-flex; align-items: center; gap: 4px 7px; flex-wrap: wrap; min-width: 0; }
   .cmp .disclosure .cv { flex: none; }
   .cmp .disclosure .key { font-weight: 500; }
@@ -283,7 +282,7 @@
 
           <div class="disclosure-box cmp" id="cmp">
             <button type="button" class="disclosure" id="cmp-t" aria-expanded="false" aria-controls="cmp-body">
-              <span class="pico" data-icon="plus"></span><span class="t"><span data-en="Compare against a trusted baseline">Compare against a trusted baseline</span> <span class="key">compare</span> <span class="badge good on-badge" id="cmp-on" hidden data-en="On">On</span></span>
+              <span class="t"><span data-en="Compare against a trusted baseline">Compare against a trusted baseline</span> <span class="key">compare</span> <span class="badge good on-badge" id="cmp-on" hidden data-en="On">On</span></span>
               <span class="cv" data-icon="chevronDown"></span>
             </button>
             <div class="disclosure-body" id="cmp-body" hidden>
@@ -354,7 +353,7 @@
 
     <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
       <p class="jh" data-en="Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.">Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.</p>
-      <p class="jempty" id="jobs-empty" data-en="No audits are running">No audits are running</p>
+      <div class="empty" id="jobs-empty"><span class="ico" aria-hidden="true" data-icon="play"></span><p data-en="No audits are running">No audits are running</p></div>
       <ul class="jlist" id="jobs"></ul>
     </section>
     </div>
@@ -487,7 +486,6 @@
   function setCmpOpen(open) {
     $("#cmp-t").setAttribute("aria-expanded", String(open));
     $("#cmp-body").hidden = !open;
-    $("#cmp").classList.toggle("open", open);
   }
   $("#cmp-t").addEventListener("click", function () {
     setCmpOpen($("#cmp-t").getAttribute("aria-expanded") !== "true");

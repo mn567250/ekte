@@ -138,7 +138,9 @@ def test_perf_js_tabs_and_chart_are_accessible():
     assert 'role="img" aria-label="Latency (ms) over time: 5 requests; target median 900 ms; ' \
            'baseline median 900 ms; 1 failed at the relay"' in section
     # the tooltip contents are also in a data table
-    assert '<details class="zp-data">' in section and "Show data table" in section
+    # (ekte.css's Disclosure: a button and a region, issue 227)
+    assert '<div class="zp-data"><button type="button" class="disclosure lead" aria-expanded="false"' in section
+    assert "Show data table" in section
     assert "failed (502)" in section.split('class="zp-data"')[1]
 
 
@@ -315,13 +317,13 @@ def test_live_builds_the_data_table_only_when_open():
     closed, opened = out["false"], out["true"]
     # the toggle is there either way (keyboard and screen readers reach it) ...
     for html in (closed, opened):
-        assert '<summary>Show data table</summary><div class="zp-data-scroll" tabindex="0">' in html
+        assert re.search(r'<span class="t">Show data table</span>.*?</button><div class="zp-data-scroll" id="zpl\d+-data" tabindex="0"', html)
         assert 'role="progressbar" aria-label="Performance probe" aria-valuemin="0" aria-valuemax="10" ' \
                'aria-valuenow="4"' in html
         assert re.search(r'role="tabpanel" id="(zpl\d+)-panel" aria-labelledby="\1-tab-latency"', html)
     # ... but only an open one carries its rows
-    assert '<details class="zp-data"><summary>' in closed and "<table" not in closed
-    assert '<details class="zp-data" open><summary>' in opened and opened.count("<tr>") == 5
+    assert 'class="disclosure lead" aria-expanded="false"' in closed and "<table" not in closed
+    assert 'class="disclosure lead" aria-expanded="true"' in opened and opened.count("<tr>") == 5
     assert "failed (502)" in opened
     # a failed row's latency is its time to failure; it has no running median or band
     row = re.search(r'<tr><td class="r">2</td>.*?</tr>', opened)
@@ -399,7 +401,7 @@ def _drive_live_panel(page) -> None:
       L.render();
       window.firstTile = document.querySelector('.zp-kpis .kpi');
       window.firstTab = document.querySelector('.zp-tabs [data-metric="ttft"]');
-      window.firstSummary = document.querySelector('.zp-data summary');
+      window.firstSummary = document.querySelector('.zp-data > .disclosure');
     }""")
     # closed: the table is not built
     assert page.evaluate("document.querySelectorAll('.zp-data-scroll tr').length") == 0
@@ -435,12 +437,12 @@ def _drive_live_panel(page) -> None:
     page.evaluate("() => { L.records.push(mk(21)); L.render(); }")
     assert page.evaluate("document.activeElement.dataset.metric") == "tps"
     # opening the toggle with the keyboard builds the table right away
-    page.focus(".zp-data summary")
+    page.focus(".zp-data > .disclosure")
     page.keyboard.press("Enter")
-    page.wait_for_function("document.querySelector('.zp-data').open && L.open")
+    page.wait_for_function("document.querySelector('.zp-data > .disclosure').getAttribute('aria-expanded') === 'true' && L.open")
     assert page.evaluate("document.querySelectorAll('.zp-data-scroll tbody tr').length") == 22
     page.evaluate("() => { L.records.push(mk(22)); L.render(); }")
-    assert page.evaluate("document.querySelector('.zp-data summary') === firstSummary")
+    assert page.evaluate("document.querySelector('.zp-data > .disclosure') === firstSummary")
     assert page.evaluate("document.activeElement === firstSummary")
     # new records are appended; the focused, scrolled table stays put
     page.evaluate("() => { for (let i = 23; i < 80; i++) L.records.push(mk(i)); L.render(); }")
@@ -464,7 +466,7 @@ def _drive_live_panel(page) -> None:
     page.focus('.zp-tabs [data-metric="latency"]')
     page.evaluate("() => { window.EKTE_LANG = {t: (zh, en) => zh, locale: () => 'zh-CN'}; L.render(); }")
     zh = page.evaluate("""() => [document.activeElement.dataset.metric, document.activeElement.textContent,
-      document.querySelector('#host .zp-data summary').textContent,
+      document.querySelector('#host .zp-data > .disclosure').textContent,
       document.querySelector('#host .zp-data-scroll thead').textContent.includes('延迟'),
       document.querySelectorAll('#host .zp-data-scroll tbody tr').length]""")
     assert zh == ["latency", "延迟", "查看数据表", True, 81]
@@ -476,7 +478,7 @@ def _drive_live_panel(page) -> None:
     page.mouse.move(1, 1)
     assert page.evaluate("document.querySelector('.zp-tip').style.display") == "none"
     # once closed, later renders leave the table alone
-    page.evaluate("() => { document.querySelector('.zp-data').open = false; }")
+    page.evaluate("() => { document.querySelector('.zp-data > .disclosure').click(); }")
     page.wait_for_function("L.open === false")
     page.evaluate("() => { L.records.push(mk(81)); L.render(); }")
     assert page.evaluate("document.querySelectorAll('#host .zp-data-scroll tbody tr').length") == 81
