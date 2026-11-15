@@ -101,6 +101,9 @@
   function Tf(zh, en, vars) {
     return Tx(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
   }
+  // "1 run" / "{n} runs", "1 request" / "{n} requests"
+  function runsText(n) { return n === 1 ? Tx("1 次检测", "1 run") : Tf("{n} 次检测", "{n} runs", { n: n }); }
+  function requestsText(n) { return n === 1 ? Tx("1 次请求", "1 request") : Tf("{n} 次请求", "{n} requests", { n: n }); }
   function nf(opts) {
     try { return window.EKTE_LANG.numFmt(opts); } catch (e) { return new Intl.NumberFormat(undefined, opts); }
   }
@@ -411,7 +414,7 @@
         var spread = typeof p.lo === "number" ? '<span class="sub">p25–p75 ' + esc(fmt(p.lo, cfg.unit)) + " – " + esc(fmt(p.hi, cfg.unit)) + "</span>" : "";
         return '<li class="' + (p.low ? "low" : "") + '">' + keySVG(s.cls, s.shape || SHAPES[si % SHAPES.length]) +
           "<span><b>" + esc(fmt(p.v, cfg.unit)) + "</b> " + '<span class="nm">' + esc(s.label) + "</span>" + spread +
-          '<span class="sub">' + esc(Tf("{n} 次检测", "{n} runs", { n: p.runs != null ? p.runs : p.n })) + "</span>" +
+          '<span class="sub">' + esc(runsText(p.runs != null ? p.runs : p.n)) + "</span>" +
           (p.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li>";
       }).join("");
       var notes = (cfg.marks || []).filter(function (m) { return m.t === t; }).map(function (m) {
@@ -536,7 +539,7 @@
     tipFor(host, function (k) {
       var c = at[k];
       return '<p class="when">' + esc(cfg.tipTime(c.dow, c.hour - c.hour % B, c.g || 0)) + "</p><ul><li><span><b>" + esc(fmt(c.v, cfg.unit)) + "</b>" +
-        '<span class="sub">' + esc(cfg.tipSub ? cfg.tipSub(c) : Tf("{n} 次检测", "{n} runs", { n: c.runs })) + "</span>" +
+        '<span class="sub">' + esc(cfg.tipSub ? cfg.tipSub(c) : runsText(c.runs)) + "</span>" +
         (c.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li></ul>";
     });
   }
@@ -598,7 +601,7 @@
       var rows = cfg.cats.slice().reverse().map(function (c) {
         var n = b.counts[c.id] || 0;
         return '<li><span class="sw ' + esc(c.cls) + '" aria-hidden="true"></span><span><b>' + esc(fmt(n / b.total, "ratio")) + "</b> " +
-          '<span class="nm">' + esc(c.label) + '</span><span class="sub">' + esc(Tf("{n} 次请求", "{n} requests", { n: n })) + "</span></span></li>";
+          '<span class="nm">' + esc(c.label) + '</span><span class="sub">' + esc(requestsText(n)) + "</span></span></li>";
       }).join("");
       return '<p class="when">' + esc(cfg.tipTime(b.t)) + "</p><ul>" + rows + "</ul>" +
         '<p class="mk">' + esc(cfg.totalText(b)) + (b.low ? "<br>" + esc(cfg.lowHint) : "") + "</p>";

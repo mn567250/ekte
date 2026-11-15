@@ -182,6 +182,19 @@
   "{n} calls, {j} of them answered by the relay.": "{n} Aufrufe, davon {j} vom Relay beantwortet.",
   "{n} groups without these values are not listed.": "{n} Gruppen ohne diese Werte sind nicht aufgeführt.",
   "{n} runs match these filters.": "{n} Läufe entsprechen diesen Filtern.",
-  "Default order": "Standardreihenfolge"
+  "Default order": "Standardreihenfolge",
+  "1 run": "1 Lauf",
+  "1 request": "1 Anfrage",
+  "relay": "Relay",
+  "model": "Modell",
+  "relay × model": "Relay × Modell",
+  "all": "alle",
+  "by hour": "pro Stunde",
+  "by day": "pro Tag",
+  "by week": "pro Woche",
+  "by weekday and hour": "nach Wochentag und Stunde",
+  "More columns": "Weitere Spalten",
+  "Column “{col}” shown": "Spalte „{col}“ eingeblendet",
+  "Column “{col}” hidden": "Spalte „{col}“ ausgeblendet"
  }
 }

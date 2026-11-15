@@ -94,7 +94,9 @@ against the period of the same length before; a chart of any metric per relay,
 model or relay × model by hour, day or week (median line with the p25–p75 band,
 up to four series, every chart also as a data table, and on request a
 forecast — see below); and a leaderboard of the
-relays for a model, or the models for a relay. Relays are grouped by their
+relays for a model, or the models for a relay. Wide tables show their main
+columns first; **More columns** above a table adds the others, and the row
+names stay in view while a table scrolls sideways. Relays are grouped by their
 knowledge-base entry (saved relays and providers), so renaming a relay
 regroups its history. Buckets with fewer than 3 runs are drawn faded — a single
 audit can be an outlier; a monitor gives regular measurements. Older runs show

@@ -104,7 +104,10 @@ ratios de facturación) con el cambio frente al periodo anterior de igual
 duración; un gráfico de cualquier métrica por relay, modelo o relay × modelo,
 por hora, día o semana (línea mediana con la banda p25–p75, hasta cuatro
 series, cada gráfico también como tabla de datos); y una clasificación de los
-relays de un modelo o de los modelos de un relay. Los relays se agrupan por su
+relays de un modelo o de los modelos de un relay. Las tablas anchas muestran
+primero sus columnas principales; **Más columnas** encima de una tabla añade las
+demás, y los nombres de las filas siguen a la vista al desplazar la tabla en
+horizontal. Los relays se agrupan por su
 entrada de la base de conocimiento (relays guardados y proveedores), así que
 renombrar un relay reagrupa su historial. Los intervalos con menos de 3
 ejecuciones se dibujan atenuados: una sola auditoría puede ser un valor

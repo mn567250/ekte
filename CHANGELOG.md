@@ -20,6 +20,28 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: visual bugs from the design audit ([#212](https://github.com/mn567250/ekte/issues/212))
+
+- **Analytics tables fit the page** ([#220](https://github.com/mn567250/ekte/issues/220)).
+  The leaderboard, call outcomes, model integrity and billing tables hid most
+  of their columns off to the right (the leaderboard showed 6 of 13). Wide
+  tables now show their main columns; **More columns** chips above the table
+  add the others, and the choice is in the URL (`lb.cols`, `errt.cols`,
+  `errg.cols`, `int.cols`, `bills.cols`), so **Copy link to this view** keeps
+  it. At 1280 px every table fits without scrolling sideways; on narrow
+  screens the row names stay in view while a table scrolls. Column headers
+  wrap between words, and the scroll-edge shadow is softer.
+- **Billing: the Metric select sits above the chart it drives**
+  ([#217](https://github.com/mn567250/ekte/issues/217)), after the key figures
+  (it does not change them) and with room above it.
+- **Wording** ([#218](https://github.com/mn567250/ekte/issues/218)): legends
+  and tooltips say "1 run" and "1 request" instead of "1 runs"; group and
+  time-bucket names inside sentences are lower case ("Summary by relay",
+  "Call outcomes per time bucket (by day)"), in every language.
+- **History: no dangling "·"** ([#219](https://github.com/mn567250/ekte/issues/219)).
+  A run's details no longer start or end a line with a separator; the
+  **Monitor** badge leads the line.
+
 ### Web UI: one filter pattern, browser-cached answers and live updates on History, Analytics and Monitors ([#150](https://github.com/mn567250/ekte/issues/150))
 
 History, Analytics and Monitors now work the same way: one filter panel that

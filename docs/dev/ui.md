@@ -141,7 +141,9 @@ stale (`activate()` loads them when shown), a widget key (`trend.*`, `heat.*`,
 `board.*`, `errors.*`, `bill.*`) reloads its panel only. The whole view is the
 URL query string (`EkteFilters`): shared filters, widget keys sent to their
 endpoint, page-only keys no endpoint reads (`bill.metric`, `lb.sort`,
-`table.*` for open data tables) and the view keys `tab`, `os` / `ts` / `rs`
+`table.*` for open data tables, `*.cols` for the extra columns of a wide
+table: `dataTable({base, colsKey})` shows `base` and offers the rest as
+**More columns** chips) and the view keys `tab`, `os` / `ts` / `rs`
 (sub-tabs); **Copy link to this view** in the panel's foot copies it. Old
 `#tab=…` fragment links open the defaults. The collapsible filter
 panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History, Monitors and Knowledge:
