@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.embed_identity import echoes_model
 from ekte.detectors.rerank import RerankDetector, known_answer_probe
@@ -35,6 +36,7 @@ class RerankIdentityDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.model_field", "no_response",
+                    recommendation=advice.failure_advice(res),
                     calls=[res],
                     title="Echoed model field not checked",
                     summary=f"POST /rerank failed: {res.error_message or res.status_code}.",

@@ -840,6 +840,15 @@ throughput), which one stray request cannot move the way it moves a standard
 deviation; they need at least 10 clean samples. The reference is the trusted
 baseline, or else the knowledge-base profile's `performance.decode_tps` range.
 
+A probe request is left out when it failed, came from a cache or lacks the
+metric: a streamed request without a content delta has no TTFT, and so no
+decode speed. With fewer than 10 clean samples the check is not counted; its
+finding counts what was left out and why, and its recommendation says what to
+change: fix the failures, make the relay stream (or use
+`--performance-non-streaming`), or send more requests (`--performance-requests`).
+The standard suite sends only 5 probe requests per endpoint, so consistency is
+judged on the deep, full and custom suites.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `performance.summary` | Latency, TTFT and throughput were measured. | Info | Not counted |

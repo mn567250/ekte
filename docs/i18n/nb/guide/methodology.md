@@ -857,6 +857,15 @@ flytter et standardavvik; de krever minst 10 rene prøver. Referansen er den
 pålitelige referansen, ellers området `performance.decode_tps` i profilen fra
 kunnskapsbasen.
 
+En probeforespørsel utelates når den mislyktes, kom fra en hurtigbuffer eller
+mangler måleverdien: en strømmet forespørsel uten innholdsdelta har ingen TTFT,
+og dermed heller ingen dekodehastighet. Med færre enn 10 rene prøver telles
+ikke kontrollen; funnet teller hva som ble utelatt og hvorfor, og anbefalingen
+sier hva som må endres: rette feilene, få reléet til å strømme (eller bruke
+`--performance-non-streaming`), eller sende flere forespørsler
+(`--performance-requests`). Testsettet standard sender bare 5 probeforespørsler
+per endepunkt, så jevnheten vurderes i testsettene deep, full og custom.
+
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `performance.summary` | Forsinkelse, TTFT og gjennomstrømning ble målt. | Info | Telles ikke |

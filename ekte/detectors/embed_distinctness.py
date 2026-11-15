@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.embedding import (
     DISTINCT_MAX_COSINE,
@@ -42,6 +43,7 @@ class EmbedDistinctnessDetector(EmbeddingDetector):
                     calls=[_res],
                     title="Distinctness not measured",
                     summary=f"No vectors to compare: {problem}.",
+                    recommendation=advice.failure_advice(_res),
                 )
             )
             result.status = Status.INCONCLUSIVE

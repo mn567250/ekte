@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.rerank import (
     DET_SCORE_TOLERANCE,
@@ -39,14 +40,17 @@ class RerankDeterminismDetector(RerankDetector):
         query, documents = drift_probe()
         # Two separate requests: a backend that varies between calls shows here.
         _r1, first, problem = await rerank(ctx, query, documents)
+        last = _r1  # the call the problem is about
         if problem is None:
             _r2, second, problem = await rerank(ctx, query, documents)
+            last = _r2
         if problem is not None:
             result.findings.append(
                 SCALE.finding(
                     "rerank.determinism", "no_ranking",
                     title="Determinism not measured",
                     summary=f"No rankings to compare: {problem}.",
+                    recommendation=advice.failure_advice(last),
                 )
             )
             result.status = Status.INCONCLUSIVE

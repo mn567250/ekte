@@ -19,7 +19,7 @@ from ekte import __version__, prompts
 from ekte.clients import Client, detect_api, make_client
 from ekte.config import SURFACE_OPS, AuditOptions
 from ekte.context import AuditContext
-from ekte.detectors.base import run_detector, select_detectors
+from ekte.detectors.base import not_run_reason, run_detector, select_detectors
 from ekte.detectors.performance import planned_probe_requests, probe_modes, stream_mode
 from ekte.errorclass import NETWORK, is_impaired, record_class
 from ekte.evidence import EvidenceHeader, EvidenceWriter, new_run_id
@@ -39,7 +39,7 @@ from ekte.models import (
 from ekte.perf import RequestRecorder, build_performance, detector_scope
 from ekte.perf.outcomes import run_outcomes
 from ekte.perf.trend import RunningMedian
-from ekte.scoring import build_dimensions, build_verdict
+from ekte.scoring import build_dimensions, build_verdict, weights_for
 from ekte.utils.redact import fingerprint_secret
 
 if TYPE_CHECKING:
@@ -469,7 +469,17 @@ def _assemble(
         op=SURFACE_OPS[options.surface],
     )
     selected = list(options.dimensions) if options.suite == "custom" else None
-    dimensions = build_dimensions(results, reliability, selected=selected, surface=options.surface)
+    not_run = {
+        dim.value: why
+        for dim in weights_for(options.surface)
+        if (why := not_run_reason(
+            dim.value, options.suite, has_judge=judge is not None,
+            has_baseline=baseline is not None, enabled=options.enabled, surface=options.surface,
+        ))
+    }
+    dimensions = build_dimensions(
+        results, reliability, selected=selected, surface=options.surface, not_run=not_run
+    )
     verdict = build_verdict(
         results,
         dimensions,

@@ -903,6 +903,16 @@ elle déplace un écart type ; il faut au moins 10 échantillons propres. La
 référence est la référence de confiance, sinon la plage
 `performance.decode_tps` du profil dans la base de connaissances.
 
+Une requête de la sonde est écartée quand elle a échoué, venait d'un cache ou
+n'a pas la mesure : une requête en streaming sans delta de contenu n'a pas de
+TTFT, donc pas de vitesse de décodage. Avec moins de 10 échantillons propres le
+contrôle ne compte pas ; son constat compte ce qui a été écarté et pourquoi, et
+sa recommandation dit quoi changer : corriger les échecs, faire diffuser le
+relais en streaming (ou utiliser `--performance-non-streaming`), ou envoyer
+plus de requêtes (`--performance-requests`). La suite standard n'envoie que 5
+requêtes de sonde par point d'accès ; la régularité se juge donc dans les
+suites deep, full et custom.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `performance.summary` | Latence, TTFT et débit ont été mesurés. | Info | Non compté |

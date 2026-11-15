@@ -37,12 +37,12 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from ekte import prompts
 from ekte.config import AuditOptions
 from ekte.context import AuditContext
-from ekte.detectors import perf_probe
+from ekte.detectors import advice, perf_probe
 from ekte.detectors.base import Detector, register
 from ekte.detectors.perf_probe import (
     PINGS,
@@ -166,6 +166,8 @@ class PerformanceDetector(Detector):
 
     def __init__(self) -> None:
         self._counter = 0
+        # The suite caps the probe below the consistency minimum (set per run).
+        self._capped = False
 
     # -- request building --------------------------------------------------- #
     def _spec(self, max_tokens: int, *, stream: bool) -> RequestSpec:
@@ -214,6 +216,7 @@ class PerformanceDetector(Detector):
                     title="Performance probe disabled",
                     summary="performance_requests <= 0; no probe requests were sent.",
                     evidence={"performance_requests": opts.performance_requests},
+                    recommendation=perf_probe.ENABLE_PROBE,
                 )
             )
             return result
@@ -256,6 +259,7 @@ class PerformanceDetector(Detector):
                 for ep in endpoints
             },
         }
+        self._capped = perf_probe.probe_capped(opts, has_baseline=ctx.has_baseline)
         self._findings(
             result, records, summaries, n, stream=modes[0], reference=ctx.performance_reference()
         )
@@ -307,6 +311,11 @@ class PerformanceDetector(Detector):
             )
         else:
             summary = f"None of the {target.requests} probe requests succeeded."
+        probes = [
+            r for r in records
+            if r.endpoint == "target" and r.phase == "probe" and r.op == "complete"
+            and r.stream == stream and not r.retried
+        ]
         result.findings.append(
             SCALE.finding(
                 "performance.summary",
@@ -314,14 +323,20 @@ class PerformanceDetector(Detector):
                 title="Performance probe results",
                 summary=summary,
                 evidence=head,
+                recommendation=None if target.successes else advice.failure_advice(
+                    next((r for r in probes if not r.ok), None)
+                ),
+                calls=None if target.successes else [r.seq for r in probes],
             )
         )
 
-        self._consistency_findings(result, records, stream=stream)
+        self._consistency_findings(result, records, stream=stream, capped=self._capped)
         perf_probe.error_finding(
             SCALE, result, target, failed_seqs(records, "target", stream=stream)
         )
-        perf_probe.load_finding(SCALE, result, target)
+        perf_probe.load_finding(
+            SCALE, result, target, perf_probe.load_calls(records, "complete", stream=stream)
+        )
 
         for label in summaries:
             cached = [
@@ -340,6 +355,7 @@ class PerformanceDetector(Detector):
                         evidence={"endpoint": label, "cached": len(cached)},
                         recommendation="A relay that caches unique prompts may be serving "
                         "stored answers; compare with a trusted baseline.",
+                        calls=[r.seq for r in cached],
                     )
                 )
 
@@ -368,28 +384,39 @@ class PerformanceDetector(Detector):
     # -- consistency ---------------------------------------------------------- #
     @staticmethod
     def _consistency_findings(
-        result: DetectorResult, records: Sequence[RequestRecord], *, stream: bool
+        result: DetectorResult,
+        records: Sequence[RequestRecord],
+        *,
+        stream: bool,
+        capped: bool = False,
     ) -> None:
-        """Tail ratios of the target's sequential probe requests in the headline mode."""
-        good = [
+        """Tail ratios of the target's sequential probe requests in the headline
+        mode; each finding counts the requests it left out and why."""
+        pool = [
             r for r in records
             if r.endpoint == "target" and r.phase == "probe" and r.op == "complete"
-            and r.ok and not r.cached and r.stream == stream
+            and r.stream == stream
         ]
-        metrics: list[tuple[str, str, str, list[float], bool]] = [
+        metrics: list[tuple[str, str, str, Callable[[RequestRecord], float | None], bool, str | None]] = [
             ("performance.latency_consistency", "Latency", "ms",
-             [r.duration_ms for r in good if r.duration_ms is not None], False),
+             lambda r: r.duration_ms, False, None),
         ]
         if stream:
             metrics.append(("performance.ttft_consistency", "Time to first token", "ms",
-                            [r.ttft_ms for r in good if r.ttft_ms is not None], False))
+                            lambda r: r.ttft_ms, False, advice.NO_STREAM_DELTAS))
+            # No TTFT means no decode speed either; with a TTFT, the answer was too short.
+            no_ttft = sum(1 for r in pool if r.ok and not r.cached and r.ttft_ms is None)
             metrics.append(("performance.throughput_consistency", "Decode throughput", "tok/s",
-                            [r.decode_tps_local for r in good if r.decode_tps_local], True))
+                            lambda r: r.decode_tps_local, True,
+                            advice.NO_STREAM_DELTAS if no_ttft else advice.TOO_SHORT_FOR_DECODE))
         else:
             metrics.append(("performance.throughput_consistency", "End-to-end throughput",
-                            "tok/s", [r.e2e_tps_local for r in good if r.e2e_tps_local], True))
-        for check, what, unit, values, higher in metrics:
-            perf_probe.consistency_finding(SCALE, result, check, what, unit, values, higher)
+                            "tok/s", lambda r: r.e2e_tps_local, True, advice.FAILURE_ADVICE["empty"]))
+        for check, what, unit, value, higher, missing in metrics:
+            perf_probe.consistency_finding(
+                SCALE, result, check, what, unit, pool, value, higher,
+                missing_advice=missing, capped=capped,
+            )
 
     # -- reference speed ---------------------------------------------------- #
     @staticmethod

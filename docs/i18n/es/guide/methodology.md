@@ -897,6 +897,15 @@ típica; necesitan al menos 10 muestras limpias. La referencia es la referencia
 de confianza o, si no hay, el rango `performance.decode_tps` del perfil en la
 base de conocimiento.
 
+Una petición de la sonda se descarta cuando falló, vino de una caché o no tiene
+la métrica: una petición en streaming sin delta de contenido no tiene TTFT y, por
+tanto, tampoco velocidad de decodificación. Con menos de 10 muestras limpias la
+comprobación no cuenta; su hallazgo cuenta lo descartado y por qué, y su
+recomendación dice qué cambiar: corregir los fallos, hacer que el relay transmita
+en streaming (o usar `--performance-non-streaming`) o enviar más peticiones
+(`--performance-requests`). La suite standard envía solo 5 peticiones de sonda
+por endpoint, así que la constancia se juzga en las suites deep, full y custom.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `performance.summary` | Se midieron la latencia, el TTFT y el throughput. | Info | No computa |

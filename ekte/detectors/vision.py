@@ -30,6 +30,7 @@ import zlib
 from ekte import prompts
 from ekte.clients import detect_api
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import contains_any
 from ekte.detectors.scale import Scale, outcome
@@ -180,6 +181,7 @@ class VisionDetector(Detector):
                 SCALE.finding(
                     "vision.color",
                     "inconclusive",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="Vision probe inconclusive",
                     summary=(

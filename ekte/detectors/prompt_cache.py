@@ -16,6 +16,7 @@ import asyncio
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import build_filler, stable_marker
 from ekte.detectors.scale import Scale, outcome
@@ -62,6 +63,7 @@ class PromptCacheDetector(Detector):
         prefix_a = f"{stable_marker('cache-a')}\n{filler}"
         prefix_b = f"{stable_marker('cache-b')}\n{filler}"
 
+        self._failed: CompletionOutcome | None = None  # the first probe that failed
         cold = await self._timed(ctx, prefix_a)
         warm = await self._timed(ctx, prefix_a)
         control = await self._timed(ctx, prefix_b)
@@ -78,6 +80,8 @@ class PromptCacheDetector(Detector):
                     title="Prefix-cache timing unavailable",
                     summary="One or more streamed probes returned no usable timing.",
                     evidence=times,
+                    recommendation=advice.failure_advice(self._failed),
+                    calls=[self._failed] if self._failed is not None else None,
                 )
             )
             result.status = Status.INCONCLUSIVE
@@ -133,5 +137,6 @@ class PromptCacheDetector(Detector):
         )
         outcome: CompletionOutcome = await ctx.client.complete(spec)
         if not outcome.ok:
+            self._failed = self._failed or outcome
             return None
         return outcome.ttft_ms if outcome.ttft_ms is not None else outcome.duration_ms

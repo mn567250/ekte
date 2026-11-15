@@ -15,6 +15,7 @@ from __future__ import annotations
 from ekte import prompts
 from ekte.clients import detect_api
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import contains_ci
 from ekte.detectors.scale import Scale, outcome
@@ -86,6 +87,7 @@ class ProtocolDetector(Detector):
                 SCALE.finding(
                     "protocol.multi_turn",
                     "no_content",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="Multi-turn memory check did not return content",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}; no content.",
@@ -150,6 +152,7 @@ class ProtocolDetector(Detector):
                 SCALE.finding(
                     "protocol.stop",
                     "no_content",
+                    recommendation=advice.failure_advice(outcome),
                     calls=[outcome],
                     title="Stop-sequence check did not return content",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}; no content.",

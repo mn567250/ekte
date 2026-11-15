@@ -26,7 +26,7 @@ from typing import Any
 
 from ekte import prompts
 from ekte.context import AuditContext
-from ekte.detectors import perf_probe
+from ekte.detectors import advice, perf_probe
 from ekte.detectors.base import Detector, register
 from ekte.detectors.perf_probe import (
     Endpoint,
@@ -114,6 +114,8 @@ class EmbedPerformanceDetector(Detector):
         self._counter = 0
         # seq of each recorded request -> inputs it carried
         self._inputs: dict[int, int] = {}
+        # The suite caps the probe below the consistency minimum (set per run).
+        self._capped = False
 
     def _input(self) -> str:
         topics: list[str] = prompts.get("performance.topics")
@@ -146,6 +148,7 @@ class EmbedPerformanceDetector(Detector):
         result.score = None
         opts = ctx.options
         n = planned_probe_requests(opts, has_baseline=ctx.has_baseline)
+        self._capped = perf_probe.probe_capped(opts, has_baseline=ctx.has_baseline)
         if n <= 0:
             result.status = Status.NOT_RUN
             result.findings.append(
@@ -155,6 +158,7 @@ class EmbedPerformanceDetector(Detector):
                     title="Performance probe disabled",
                     summary="performance_requests <= 0; no probe requests were sent.",
                     evidence={"performance_requests": opts.performance_requests},
+                    recommendation=perf_probe.ENABLE_PROBE,
                 )
             )
             return result
@@ -196,6 +200,13 @@ class EmbedPerformanceDetector(Detector):
         return result
 
     # -- findings ----------------------------------------------------------- #
+    def _pool(self, records: Sequence[RequestRecord], label: str, phase: str) -> list[RequestRecord]:
+        """Every request of ``label`` in ``phase``: what a sample-based check looks at."""
+        return [
+            rec for rec in records
+            if rec.endpoint == label and rec.phase == phase and rec.op == OP
+        ]
+
     def _good(self, records: Sequence[RequestRecord], label: str, phase: str) -> list[RequestRecord]:
         return [
             rec for rec in records
@@ -246,6 +257,9 @@ class EmbedPerformanceDetector(Detector):
                 title="Embedding probe results",
                 summary=summary,
                 evidence=head,
+                recommendation=None if target.successes else advice.failure_advice(
+                    next((rec for rec in self._pool(records, "target", "probe") if not rec.ok), None)
+                ),
             )
         )
 
@@ -253,16 +267,18 @@ class EmbedPerformanceDetector(Detector):
         batch = self._good(records, "target", BATCH_PHASE)
         perf_probe.consistency_finding(
             SCALE, result, "performance.latency_consistency", "Latency", "ms",
-            [rec.duration_ms for rec in single if rec.duration_ms is not None], False,
+            self._pool(records, "target", "probe"), lambda rec: rec.duration_ms, False,
+            capped=self._capped,
         )
         perf_probe.consistency_finding(
             SCALE, result, "performance.throughput_consistency", "Embedding throughput", "inputs/s",
-            [v for v in (_per_s(self._inputs.get(rec.seq, BATCH), rec.duration_ms) for rec in batch) if v],
-            True,
+            self._pool(records, "target", BATCH_PHASE),
+            lambda rec: _per_s(self._inputs.get(rec.seq, BATCH), rec.duration_ms), True,
+            capped=self._capped,
         )
         perf_probe.error_finding(SCALE, result, target, failed_seqs(records, "target", op=OP))
-        perf_probe.load_finding(SCALE, result, target)
-        self._batch_finding(result, single, batch)
+        perf_probe.load_finding(SCALE, result, target, perf_probe.load_calls(records, OP))
+        self._batch_finding(result, single, batch, records)
 
         for label in summaries:
             cached = [
@@ -275,6 +291,7 @@ class EmbedPerformanceDetector(Detector):
                     SCALE.finding(
                         "performance.cache_hit",
                         "cached" if label == "target" else "baseline_cached",
+                        calls=[rec.seq for rec in cached],
                         title="Unique probe inputs returned repeated vectors",
                         summary=f"{len(cached)} {label} probe request(s) returned a vector already "
                         "seen for another input, although every input was unique. They were "
@@ -290,8 +307,14 @@ class EmbedPerformanceDetector(Detector):
             self._overhead_finding(result, records, target, baseline, head)
 
     def _batch_finding(
-        self, result: DetectorResult, single: list[RequestRecord], batch: list[RequestRecord]
+        self,
+        result: DetectorResult,
+        single: list[RequestRecord],
+        batch: list[RequestRecord],
+        records: Sequence[RequestRecord] | None = None,
     ) -> None:
+        """``records`` are the run's requests (the left-out ones explain a "few
+        samples" result); without them only ``single`` and ``batch`` count."""
         one = percentile([rec.duration_ms for rec in single if rec.duration_ms is not None], 50)
         many = percentile([rec.duration_ms for rec in batch if rec.duration_ms is not None], 50)
         evidence = {
@@ -309,6 +332,17 @@ class EmbedPerformanceDetector(Detector):
                     summary=f"{len(single)} single and {len(batch)} batch samples; at least "
                     f"{_MIN_BATCH_SAMPLES} of each are needed.",
                     evidence=evidence,
+                    recommendation=perf_probe.scaling_advice(
+                        [self._pool(records, "target", "probe"), self._pool(records, "target", BATCH_PHASE)]
+                        if records is not None else [single, batch],
+                        minimum=_MIN_BATCH_SAMPLES,
+                    ),
+                    calls=[
+                        rec.seq for rec in (
+                            self._pool(records, "target", "probe") + self._pool(records, "target", BATCH_PHASE)
+                            if records is not None else single + batch
+                        )
+                    ],
                 )
             )
             return

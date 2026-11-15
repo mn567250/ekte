@@ -892,6 +892,16 @@ precisam de pelo menos 10 amostras limpas. A referência é a referência de
 confiança ou, na sua falta, o intervalo `performance.decode_tps` do perfil na
 base de conhecimento.
 
+Um pedido da sonda é deixado de fora quando falhou, veio de uma cache ou não
+tem a métrica: um pedido em streaming sem delta de conteúdo não tem TTFT e,
+portanto, também não tem velocidade de descodificação. Com menos de 10 amostras
+limpas a verificação não conta; a sua constatação conta o que ficou de fora e
+porquê, e a sua recomendação diz o que mudar: corrigir as falhas, pôr o relay a
+transmitir em streaming (ou usar `--performance-non-streaming`) ou enviar mais
+pedidos (`--performance-requests`). A suite standard envia apenas 5 pedidos da
+sonda por endpoint, por isso a constância é avaliada nas suites deep, full e
+custom.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `performance.summary` | Latência, TTFT e débito foram medidos. | Info | Não contabilizado |

@@ -200,6 +200,9 @@ def _backend_sentences() -> list[str]:
                 # a literal, or either literal branch of `"…" if cond else None`
                 values = [node.value.body, node.value.orelse] if isinstance(node.value, ast.IfExp) else [node.value]
                 out += [s for s in map(lit, values) if s]
+            if (rel == "detectors/advice.py" and isinstance(node, ast.AnnAssign)
+                    and isinstance(node.value, ast.Dict)):
+                out += [s for s in map(lit, node.value.values) if s]  # shared recommendations
             if not (isinstance(node, ast.Assign) and len(node.targets) == 1
                     and isinstance(node.targets[0], ast.Name)):
                 continue
@@ -208,6 +211,14 @@ def _backend_sentences() -> list[str]:
                 out.append(lit(node.value))  # a detector's display name
             if rel.startswith("detectors/") and target == "_NO_RESPONSE" and lit(node.value):
                 out.append(lit(node.value))  # a shared scoring-scale label
+            if rel == "detectors/perf_probe.py" and target == "ENABLE_PROBE" and lit(node.value):
+                out.append(lit(node.value))  # a shared recommendation
+            if rel == "detectors/advice.py":
+                # the shared recommendations and not-run reasons
+                if lit(node.value):
+                    out.append(lit(node.value))
+                elif isinstance(node.value, ast.Dict):
+                    out += [s for s in map(lit, node.value.values) if s]
             if rel == "perf/summary.py" and target.startswith("NOTE_") and lit(node.value):
                 out.append(lit(node.value))  # performance notes
             if rel == "runner.py" and target == "notes" and isinstance(node.value, ast.List):

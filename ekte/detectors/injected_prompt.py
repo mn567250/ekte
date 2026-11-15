@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import usage_field
 from ekte.detectors.scale import Scale, outcome
@@ -134,6 +135,7 @@ class InjectedPromptDetector(Detector):
                     id="injected_prompt.inconclusive",
                     title="Could not measure input-token overhead",
                     summary="No usable prompt_tokens in the responses; overhead check skipped.",
+                    recommendation=advice.NO_PROMPT_TOKENS,
                     evidence={},
                 )
             )

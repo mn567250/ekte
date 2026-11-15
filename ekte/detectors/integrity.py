@@ -22,6 +22,7 @@ from dataclasses import dataclass
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import contains_ci
 from ekte.detectors.scale import Scale, outcome
@@ -197,6 +198,7 @@ class IntegrityDetector(Detector):
                     id="integrity.inconclusive",
                     title="Integrity canaries inconclusive",
                     summary="The model did not echo any canary verbatim, so tampering could not be assessed.",
+                    recommendation=advice.NO_CANARY_ECHO,
                     evidence={"noncompliant": noncompliant},
                 )
             )

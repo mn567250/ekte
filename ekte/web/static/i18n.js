@@ -200,9 +200,21 @@
       ["warn", "Self-id names neither the genuine brand nor a rival; treat as weak/evasive evidence."],
       ["pass", "Self-id names the genuine brand."],
     ],
-    "performance.latency_consistency": [["info", "{samples} clean samples; too few to judge consistency."]],
-    "performance.ttft_consistency": [["info", "{samples} clean samples; too few to judge consistency."]],
-    "performance.throughput_consistency": [["info", "{samples} clean samples; too few to judge consistency."]],
+    "performance.latency_consistency": [
+      // what left the probe requests out (newer reports), else the bare count
+      ["info", "{samples} clean samples of {requests} probe requests ({failed} failed, {cached} cached, {missing} without a usable value); too few to judge consistency."],
+      ["info", "{samples} clean samples; too few to judge consistency."],
+    ],
+    "performance.ttft_consistency": [
+      // what left the probe requests out (newer reports), else the bare count
+      ["info", "{samples} clean samples of {requests} probe requests ({failed} failed, {cached} cached, {missing} without a usable value); too few to judge consistency."],
+      ["info", "{samples} clean samples; too few to judge consistency."],
+    ],
+    "performance.throughput_consistency": [
+      // what left the probe requests out (newer reports), else the bare count
+      ["info", "{samples} clean samples of {requests} probe requests ({failed} failed, {cached} cached, {missing} without a usable value); too few to judge consistency."],
+      ["info", "{samples} clean samples; too few to judge consistency."],
+    ],
     "embed.dimension": [
       ["info", "Returned {returned}-d vectors; no known dimension for the claimed model to compare against."],
     ],

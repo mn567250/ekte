@@ -903,6 +903,16 @@ verschiebt wie eine Standardabweichung; sie brauchen mindestens 10 saubere
 Stichproben. Referenz ist die vertrauenswürdige Referenz, sonst der Bereich
 `performance.decode_tps` des Profils in der Wissensbasis.
 
+Eine Messanfrage wird ausgelassen, wenn sie fehlschlug, aus einem Cache kam
+oder den Messwert nicht hat: Eine gestreamte Anfrage ohne Inhalts-Delta hat
+keine TTFT und damit auch keine Dekodiergeschwindigkeit. Mit weniger als 10
+sauberen Stichproben zählt die Prüfung nicht; ihr Befund zählt, was ausgelassen
+wurde und warum, und ihre Empfehlung sagt, was zu ändern ist: die Fehler
+beheben, das Relay streamen lassen (oder `--performance-non-streaming` nutzen)
+oder mehr Anfragen senden (`--performance-requests`). Die Standard-Suite sendet
+nur 5 Messanfragen pro Endpunkt, daher wird die Gleichmäßigkeit in den Suiten
+deep, full und custom beurteilt.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `performance.summary` | Latenz, TTFT und Durchsatz wurden gemessen. | Info | Nicht gewertet |

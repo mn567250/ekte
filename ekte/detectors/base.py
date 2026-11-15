@@ -116,6 +116,50 @@ def select_detectors(
     return chosen
 
 
+def not_run_reason(
+    dimension: str,
+    suite: str,
+    *,
+    has_judge: bool,
+    has_baseline: bool,
+    enabled,
+    surface: str = "chat",
+) -> str | None:
+    """Why no detector of ``dimension`` ran with this configuration, as a fixed
+    sentence (:data:`ekte.detectors.advice.NOT_RUN_REASONS`) saying what would
+    make it run; None when it has no detector on ``surface`` or one would run."""
+    from ekte.detectors.advice import NOT_RUN_REASONS
+
+    surface = surface or "chat"
+    current = _tier(suite)
+    keys: set[str] = set()
+    for det_id, cls in REGISTRY.items():
+        if cls.surface != surface or cls.dimension.value != dimension:
+            continue
+        if not enabled(det_id):
+            keys.add("disabled")
+        elif cls.requires_judge and not has_judge:
+            keys.add("judge")
+        elif cls.requires_baseline and not has_baseline:
+            keys.add("baseline")
+        elif _tier(cls.min_suite) > current or not cls.applies(suite, has_baseline=has_baseline):
+            if (_tier(cls.min_suite) <= current and not has_baseline
+                    and cls.applies(suite, has_baseline=True)):
+                keys.add("baseline")
+                continue
+            # The cheapest suite this check runs on (with the baseline as given).
+            needed = next(
+                (t for t in SUITE_ORDER[max(_tier(cls.min_suite), current + 1):]
+                 if cls.applies(t, has_baseline=has_baseline)),
+                None,
+            )
+            if needed in ("standard", "deep", "full"):
+                keys.add(f"suite_{needed}")
+        else:
+            return None  # this one would run
+    return next((NOT_RUN_REASONS[k] for k in NOT_RUN_REASONS if k in keys), None)
+
+
 async def run_detector(detector: Detector, ctx: AuditContext) -> DetectorResult:
     """Run a detector, capturing timing and turning crashes into an error result."""
     started = time.perf_counter()

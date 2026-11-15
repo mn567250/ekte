@@ -34,7 +34,7 @@ from typing import Any
 from ekte import prompts
 from ekte.config import AuditOptions
 from ekte.context import AuditContext
-from ekte.detectors import perf_probe
+from ekte.detectors import advice, perf_probe
 from ekte.detectors.base import Detector, register
 from ekte.detectors.perf_probe import (
     Endpoint,
@@ -140,6 +140,8 @@ class RerankPerformanceDetector(Detector):
         self._topics: list[str] = prompts.get("performance.topics")
         # seq of each recorded request -> documents it carried
         self._docs: dict[int, int] = {}
+        # The suite caps the probe below the consistency minimum (set per run).
+        self._capped = False
         # (endpoint, scores digest) -> the arrangement first answered with them
         self._answered: dict[tuple[str, str], tuple[int, int]] = {}
 
@@ -186,6 +188,7 @@ class RerankPerformanceDetector(Detector):
         result.score = None
         opts = ctx.options
         n = planned_probe_requests(opts, has_baseline=ctx.has_baseline)
+        self._capped = perf_probe.probe_capped(opts, has_baseline=ctx.has_baseline)
         if n <= 0:
             result.status = Status.NOT_RUN
             result.findings.append(
@@ -195,6 +198,7 @@ class RerankPerformanceDetector(Detector):
                     title="Performance probe disabled",
                     summary="performance_requests <= 0; no probe requests were sent.",
                     evidence={"performance_requests": opts.performance_requests},
+                    recommendation=perf_probe.ENABLE_PROBE,
                 )
             )
             return result
@@ -236,6 +240,13 @@ class RerankPerformanceDetector(Detector):
         return result
 
     # -- findings ----------------------------------------------------------- #
+    def _pool(self, records: Sequence[RequestRecord], label: str, phase: str) -> list[RequestRecord]:
+        """Every request of ``label`` in ``phase``: what a sample-based check looks at."""
+        return [
+            rec for rec in records
+            if rec.endpoint == label and rec.phase == phase and rec.op == OP
+        ]
+
     def _good(self, records: Sequence[RequestRecord], label: str, phase: str) -> list[RequestRecord]:
         return [
             rec for rec in records
@@ -288,6 +299,9 @@ class RerankPerformanceDetector(Detector):
                 title="Rerank probe results",
                 summary=summary,
                 evidence=head,
+                recommendation=None if target.successes else advice.failure_advice(
+                    next((rec for rec in self._pool(records, "target", "probe") if not rec.ok), None)
+                ),
             )
         )
 
@@ -295,15 +309,18 @@ class RerankPerformanceDetector(Detector):
         many = self._good(records, "target", DOCS_PHASE)
         perf_probe.consistency_finding(
             SCALE, result, "performance.latency_consistency", "Latency", "ms",
-            [rec.duration_ms for rec in few if rec.duration_ms is not None], False,
+            self._pool(records, "target", "probe"), lambda rec: rec.duration_ms, False,
+            capped=self._capped,
         )
         perf_probe.consistency_finding(
             SCALE, result, "performance.throughput_consistency", "Rerank throughput", "documents/s",
-            self._docs_per_s(many), True,
+            self._pool(records, "target", DOCS_PHASE),
+            lambda rec: _per_s(self._docs.get(rec.seq, MANY), rec.duration_ms), True,
+            capped=self._capped,
         )
         perf_probe.error_finding(SCALE, result, target, failed_seqs(records, "target", op=OP))
-        perf_probe.load_finding(SCALE, result, target)
-        self._scaling_finding(result, few, many)
+        perf_probe.load_finding(SCALE, result, target, perf_probe.load_calls(records, OP))
+        self._scaling_finding(result, few, many, records)
 
         for label in summaries:
             cached = [
@@ -316,6 +333,7 @@ class RerankPerformanceDetector(Detector):
                     SCALE.finding(
                         "performance.cache_hit",
                         "cached" if label == "target" else "baseline_cached",
+                        calls=[rec.seq for rec in cached],
                         title="Unique probe queries returned repeated scores",
                         summary=f"{len(cached)} {label} probe request(s) returned the exact "
                         "scores already seen for another query, although every query was "
@@ -331,8 +349,14 @@ class RerankPerformanceDetector(Detector):
             self._overhead_finding(result, records, target, baseline, head)
 
     def _scaling_finding(
-        self, result: DetectorResult, few: list[RequestRecord], many: list[RequestRecord]
+        self,
+        result: DetectorResult,
+        few: list[RequestRecord],
+        many: list[RequestRecord],
+        records: Sequence[RequestRecord] | None = None,
     ) -> None:
+        """``records`` are the run's requests (the left-out ones explain a "few
+        samples" result); without them only ``few`` and ``many`` count."""
         one = percentile([rec.duration_ms for rec in few if rec.duration_ms is not None], 50)
         lots = percentile([rec.duration_ms for rec in many if rec.duration_ms is not None], 50)
         evidence = {
@@ -350,6 +374,17 @@ class RerankPerformanceDetector(Detector):
                     summary=f"{len(few)} samples over {FEW} and {len(many)} over {MANY} "
                     f"documents; at least {_MIN_DOCS_SAMPLES} of each are needed.",
                     evidence=evidence,
+                    recommendation=perf_probe.scaling_advice(
+                        [self._pool(records, "target", "probe"), self._pool(records, "target", DOCS_PHASE)]
+                        if records is not None else [few, many],
+                        minimum=_MIN_DOCS_SAMPLES,
+                    ),
+                    calls=[
+                        rec.seq for rec in (
+                            self._pool(records, "target", "probe") + self._pool(records, "target", DOCS_PHASE)
+                            if records is not None else few + many
+                        )
+                    ],
                 )
             )
             return

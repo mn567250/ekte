@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import contains_ci, stable_marker
 from ekte.detectors.scale import DeductionScale, outcome
@@ -178,6 +179,7 @@ class SecurityDetector(Detector):
                 SCALE.finding(
                     "security.headers",
                     "unavailable",
+                    recommendation=advice.failure_advice(chat),
                     calls=[chat],
                     title="No response headers to inspect",
                     summary=chat.error_message or "Call returned no headers; header hygiene not assessed.",

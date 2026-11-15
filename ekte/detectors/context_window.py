@@ -31,6 +31,7 @@ import asyncio
 
 from ekte import prompts
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import build_filler, contains_ci, stable_marker
 from ekte.detectors.scale import DeductionScale, outcome
@@ -208,6 +209,7 @@ class ContextWindowDetector(Detector):
                     "no_sizes",
                     title="Context-window probe could not run",
                     summary=f"No probe sizes fit between floor and cap (upper={upper}).",
+                    recommendation=advice.NO_CONTEXT_LADDER,
                     evidence={"declared": declared, "upper": upper, "probe_cap": cap, "floor": floor},
                 )
             )

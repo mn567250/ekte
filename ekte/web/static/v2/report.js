@@ -434,7 +434,9 @@
     if (!members.length) {
       var none = notSelected(d, r)
         ? T("本次自定义检测未选择该维度。", "Not selected in this custom run.")
-        : T("本次检测未运行该维度的检测器。", "No detector of this dimension ran in this audit.");
+        : T("本次检测未运行该维度的检测器。", "No detector of this dimension ran in this audit.") +
+          // the backend's reason says what would make it run (a suite, a baseline, a judge)
+          (d.reason && d.reason !== "Not run in this suite." ? " " + srv(d.reason) : "");
       return '<p class="how">' + esc(none) + "</p>" + dimExtra(d, r);
     }
     var b = d.breakdown;

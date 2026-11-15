@@ -4,6 +4,7 @@ it first (a stub or a random shuffle does not)."""
 from __future__ import annotations
 
 from ekte.context import AuditContext
+from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.rerank import (
     KNOWN_ANSWER_TOP,
@@ -43,6 +44,7 @@ class RerankKnownAnswerDetector(RerankDetector):
                     calls=[_res],
                     title="Known-answer ranking not checked",
                     summary=f"No ranking to check: {problem}.",
+                    recommendation=advice.failure_advice(_res),
                 )
             )
             result.status = Status.INCONCLUSIVE
