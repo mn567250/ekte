@@ -705,6 +705,13 @@
       if (p) { p.hidden = true; p.innerHTML = ""; }
       if (b) { b.setAttribute("aria-expanded", "false"); if (focusBtn) b.focus(); }
     }
+    // the relay / model key of a field's element: one of MS's own keys, never
+    // the attribute's text, as the key goes into the list's HTML ids
+    function msKey(el) {
+      var f = el.closest("[data-ms]");
+      return msKnown(f ? f.getAttribute("data-ms") : "");
+    }
+    function msKnown(a) { return Object.keys(MS).filter(function (k) { return k === a; })[0] || null; }
     // the search box and the checkboxes, in arrow-key order
     function msItems(k) {
       var p = section.querySelector("#ekf-" + k + "-p");
@@ -919,7 +926,7 @@
         setScope(el.checked ? "shared" : "page", o.storage, { state: st, fields: fields });
         return;
       }
-      var m = el.getAttribute("data-m");
+      var m = msKnown(el.getAttribute("data-m"));
       if (m) {
         // one value on or off; values the search hides stay as they are. The
         // value is the listed one, not the box's DOM text, so nothing typed
@@ -948,7 +955,7 @@
       set(patch);
     });
     section.addEventListener("input", function (ev) {
-      var mq = ev.target.getAttribute("data-msq");
+      var mq = msKnown(ev.target.getAttribute("data-msq"));
       if (mq && pop && pop.k === mq) {
         // only the list changes; the field and its caret stay
         pop.q = ev.target.value;
@@ -971,7 +978,8 @@
       if (ev.target.closest("#fshare")) copyLink();
       var b = ev.target.closest(".ekf-ms-btn");
       if (b) {
-        var k = b.closest("[data-ms]").getAttribute("data-ms");
+        var k = msKey(b);
+        if (!k) return;
         // from the keyboard (detail 0) focus moves into the list
         if (pop && pop.k === k) msClose(false); else msOpen(k, ev.detail === 0);
         return;
@@ -994,7 +1002,8 @@
       var b = ev.target.closest(".ekf-ms-btn");
       if (b && ev.key === "ArrowDown") {
         ev.preventDefault();
-        var bk = b.closest("[data-ms]").getAttribute("data-ms");
+        var bk = msKey(b);
+        if (!bk) return;
         if (!pop || pop.k !== bk) msOpen(bk, true);
         else if (msItems(bk)[0]) msItems(bk)[0].focus();
         return;
