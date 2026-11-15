@@ -150,6 +150,15 @@ skipped. `GET /api/watches` adds `run_window`, `in_window` and
 (`null` clears it). `watches.db` gains a nullable `run_window` column
 (schema version 4). See the [monitoring guide](docs/guide/monitoring.md).
 
+The run window editor follows the prototype's layout: presets, days, From /
+To / Time zone, then the week drawn by the Analytics peak-hours heatmap in
+4-hour blocks (each block shaded by the share of its hours the monitor runs),
+then the coverage line with the real number of runs at the monitor's check
+interval. An end hour on the next day reads "06:00 (+1)". "Next window" now
+falls exactly on the hour (it could read 06:59 for a 07:00 window). On a
+phone, the heatmap legend no longer breaks "100 %" into one character per
+line (Analytics too).
+
 ### Metrics, filters and History/Analytics rework ([#117](https://github.com/mn567250/ekte/issues/117))
 
 History and Analytics now show the same numbers, computed once on the
