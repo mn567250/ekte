@@ -137,11 +137,13 @@
     - 'link "Monitorer for denne reléen og modellen: model-a · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-a
       - text: Monitorer for denne reléen og modellen
-    - text: Score
-    - 'img "Score-trend over 7 revisjoner: fra 70 til 82, stigende."'
-    - text: 82 Forsinkelse p50
-    - 'img "Forsinkelse p50-trend over 7 revisjoner: fra <duration> til <duration>, fallende."'
-    - text: <duration>
+    - list "Trender":
+      - listitem:
+        - 'img "Score-trend over 7 revisjoner: fra 70 til 82, stigende."'
+        - text: Score 82
+      - listitem:
+        - 'img "Forsinkelse p50-trend over 7 revisjoner: fra <duration> til <duration>, fallende."'
+        - text: Forsinkelse p50 <duration>
     - list:
       - listitem:
         - button "30. sep. 2026, 11:02 Konsistent (trolig ekte) Score 82 Karakter B check · standard openai · Strømming p50 <duration>"
@@ -188,11 +190,13 @@
     - 'link "Monitorer for denne reléen og modellen: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
       - text: Monitorer for denne reléen og modellen
-    - text: Score
-    - 'img "Score-trend over 4 revisjoner: fra 58 til 64, stigende."'
-    - text: 64 Forsinkelse p50
-    - 'img "Forsinkelse p50-trend over 4 revisjoner: fra <duration> til <duration>, fallende."'
-    - text: <duration>
+    - list "Trender":
+      - listitem:
+        - 'img "Score-trend over 4 revisjoner: fra 58 til 64, stigende."'
+        - text: Score 64
+      - listitem:
+        - 'img "Forsinkelse p50-trend over 4 revisjoner: fra <duration> til <duration>, fallende."'
+        - text: Forsinkelse p50 <duration>
     - list:
       - listitem:
         - button "30. sep. 2026, 08:02 Falsk vare Score 64 Karakter D check · standard openai · Strømming p50 <duration>"
@@ -224,11 +228,13 @@
     - 'link "Monitorer for denne reléen og modellen: model-b · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-b
       - text: Monitorer for denne reléen og modellen
-    - text: Score
-    - 'img "Score-trend over 2 revisjoner: fra 89 til 91, stigende."'
-    - text: 91 Forsinkelse p50
-    - 'img "Forsinkelse p50-trend over 2 revisjoner: fra <duration> til <duration>, fallende."'
-    - text: <duration>
+    - list "Trender":
+      - listitem:
+        - 'img "Score-trend over 2 revisjoner: fra 89 til 91, stigende."'
+        - text: Score 91
+      - listitem:
+        - 'img "Forsinkelse p50-trend over 2 revisjoner: fra <duration> til <duration>, fallende."'
+        - text: Forsinkelse p50 <duration>
     - list:
       - listitem:
         - button "29. sep. 2026, 07:02 Konsistent (trolig ekte) Score 91 Karakter B check · standard openai · Strømming p50 <duration>"
@@ -250,7 +256,9 @@
     - 'link "Monitorer for denne reléen og modellen: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
       - text: Monitorer for denne reléen og modellen
-    - text: Score 72 Forsinkelse p50 <duration>
+    - list "Trender":
+      - listitem: Score 72
+      - listitem: Forsinkelse p50 <duration>
     - list:
       - listitem:
         - button "27. sep. 2026, 10:02 Stort sett pålitelig Score 72 Karakter D check · standard openai · Strømming p50 <duration>" [expanded]
@@ -261,7 +269,9 @@
           - article "Stort sett konsistent, med noen få små avvik":
             - text: Stort sett pålitelig
             - heading "Stort sett konsistent, med noen få små avvik" [level=2]
-            - text: Samlet helsescore 72/100 (Vurdering D) Sikkerhet i konklusjonen —
+            - list:
+              - listitem: Samlet helsescore 72/100 (Vurdering D)
+              - listitem: Sikkerhet i konklusjonen ingen data
             - term: Mål
             - definition:
               - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
@@ -338,7 +348,9 @@
     - 'link "Monitorer for denne reléen og modellen: gpt-4o · 127.0.0.1:9099"':
       - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
       - text: Monitorer for denne reléen og modellen
-    - text: Score 53 Forsinkelse p50 ingen data
+    - list "Trender":
+      - listitem: Score 53
+      - listitem: Forsinkelse p50 ingen data
     - list:
       - listitem:
         - button "27. sep. 2026, 07:47 Falsk vare Score 53 Karakter F check · standard"

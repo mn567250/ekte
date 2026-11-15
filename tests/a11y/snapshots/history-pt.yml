@@ -137,11 +137,13 @@
     - 'link "Monitores deste relay e modelo: model-a · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-a
       - text: Monitores deste relay e modelo
-    - text: Pontuação
-    - 'img "Tendência de Pontuação em 7 auditorias: de 70 a 82, em subida."'
-    - text: 82 Latência p50
-    - 'img "Tendência de Latência p50 em 7 auditorias: de <duration> a <duration>, em queda."'
-    - text: <duration>
+    - list "Tendências":
+      - listitem:
+        - 'img "Tendência de Pontuação em 7 auditorias: de 70 a 82, em subida."'
+        - text: Pontuação 82
+      - listitem:
+        - 'img "Tendência de Latência p50 em 7 auditorias: de <duration> a <duration>, em queda."'
+        - text: Latência p50 <duration>
     - list:
       - listitem:
         - button "30/09/2026, 11:02 Coerente (provavelmente autêntico) Pontuação 82 Nota B check · standard openai · Streaming p50 <duration>"
@@ -188,11 +190,13 @@
     - 'link "Monitores deste relay e modelo: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
       - text: Monitores deste relay e modelo
-    - text: Pontuação
-    - 'img "Tendência de Pontuação em 4 auditorias: de 58 a 64, em subida."'
-    - text: 64 Latência p50
-    - 'img "Tendência de Latência p50 em 4 auditorias: de <duration> a <duration>, em queda."'
-    - text: <duration>
+    - list "Tendências":
+      - listitem:
+        - 'img "Tendência de Pontuação em 4 auditorias: de 58 a 64, em subida."'
+        - text: Pontuação 64
+      - listitem:
+        - 'img "Tendência de Latência p50 em 4 auditorias: de <duration> a <duration>, em queda."'
+        - text: Latência p50 <duration>
     - list:
       - listitem:
         - button "30/09/2026, 08:02 Gato por lebre Pontuação 64 Nota D check · standard openai · Streaming p50 <duration>"
@@ -224,11 +228,13 @@
     - 'link "Monitores deste relay e modelo: model-b · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-b
       - text: Monitores deste relay e modelo
-    - text: Pontuação
-    - 'img "Tendência de Pontuação em 2 auditorias: de 89 a 91, em subida."'
-    - text: 91 Latência p50
-    - 'img "Tendência de Latência p50 em 2 auditorias: de <duration> a <duration>, em queda."'
-    - text: <duration>
+    - list "Tendências":
+      - listitem:
+        - 'img "Tendência de Pontuação em 2 auditorias: de 89 a 91, em subida."'
+        - text: Pontuação 91
+      - listitem:
+        - 'img "Tendência de Latência p50 em 2 auditorias: de <duration> a <duration>, em queda."'
+        - text: Latência p50 <duration>
     - list:
       - listitem:
         - button "29/09/2026, 07:02 Coerente (provavelmente autêntico) Pontuação 91 Nota B check · standard openai · Streaming p50 <duration>"
@@ -250,7 +256,9 @@
     - 'link "Monitores deste relay e modelo: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
       - text: Monitores deste relay e modelo
-    - text: Pontuação 72 Latência p50 <duration>
+    - list "Tendências":
+      - listitem: Pontuação 72
+      - listitem: Latência p50 <duration>
     - list:
       - listitem:
         - button "27/09/2026, 10:02 Globalmente fiável Pontuação 72 Nota D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -261,7 +269,9 @@
           - article "Globalmente coerente, com alguns pequenos problemas":
             - text: Globalmente fiável
             - heading "Globalmente coerente, com alguns pequenos problemas" [level=2]
-            - text: Pontuação de saúde global 72/100 (Classificação D) Confiança do veredito —
+            - list:
+              - listitem: Pontuação de saúde global 72/100 (Classificação D)
+              - listitem: Confiança do veredito sem dados
             - term: Alvo
             - definition:
               - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
@@ -338,7 +348,9 @@
     - 'link "Monitores deste relay e modelo: gpt-4o · 127.0.0.1:9099"':
       - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
       - text: Monitores deste relay e modelo
-    - text: Pontuação 53 Latência p50 sem dados
+    - list "Tendências":
+      - listitem: Pontuação 53
+      - listitem: Latência p50 sem dados
     - list:
       - listitem:
         - button "27/09/2026, 07:47 Gato por lebre Pontuação 53 Nota F check · standard"

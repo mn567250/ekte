@@ -137,11 +137,13 @@
     - 'link "Monitor di questo relay e modello: model-a · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-a
       - text: Monitor di questo relay e modello
-    - text: Punteggio
-    - 'img "Andamento di Punteggio su 7 audit: da 70 a 82, in crescita."'
-    - text: 82 Latenza p50
-    - 'img "Andamento di Latenza p50 su 7 audit: da <duration> a <duration>, in calo."'
-    - text: <duration>
+    - list "Andamenti":
+      - listitem:
+        - 'img "Andamento di Punteggio su 7 audit: da 70 a 82, in crescita."'
+        - text: Punteggio 82
+      - listitem:
+        - 'img "Andamento di Latenza p50 su 7 audit: da <duration> a <duration>, in calo."'
+        - text: Latenza p50 <duration>
     - list:
       - listitem:
         - button "30 set 2026, 11:02 Coerente (probabilmente autentico) Punteggio 82 Voto B check · standard openai · Streaming p50 <duration>"
@@ -188,11 +190,13 @@
     - 'link "Monitor di questo relay e modello: model-a · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-a
       - text: Monitor di questo relay e modello
-    - text: Punteggio
-    - 'img "Andamento di Punteggio su 4 audit: da 58 a 64, in crescita."'
-    - text: 64 Latenza p50
-    - 'img "Andamento di Latenza p50 su 4 audit: da <duration> a <duration>, in calo."'
-    - text: <duration>
+    - list "Andamenti":
+      - listitem:
+        - 'img "Andamento di Punteggio su 4 audit: da 58 a 64, in crescita."'
+        - text: Punteggio 64
+      - listitem:
+        - 'img "Andamento di Latenza p50 su 4 audit: da <duration> a <duration>, in calo."'
+        - text: Latenza p50 <duration>
     - list:
       - listitem:
         - button "30 set 2026, 08:02 Merce non conforme Punteggio 64 Voto D check · standard openai · Streaming p50 <duration>"
@@ -224,11 +228,13 @@
     - 'link "Monitor di questo relay e modello: model-b · Example Relay"':
       - /url: /watches?relay=example-relay&model=model-b
       - text: Monitor di questo relay e modello
-    - text: Punteggio
-    - 'img "Andamento di Punteggio su 2 audit: da 89 a 91, in crescita."'
-    - text: 91 Latenza p50
-    - 'img "Andamento di Latenza p50 su 2 audit: da <duration> a <duration>, in calo."'
-    - text: <duration>
+    - list "Andamenti":
+      - listitem:
+        - 'img "Andamento di Punteggio su 2 audit: da 89 a 91, in crescita."'
+        - text: Punteggio 91
+      - listitem:
+        - 'img "Andamento di Latenza p50 su 2 audit: da <duration> a <duration>, in calo."'
+        - text: Latenza p50 <duration>
     - list:
       - listitem:
         - button "29 set 2026, 07:02 Coerente (probabilmente autentico) Punteggio 91 Voto B check · standard openai · Streaming p50 <duration>"
@@ -250,7 +256,9 @@
     - 'link "Monitor di questo relay e modello: model-b · gateway.a-very-long-relay-hostname.example.org"':
       - /url: /watches?relay=https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1&model=model-b
       - text: Monitor di questo relay e modello
-    - text: Punteggio 72 Latenza p50 <duration>
+    - list "Andamenti":
+      - listitem: Punteggio 72
+      - listitem: Latenza p50 <duration>
     - list:
       - listitem:
         - button "27 set 2026, 10:02 Per lo più affidabile Punteggio 72 Voto D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -261,7 +269,9 @@
           - article "Per lo più coerente, con alcuni problemi minori":
             - text: Per lo più affidabile
             - heading "Per lo più coerente, con alcuni problemi minori" [level=2]
-            - text: Punteggio di salute complessivo 72/100 (Valutazione D) Affidabilità del verdetto —
+            - list:
+              - listitem: Punteggio di salute complessivo 72/100 (Valutazione D)
+              - listitem: Affidabilità del verdetto nessun dato
             - term: Obiettivo
             - definition:
               - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
@@ -338,7 +348,9 @@
     - 'link "Monitor di questo relay e modello: gpt-4o · 127.0.0.1:9099"':
       - /url: /watches?relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o
       - text: Monitor di questo relay e modello
-    - text: Punteggio 53 Latenza p50 nessun dato
+    - list "Andamenti":
+      - listitem: Punteggio 53
+      - listitem: Latenza p50 nessun dato
     - list:
       - listitem:
         - button "27 set 2026, 07:47 Merce non conforme Punteggio 53 Voto F check · standard"
