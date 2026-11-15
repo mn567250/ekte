@@ -127,7 +127,7 @@
             - rowheader "9.1.1.1"
             - cell:
               - group:
-                - text: Non-text Content
+                - button "Non-text Content" [expanded]
                 - paragraph: "How it is tested: Images, icons, SVGs and controls have a text alternative. Whether each alternative is meaningful is judged by a person."
                 - paragraph: "Automated tests: 30 run, 30 passed, 0 failed, 156 skipped"
                 - paragraph:

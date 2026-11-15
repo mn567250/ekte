@@ -274,7 +274,7 @@
   // opts.scale "probe" focuses the y-axis on the probe.
   function chart(records, metricId, opts) {
     var c = chartSvg(records, metricId, opts && opts.scale);
-    return c.empty ? c.html : c.html + dataTable(c.calls, c.m, opts && opts.open);
+    return c.empty ? c.html : c.html + dataTable(c.calls, c.m, opts && opts.open, false, opts && opts.pid ? opts.pid + "-data" : null);
   }
   // The SVG alone (or the "no samples" note): {html, empty, calls, m, over,
   // top, xMax, yMax, last} (top: a focused range's maximum; over: how many
@@ -466,12 +466,33 @@
   // What the hover tooltips show, as a table behind a toggle.
   // With `lazy`, a closed toggle comes without its table (the live panel fills
   // it in when it opens).
-  function dataTable(calls, m, open, lazy) {
+  // The toggle is ekte.css's Disclosure (issue 227): a button and a region,
+  // no native <details>. dataOpen / bindData stand in for details.open and
+  // its "toggle" event (fired on the .zp-data wrapper after each flip).
+  // id: the region's id, from the panel's pid (so a render is deterministic)
+  function dataTable(calls, m, open, lazy, id) {
     var rows = dataRows(calls, m);
     if (!rows.length) return "";
-    return '<details class="zp-data"' + (open ? " open" : "") + "><summary>" + esc(dataSummary()) +
-      '</summary><div class="zp-data-scroll" tabindex="0">' + (open || !lazy ? dataTableHtml(rows, m) : "") +
-      "</div></details>";
+    id = id || "zp-data";
+    return '<div class="zp-data"><button type="button" class="disclosure lead" aria-expanded="' + !!open + '" aria-controls="' + id + '">' +
+      '<span class="t">' + esc(dataSummary()) + '</span><span class="cv" aria-hidden="true">' + (window.ekteIcon ? window.ekteIcon("chevronDown") : "") +
+      '</span></button><div class="zp-data-scroll" id="' + id + '" tabindex="0"' + (open ? "" : " hidden") + ">" +
+      (open || !lazy ? dataTableHtml(rows, m) : "") + "</div></div>";
+  }
+  function dataOpen(det) {
+    var b = det && det.querySelector(":scope > .disclosure");
+    return !!b && b.getAttribute("aria-expanded") === "true";
+  }
+  function bindData(det) {
+    if (!det || det.getAttribute("data-bound")) return;
+    det.setAttribute("data-bound", "1");
+    var b = det.querySelector(":scope > .disclosure");
+    b.addEventListener("click", function () {
+      var open = !dataOpen(det);
+      b.setAttribute("aria-expanded", String(open));
+      det.querySelector(":scope > .zp-data-scroll").hidden = !open;
+      det.dispatchEvent(new Event("toggle"));
+    });
   }
   function dataSummary() {
     return T("查看数据表", "Show data table");
@@ -526,7 +547,7 @@
     return m.id === "latency" && r.duration_ms != null ? num(r.duration_ms) : "—";
   }
   function dataTableHtml(rows, m) {
-    return '<table class="zp-table zp-small">' + dataHead(m) + "<tbody>" +
+    return '<table class="tbl dense zp-table zp-small">' + dataHead(m) + "<tbody>" +
       rows.map(function (r) { return dataRow(r, m); }).join("") + "</tbody></table>";
   }
   function tip(r, m) {
@@ -596,7 +617,7 @@
   }
   function plotHtml(c, active, pid, open) {
     return '<div class="zp-plot" role="tabpanel" id="' + pid + '-panel" aria-labelledby="' + pid + "-tab-" + active +
-      '">' + (c.empty ? c.html : c.html + dataTable(c.calls, c.m, open)) + "</div>";
+      '">' + (c.empty ? c.html : c.html + dataTable(c.calls, c.m, open, false, pid + "-data")) + "</div>";
   }
   // The y-range switch above the chart (s from scaleState): "Full range" and
   // "Probe focus" as toggle buttons, whether the range was chosen
@@ -654,7 +675,8 @@
     if (!root) return;
     wireTabs(root, onMetric);
     var det = root.querySelector(".zp-data");
-    if (det && onToggle) det.addEventListener("toggle", function () { onToggle(det.open); });
+    bindData(det);
+    if (det && onToggle) det.addEventListener("toggle", function () { onToggle(dataOpen(det)); });
     root.querySelectorAll("[data-tip]").forEach(function (el) {
       el.addEventListener("mouseover", function (e) { showTip(e, el.getAttribute("data-tip")); });
       el.addEventListener("mouseleave", hideTip);
@@ -687,7 +709,7 @@
   function statTable(ep) {
     var rows = ROWS.filter(function (r) { return ep[r[0]] && ep[r[0]].count; });
     if (!rows.length) return '<p class="zp-muted">' + esc(T("没有可统计的成功请求。", "No successful requests to summarize.")) + "</p>";
-    return '<div class="zp-scroll"><table class="zp-table"><thead><tr><th>' + esc(T("指标", "Metric")) + "</th>" +
+    return '<div class="zp-scroll"><table class="tbl dense zp-table"><thead><tr><th>' + esc(T("指标", "Metric")) + "</th>" +
       COLS.map(function (c) { return '<th class="r">' + esc(FLOOR[c] ? c : tr(c)) + "</th>"; }).join("") + "</tr></thead><tbody>" +
       rows.map(function (r) {
         var s = ep[r[0]];
@@ -754,7 +776,7 @@
     if (extra.length) o.push('<ul class="zp-list">' + extra.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>");
     o.push(statTable(ep));
     if ((ep.ttft_by_input || []).length > 1) {
-      o.push('<div class="zp-wide"><table class="zp-table zp-small"><thead><tr><th>' + esc(T("提示词长度", "Prompt size")) + '</th><th class="r">n</th>' +
+      o.push('<div class="zp-wide"><table class="tbl dense zp-table zp-small"><thead><tr><th>' + esc(T("提示词长度", "Prompt size")) + '</th><th class="r">n</th>' +
         '<th class="r">TTFT p50</th><th class="r">' + esc(T("延迟 p50", "Latency p50")) + "</th></tr></thead><tbody>" +
         ep.ttft_by_input.map(function (b) {
           return "<tr><td>" + esc(b.label) + '</td><td class="r">' + int(b.count) + '</td><td class="r">' + num(b.ttft_p50_ms) +
@@ -773,7 +795,7 @@
     return c.delta > 0 === !!c.higher_is_better;
   }
   function compareTable(rows) {
-    return '<div class="zp-wide"><table class="zp-table"><thead><tr><th>' + esc(T("指标", "Metric")) + '</th><th class="r">' +
+    return '<div class="zp-wide"><table class="tbl dense zp-table"><thead><tr><th>' + esc(T("指标", "Metric")) + '</th><th class="r">' +
       esc(T("目标", "Target")) + '</th><th class="r">' + esc(T("基线", "Baseline")) + '</th><th class="r">Δ</th><th class="r">' +
       esc(T("比值", "Ratio")) + "</th></tr></thead><tbody>" + rows.map(function (c) {
         var lab = COMPARE[c.metric] ? T(COMPARE[c.metric][0], COMPARE[c.metric][1]) : c.metric;
@@ -1116,7 +1138,7 @@
     if (act && act !== this.host && this.host.contains(act)) {
       // (the selected tab: after an arrow key the focused one is the old metric)
       if (act.getAttribute("data-metric")) refocus = '.zp-tabs [data-metric="' + this.metric + '"]';
-      else if (act.tagName === "SUMMARY") refocus = ".zp-data summary";
+      else if (act.matches(".zp-data > .disclosure")) refocus = ".zp-data > .disclosure";
       // a y-range button (gone after "Back to automatic": the pressed one)
       else if (act.getAttribute("data-scale"))
         refocus = act.getAttribute("data-scale") === "auto" ? '.zp-seg [aria-pressed="true"]'
@@ -1177,14 +1199,14 @@
     this.halt();
     if (this.el) this.render();
   };
-  function plotInner(c, open) {
-    return c.html + (c.empty ? "" : dataTable(c.calls, c.m, open, true));
+  function plotInner(c, open, pid) {
+    return c.html + (c.empty ? "" : dataTable(c.calls, c.m, open, true, pid + "-data"));
   }
   Live.prototype.build = function (v) {
     var self = this;
     var prev = this.host.querySelector(".zp-data");
     // the toggle may have been opened before its "toggle" event ran
-    var open = this.open || !!(prev && prev.open);
+    var open = this.open || dataOpen(prev);
     var o = ['<div class="zp-live"><div class="zp-live-h">' + esc(v.title) + "</div>"];
     o.push(kpiHTML(v.head, v.title));
     if (v.probe) {
@@ -1195,7 +1217,7 @@
     o.push(v.tabs);
     o.push(v.scale);
     o.push('<div class="zp-plot" role="tabpanel" id="' + this.pid + '-panel" aria-labelledby="' + this.pid + "-tab-" +
-      this.metric + '">' + plotInner(v.chart, open) + "</div>");
+      this.metric + '">' + plotInner(v.chart, open, this.pid) + "</div>");
     o.push(v.legend);
     // announces an automatic y-range switch (kept across patches, so it speaks)
     o.push('<div class="zp-sr" role="status"></div>');
@@ -1247,17 +1269,15 @@
     var self = this, el = this.el, det = el.plot.querySelector(".zp-data");
     el.det = det;
     el.box = det && det.querySelector(".zp-data-scroll");
-    el.summary = det && det.querySelector("summary");
+    el.summary = det && det.querySelector(":scope > .disclosure > .t");
     if (!det) return;
+    bindData(det);
     // Fill the table as the toggle opens, so it never shows up empty or stale
-    // (a click on the summary runs before the details opens; "toggle" after).
-    el.summary.addEventListener("click", function () {
-      if (!det.open && self.el && self.el.det === det) self.fillTable();
-    });
+    // ("toggle" fires right after the region is shown, before it is painted).
     det.addEventListener("toggle", function () {
       if (!self.el || self.el.det !== det) return;
-      self.open = det.open;
-      if (det.open) self.fillTable();
+      self.open = dataOpen(det);
+      if (self.open) self.fillTable();
     });
   };
   Live.prototype.patch = function (v) {
@@ -1300,8 +1320,8 @@
     if (v.chart.empty !== c.empty) {
       // the first samples arrived (or this metric has none): the plot gains
       // or loses its data table
-      var open = this.open || !!(el.det && el.det.open);
-      el.plot.innerHTML = plotInner(v.chart, open);
+      var open = this.open || dataOpen(el.det);
+      el.plot.innerHTML = plotInner(v.chart, open, this.pid);
       this.markTable(open, v.chart);
       this.wirePlot();
     } else if (v.chart.html !== c.chart) {
@@ -1310,7 +1330,7 @@
     c.chart = v.chart.html;
     c.empty = v.chart.empty;
     if (el.summary) setText(el.summary, dataSummary());
-    if (el.det && el.det.open) this.fillTable();
+    if (dataOpen(el.det)) this.fillTable();
     if (v.legend !== c.legend) {
       el.legend.outerHTML = v.legend;
       el.legend = el.root.querySelector(".zp-legend");
@@ -1373,7 +1393,7 @@
     ".zp-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}" +
     ".zp-tabs button{font:600 var(--t-xs) var(--sans,system-ui);color:var(--zp-ink2);background:var(--zp-tab);border:1.5px solid var(--zp-grid);border-radius:var(--r-pill);padding:4px 11px;cursor:pointer}" +
     ".zp-tabs button.on{color:var(--zp-tab-on-ink);background:var(--zp-tab-on);border-color:var(--zp-tab-on)}" +
-    ".zp-tabs button:focus-visible,.zp-data summary:focus-visible{outline:2px solid var(--zp-focus);outline-offset:2px}" +
+    ".zp-tabs button:focus-visible,.zp-data>.disclosure:focus-visible{outline:2px solid var(--zp-focus);outline-offset:2px}" +
     ".zp-chart{width:100%;height:auto;display:block}" +
     ".zp-grid{stroke:var(--zp-grid);stroke-width:1}" +
     ".zp-tick{fill:var(--zp-ink2);font-size:var(--t-2xs);font-variant-numeric:tabular-nums}" +
@@ -1429,17 +1449,17 @@
     ".zp-muted{font-size:var(--t-sm);color:var(--zp-ink2);margin:6px 0;line-height:1.5}" +
     ".zp-h{font-size:var(--t-base);margin:16px 0 6px;color:var(--zp-ink)}" +
     ".zp-scroll{overflow-x:auto}" +  // .zp-wide: a plain wrapper (pages may let it scroll)
-    ".zp-table{width:100%;border-collapse:collapse;font-size:var(--t-xs);margin:6px 0 10px;font-variant-numeric:tabular-nums}" +
-    ".zp-table th{font-size: var(--label-size);font-weight: var(--label-weight);text-transform:uppercase;letter-spacing: var(--track-label);color:var(--zp-faint);text-align:left;padding:5px 7px;border-bottom:1px solid var(--zp-grid)}" +
-    ".zp-table td{padding:5px 7px;border-bottom:1px dotted var(--zp-grid);color:var(--zp-ink2);white-space:nowrap}" +
+    // the tables are ekte.css's Table (<table class="tbl dense zp-table">, issue 227)
+    ".zp-table{margin:6px 0 10px;font-variant-numeric:tabular-nums}" +
+    ".zp-table td{white-space:nowrap}" +
     ".zp-table .r{text-align:right}.zp-table.zp-small{width:auto}" +
     ".zp-unit{color:var(--zp-faint);font-size:var(--t-2xs)}" +
     ".zp-list{font-size:var(--t-sm);color:var(--zp-ink2);margin:6px 0;padding-left:18px;line-height:1.55}" +
     // The data table is for screen readers until it takes focus or is opened
     // (:where keeps this overridable: a page may always show the toggle).
     ".zp-plot{position:relative}" +
-    ".zp-data:where(:not(:focus-within):not([open])){position:absolute;left:0;bottom:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}" +
-    ".zp-data summary{font-size:var(--t-xs);color:var(--zp-ink2);cursor:pointer;margin:2px 0 4px}" +
+    ".zp-data:where(:not(:focus-within):not(:has(>.disclosure[aria-expanded=true]))){position:absolute;left:0;bottom:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}" +
+    ".zp-data>.disclosure{width:auto;padding:0;font-size:var(--t-xs);color:var(--zp-ink2);margin:2px 0 4px}" +
     ".zp-data-scroll{max-height:260px;overflow:auto}" +
     ".zp-tip{position:fixed;z-index:50;display:none;pointer-events:none;white-space:pre;background:var(--zp-tip-bg);color:var(--zp-tip-ink);" +
     "font:500 var(--t-xs)/1.45 var(--mono,monospace);padding:7px 9px;border-radius:var(--r-sm);box-shadow:0 8px 24px -10px var(--zp-tip-shadow)}";

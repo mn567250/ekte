@@ -609,12 +609,12 @@
         : "") +
       '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id + '" data-l0="' +
       esc(showAll) + '" data-l1="' + esc(T("收起", "Show fewer")) + '">' + esc(showAll) + "</button>" +
-      '<div class="zr-at" id="' + id + '" hidden><table><thead><tr>' +
+      '<div class="zr-at" id="' + id + '" hidden><table class="tbl"><thead><tr>' +
       "<th>" + esc(T("属性", "Attribute")) + "</th><th>" + esc(T("实际值", "Observed")) + "</th><th>" +
-      esc(T("结果", "Result")) + '</th><th class="num">' + esc(T("分数", "Points")) + "</th></tr></thead><tbody>" +
+      esc(T("结果", "Result")) + '</th><th class="n">' + esc(T("分数", "Points")) + "</th></tr></thead><tbody>" +
       fs.map(function (f) {
         return "<tr><td>" + subDot(f) + "<code>" + esc(f.subject) + "</code></td><td><code>" + esc(observed(f)) +
-          "</code></td><td>" + esc(what(f)) + '</td><td class="num">' + esc(sc ? eff(f, sc) : "—") + "</td></tr>";
+          "</code></td><td>" + esc(what(f)) + '</td><td class="n">' + esc(sc ? eff(f, sc) : "—") + "</td></tr>";
       }).join("") +
       "</tbody></table></div></div></li>"
     );
@@ -938,9 +938,10 @@
       "</h3>" +
       (findings.length
         ? findingGroups(findings)
-        : '<p class="none">' +
+        // the EmptyState (ekte.css .empty; notice.js builds the same markup)
+        : '<div class="empty"><span class="ico" aria-hidden="true">' + ico("check") + "</span><p>" +
           esc(T("未发现警告或失败项 —— 各维度表现与所声称模型一致。", "No warnings or failures — every dimension is consistent with the claimed model.")) +
-          "</p>") +
+          "</p></div>") +
       "</section>" +
       warningsSection(r) +
       execSection(r) +

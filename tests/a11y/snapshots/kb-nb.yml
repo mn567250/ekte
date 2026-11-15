@@ -93,7 +93,7 @@
     - heading "Alle modeller 244 modeller" [level=2]
     - paragraph: "Modellprofilene revisjoner sammenligner med. En modell som er slått av, slås ikke lenger opp: revisjoner av den kjøres uten profil."
     - group:
-      - text: Legg til en modell
+      - button "Legg til en modell" [expanded]
       - paragraph: La en KI-assistent undersøke modellen, og kontroller svaret her før det lagres.
       - heading "1 Kopier undersøkelsesprompten" [level=3]
       - text: Modell-ID id
@@ -105,7 +105,7 @@
       - button "Kopier prompt"
       - status
       - group:
-        - text: Vis prompten
+        - button "Vis prompten" [expanded]
         - textbox "Prompt"
       - paragraph: Lim den inn i KI-assistenten du foretrekker. Den svarer med ett YAML-dokument.
       - heading "2 Last opp eller lim inn YAML-en" [level=3]
@@ -118,9 +118,10 @@
       - button "Kontroll"
       - button "Lagre i kunnskapsbasen" [disabled]
     - group:
-      - text: Ai2 (Allen Institute for AI)
-      - code: ai2
-      - text: 6 modeller
+      - button "Ai2 (Allen Institute for AI) ai2 6 modeller" [expanded]:
+        - text: Ai2 (Allen Institute for AI)
+        - code: ai2
+        - text: 6 modeller
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct

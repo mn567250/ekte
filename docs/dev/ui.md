@@ -78,6 +78,18 @@ word or the colours (contrast, distance between steps, `--success` =
 thresholds of its own. Info blue (`--info`, family `sky`) is for information,
 never a verdict.
 
+Three more shared components live in `ekte.css` (issue 227). The **Table**
+is `<table class="tbl">` (`.dense` for wide analysis tables; `.n` numbers,
+`.sub` a muted sub-value). The **Disclosure** is a button and a region
+(`.disclosure`, `aria-expanded`, `aria-controls`; `.lead` puts the chevron
+first in a list; `.disclosure-box` frames it, `.add` dashed); a page that has
+no handler of its own marks the button `data-disclosure` and loads
+`disclosure.js` (`EkteDisclosure.html()` builds the markup). The
+**EmptyState** is `.empty` (`EkteNotice.empty(text, { icon, action })`).
+`tests/test_web_components.py` fails on a table without `.tbl`, table layout
+outside `ekte.css`, a native `<details>`, a disclosure button without its
+ARIA, the old empty-state classes and negative offsets in History's header.
+
 Messages have two shapes. The **Callout** (`.znote` in `ekte.css`) is for a
 message that needs attention or action: page size for the page notice
 (below), inline size for one inside a card or form, built by

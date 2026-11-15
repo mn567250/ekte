@@ -127,7 +127,7 @@
             - rowheader "9.1.1.1"
             - cell:
               - group:
-                - text: Contenido no textual
+                - button "Contenido no textual" [expanded]
                 - paragraph: "Cómo se prueba: Las imágenes, iconos, SVG y controles tienen una alternativa textual. Si cada alternativa tiene sentido lo juzga una persona."
                 - paragraph: "Pruebas automatizadas: 30 ejecutadas, 30 superadas, 0 fallidas, 156 omitidas"
                 - paragraph:

@@ -28,6 +28,7 @@
  *
  *   EkteNotice.callout(level, html, o)  the same Callout, inline size, as
  *     markup for a message inside a card or form (see below)
+ *   EkteNotice.empty(text, o)  the EmptyState as markup (see below)
  *
  * Pure helpers (tested under node): levelOf(level), roleFor(n).
  */
@@ -101,5 +102,16 @@
       '<span class="ico">' + ico + '</span><div class="txt">' + html + "</div></div>";
   }
 
-  window.EkteNotice = { show: show, levelOf: levelOf, roleFor: roleFor, callout: callout };
+  // The EmptyState (ekte.css .empty, issue 227) as markup: an icon, one
+  // sentence (text, escaped here) and an optional action (html):
+  //   EkteNotice.empty(text, { icon, action, html })
+  // o.html: the sentence is already markup.
+  function empty(text, o) {
+    o = o || {};
+    var ico = window.ekteIcon ? window.ekteIcon(o.icon || "info", { size: 28 }) : "";
+    return '<div class="empty"><span class="ico" aria-hidden="true">' + ico + "</span><p>" +
+      (o.html ? text : esc(text)) + "</p>" + (o.action || "") + "</div>";
+  }
+
+  window.EkteNotice = { show: show, levelOf: levelOf, roleFor: roleFor, callout: callout, empty: empty };
 })();

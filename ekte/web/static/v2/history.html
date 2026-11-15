@@ -53,10 +53,10 @@
   .sortb[data-dir] { color: var(--ink); }
   .sortb[data-dir] .zicon { opacity: 1; }
   .sortb[data-dir="asc"] .zicon { transform: rotate(180deg); }
-  /* numeric columns are narrow: their labels end at the column's right edge
-     and grow to the left, Score into the free end of the wide Risk column */
-  .sortb.n { justify-self: end; flex-direction: row-reverse; max-width: none; margin: 0 -4px 0 -10px; }
-  .sortb[data-sort="score"] { margin-left: -120px; }
+  /* numeric columns are narrow: a label ends at its column's right edge and,
+     as wide as its text (max-content), grows to the left into the free end
+     of the wide Risk column; header and rows share --cols, no offsets */
+  .sortb.n { justify-self: end; flex-direction: row-reverse; width: max-content; max-width: none; margin: 0 -4px; }
 
   /* group collapse toggle: the group heading's text is the button */
   .gtog {
@@ -132,8 +132,6 @@
   .tsel button:hover:not(:disabled) { border-color: var(--line); color: var(--ink); }
   .tsel button[aria-pressed="true"]:hover:not(:disabled) { border-color: var(--ink); }
   .tsel button:disabled { cursor: not-allowed; opacity: 0.7; }
-  .nomatch { text-align: center; padding: 36px 22px; color: var(--ink-muted); font-size: var(--t-md); }
-  .nomatch p { margin: 0 0 14px; }
 
   /* colour families (text) */
   .f-good { color: var(--success); } .f-fair { color: var(--fair); } .f-warn { color: var(--warning); }
@@ -210,10 +208,6 @@
   .clr:hover { color: var(--danger); }
   .clr .zicon { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; }
 
-  .empty-box { text-align: center; padding: 44px 22px 40px; }
-  .empty-box .ic { color: var(--ink-muted); margin-bottom: 10px; }
-  .empty-box .ic .zicon { width: 34px; height: 34px; }
-  .empty-box p { margin: 0 0 16px; color: var(--ink-muted); font-size: var(--t-md); }
 
   /* phones: stacked rows, no horizontal scroll */
   @media (max-width: 600px) {
@@ -826,11 +820,10 @@
     if (state.confirm != null && state.confirm !== "all" && !state.rows[String(state.confirm)]) state.confirm = null;
     if (!state.totalRuns) {
       host.innerHTML = urlFiltered() || anySaved()
-        ? '<div class="nomatch"><p>' + esc(T("没有符合筛选条件的检测记录。", "No audits match these filters.")) +
-          '</p><button type="button" class="btn sm" id="nmreset">' + esc(T("重置筛选", "Reset filters")) + "</button></div>"
-        : '<div class="empty-box"><div class="ic">' + ico("folder") + "</div><p>" +
-          esc(T("还没有检测记录。", "No audits recorded yet.")) + '</p><a class="btn pri" href="/">' +
-          esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a></div>";
+        ? EkteNotice.empty(T("没有符合筛选条件的检测记录。", "No audits match these filters."), { icon: "search",
+          action: '<button type="button" class="btn sm" id="nmreset">' + esc(T("重置筛选", "Reset filters")) + "</button>" })
+        : EkteNotice.empty(T("还没有检测记录。", "No audits recorded yet."), { icon: "folder",
+          action: '<a class="btn pri" href="/">' + esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a>" });
       return;
     }
 
@@ -1375,7 +1368,7 @@
         return load();
       })
       .then(function () {
-        var first = host.querySelector(".rmain") || host.querySelector(".empty-box a");
+        var first = host.querySelector(".rmain") || host.querySelector(".empty a");
         (first || host).focus();
       })
       .catch(function (e) {

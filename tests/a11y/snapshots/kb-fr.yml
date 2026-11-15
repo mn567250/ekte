@@ -93,7 +93,7 @@
     - heading "Tous les modèles 244 modèles" [level=2]
     - paragraph: "Les profils de modèle auxquels les audits se comparent. Un modèle désactivé n'est plus résolu : ses audits s'exécutent sans profil."
     - group:
-      - text: Ajouter un modèle
+      - button "Ajouter un modèle" [expanded]
       - paragraph: Laissez un assistant IA se renseigner sur le modèle, puis vérifiez sa réponse ici avant qu’elle soit enregistrée.
       - heading "1 Copier le prompt de recherche" [level=3]
       - text: Identifiant du modèle id
@@ -105,7 +105,7 @@
       - button "Copier le prompt"
       - status
       - group:
-        - text: Afficher le prompt
+        - button "Afficher le prompt" [expanded]
         - textbox "Prompt"
       - paragraph: Collez-le dans l’assistant IA de votre choix. Il répond avec un document YAML.
       - heading "2 Importer ou coller le YAML" [level=3]
@@ -118,9 +118,10 @@
       - button "Contrôle"
       - button "Enregistrer dans la base" [disabled]
     - group:
-      - text: Ai2 (Allen Institute for AI)
-      - code: ai2
-      - text: 6 modèles
+      - button "Ai2 (Allen Institute for AI) ai2 6 modèles" [expanded]:
+        - text: Ai2 (Allen Institute for AI)
+        - code: ai2
+        - text: 6 modèles
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct

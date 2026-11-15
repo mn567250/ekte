@@ -65,14 +65,16 @@
   .filters .grp { margin: 0; }
   .shown { font-size: var(--t-sm); color: var(--ink-muted); margin: 12px 0 0; }
   .tbl { margin-top: 12px; overflow-x: auto; border-radius: var(--r-md); }
-  table.steps { width: 100%; border-collapse: collapse; font-size: var(--t-base); min-width: 520px; }
-  .steps caption { text-align: left; }
-  .steps th, .steps td { text-align: left; vertical-align: top; padding: 9px 8px; border-top: 1px solid var(--line); }
-  .steps thead th { border-top: 0; font-size: var(--label-size); font-weight: var(--label-weight); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-muted); white-space: nowrap; }
+  /* ekte.css's Table (.tbl, issue 227); only this table's own cells here */
+  table.steps { min-width: 520px; }
+  .steps thead th { white-space: nowrap; }
   .steps th[scope=row] { font-family: var(--mono); font-weight: 600; font-size: var(--t-sm); white-space: nowrap; }
   .steps td.lvl { font-family: var(--mono); font-size: var(--t-sm); }
   .steps td.ttl { min-width: 11em; }
-  .steps details > summary { cursor: pointer; font-weight: 600; overflow-wrap: break-word; hyphens: auto; }
+  /* a step's title is a Disclosure in a list (chevron first, ekte.css) */
+  .steps td.ttl .disclosure { padding: 0; font-size: inherit; color: var(--ink); font-weight: 600; overflow-wrap: break-word; hyphens: auto; }
+  .steps td.ttl .disclosure .t { min-width: 0; }
+  .steps td.ttl .disclosure-body { padding: 8px 0 0; }
   .steps .badge { white-space: normal; }
   .det { margin: 8px 0 2px; font-size: var(--t-sm); line-height: 1.5; color: var(--ink); }
   .det p { margin: 0 0 8px; }
@@ -81,7 +83,6 @@
   .det pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: var(--t-xs); background: var(--sunken); border-radius: var(--r-sm); padding: 6px 8px; }
   .det .pre { white-space: pre-line; overflow-wrap: anywhere; }
   .det li + li { margin-top: 6px; }
-  .empty-row td { text-align: center; color: var(--ink-muted); padding: 24px 8px; }
 
   .stmt h3 { font-size: var(--t-md); font-weight: 700; margin: 18px 0 6px; }
   .stmt h3:first-of-type { margin-top: 0; }
@@ -171,7 +172,7 @@
       </div>
       <p class="shown" id="shown" role="status"></p>
       <div class="tbl" id="tbl" role="region" tabindex="0" aria-labelledby="steps-cap">
-        <table class="steps">
+        <table class="tbl steps">
           <caption class="sr-only" id="steps-cap" data-en="BITV / EN 301 549 test steps with automation level and result">BITV / EN 301 549 test steps with automation level and result</caption>
           <thead>
             <tr>
@@ -208,6 +209,7 @@
 <script src="/icons.js"></script>
 <script src="/static/nav.js"></script>
 <script src="/static/notice.js"></script>
+<script src="/static/disclosure.js"></script>
 <script src="/static/charts.js"></script>
 <script src="/static/chartmotion.js"></script>
 <script>
@@ -441,7 +443,7 @@
   }
   function paintTable() {
     if (!report) {
-      $("rows").innerHTML = '<tr class="empty-row"><td colspan="5">' + esc(loadErr ? T("暂无报告。", "No report available.") : T("加载中…", "Loading…")) + "</td></tr>";
+      $("rows").innerHTML = '<tr><td colspan="5">' + EkteNotice.empty(loadErr ? T("暂无报告。", "No report available.") : T("加载中…", "Loading…")) + "</td></tr>";
       $("shown").textContent = "";
       return;
     }
@@ -449,17 +451,19 @@
     $("rows").innerHTML = steps.length ? steps.map(function (s) {
       return "<tr>" +
         '<th scope="row">' + esc(s.step) + "</th>" +
-        '<td class="ttl"><details data-step="' + esc(s.step) + '"' + (open[s.step] ? " open" : "") + "><summary>" + cat(s.title) + "</summary>" + details(s) + "</details></td>" +
+        '<td class="ttl" data-step="' + esc(s.step) + '">' + EkteDisclosure.html({ id: "st-" + String(s.step).replace(/[^\w-]/g, "_"),
+          lead: true, open: !!open[s.step], label: cat(s.title), body: details(s) }) + "</td>" +
         '<td class="lvl">' + esc(s.level) + "</td>" +
         "<td>" + badge(AUTO, s.automation) + "</td>" +
         "<td>" + badge(STATUS, s.status) + "</td></tr>";
-    }).join("") : '<tr class="empty-row"><td colspan="5">' + esc(T("没有符合筛选条件的步骤。", "No step matches the filters.")) + "</td></tr>";
+    }).join("") : '<tr><td colspan="5">' + EkteNotice.empty(T("没有符合筛选条件的步骤。", "No step matches the filters."), { icon: "search" }) + "</td></tr>";
     $("shown").textContent = Tf("显示 {n} / {total} 个步骤", "Showing {n} of {total} steps", { n: num(steps.length), total: num(report.steps.length) });
   }
-  $("rows").addEventListener("toggle", function (ev) {
-    var d = ev.target;
-    if (d && d.tagName === "DETAILS") open[d.getAttribute("data-step")] = d.open;
-  }, true);
+  // a step's Disclosure (disclosure.js): remember it across repaints
+  $("rows").addEventListener("ekte:disclosure", function (ev) {
+    var td = ev.target.closest("td[data-step]");
+    if (td) open[td.getAttribute("data-step")] = ev.detail.open;
+  });
   ["f-level", "f-auto", "f-status"].forEach(function (id) { $(id).addEventListener("change", paintTable); });
   $("f-q").addEventListener("input", paintTable);
 

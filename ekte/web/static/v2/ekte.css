@@ -356,17 +356,28 @@ select.in {
   .switch input:checked + span { background: HighlightText; }
 }
 
-/* disclosure (accordion): <button class="disclosure" aria-expanded aria-controls> */
-.disclosure-box { border: 1.5px dashed var(--line); border-radius: var(--r-md); overflow: hidden; }
-.disclosure-box.open { border-style: solid; background: var(--sunken); }
+/* the Disclosure (issue 227): always a button and a region,
+   <button class="disclosure" aria-expanded aria-controls="…"> + <div id="…"
+   class="disclosure-body" hidden>. The chevron sits on the right of a
+   standalone block, on the left (.lead) in a list of rows or groups.
+   Optional frame .disclosure-box: solid with --r-md corners; dashed only
+   for an "add" affordance (.disclosure-box.add). Pages without a handler of
+   their own mark the button data-disclosure: disclosure.js toggles it. */
+.disclosure-box { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+.disclosure-box.add { border: 1.5px dashed var(--line); }
+.disclosure-box:has(> .disclosure[aria-expanded="true"]) { background: var(--sunken); }
 .disclosure {
   width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left;
   background: none; border: 0; cursor: pointer; font-family: var(--sans); font-weight: 700; font-size: var(--t-base);
   color: var(--ink-muted); padding: 13px 14px;
 }
 .disclosure[aria-expanded="true"] { color: var(--primary); }
-.disclosure .cv { display: inline-flex; transition: transform var(--dur-base); }
+.disclosure .cv { display: inline-flex; flex: none; transition: transform var(--dur-base); }
 .disclosure[aria-expanded="true"] .cv { transform: rotate(180deg); }
+/* in a list: the chevron leads, pointing right when shut, down when open */
+.disclosure.lead { justify-content: flex-start; }
+.disclosure.lead .cv { order: -1; transform: rotate(-90deg); }
+.disclosure.lead[aria-expanded="true"] .cv { transform: none; }
 .disclosure-body { padding: 2px 14px 14px; }
 .disclosure-body[hidden] { display: none; }
 
@@ -461,8 +472,33 @@ select.in {
 .note > .zicon, .note > .pico { width: 14px; height: 14px; flex: none; margin-top: 3px; }
 .note > span { min-width: 0; overflow-wrap: anywhere; }
 .note ul { margin: 4px 0 0; padding-left: 18px; }
-.empty { text-align: center; padding: 36px 20px; color: var(--ink-muted); font-size: var(--t-md); }
-.empty .zicon { width: 28px; height: 28px; color: var(--ink-muted); }
+/* the EmptyState (issue 227): an icon, one sentence and an optional action,
+   centred; no box (a dashed border is for "add" only). Built by
+   EkteNotice.empty(text, { icon, action }) or written as
+   <div class="empty"><span class="ico">…</span><p>…</p></div>. */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 32px 20px; color: var(--ink-muted); font-size: var(--t-base); line-height: 1.5; }
+.empty > p { margin: 0; max-width: 46ch; }
+.empty .ico { display: inline-flex; color: var(--ink-muted); }
+.empty .ico .zicon, .empty > .zicon { width: 28px; height: 28px; }
+.empty a { font-weight: 700; }
+.empty[hidden] { display: none; }
+
+/* the Table (issue 227): every data table is <table class="tbl"> (add
+   .dense for wide analysis tables): a label-style header, 10/12 px cells
+   (7/8 dense), hairlines between rows, numbers right-aligned in tabular
+   figures (.n), a sub-value muted under its number (.sub). A wide table
+   scrolls inside its own wrapper, never the page. */
+.tbl { width: 100%; border-collapse: collapse; font-size: var(--t-sm); color: var(--ink); --tbl-y: 10px; --tbl-x: 12px; }
+.tbl.dense { --tbl-y: 7px; --tbl-x: 8px; font-size: var(--t-xs); }
+.tbl caption { text-align: left; caption-side: top; font-size: var(--t-xs); color: var(--ink-muted); padding: 6px var(--tbl-x); }
+.tbl th, .tbl td { padding: var(--tbl-y) var(--tbl-x); text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
+.tbl thead th {
+  border-top: 0; vertical-align: bottom; color: var(--ink-muted);
+  font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase;
+}
+.tbl tbody th { font-weight: 600; }
+.tbl .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl .sub { display: block; font-size: var(--t-2xs); color: var(--ink-muted); font-weight: 400; }
 .foot { text-align: center; color: var(--ink-muted); font-size: var(--t-xs); padding: 16px 0 32px; line-height: 1.6; }
 .foot code { font-size: var(--t-xs); }
 /* the shared disclaimer footer (nav.js): all local, black box */

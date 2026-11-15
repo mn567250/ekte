@@ -127,7 +127,7 @@
             - rowheader "9.1.1.1"
             - cell:
               - group:
-                - text: Nicht-Text-Inhalt
+                - button "Nicht-Text-Inhalt" [expanded]
                 - paragraph: "Wie geprüft wird: Bilder, Icons, SVGs und Bedienelemente haben eine Textalternative. Ob jede Alternative sinnvoll ist, beurteilt ein Mensch."
                 - paragraph: "Automatisierte Tests: 30 ausgeführt, 30 bestanden, 0 fehlgeschlagen, 156 übersprungen"
                 - paragraph:

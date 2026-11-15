@@ -93,7 +93,7 @@
     - heading "Alle Modelle 244 Modelle" [level=2]
     - paragraph: "Die Modellprofile, mit denen Prüfungen vergleichen. Ein ausgeschaltetes Modell wird nicht mehr zugeordnet: Prüfungen dafür laufen ohne Profil."
     - group:
-      - text: Modell hinzufügen
+      - button "Modell hinzufügen" [expanded]
       - paragraph: Lass einen KI-Assistenten das Modell recherchieren und prüfe seine Antwort hier, bevor sie gespeichert wird.
       - heading "1 Recherche-Prompt kopieren" [level=3]
       - text: Modell-ID id
@@ -105,7 +105,7 @@
       - button "Prompt kopieren"
       - status
       - group:
-        - text: Prompt anzeigen
+        - button "Prompt anzeigen" [expanded]
         - textbox "Prompt"
       - paragraph: Füge ihn in einen KI-Assistenten deiner Wahl ein. Er antwortet mit einem YAML-Dokument.
       - heading "2 YAML hochladen oder einfügen" [level=3]
@@ -118,9 +118,10 @@
       - button "Prüfen"
       - button "In der Wissensbasis speichern" [disabled]
     - group:
-      - text: Ai2 (Allen Institute for AI)
-      - code: ai2
-      - text: 6 Modelle
+      - button "Ai2 (Allen Institute for AI) ai2 6 Modelle" [expanded]:
+        - text: Ai2 (Allen Institute for AI)
+        - code: ai2
+        - text: 6 Modelle
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct

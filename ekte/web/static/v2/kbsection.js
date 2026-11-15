@@ -10,12 +10,13 @@
  * The tab panel holds a static skeleton (so lang.js translates it):
  *   [data-kb=title]     the h2 (tabindex=-1: focus lands here after a delete)
  *   [data-kb=count]     totals next to it ("98 models · 2 yours · 1 off")
- *   [data-kb=add]       <details> holding the add form, built by cfg.add
+ *   [data-kb=add]       the add form's Disclosure (disclosure.js), built by cfg.add
  *   [data-kb=list]      the items
  *
  * EkteKbSection.mount(panel, cfg, page) → { render() }
  *   cfg.kind     "models" | "providers" | "relays" (the key in the API data)
- *   cfg.groupBy  optional item field: items are grouped in <details>
+ *   cfg.groupBy  optional item field: items are grouped, each group a
+ *                Disclosure with its chevron first (disclosure.js)
  *   cfg.group(g) the html of a group's summary
  *   cfg.name(it) the html of an item's name
  *   cfg.meta(it) [html…] shown under the name
@@ -131,25 +132,27 @@
       if (a && list.contains(a) && a.getAttribute("data-act")) keep = [a.getAttribute("data-act"), a.getAttribute("data-key")];
       var i = 0, html;
       if (!items.length) {
-        html = '<p class="empty">' + esc(cfg.empty()) + "</p>";
+        html = window.EkteNotice.empty(cfg.empty(), { icon: "book" });
       } else if (cfg.groupBy) {
-        html = V.groups(items, cfg.groupBy).map(function (g) {
-          return '<details class="card grp" data-group="' + esc(g.key) + '"' + (openGroups[g.key] ? " open" : "") +
-            "><summary>" + cfg.group(g) + '</summary><ul class="items">' +
-            g.items.map(function (it) { return row(it, i++); }).join("") + "</ul></details>";
+        html = V.groups(items, cfg.groupBy).map(function (g, gi) {
+          return '<div class="card grp" data-group="' + esc(g.key) + '">' + window.EkteDisclosure.html({
+            id: list.id + "-g" + gi, lead: true, open: !!openGroups[g.key], label: cfg.group(g),
+            body: '<ul class="items">' + g.items.map(function (it) { return row(it, i++); }).join("") + "</ul>",
+          }) + "</div>";
         }).join("");
       } else {
         html = '<ul class="items">' + items.map(function (it) { return row(it, i++); }).join("") + "</ul>";
       }
-      list.innerHTML = html + '<p class="empty" data-kb="none" hidden>' + esc(T("没有符合筛选条件的项。", "Nothing matches the filters.")) + "</p>";
+      list.innerHTML = html + window.EkteNotice.empty(T("没有符合筛选条件的项。", "Nothing matches the filters."), { icon: "search" })
+        .replace('<div class="empty"', '<div class="empty" data-kb="none" hidden');
       applyFilter();
       if (keep) {
         var alt = { del: "del-no", "del-no": "del", "del-yes": "del" }[keep[0]] || keep[0];
         var sel = function (act) { return '[data-act="' + act + '"][data-key="' + cssEsc(keep[1]) + '"]'; };
         var to = list.querySelector(sel(keep[0])) || list.querySelector(sel(alt));
         if (to) {
-          var g = to.closest("details");
-          if (g) g.open = true;
+          var g = to.closest(".grp");
+          if (g) setGroup(g, true);
           to.focus();
         } else title.focus();
       }
@@ -173,23 +176,30 @@
         li.hidden = !show;
         if (show) n++;
       });
-      Array.prototype.forEach.call(list.querySelectorAll("details.grp"), function (d) {
+      Array.prototype.forEach.call(list.querySelectorAll(".grp[data-group]"), function (d) {
         var any = d.querySelector("li.item:not([hidden])");
         d.hidden = !any;
-        if (on && any) d.open = true;
+        if (on && any) setGroup(d, true);
         // clearing the filters closes what the user had not opened, unless
         // focus is inside (it would fall to <body>)
-        else if (!on) d.open = !!openGroups[d.getAttribute("data-group")] || d.contains(document.activeElement);
+        else if (!on) setGroup(d, !!openGroups[d.getAttribute("data-group")] || d.contains(document.activeElement));
       });
       var none = list.querySelector('[data-kb="none"]');
       if (none) none.hidden = !(items.length && !n);
       return { n: n, total: items.length };
     }
-    list.addEventListener("toggle", function (ev) {
-      var d = ev.target;
+    // a group's Disclosure, set by the page (filtering), not by the user
+    function setGroup(g, open) {
+      var b = g.querySelector(".disclosure"), r = b && document.getElementById(b.getAttribute("aria-controls"));
+      if (!b) return;
+      b.setAttribute("aria-expanded", String(open));
+      if (r) r.hidden = !open;
+    }
+    list.addEventListener("ekte:disclosure", function (ev) {
+      var d = ev.target.closest(".grp[data-group]");
       // only the user's own opening/closing is remembered, not the filter's
-      if (d.classList && d.classList.contains("grp") && !V.active(page.filters())) openGroups[d.getAttribute("data-group")] = d.open;
-    }, true);
+      if (d && !V.active(page.filters())) openGroups[d.getAttribute("data-group")] = ev.detail.open;
+    });
 
     list.addEventListener("click", function (ev) {
       var t = ev.target.closest("button[data-act]");
@@ -240,8 +250,9 @@
       filter: applyFilter,
       openAdd: function (focus) {
         if (!addBox) return;
-        addBox.open = true;
-        if (focus) addBox.querySelector("summary").focus();
+        var b = addBox.querySelector(".disclosure");
+        window.EkteDisclosure.toggle(b, true);
+        if (focus) b.focus();
       },
     };
   }
@@ -265,8 +276,9 @@
         "</div></div>" +
         '<div class="row"><button class="btn pri" type="button" id="' + id("copy") + '">' + icon("arrowRight") + ' <span data-en="Copy prompt">Copy prompt</span></button>' +
         '<span class="hint" id="' + id("copy-msg") + '" role="status"></span></div>' +
-        '<details class="inline"><summary data-en="Show the prompt">Show the prompt</summary>' +
-        '<textarea class="in prompt" id="' + id("prompt") + '" readonly aria-label="Prompt" data-en-aria-label="Prompt"></textarea></details>' +
+        '<div class="prompt-disc">' + window.EkteDisclosure.html({ id: id("prompt-body"),
+          label: '<span data-en="Show the prompt">Show the prompt</span>',
+          body: '<textarea class="in prompt" id="' + id("prompt") + '" readonly aria-label="Prompt" data-en-aria-label="Prompt"></textarea>' }) + "</div>" +
         '<p class="hint" data-en="Paste it into the AI assistant of your choice. It answers with one YAML document.">Paste it into the AI assistant of your choice. It answers with one YAML document.</p></div>';
     }
     html +=
@@ -306,7 +318,7 @@
         }).then(function (text) {
           var box = $("prompt");
           box.value = text;
-          var show = function () { box.parentNode.open = true; box.select(); };
+          var show = function () { window.EkteDisclosure.toggle(document.querySelector('[aria-controls="' + id("prompt-body") + '"]'), true); box.select(); };
           if (navigator.clipboard && navigator.clipboard.writeText) {
             return navigator.clipboard.writeText(text).then(function () {
               copyMsg = function () { return T("提示词已复制。", "Prompt copied."); };
@@ -388,10 +400,10 @@
         });
       if (s.probes && s.probes.length) {
         html += "<div><h4>" + esc(Tf("将发送给中转站的提示词（{n}）", "Prompts ekte will send to relays ({n})", { n: s.probes.length })) + "</h4>" +
-          "<details><summary>" + esc(T("逐条查看", "Review them")) + "</summary><ul>" +
+          window.EkteDisclosure.html({ id: id("probes"), label: esc(T("逐条查看", "Review them")), body: "<ul>" +
           s.probes.map(function (pr) {
             return "<li><code>" + esc(pr.id) + "</code> (" + esc(pr.owner) + ", " + esc(pr.prompt_lang) + ")<pre>" + esc(pr.prompt) + "</pre></li>";
-          }).join("") + "</ul></details></div>";
+          }).join("") + "</ul>" }) + "</div>";
       }
       if (s.ok) html += '<p class="hint">' + esc(T("检查通过，可以保存。", "Check passed — ready to save.")) + "</p>";
       box.innerHTML = html;
