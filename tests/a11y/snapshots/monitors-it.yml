@@ -42,9 +42,6 @@
     - link "Cronologia":
       - /url: /history
     - text: e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima volta, ekte avvisa i tuoi webhook (Slack / Feishu / DingTalk / JSON generico).
-  - status:
-    - text: Le chiavi API non vengono salvate Le chiavi inserite restano solo nella memoria di ekte serve e non vengono mai scritte su disco; reinseriscile dopo un riavvio. I riferimenti env:VAR continuano a funzionare.
-    - button "Modifica"
   - group "Archiviazione delle chiavi API":
     - text: Archiviazione delle chiavi API
     - radio "Non salvare le chiavi" [checked]
@@ -168,8 +165,7 @@
         - text: Apri in Analisi
       - form "Completa la configurazione per attivarlo":
         - heading "Completa la configurazione per attivarlo" [level=4]
-        - paragraph: La configurazione proviene dall’esecuzione nella Cronologia. Imposta ogni quanto viene eseguito, poi attivalo.
-        - text: Intervallo di controllo
+        - text: La configurazione proviene dall’esecuzione nella Cronologia. Imposta ogni quanto viene eseguito, poi attivalo. Intervallo di controllo
         - combobox "Intervallo di controllo":
           - option "Scegli…" [selected]
           - option "ogni 5 min"
@@ -194,7 +190,6 @@
         - button "Attiva monitor"
       - button "Esegui ora"
       - button "Elimina"
-    - paragraph: "Tutto viene eseguito in locale. La chiave API non viene salvata: resta solo nella memoria di ekte serve e non viene mai scritta su disco, mostrata nell'elenco dei monitor o inviata al browser. Reinseriscila dopo il riavvio di ekte serve."
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
   - paragraph: "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

@@ -42,9 +42,6 @@
     - link "Historikk":
       - /url: /history
     - text: og velg Planlegg som overvåking — angi deretter intervallet her og slå den på. Når risikoen krysser terskelen din eller blir verre enn forrige gang, varsler ekte webhookene dine (Slack / Feishu / DingTalk / generisk JSON).
-  - status:
-    - text: API-nøkler lagres ikke Nøkler du oppgir, blir bare værende i minnet til ekte serve og skrives aldri til disk; oppgi dem igjen etter en omstart. env:VAR-referanser fortsetter å virke.
-    - button "Endre"
   - group "Lagring av API-nøkler":
     - text: Lagring av API-nøkler
     - radio "Ikke lagre nøkler" [checked]
@@ -168,8 +165,7 @@
         - text: Åpne i Analyse
       - form "Fullfør oppsettet for å slå den på":
         - heading "Fullfør oppsettet for å slå den på" [level=4]
-        - paragraph: Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den.
-        - text: Kontrollintervall
+        - text: Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den. Kontrollintervall
         - combobox "Kontrollintervall":
           - option "Velg …" [selected]
           - option "hvert 5. minutt"
@@ -194,7 +190,6 @@
         - button "Aktiver overvåking"
       - button "Kjør nå"
       - button "Slett"
-    - paragraph: "Alt kjører lokalt. API-nøkkelen lagres ikke: den blir bare værende i minnet til ekte serve og blir aldri skrevet til disk, vist i overvåkingslisten eller sendt til nettleseren. Oppgi den igjen når ekte serve har startet på nytt."
 - contentinfo:
   - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
   - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

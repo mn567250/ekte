@@ -42,9 +42,6 @@
     - link "Historique":
       - /url: /history
     - text: et choisissez Planifier comme surveillance, puis définissez ici son intervalle et activez-la. Dès que le risque franchit votre seuil ou s’aggrave par rapport à la dernière fois, ekte alerte vos webhooks (Slack / Feishu / DingTalk / JSON générique).
-  - status:
-    - text: Les clés API ne sont pas enregistrées Les clés saisies restent uniquement dans la mémoire de ekte serve et ne sont jamais écrites sur le disque ; saisissez-les à nouveau après un redémarrage. Les références env:VAR continuent de fonctionner.
-    - button "Modifier"
   - group "Stockage des clés API":
     - text: Stockage des clés API
     - radio "Ne pas enregistrer les clés" [checked]
@@ -168,8 +165,7 @@
         - text: Ouvrir dans Analyses
       - form "Terminez la configuration pour l’activer":
         - heading "Terminez la configuration pour l’activer" [level=4]
-        - paragraph: La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.
-        - text: Intervalle de contrôle
+        - text: La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la. Intervalle de contrôle
         - combobox "Intervalle de contrôle":
           - option "Choisir…" [selected]
           - option "toutes les 5 min"
@@ -194,7 +190,6 @@
         - button "Activer la surveillance"
       - button "Exécuter maintenant"
       - button "Supprimer"
-    - paragraph: "Tout s'exécute localement. La clé API n'est pas enregistrée : elle reste uniquement dans la mémoire de ekte serve et n'est jamais écrite sur le disque, affichée dans la liste des surveillances ni envoyée au navigateur. Saisissez-la à nouveau après le redémarrage de ekte serve."
 - contentinfo:
   - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
   - paragraph: "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

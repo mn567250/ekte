@@ -26,12 +26,15 @@
  * nothing, so a screen reader does not hear it twice: a page that redraws
  * its notice on every poll announces it only when it says something new.
  *
+ *   EkteNotice.callout(level, html, o)  the same Callout, inline size, as
+ *     markup for a message inside a card or form (see below)
+ *
  * Pure helpers (tested under node): levelOf(level), roleFor(n).
  */
 (function () {
   "use strict";
 
-  var ICON = { info: "info", success: "check", warning: "warning", critical: "warning" };
+  var ICON = { info: "info", success: "check", warning: "warning", critical: "warning", neutral: "info" };
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -82,5 +85,21 @@
     el.hidden = false;
   }
 
-  window.EkteNotice = { show: show, levelOf: levelOf, roleFor: roleFor };
+  // The same Callout in its inline size, as markup, for a message inside a
+  // card or a form (a load failure, a form error, a hint that needs action):
+  //   EkteNotice.callout(level, html, { role, icon })
+  // html is already escaped markup; role: "alert" / "status" (default: by
+  // level, as roleFor), or false when the element it goes into is the live
+  // region. A page draws no message box of its own (issue 226);
+  // tests/test_web_callouts.py keeps it so.
+  function callout(level, html, o) {
+    o = o || {};
+    level = levelOf(level);
+    var role = o.role === false ? null : o.role || (level === "critical" ? "alert" : null);
+    var ico = window.ekteIcon ? window.ekteIcon(o.icon || ICON[level], { size: 16 }) : "";
+    return '<div class="znote inline ' + level + '"' + (role ? ' role="' + role + '"' : "") + '>' +
+      '<span class="ico">' + ico + '</span><div class="txt">' + html + "</div></div>";
+  }
+
+  window.EkteNotice = { show: show, levelOf: levelOf, roleFor: roleFor, callout: callout };
 })();

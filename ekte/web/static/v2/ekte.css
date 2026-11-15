@@ -421,13 +421,13 @@ select.in {
 /* ---------- messages ---------- */
 .reassure { text-align: center; font-size: var(--t-sm); color: var(--ink-muted); margin-top: 13px; line-height: 1.5; }
 .reassure b { color: var(--ink-muted); }
-.errbox {
-  background: var(--danger-tint); border: 1px solid var(--danger); color: var(--danger);
-  border-radius: var(--r-md); padding: 14px 16px; margin-top: 14px; font-size: var(--t-base); line-height: 1.5;
-}
-/* the page notice (notice.js): one per page, right under the hero; icon, text
-   and buttons share one vertical centre line; the level
-   sets tint, border and icon colour, the text stays --ink for contrast */
+/* The Callout (issue 226): the one box for a message that needs attention or
+   action. Page size (.znote): the page notice (notice.js show), one per page,
+   right under the hero; icon, text and buttons share one vertical centre line.
+   Inline size (.znote.inline): inside a card or form (notice.js callout).
+   The tone (info, success, warning, critical, neutral) sets tint, border and
+   icon colour; the text stays --ink for contrast. Anything else is a Note
+   (.note below): one muted line with an icon, no box. */
 .znote {
   display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap;
   margin: 18px 0 0; padding: 12px 14px; border-radius: var(--r-md);
@@ -450,6 +450,17 @@ select.in {
 .znote.warning .ico { color: var(--warning); }
 .znote.critical { background: var(--danger-tint); border-color: var(--danger); }
 .znote.critical .ico { color: var(--danger); }
+.znote.neutral .ico { color: var(--ink-muted); }
+.znote.inline { margin: 14px 0 0; padding: 10px 14px; align-items: flex-start; gap: 8px 10px; }
+.znote.inline .ico { margin-top: 2px; }
+.znote.inline .ico .zicon { width: 16px; height: 16px; }
+.znote.inline .txt { flex-basis: 200px; }
+.znote.inline .txt a { font-weight: 700; }
+/* the Note: an inline hint, one muted line with an info icon, no box */
+.note { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--t-sm); line-height: 1.5; color: var(--ink-muted); }
+.note > .zicon, .note > .pico { width: 14px; height: 14px; flex: none; margin-top: 3px; }
+.note > span { min-width: 0; overflow-wrap: anywhere; }
+.note ul { margin: 4px 0 0; padding-left: 18px; }
 .empty { text-align: center; padding: 36px 20px; color: var(--ink-muted); font-size: var(--t-md); }
 .empty .zicon { width: 28px; height: 28px; color: var(--ink-muted); }
 .foot { text-align: center; color: var(--ink-muted); font-size: var(--t-xs); padding: 16px 0 32px; line-height: 1.6; }
