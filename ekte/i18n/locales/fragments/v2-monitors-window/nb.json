@@ -14,16 +14,21 @@
   "(this browser)": "(denne nettleseren)",
   "Overnight window: it ends the next morning and belongs to the day it starts on.": "Nattvindu: Det slutter neste morgen og hører til dagen det starter.",
   "Checked all 168 hours a week.": "Alle 168 timer i uken kontrolleres.",
-  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "{h} av 168 timer i uken kontrolleres · omtrent {h} kjøringer og bevisfiler i stedet for 168 (−{pct} %).",
   "{n} h a week are not checked.": "{n} t i uken kontrolleres ikke.",
   "A relay could serve another model in exactly these hours, and its pattern can be learned.": "Et relé kan levere en annen modell akkurat i disse timene, og mønsteret kan læres.",
-  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "Kontrollintervallet er lengre enn vinduet: starttidene forskyves, og en kjøring som ville startet etter vinduet venter på neste.",
   "Choose at least one day.": "Velg minst én dag.",
   "Start and end must be different.": "Start og slutt må være forskjellige.",
   "Run window saved.": "Kjøretidsvindu lagret.",
   "Outside run window": "Utenfor kjøretidsvinduet",
   "Next window: {when}": "Neste vindu: {when}",
   "Next run: about {when}": "Neste kjøring: omtrent {when}",
-  "Run now ignores the run window.": "«Kjør nå» ignorerer kjøretidsvinduet."
+  "Run now ignores the run window.": "«Kjør nå» ignorerer kjøretidsvinduet.",
+  "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).": "{h} av 168 timer i uken · omtrent {runs} kjøringer i stedet for {all} (−{pct} %).",
+  "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "Kontrollintervallet ({every}) er lengre enn vinduet: starttidene forskyves, og en kjøring som ville startet etter vinduet venter på neste.",
+  "Doesn't run": "Kjører ikke",
+  "The monitor runs at its check interval at any time of day.": "Monitoren kjører med sitt kontrollintervall til alle døgnets tider.",
+  "Runs {h} of 168 hours a week.": "Kjører {h} av 168 timer i uken.",
+  "Runs {n} of {b} hours": "Kjører {n} av {b} timer",
+  "share of each block's hours it runs": "andel av timene i hver blokk den kjører"
  }
 }

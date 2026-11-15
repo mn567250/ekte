@@ -14,16 +14,21 @@
   "(this browser)": "(this browser)",
   "Overnight window: it ends the next morning and belongs to the day it starts on.": "Overnight window: it ends the next morning and belongs to the day it starts on.",
   "Checked all 168 hours a week.": "Checked all 168 hours a week.",
-  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).",
   "{n} h a week are not checked.": "{n} h a week are not checked.",
   "A relay could serve another model in exactly these hours, and its pattern can be learned.": "A relay could serve another model in exactly these hours, and its pattern can be learned.",
-  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.",
   "Choose at least one day.": "Choose at least one day.",
   "Start and end must be different.": "Start and end must be different.",
   "Run window saved.": "Run window saved.",
   "Outside run window": "Outside run window",
   "Next window: {when}": "Next window: {when}",
   "Next run: about {when}": "Next run: about {when}",
-  "Run now ignores the run window.": "Run now ignores the run window."
+  "Run now ignores the run window.": "Run now ignores the run window.",
+  "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).": "{h} of 168 hours a week · about {runs} runs instead of {all} (−{pct} %).",
+  "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.",
+  "Doesn't run": "Doesn't run",
+  "The monitor runs at its check interval at any time of day.": "The monitor runs at its check interval at any time of day.",
+  "Runs {h} of 168 hours a week.": "Runs {h} of 168 hours a week.",
+  "Runs {n} of {b} hours": "Runs {n} of {b} hours",
+  "share of each block's hours it runs": "share of each block's hours it runs"
  }
 }

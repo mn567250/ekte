@@ -140,7 +140,7 @@ def test_single_page_files():
     assert scope("tests/a11y/test_history_controls.py").pages == ("history",)
     assert scope("tests/a11y/snapshots/kb-zh.yml").pages == ("kb",)
     assert scope("ekte/web/analytics.py").pages == ("analytics",)
-    assert scope("ekte/web/static/v2/charts.js").pages == ("analytics", "accessibility")
+    assert scope("ekte/web/static/v2/charts.js").pages == ("monitors", "analytics", "accessibility")
     assert scope("ekte/web/static/v2/filterpanel.js").pages == ("history", "monitors", "kb", "analytics")
 
 
