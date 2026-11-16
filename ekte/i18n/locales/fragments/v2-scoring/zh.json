@@ -88,7 +88,6 @@
   "A canary value was substituted (not yet confirmed by a baseline).": "某个标记值被替换（尚未经基线确认）。",
   "A canary value was substituted while the trusted baseline kept it intact.": "某个标记值被替换，而可信基线保持原样。",
   "No canary was echoed verbatim, so tampering could not be assessed.": "没有标记值被原样回显，无法评估篡改。",
-  "Response integrity": "响应完整性",
   "None of the probe requests succeeded.": "所有探测请求均未成功。",
   "Unique probe prompts came back from a cache (left out of the statistics).": "唯一的探测提示却来自缓存（已从统计中剔除）。",
   "The model spends hidden reasoning tokens; TTFT includes thinking.": "模型消耗了隐藏的推理 token；首 token 时间包含思考时间。",

@@ -107,7 +107,6 @@
   "A canary value was substituted (not yet confirmed by a baseline).": "Um valor canário foi substituído (ainda não confirmado por uma referência).",
   "A canary value was substituted while the trusted baseline kept it intact.": "Um valor canário foi substituído enquanto a referência de confiança o manteve intacto.",
   "No canary was echoed verbatim, so tampering could not be assessed.": "Nenhum canário foi repetido literalmente, por isso a adulteração não pôde ser avaliada.",
-  "Response integrity": "Integridade das respostas",
   "None of the probe requests succeeded.": "Nenhum dos pedidos de sonda teve sucesso.",
   "Unique probe prompts came back from a cache (left out of the statistics).": "Prompts de sonda únicos voltaram de uma cache (excluídos das estatísticas).",
   "The model spends hidden reasoning tokens; TTFT includes thinking.": "O modelo gasta tokens de raciocínio ocultos; o TTFT inclui o raciocínio.",

@@ -84,7 +84,7 @@ SCALE = Scale(
 class IntegrityDetector(Detector):
     id = "integrity"
     name = "Response integrity / tampering"
-    dimension = Dimension.SECURITY
+    dimension = Dimension.INTEGRITY
     min_suite = "deep"
     cost_hint = 3
 

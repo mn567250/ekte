@@ -169,6 +169,7 @@
               "streaming",
               "billing",
               "reliability",
+              "integrity",
               "security",
               "performance"
             ]

@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
-REPORT_SCHEMA_VERSION = "1.4"
+REPORT_SCHEMA_VERSION = "1.5"
 WEBHOOK_SCHEMA_VERSION = "1.0"
 # Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
 EVIDENCE_SCHEMA_VERSION = "1.1"
@@ -55,6 +55,7 @@ class Dimension(str, Enum):  # noqa: UP042 (StrEnum would change str()/format())
     STREAMING = "streaming"
     BILLING = "billing"
     RELIABILITY = "reliability"
+    INTEGRITY = "integrity"
     SECURITY = "security"
     PERFORMANCE = "performance"
 

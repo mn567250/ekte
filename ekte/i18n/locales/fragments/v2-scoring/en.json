@@ -107,7 +107,6 @@
   "A canary value was substituted (not yet confirmed by a baseline).": "A canary value was substituted (not yet confirmed by a baseline).",
   "A canary value was substituted while the trusted baseline kept it intact.": "A canary value was substituted while the trusted baseline kept it intact.",
   "No canary was echoed verbatim, so tampering could not be assessed.": "No canary was echoed verbatim, so tampering could not be assessed.",
-  "Response integrity": "Response integrity",
   "None of the probe requests succeeded.": "None of the probe requests succeeded.",
   "Unique probe prompts came back from a cache (left out of the statistics).": "Unique probe prompts came back from a cache (left out of the statistics).",
   "The model spends hidden reasoning tokens; TTFT includes thinking.": "The model spends hidden reasoning tokens; TTFT includes thinking.",

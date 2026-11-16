@@ -3,7 +3,7 @@
 A local-first CLI that audits whether an OpenAI-compatible or Anthropic-native API
 relay actually serves the model it claims to (货不对板检测): real context window,
 model identity and downgrade fingerprinting, capability claims, token/billing
-sanity, streaming authenticity, reliability, and security signals.
+sanity, streaming authenticity, reliability, response integrity and security signals.
 """
 
 from __future__ import annotations

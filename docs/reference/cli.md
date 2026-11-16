@@ -83,7 +83,7 @@ Audit one relay endpoint and write a report.
 | `--declared-provider` | str |  | Provider hint for KB lookup (openai, anthropic, deepseek, ...). |
 | `--header`, `-H` | str (repeatable) |  | Extra header 'Name: value' (repeatable). |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--judge`, `--no-judge` | flag |  | Enable code+LLM hybrid judging. |
 | `--judge-base-url` | str |  | Trusted judge endpoint base URL. |
 | `--judge-api-key` | str |  | Judge API key (env:VAR ok). |
@@ -129,7 +129,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--baseline-name` | str |  | Baseline display name. |
 | `--baseline-api` | str |  | Baseline wire protocol: auto \| openai \| anthropic. |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--judge`, `--no-judge` | flag |  | Enable code+LLM hybrid judging. |
 | `--judge-model` | str |  | Judge model id (defaults to baseline). |
 | `--out-dir` | path |  | Report output directory. |
@@ -367,7 +367,7 @@ Continuously re-audit a relay on a schedule and alert webhooks on risk.
 | `--declared-provider` | str |  | Provider hint for KB lookup. |
 | `--header`, `-H` | str (repeatable) |  | Extra header 'Name: value' (repeatable). |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--interval` | int | `3600` | Seconds between re-audit cycles. |
 | `--once` | flag |  | Run a single cycle and exit (no loop). |
 | `--webhook` | str (repeatable) |  | Alert webhook URL (repeatable). |
