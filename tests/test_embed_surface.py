@@ -102,7 +102,7 @@ async def test_clean_embedding_audit(serve):
     assert report.surface == "embedding" and report.stream_mode == "non_stream"
     assert report.verdict.risk_level == RiskLevel.CLEAN
     assert {d.dimension for d in report.detectors} == {
-        Dimension.CONNECTIVITY, Dimension.MODEL_IDENTITY, Dimension.RELIABILITY, Dimension.CAPABILITY}
+        Dimension.CONNECTIVITY, Dimension.MODEL_IDENTITY, Dimension.INTEGRITY, Dimension.CAPABILITY}
     assert all(d.status in (Status.PASS, Status.INFO) for d in report.detectors), [
         (d.id, d.status, d.error) for d in report.detectors]
     assert _finding(report, "embed.dimension").outcome == "match"
@@ -121,7 +121,7 @@ async def test_embedding_report_lists_only_its_dimensions(serve):
     report = await run_audit(_target(), _opts(suite="smoke"))
     listed = {d.dimension for d in dimensions.all_dimensions(report)}
     assert listed == {Dimension.CONNECTIVITY, Dimension.MODEL_IDENTITY, Dimension.CAPABILITY,
-                      Dimension.RELIABILITY, Dimension.PERFORMANCE}
+                      Dimension.INTEGRITY, Dimension.PERFORMANCE}
     assert "Billing" not in render.render_markdown(report)
 
 

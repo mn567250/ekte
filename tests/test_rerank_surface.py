@@ -124,7 +124,7 @@ async def test_clean_rerank_audit(serve):
     assert report.verdict.risk_level == RiskLevel.CLEAN
     assert {d.dimension for d in report.detectors if d.id in RERANK_IDS} == {
         Dimension.CONNECTIVITY, Dimension.CAPABILITY, Dimension.MODEL_IDENTITY,
-        Dimension.RELIABILITY}
+        Dimension.INTEGRITY}
     assert _finding(report, "rerank.connectivity").evidence["results"] == 4
     known = _finding(report, "rerank.known_answer")
     assert known.outcome == "first" and known.evidence["top_index"] == KNOWN_ANSWER_TOP
