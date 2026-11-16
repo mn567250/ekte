@@ -183,8 +183,8 @@ def test_live_tiles_show_ttft_and_decode_speed_for_streamed_calls():
                       start_ms=i * 100.0, duration_ms=900.0, ttft_ms=250.0, decode_tps_local=80.0)
         for i in range(3)
     ])
-    assert '<span class="kl">TTFT p50</span>' in html and 'data-kv="ttft_p50">250<small>ms</small>' in html
-    assert '<span class="kl">Decode speed p50</span>' in html and 'data-kv="decode_tps">80.0<small>tok/s</small>' in html
+    assert '<span class="kl" title="TTFT p50">TTFT p50</span>' in html and 'data-kv="ttft_p50">250<small>ms</small>' in html
+    assert '<span class="kl" title="Decode speed p50">Decode speed p50</span>' in html and 'data-kv="decode_tps">80.0<small>tok/s</small>' in html
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
@@ -195,7 +195,7 @@ def test_live_tiles_fall_back_to_end_to_end_speed_without_streamed_calls():
         for i in range(3)
     ])
     assert 'data-kv="ttft_p50">—</span>' in html  # no first token without streaming
-    assert '<span class="kl">End-to-end speed p50</span>' in html and 'data-kv="decode_tps">42.0<small>tok/s</small>' in html
+    assert '<span class="kl" title="End-to-end speed p50">End-to-end speed p50</span>' in html and 'data-kv="decode_tps">42.0<small>tok/s</small>' in html
 
 
 _AXIS_JS = r"""

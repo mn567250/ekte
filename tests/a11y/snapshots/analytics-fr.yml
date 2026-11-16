@@ -115,7 +115,7 @@
         - listitem: Relais 3 en hausse +3
         - listitem: Modèles 3 en hausse +3
         - listitem: Score médian 78 Pas de données sur la période précédente
-        - listitem: Part à risque élevé 26,7 % Pas de données sur la période précédente
+        - listitem: Risque élevé 26,7 % Pas de données sur la période précédente
         - listitem:
           - text: Taux de réussite
           - 'button "À propos : Taux de réussite"'
@@ -125,10 +125,10 @@
           - 'button "À propos : Taux d''erreur"'
           - text: 7,2 % Pas de données sur la période précédente Données de 14 exécutions sur 15
         - listitem: Latence p50 <duration> Pas de données sur la période précédente Données de 14 exécutions sur 15
-        - listitem: Délai du premier jeton p50 <duration> Pas de données sur la période précédente Données de 14 exécutions sur 15
-        - listitem: Vitesse de décodage p50 62,9 tok/s Pas de données sur la période précédente Données de 14 exécutions sur 15
-        - listitem: Ratio de facturation (entrée) 103,5 % Pas de données sur la période précédente Données de 10 exécutions sur 15
-        - listitem: Ratio de facturation (sortie) 102 % Pas de données sur la période précédente Données de 10 exécutions sur 15
+        - listitem: TTFT p50 <duration> Pas de données sur la période précédente Données de 14 exécutions sur 15
+        - listitem: Décodage p50 62,9 tok/s Pas de données sur la période précédente Données de 14 exécutions sur 15
+        - listitem: Facturation (entrée) 103,5 % Pas de données sur la période précédente Données de 10 exécutions sur 15
+        - listitem: Facturation (sortie) 102 % Pas de données sur la période précédente Données de 10 exécutions sur 15
 - contentinfo:
   - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
   - paragraph: "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

@@ -55,16 +55,19 @@ def _server_tile(**over) -> dict:
 @needs_node
 def test_grid_tiles_value_delta_hint_and_na():
     out = _run({
-        "grid": {"opts": {"label": "Key figures", "cols": 4, "idp": "k"}, "tiles": [
+        "grid": {"opts": {"label": "Key figures", "idp": "k"}, "tiles": [
             {"id": "a", "label": "Runs", "text": "47", "value": 47},
             {"id": "b", "label": "Error <rate>", "text": "2.2%", "hint": "Pooled.",
              "delta": {"text": "+0.4 pp", "sign": 1, "dir": "worse", "sr": "rising"}, "caption": "Data from 3 of 5 runs"},
             {"id": "c", "label": "TTFT", "na": True},
-            {"id": "d", "label": "Impaired", "text": "0%", "group": 1, "note": "No data in the previous period"},
+            {"id": "d", "label": "Impaired", "text": "0%", "group": 1, "tag": "All calls", "note": "No data in the previous period",
+             "caption": "Data from 3 of 5 runs"},
         ]},
     })
     html = out["grid"]
-    assert html.startswith('<ul class="kpis cols" style="--kpi-cols:4" aria-label="Key figures">')
+    # as many columns as fit: no column count (issue 233)
+    assert html.startswith('<ul class="kpis" aria-label="Key figures">')
+    assert '<span class="kl" title="Runs">Runs</span>' in html
     assert '<li class="kpi" data-id="a">' in html
     # the figure counts up hidden; the screen reader reads the final value
     assert '<span aria-hidden="true" data-kv="a">47</span><span class="sr-only">47</span>' in html
@@ -74,8 +77,9 @@ def test_grid_tiles_value_delta_hint_and_na():
     assert '<span class="kd bad"><span aria-hidden="true">▲ </span><span class="sr-only">rising </span>+0.4 pp · worse</span>' in html
     assert '<span class="kc">Data from 3 of 5 runs</span>' in html
     assert '<li class="kpi na" data-id="c">' in html and ">n/a</span>" in html and "Not measured on this surface" in html
-    # a new group: a divider before it
+    # a new group: named by its tag, before the caption
     assert '<li class="kpi sep" data-id="d">' in html and '<span class="kd few">No data in the previous period</span>' in html
+    assert '<span class="kc"><span class="ktag">All calls</span> Data from 3 of 5 runs</span>' in html
 
 
 @needs_node
@@ -95,11 +99,13 @@ def test_server_tiles_map_to_tiles():
     out = _run({
         "prev": {"server": [_server_tile(), _server_tile(id="error_rate", delta=None, hint_key=None),
                             _server_tile(id="ttft_p50", applies=False),
-                            _server_tile(id="score", direction="none", n=2)],
+                            _server_tile(id="score", direction="none", n=2),
+                            _server_tile(id="impaired_rate", group=1, tag_key="metric.impaired_rate.tag")],
                  "ctx": {"previous": True, "runs": 5, "fewId": "few"}},
         "noprev": {"server": [_server_tile(n=0)], "ctx": {"previous": False, "runs": 5}},
     })
-    ok, nodelta, na, faded = out["prev"]
+    ok, nodelta, na, faded, tagged = out["prev"]
+    assert tagged["tag"] == "L(metric.impaired_rate.tag)" and "tag" not in ok
     assert ok["text"] == "percent:0.97" and ok["value"] == 0.97 and ok["label"] == "L(metric.success_rate)"
     assert ok["delta"] == {"text": "d0.01", "sign": 1, "dir": "better", "sr": "L(trend.rising)"}
     assert ok["hint"].startswith("L(metric.success_rate.agg_hint). Relay failures only")

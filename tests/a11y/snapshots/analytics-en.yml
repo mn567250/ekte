@@ -115,7 +115,7 @@
         - listitem: Relays 3 rising +3
         - listitem: Models 3 rising +3
         - listitem: Median score 78 No data in the previous period
-        - listitem: High-risk share 26.7% No data in the previous period
+        - listitem: High risk 26.7% No data in the previous period
         - listitem:
           - text: Success rate
           - 'button "About: Success rate"'
@@ -125,10 +125,10 @@
           - 'button "About: Error rate"'
           - text: 7.2% No data in the previous period Data from 14 of 15 runs
         - listitem: Latency p50 <duration> No data in the previous period Data from 14 of 15 runs
-        - listitem: Time to first token p50 <duration> No data in the previous period Data from 14 of 15 runs
-        - listitem: Decode speed p50 62.9 tok/s No data in the previous period Data from 14 of 15 runs
-        - listitem: Billing ratio (prompt) 103.5% No data in the previous period Data from 10 of 15 runs
-        - listitem: Billing ratio (completion) 102% No data in the previous period Data from 10 of 15 runs
+        - listitem: TTFT p50 <duration> No data in the previous period Data from 14 of 15 runs
+        - listitem: Decode p50 62.9 tok/s No data in the previous period Data from 14 of 15 runs
+        - listitem: Billing (prompt) 103.5% No data in the previous period Data from 10 of 15 runs
+        - listitem: Billing (completion) 102% No data in the previous period Data from 10 of 15 runs
 - contentinfo:
   - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
   - paragraph: "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

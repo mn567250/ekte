@@ -22,12 +22,14 @@
  *     number counted up), na (keeps its slot: "n/a"), naText, hint
  *     (toggletip text), delta: { text, sign (-1|0|1), dir: better | worse |
  *     neutral | none, sr (spoken trend) }, note (a muted line instead of a
- *     delta), caption, faded (aria-describedby id), group (a new group
- *     starts after a divider), family (good | fair | warn | bad | grey:
+ *     delta), caption, faded (aria-describedby id), group (a new group;
+ *     its first tile names what sets it apart in a tag), tag (a small tag
+ *     before the caption, e.g. "All calls"), family (good | fair | warn | bad | grey:
  *     colours the value), slot (HTML before the value, e.g. a sparkline),
  *     sr (spoken value instead of text + unit) }
- * opts: { label (the list's accessible name), cols (a fixed column count;
- *   default: as many as fit), variant: "grid" (boxes, default) | "compact"
+ * opts: { label (the list's accessible name), variant: "grid" (boxes in
+ *   as many columns as fit, issue 233; label, value, change and caption on
+ *   rows shared across a row of tiles) | "compact"
  *   (borderless, label over value, a slot beside them: History, report),
  *   align: "end" (compact: right-aligned), cls (extra class of the list),
  *   count (mount: count the figures up), still, fmt(v, tile) (count-up
@@ -80,10 +82,11 @@
       '</span><span class="sr-only">' + esc(spoken) + "</span></span>";
   }
   function inner(t, p) {
-    var head = '<span class="khead"><span class="kl">' + esc(t.label) + "</span>" + hintHTML(t, p) + "</span>";
+    var head = '<span class="khead"><span class="kl" title="' + esc(t.label) + '">' + esc(t.label) + "</span>" + hintHTML(t, p) + "</span>";
     var caption = t.na ? t.naText || T("此接口类型不测量此项", "Not measured on this surface") : t.caption;
+    var tag = t.tag ? '<span class="ktag">' + esc(t.tag) + "</span>" + (caption ? " " : "") : "";
     return (t.slot ? '<span class="kslot">' + t.slot + "</span>" : "") + head + valueHTML(t) +
-      (t.na ? "" : deltaHTML(t)) + (caption ? '<span class="kc">' + esc(caption) + "</span>" : "");
+      (t.na ? "" : deltaHTML(t)) + (caption || tag ? '<span class="kc">' + tag + esc(caption || "") + "</span>" : "");
   }
   function tileClass(t, prev) {
     return "kpi" + (t.na ? " na" : "") + (prev && t.group !== prev.group ? " sep" : "") +
@@ -95,13 +98,13 @@
   }
   function listClass(opts) {
     var v = opts.variant === "compact" ? " compact" : "";
-    return "kpis" + v + (opts.cols ? " cols" : "") + (opts.align === "end" ? " end" : "") + (opts.cls ? " " + opts.cls : "");
+    return "kpis" + v + (opts.align === "end" ? " end" : "") + (opts.cls ? " " + opts.cls : "");
   }
   // opts.idp: the prefix of the list's element ids (default: a new one)
   function html(tiles, opts) {
     opts = opts || {};
     var p = opts.idp || "kh" + ++uid;
-    return '<ul class="' + esc(listClass(opts)) + '"' + (opts.cols ? ' style="--kpi-cols:' + Number(opts.cols) + '"' : "") +
+    return '<ul class="' + esc(listClass(opts)) + '"' +
       (opts.label ? ' aria-label="' + esc(opts.label) + '"' : "") + ">" +
       tiles.map(function (t, i) { return tileHTML(t, tiles[i - 1], p); }).join("") + "</ul>";
   }
@@ -178,6 +181,7 @@
   function fromServer(t, ctx) {
     var label = ctx.label(t.label_key);
     var out = { id: t.id, label: label, group: t.group || 0, kind: t.format };
+    if (t.tag_key) out.tag = ctx.label(t.tag_key);
     if (!t.applies) { out.na = true; return out; }
     out.value = t.value;
     out.text = ctx.fmt(t.value, t.format);

@@ -1,20 +1,42 @@
 /* ekte web UI v2 — KPI tiles (kpi.js, issue 208): every key figure of the UI.
    Tokens only (tokens.css); light and dark come with them.
 
-   .kpis           the list: as many columns as fit (tiles at least 120px)
-   .kpis.cols      a fixed count, --kpi-cols (2 below 600px)
+   .kpis           the list: as many columns as fit, every tile at least
+                   --kpi-min (150px) wide; no page sets a column count
+                   (issue 233). Each tile is a subgrid of four rows (label,
+                   value, change, caption) shared by the tiles of its row,
+                   so the values of a row sit on one baseline
    .kpis.compact   borderless tiles side by side, a divider between them:
                    [ slot (--kpi-slot-w, both rows) | label over value ]
                    the value column at least --kpi-vw wide (History, report)
    .kpi            one tile; .na: not measured here (keeps its slot);
-                   .sep: the first tile of a new group (other base);
-                   .f-<family>: the value's colour family (the server's) */
-.kpis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); gap: 10px; }
-.kpis.cols { grid-template-columns: repeat(var(--kpi-cols, 4), minmax(0, 1fr)); }
+                   .sep: the first tile of a new group (other base), named
+                   by its tag (.ktag) and nothing else; .f-<family>: the
+                   value's colour family (the server's) */
+.kpis {
+  --kpi-min: 150px; list-style: none; margin: 0; padding: 0; display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--kpi-min), 100%), 1fr)); gap: 10px; align-items: start;
+}
 .kpi { position: relative; border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 13px 11px; background: var(--sunken); min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.kpis:not(.compact) .kpi { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 3px; align-self: stretch; align-content: start; }
+.kpis:not(.compact) .kpi > .khead { grid-row: 1; align-self: end; }
+.kpis:not(.compact) .kpi > .kv { grid-row: 2; align-self: start; }
+.kpis:not(.compact) .kpi > .kd { grid-row: 3; align-self: start; }
+.kpis:not(.compact) .kpi > .kc { grid-row: 4; align-self: start; }
+.kpis:not(.compact) .kpi > .kslot { grid-row: 1; }
 .kpi .khead { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
-/* long words (German compounds) break with a hyphen, by the page's lang */
-.kpi .kl { font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted); overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
+/* long words (German compounds) break with a hyphen, by the page's lang;
+   a label takes at most two lines (the full text is its title) */
+.kpi .kl {
+  font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-muted);
+  overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; min-width: 0;
+}
+/* what sets a tile apart from the ones before it (another base) */
+.kpi .ktag {
+  display: inline-block; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r-pill);
+  font-size: var(--t-2xs); font-weight: 600; line-height: 1.5; color: var(--ink-muted); background: var(--surface);
+}
 .kpi .kv { font-family: var(--disp); font-weight: 700; font-size: var(--t-xl); letter-spacing: var(--track-heading); font-variant-numeric: tabular-nums; color: var(--kpi-c, var(--ink)); overflow-wrap: anywhere; }
 .kpi .kv small { font-family: var(--sans); font-size: var(--t-2xs); font-weight: 600; color: var(--ink-muted); letter-spacing: 0; margin-left: 2px; }
 .kpi .kv.none, .kpi.na .kv { color: var(--ink-muted); font-weight: 600; }
@@ -22,8 +44,6 @@
 .kpi .kd.good { color: var(--success); } .kpi .kd.bad { color: var(--danger); }
 .kpi .kd.few { color: var(--ink-muted); font-weight: 500; }
 .kpi .kc { font-size: var(--t-xs); color: var(--ink-muted); line-height: 1.4; }
-/* a new group: measured on another base (e.g. all calls, not the answered ones) */
-.kpi.sep { border-style: dashed; background: none; }
 .kpi.f-good { --kpi-c: var(--success); } .kpi.f-fair { --kpi-c: var(--fair); } .kpi.f-warn { --kpi-c: var(--warning); }
 .kpi.f-bad { --kpi-c: var(--danger); } .kpi.f-grey { --kpi-c: var(--ink-muted); }
 .kpi .kslot { color: var(--kpi-c, var(--ink-muted)); }
@@ -62,14 +82,13 @@
 .kpis.compact .kpi.slotted { grid-template-columns: var(--kpi-slot-w, 96px) minmax(var(--kpi-vw, 0px), max-content); }
 .kpis.compact .kslot { grid-column: 1; grid-row: 1 / 3; align-self: center; }
 .kpis.compact .khead { grid-column: -2; grid-row: 1; }
-.kpis.compact .kl { font-size: var(--t-2xs); white-space: nowrap; }
+.kpis.compact .kl { display: block; font-size: var(--t-2xs); white-space: nowrap; }
 .kpis.compact .kv { grid-column: -2; grid-row: 2; font-size: 1em; line-height: 1.1; white-space: nowrap; }
 .kpis.compact .kd, .kpis.compact .kc { grid-column: -2; }
 .kpis.compact.end .khead { justify-content: flex-end; }
 .kpis.compact.end .kl, .kpis.compact.end .kv { text-align: right; }
 
 @media (max-width: 600px) {
-  .kpis.cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kpi .kv { font-size: var(--t-xl); }
   .kpis.compact .kv { font-size: 1em; }
 }

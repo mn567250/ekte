@@ -115,7 +115,7 @@
         - listitem: Relays 3 al alza +3
         - listitem: Modelos 3 al alza +3
         - listitem: Puntuación mediana 78 Sin datos en el periodo anterior
-        - listitem: Proporción de riesgo alto 26,7 % Sin datos en el periodo anterior
+        - listitem: Riesgo alto 26,7 % Sin datos en el periodo anterior
         - listitem:
           - text: Tasa de éxito
           - 'button "Acerca de: Tasa de éxito"'
@@ -125,10 +125,10 @@
           - 'button "Acerca de: Tasa de errores"'
           - text: 7,2 % Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
         - listitem: Latencia p50 <duration> Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
-        - listitem: Tiempo hasta el primer token p50 <duration> Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
-        - listitem: Velocidad de decodificación p50 62,9 tok/s Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
-        - listitem: Ratio de facturación (entrada) 103,5 % Sin datos en el periodo anterior Datos de 10 de 15 ejecuciones
-        - listitem: Ratio de facturación (salida) 102 % Sin datos en el periodo anterior Datos de 10 de 15 ejecuciones
+        - listitem: TTFT p50 <duration> Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
+        - listitem: Decodificación p50 62,9 tok/s Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
+        - listitem: Facturación (entrada) 103,5 % Sin datos en el periodo anterior Datos de 10 de 15 ejecuciones
+        - listitem: Facturación (salida) 102 % Sin datos en el periodo anterior Datos de 10 de 15 ejecuciones
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
   - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

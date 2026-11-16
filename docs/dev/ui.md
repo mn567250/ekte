@@ -142,28 +142,34 @@ metric's `format`. It has one `<section class="card panel">` per panel under
 the shared filter panel (`EkteFilters`: range, surface, relay, model, suite,
 protocol, probe requests, execution and the page-wide **Group by** `group`),
 so new panels slot in. The **KPI grid** is the summary's 12 `tiles` in
-`KPI_GRID` order, always 4 columns × 3 rows (2 columns below 600 px). The
+`KPI_GRID` order, 4 columns × 3 rows at desktop width (2 columns on phones). The
 Errors, Relay overhead, Model integrity and Billing panels open with their
 own headline tiles (the summary's `kpi.set` of the same name, with changes
 against the previous range). The **errors** panel stacks the relay's outcome
 classes over the calls it answered (429, relay timeout, 5xx, 4xx and other)
 and keeps network and ekte failures apart, greyed out in legend and tables
-(they are not the relay's fault); its tiles show the relay's rates and, after
-a divider, the impaired share.
+(they are not the relay's fault); its tiles show the relay's rates and then the
+impaired share, tagged "All calls".
 
 **KPI tiles** (#208). Every key figure of the UI is one component,
 `v2/kpi.js` (`window.EkteKpi`) with `v2/kpi.css`: the Analytics tiles, the
 live performance panel and a report's performance tiles (`perf.js`), the
 History group trends and a report's verdict scores. A tile is
-`{ id, label, text, unit, value, na, hint, delta, note, caption, group,
+`{ id, label, text, unit, value, na, hint, delta, note, caption, group, tag,
 family, slot, sr }`; `EkteKpi.fromServer(tile, ctx)` maps a server tile
-(`metrics.tile()`) onto it. `html(tiles, opts)` draws a list: the `grid`
-variant (boxes; `cols` fixes the column count, else as many as fit) or
+(`metrics.tile()`, labelled by `Metric.tile_label_key`: the KPI label, else
+the short one) onto it. `html(tiles, opts)` draws a list: the `grid`
+variant (#233: boxes in as many columns as fit, each at least `--kpi-min`
+150 px wide; no page sets a column count. Each tile is a subgrid of four
+rows, label, value, change and caption, shared by the tiles of its row, so
+the values of a row sit on one baseline; a label takes at most two lines) or
 `compact` (label over value, a `slot` such as a sparkline beside them, sized by
 `--kpi-slot-w` / `--kpi-vw`). A tile with `na` keeps its slot and shows "n/a"
 ("Not measured on this surface"); the delta's colour and word follow
 `direction` (`none`: faded, described by the "previous period has fewer than
-N runs" note); a new `group` starts after a divider; the shown figure is
+N runs" note; better is the success colour, worse the danger colour); a new
+`group` starts with a tile whose `tag` (`metric.<id>.tag`, e.g. "All calls")
+names its other base, never with a border style of its own; the shown figure is
 `aria-hidden` beside a screen-reader value (`sr` overrides it). `count()`
 counts figures up from the ones shown before (per box or `key`; never under
 reduced motion or on a quiet redraw); `mount()` returns `update(tiles)`,

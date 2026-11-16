@@ -205,6 +205,7 @@ def test_series_daily_with_coverage_low_n_mixed_and_annotations(seeded):
     assert out["metric"] == {"id": "ttft_p50", "unit": "ms", "format": "ms", "higher_is_better": False,
                              "agg": "median", "surfaces": ["chat"], "label_key": "metric.ttft_p50",
                              "short_label_key": "metric.ttft_p50.short", "kpi_label_key": "metric.ttft_p50",
+                             "tile_label_key": "metric.ttft_p50.short", "tag_key": None,
                              "agg_hint_key": "metric.ttft_p50.agg_hint"}
     assert out["tz"] == "UTC" and out["bucket"] == "day"
     keys = [s["key"] for s in out["series"]]

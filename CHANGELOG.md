@@ -20,6 +20,23 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: one responsive KPI grid ([#233](https://github.com/mn567250/ekte/issues/233))
+
+Key-figure tiles changed their column count by tab (4, 5 or 2), wrapped
+labels onto three lines and let the values of one row drift up to 22 px apart.
+
+- Tiles take as many columns as fit (each at least 150 px) on every tab; no
+  page sets a column count of its own.
+- Label, value, change and caption sit on rows shared across a row of tiles,
+  so the values of a row share one baseline at every width.
+- Labels are shorter ("Rate-limited", "Timeouts", "Impaired") and take at most
+  two lines.
+- The impaired share is no longer a dashed tile: a small "All calls" tag names
+  its other base.
+- Tests keep the grid in `kpi.css`, measure baselines, label lines and
+  change colours in the browser, and require a tag on every tile that starts
+  a new group.
+
 ### Web UI: one Table, one Disclosure and one EmptyState ([#227](https://github.com/mn567250/ekte/issues/227))
 
 Tables, expanders and empty states each came in four or five versions, with

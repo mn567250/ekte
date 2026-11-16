@@ -1091,7 +1091,7 @@ def test_every_metric_label_key_is_in_every_locale():
 
     cat = metrics.catalogue()
     keys = {m[k] for m in cat["metrics"]
-            for k in ("label_key", "short_label_key", "kpi_label_key", "agg_hint_key")}
+            for k in ("label_key", "short_label_key", "kpi_label_key", "agg_hint_key", "tag_key") if m[k]}
     keys |= set(cat["trend_keys"])
     assert keys == set(cat["labels"])
     data = i18n._load()

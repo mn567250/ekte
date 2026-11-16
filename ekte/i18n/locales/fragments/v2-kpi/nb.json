@@ -1,7 +1,6 @@
 {
  "strings": {
   "Changes compare with the period of the same length before ({prev}).": "Endringer sammenlignet med like lang periode før ({prev}).",
-  "Of all calls": "Av alle kall",
   "Succeeded": "Vellykket",
   "Timeouts": "Tidsavbrudd"
  }
