@@ -115,7 +115,7 @@
         - listitem: Releer 3 stigende +3
         - listitem: Modeller 3 stigende +3
         - listitem: Medianscore 78 Ingen data i forrige periode
-        - listitem: Andel høy risiko 26,7 % Ingen data i forrige periode
+        - listitem: Høy risiko 26,7 % Ingen data i forrige periode
         - listitem:
           - text: Suksessrate
           - 'button "Om: Suksessrate"'
@@ -125,10 +125,10 @@
           - 'button "Om: Feilrate"'
           - text: 7,2 % Ingen data i forrige periode Data fra 14 av 15 kjøringer
         - listitem: Forsinkelse p50 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
-        - listitem: Tid til første token p50 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
-        - listitem: Dekodehastighet p50 62,9 tok/s Ingen data i forrige periode Data fra 14 av 15 kjøringer
-        - listitem: Faktureringsforhold (prompt) 103,5 % Ingen data i forrige periode Data fra 10 av 15 kjøringer
-        - listitem: Faktureringsforhold (fullføring) 102 % Ingen data i forrige periode Data fra 10 av 15 kjøringer
+        - listitem: TTFT p50 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem: Dekoding p50 62,9 tok/s Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem: Fakturering (prompt) 103,5 % Ingen data i forrige periode Data fra 10 av 15 kjøringer
+        - listitem: Fakturering (fullføring) 102 % Ingen data i forrige periode Data fra 10 av 15 kjøringer
 - contentinfo:
   - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
   - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

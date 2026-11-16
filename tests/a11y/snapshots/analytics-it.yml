@@ -115,7 +115,7 @@
         - listitem: Relay 3 in crescita +3
         - listitem: Modelli 3 in crescita +3
         - listitem: Punteggio mediano 78 Nessun dato nel periodo precedente
-        - listitem: Quota ad alto rischio 26,7% Nessun dato nel periodo precedente
+        - listitem: Rischio alto 26,7% Nessun dato nel periodo precedente
         - listitem:
           - text: Tasso di successo
           - 'button "Informazioni: Tasso di successo"'
@@ -125,10 +125,10 @@
           - 'button "Informazioni: Tasso di errore"'
           - text: 7,2% Nessun dato nel periodo precedente Dati da 14 esecuzioni su 15
         - listitem: Latenza p50 <duration> Nessun dato nel periodo precedente Dati da 14 esecuzioni su 15
-        - listitem: Tempo al primo token p50 <duration> Nessun dato nel periodo precedente Dati da 14 esecuzioni su 15
-        - listitem: Velocità di decodifica p50 62,9 tok/s Nessun dato nel periodo precedente Dati da 14 esecuzioni su 15
-        - listitem: Rapporto di fatturazione (input) 103,5% Nessun dato nel periodo precedente Dati da 10 esecuzioni su 15
-        - listitem: Rapporto di fatturazione (output) 102% Nessun dato nel periodo precedente Dati da 10 esecuzioni su 15
+        - listitem: TTFT p50 <duration> Nessun dato nel periodo precedente Dati da 14 esecuzioni su 15
+        - listitem: Decodifica p50 62,9 tok/s Nessun dato nel periodo precedente Dati da 14 esecuzioni su 15
+        - listitem: Fatturazione (input) 103,5% Nessun dato nel periodo precedente Dati da 10 esecuzioni su 15
+        - listitem: Fatturazione (output) 102% Nessun dato nel periodo precedente Dati da 10 esecuzioni su 15
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
   - paragraph: "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

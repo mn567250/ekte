@@ -115,7 +115,7 @@
         - listitem: Relays 3 em subida +3
         - listitem: Modelos 3 em subida +3
         - listitem: Pontuação mediana 78 Sem dados no período anterior
-        - listitem: Proporção de risco alto 26,7% Sem dados no período anterior
+        - listitem: Risco alto 26,7% Sem dados no período anterior
         - listitem:
           - text: Taxa de sucesso
           - 'button "Sobre: Taxa de sucesso"'
@@ -125,10 +125,10 @@
           - 'button "Sobre: Taxa de erros"'
           - text: 7,2% Sem dados no período anterior Dados de 14 de 15 execuções
         - listitem: Latência p50 <duration> Sem dados no período anterior Dados de 14 de 15 execuções
-        - listitem: Tempo até ao primeiro token p50 <duration> Sem dados no período anterior Dados de 14 de 15 execuções
-        - listitem: Velocidade de descodificação p50 62,9 tok/s Sem dados no período anterior Dados de 14 de 15 execuções
-        - listitem: Rácio de faturação (entrada) 103,5% Sem dados no período anterior Dados de 10 de 15 execuções
-        - listitem: Rácio de faturação (saída) 102% Sem dados no período anterior Dados de 10 de 15 execuções
+        - listitem: TTFT p50 <duration> Sem dados no período anterior Dados de 14 de 15 execuções
+        - listitem: Descodificação p50 62,9 tok/s Sem dados no período anterior Dados de 14 de 15 execuções
+        - listitem: Faturação (entrada) 103,5% Sem dados no período anterior Dados de 10 de 15 execuções
+        - listitem: Faturação (saída) 102% Sem dados no período anterior Dados de 10 de 15 execuções
 - contentinfo:
   - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
   - paragraph: "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

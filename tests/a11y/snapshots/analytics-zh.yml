@@ -115,7 +115,7 @@
         - listitem: 中转站 3 上升 +3
         - listitem: 模型 3 上升 +3
         - listitem: 健康分中位数 78 上一周期无数据
-        - listitem: 高风险占比 26.7% 上一周期无数据
+        - listitem: 高风险 26.7% 上一周期无数据
         - listitem:
           - text: 成功率
           - button "关于：成功率"
@@ -126,7 +126,7 @@
           - text: 7.2% 上一周期无数据 14 / 15 次检测有此数据
         - listitem: 延迟 p50 <duration> 上一周期无数据 14 / 15 次检测有此数据
         - listitem: 首字延迟 p50 <duration> 上一周期无数据 14 / 15 次检测有此数据
-        - listitem: 输出速度 p50 62.9 tok/s 上一周期无数据 14 / 15 次检测有此数据
+        - listitem: 输出 p50 62.9 tok/s 上一周期无数据 14 / 15 次检测有此数据
         - listitem: 计费比（输入） 103.5% 上一周期无数据 10 / 15 次检测有此数据
         - listitem: 计费比（输出） 102% 上一周期无数据 10 / 15 次检测有此数据
 - contentinfo:

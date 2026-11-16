@@ -115,7 +115,7 @@
         - listitem: Relays 3 steigend +3
         - listitem: Modelle 3 steigend +3
         - listitem: Median-Score 78 Keine Daten im vorigen Zeitraum
-        - listitem: Anteil hohes Risiko 26,7 % Keine Daten im vorigen Zeitraum
+        - listitem: Hohes Risiko 26,7 % Keine Daten im vorigen Zeitraum
         - listitem:
           - text: Erfolgsquote
           - 'button "Info: Erfolgsquote"'
@@ -125,10 +125,10 @@
           - 'button "Info: Fehlerquote"'
           - text: 7,2 % Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
         - listitem: Latenz p50 <duration> Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
-        - listitem: Zeit bis zum ersten Token p50 <duration> Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
-        - listitem: Dekodiertempo p50 62,9 tok/s Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
-        - listitem: Abrechnungsverhältnis (Eingabe) 103,5 % Keine Daten im vorigen Zeitraum Daten aus 10 von 15 Läufen
-        - listitem: Abrechnungsverhältnis (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 10 von 15 Läufen
+        - listitem: TTFT p50 <duration> Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
+        - listitem: Dekodierung p50 62,9 tok/s Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
+        - listitem: Abrechnung (Eingabe) 103,5 % Keine Daten im vorigen Zeitraum Daten aus 10 von 15 Läufen
+        - listitem: Abrechnung (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 10 von 15 Läufen
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
   - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
