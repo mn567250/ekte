@@ -5,7 +5,7 @@
   "en": "EN 301 549 V3.2.1, chapter 9",
   "wcag": "WCAG 2.1 level A + AA"
  },
- "generated_at": "2026-11-16T18:06:55+00:00",
+ "generated_at": "2026-11-16T18:08:17+00:00",
  "tests_run_at": "2026-11-16T18:02:50+00:00",
  "ekte_version": "0.35.0",
  "commit": "700e822f51bb",
@@ -1536,7 +1536,7 @@
  ],
  "review": {
   "model": "claude-opus-5-5",
-  "generated_at": "2026-11-16T16:37:15+00:00",
+  "generated_at": "2026-11-16T18:08:17+00:00",
   "note": "LLM review of the texts. The conformance report (python -m tests.a11y.conformance) counts it as the manual part of the steps it covers and names the model.",
   "method": "llm",
   "counted": true,
