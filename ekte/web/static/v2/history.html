@@ -149,7 +149,7 @@
   .rline { display: grid; grid-template-columns: 1fr var(--del) var(--del) var(--del); gap: 6px; align-items: start; }
   .rline > :not(.rmain) { margin-top: calc(var(--rpad) + var(--l1) / 2 - var(--del) / 2); }
   .rmain {
-    display: grid; grid-template-columns: var(--cols); grid-template-rows: var(--l1) auto; gap: var(--cgap); align-items: center; width: 100%; min-width: 0;
+    display: grid; grid-template-columns: var(--cols); grid-template-rows: minmax(var(--l1), auto) auto; gap: var(--cgap); align-items: center; width: 100%; min-width: 0;
     text-align: left; background: none; border: 0; border-radius: var(--r-sm); padding: var(--rpad) 10px; cursor: pointer;
     font-size: var(--t-sm); color: var(--ink-muted); transition: background var(--dur-fast);
   }
@@ -163,19 +163,21 @@
   .rmain > span { min-width: 0; }
   .c-date { grid-area: date; } .c-score { grid-area: score; } .c-grade { grid-area: grade; }
   .c-risk { grid-area: risk; } .c-meta { grid-area: meta; } .c-cv { grid-area: cv; }
-  .c-date { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .c-risk .badge { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  /* nothing is cut off (zoomed or spaced text wraps instead, WCAG 1.4.4 /
+     1.4.12); at the normal size every first line fits on one line */
+  .c-date { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; }
+  .c-risk .badge { white-space: normal; text-align: left; line-height: 1.25; max-width: 100%; }
   .c-risk .badge .zicon { flex: none; }
   .c-score { text-align: right; font-family: var(--disp); font-weight: 700; font-size: var(--t-lg); font-variant-numeric: tabular-nums; }
   .c-grade { text-align: right; font-family: var(--disp); font-weight: 700; font-size: var(--t-lg); }
   /* the run's details: one muted sans line (mode · Monitor · suite ·
-     surface · protocol · stream mode · p50), cut with an ellipsis where it is
-     too long (the full text is in the row button's name); on phones it wraps */
+     surface · protocol · stream mode · p50) that wraps where it does not fit
+     (phones, zoomed or spaced text), never cut off */
   .c-meta { font-size: var(--t-xs); line-height: 1.5; color: var(--ink-muted); overflow: hidden; }
   /* each detail is a nowrap span with its " · " drawn before it; the list is
      shifted left by one separator and clipped, so a line (the first, or one
      wrapped on a phone) never starts with a separator, and none ends with one */
-  .c-meta .mi { display: block; margin-left: -0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c-meta .mi { display: block; margin-left: -0.9em; }
   .c-meta .mi > span { white-space: nowrap; }
   .c-meta .mi > span::before { content: "·" / ""; display: inline-block; width: 0.9em; text-align: center; }
   .c-cv { display: inline-flex; justify-content: flex-end; color: var(--ink-muted); }
@@ -245,11 +247,9 @@
     .lfoot { padding: 12px 14px; }
     /* the first line: date and chevron; the second: risk, score, grade; then the details */
     .rmain {
-      grid-template-columns: minmax(0, 1fr) auto auto 18px; grid-template-rows: var(--l1) auto auto; gap: 4px 10px; padding: var(--rpad) 8px;
+      grid-template-columns: minmax(0, 1fr) auto auto 18px; grid-template-rows: minmax(var(--l1), auto) auto auto; gap: 4px 10px; padding: var(--rpad) 8px;
       grid-template-areas: "date date date cv" "risk score grade ." "meta meta meta meta";
     }
-    .c-meta .mi { white-space: normal; text-overflow: clip; }
-    .c-risk .badge { white-space: normal; overflow: visible; line-height: 1.25; text-align: left; }
     /* the title keeps the full width; the trends follow in one row:
        sparkline and value side by side, each tile as wide as on desktop */
     .grp-h { align-items: flex-start; gap: 10px 14px; }
