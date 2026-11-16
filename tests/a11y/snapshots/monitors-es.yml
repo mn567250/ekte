@@ -43,13 +43,6 @@
     - link "Historial":
       - /url: /history
     - text: y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última vez, ekte avisa a tus webhooks (Slack / Feishu / DingTalk / JSON genérico).
-  - group "Almacenamiento de claves API":
-    - text: Almacenamiento de claves API
-    - radio "No guardar claves" [checked]
-    - text: No guardar claves
-    - radio "Guardar cifradas en este equipo"
-    - text: Guardar cifradas en este equipo
-    - paragraph: Las claves API permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Buscar
@@ -95,6 +88,13 @@
     - status
     - button "Copiar el enlace a esta vista"
   - status
+  - group "Almacenamiento de claves API":
+    - text: Almacenamiento de claves API
+    - radio "No guardar claves" [checked]
+    - text: No guardar claves
+    - radio "Guardar cifradas en este equipo"
+    - text: Guardar cifradas en este equipo
+    - paragraph: Las claves API permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.
   - tablist "Vistas de monitores":
     - tab "Configurar" [selected]
     - tab "En curso"
@@ -189,8 +189,8 @@
         - button "Mostrar clave"
         - paragraph: El historial nunca guarda la clave. Déjala vacía para un modelo local o autoalojado.
         - button "Activar monitor"
-      - button "Ejecutar ahora"
       - button "Eliminar"
+      - button "Ejecutar ahora"
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
   - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

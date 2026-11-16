@@ -43,13 +43,6 @@
     - link "History":
       - /url: /history
     - text: and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).
-  - group "API key storage":
-    - text: API key storage
-    - radio "Don't store keys" [checked]
-    - text: Don't store keys
-    - radio "Store encrypted on this machine"
-    - text: Store encrypted on this machine
-    - paragraph: API keys stay in the memory of ekte serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.
   - region "Filters":
     - button "Filters" [expanded]
     - text: Search
@@ -95,6 +88,13 @@
     - status
     - button "Copy link to this view"
   - status
+  - group "API key storage":
+    - text: API key storage
+    - radio "Don't store keys" [checked]
+    - text: Don't store keys
+    - radio "Store encrypted on this machine"
+    - text: Store encrypted on this machine
+    - paragraph: API keys stay in the memory of ekte serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.
   - tablist "Monitor views":
     - tab "Configure" [selected]
     - tab "Running"
@@ -189,8 +189,8 @@
         - button "Show key"
         - paragraph: History never stores the key. Leave it empty for a local or self-hosted model.
         - button "Activate monitor"
-      - button "Run now"
       - button "Delete"
+      - button "Run now"
 - contentinfo:
   - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
   - paragraph: "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

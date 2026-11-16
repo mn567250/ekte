@@ -890,9 +890,13 @@
         }))));
     }
 
-    var actions = (opts.actions || [])
-      .map(function (a, i) {
-        return '<button type="button" class="btn' + (a.primary ? " pri" : "") + '" data-action="' + i + '">' + esc(T(a.zh, a.en)) + "</button>";
+    // the actions row (ekte.css .actions): the primary action last
+    var acts = opts.actions || [];
+    var actions = acts.map(function (a, i) { return { a: a, i: i }; })
+      .filter(function (x) { return !x.a.primary; })
+      .concat(acts.map(function (a, i) { return { a: a, i: i }; }).filter(function (x) { return x.a.primary; }))
+      .map(function (x) {
+        return '<button type="button" class="btn' + (x.a.primary ? " pri" : "") + '" data-action="' + x.i + '">' + esc(T(x.a.zh, x.a.en)) + "</button>";
       })
       .join("");
 

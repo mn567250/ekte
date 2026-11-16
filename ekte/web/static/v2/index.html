@@ -42,7 +42,7 @@
 
   /* form (inside the tab card: no second frame) */
   /* the audit form is the page's one task: its fields are the large size */
-  .form-card { margin-top: 18px; --field-h: var(--h-lg); }
+  .form-card { --field-h: var(--h-lg); }
   /* four-option segments: one row, 2 × 2 on phones (no mid-word breaks) */
   /* columns are never narrower than their label (e.g. DE "benutzerdefiniert") */
   .seg.q { display: grid; grid-template-columns: repeat(4, minmax(min-content, 1fr)); }
@@ -51,6 +51,7 @@
   @media (max-width: 560px) { .seg.q, #suite.seg.q { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   /* the endpoint type (a .seg.radio, ekte.css) in a borderless fieldset */
   fieldset.grp { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
+  #bapi-grp { margin-bottom: 0; }
   fieldset.grp > legend { padding: 0; }
   .cmp { margin: 4px 0 16px; }
   /* a standalone Disclosure (ekte.css): chevron on the right */
@@ -174,8 +175,7 @@
   #report { margin-top: 18px; }
   /* the report article is a card elsewhere (history); inside the tab card it
      spans the card's width without a frame of its own */
-  .tab-card .zr.card { margin: 0 -24px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
-  @media (max-width: 520px) { .tab-card .zr.card { margin: 0 -18px; } }
+  .tab-card .zr.card { margin: 0 calc(-1 * var(--pad)); border: 0; border-radius: 0; box-shadow: none; background: transparent; }
   .tab-card .view > .foot:last-child { padding-bottom: 0; }
 </style>
 </head>
@@ -299,7 +299,7 @@
                 <label class="lab" for="b-model"><span data-en="Baseline model">Baseline model</span> <span class="key">model</span></label>
                 <input class="in" id="b-model" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Official id of the same model" data-en-placeholder="Official id of the same model">
               </div>
-              <div class="grp" id="bapi-grp" style="margin-bottom:0">
+              <div class="grp" id="bapi-grp">
                 <span class="lab" id="lab-bapi" data-en="Baseline protocol">Baseline protocol</span>
                 <div class="seg q" id="b-api" role="group" aria-labelledby="lab-bapi">
                   <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">Auto</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>

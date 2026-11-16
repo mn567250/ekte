@@ -335,8 +335,8 @@
               - text: O ekte fornece
               - strong: evidências reprodutíveis de desvio de comportamento e de risco
               - text: ", não uma prova jurídica ou criptográfica de fraude. Os intermediários podem encaminhar de forma probabilística; pondere por si o tamanho da amostra, as definições de faturação e a lei local, e nunca acuse publicamente um fornecedor com base numa única execução."
-            - button "Agendar como monitor"
             - button "Executar auditoria novamente"
+            - button "Agendar como monitor"
             - group "Transferir relatório":
               - text: Transferir relatório
               - button "JSON"

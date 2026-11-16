@@ -109,7 +109,7 @@
 .zmk-body #zmk-key { font-size: var(--t-base); letter-spacing: var(--track-label); }
 .zmk-check { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; font-size: var(--t-base); line-height: 1.45; cursor: pointer; }
 .zmk-check input { margin-top: 3px; }
-.zmk-act { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+/* .zmk-act: the dialog's actions, the shared .actions row (ekte.css) */
 .zmk-err { margin: 8px 0 0; font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
 .zmk-err[hidden] { display: none; }
 

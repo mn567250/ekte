@@ -92,10 +92,8 @@
   .mon-msg.ok { color: var(--success); }
   .mon-msg.bad { color: var(--danger); }
   /* the actions span the card, like the report's page actions (report.css) */
-  .mon-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-  .mon-act .btn { flex: 1 1 200px; min-width: 0; padding: 6px 14px; white-space: normal; text-align: center; }
-  .mon-act .ask { flex-basis: 100%; font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
-  @media (max-width: 520px) { .mon-act .btn { flex-basis: 100%; } }
+  /* the monitor's actions: the shared .actions row (ekte.css) */
+  .mon-act .ask { font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
   .mon-prog { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: var(--t-sm); font-weight: 700; color: var(--info); }
   .mon-prog .bar { flex: 1; height: 6px; border-radius: var(--r-pill); background: var(--info-tint); overflow: hidden; }
   .mon-prog .bar > span { display: block; height: 100%; background: var(--info); border-radius: var(--r-pill); transition: width var(--dur-slow) var(--ease-out); }
@@ -130,7 +128,8 @@
   .rw-cov { margin: -8px 0 0; font-size: var(--t-sm); color: var(--ink); line-height: 1.45; }
   .rw-cov b { font-variant-numeric: tabular-nums; }
   .rw > .znote.inline { margin: 0; }
-  .mon-act-note { flex-basis: 100%; margin: 0; }
+  .mon-act-note { flex-basis: 100%; margin: 0; text-align: right; }
+  @media (max-width: 600px) { .mon-act-note { text-align: left; } }
   /* draft: a watch scheduled from a history run that still needs its interval / key */
   /* "Finish setup": a warning Callout, the form below it (not a coloured box around it) */
   .setup { margin-top: 14px; }
@@ -138,7 +137,6 @@
   .setup > .znote.inline { margin: 0 0 12px; }
   .setup .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; align-items: start; }
   .setup .lab { font-size: var(--t-sm); }
-  .setup .go { margin-top: 12px; }
   /* nested in the .tab-card: a quieter item surface instead of a second card shadow */
   .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: var(--r-md); }
   .tab-card .section-title { margin-top: 0; }
@@ -160,10 +158,14 @@
 
   /* API key storage: native radios dressed as a segmented control (as the
      audit page's endpoint type) */
-  .keystore { margin: 12px 0 16px; }
-  .keystore fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
-  .keystore legend { padding: 0; }
-  .keystore .hint { margin: 8px 0 0; }
+  /* where API keys are kept: a compact toolbar setting (issue 230), its
+     label (with a lock) beside the choice, the hint under it */
+  .keystore { min-width: 0; }
+  .keystore fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 10px; }
+  .keystore legend { float: left; padding: 0; display: inline-flex; align-items: center; gap: 6px; }
+  .keystore legend .zicon { width: 14px; height: 14px; color: var(--ink-muted); }
+  .keystore .hint { flex-basis: 100%; margin: 0; text-align: right; }
+  @media (max-width: 600px) { .keystore fieldset { justify-content: flex-start; } .keystore .hint { text-align: left; } }
 </style>
 </head>
 <body>
@@ -180,21 +182,26 @@
     <div class="znote" id="note" role="status" hidden></div>
 
     <!-- where the monitors' API keys are kept: the user's choice -->
-    <section class="card card-pad keystore">
-      <fieldset id="keystore">
-        <legend class="lab" data-en="API key storage">API key storage</legend>
-        <div class="seg radio">
-          <span><input type="radio" name="keystore" id="ks-memory" value="memory" aria-describedby="ks-hint" disabled><label for="ks-memory" data-en="Don't store keys">Don't store keys</label></span><span><input type="radio" name="keystore" id="ks-encrypted" value="encrypted" aria-describedby="ks-hint" disabled><label for="ks-encrypted" data-en="Store encrypted on this machine">Store encrypted on this machine</label></span>
-        </div>
-        <p class="hint" id="ks-hint"></p>
-      </fieldset>
-    </section>
 
     <!-- the master key that encrypts the stored API keys (only when they are stored) -->
     <div id="mk-bar" aria-live="polite"></div>
 
     <!-- the shared filter panel (filters.js), above the card as on History and Analytics; the filters live in the URL query string -->
-    <section class="card filters" id="filters" hidden></section>
+    <!-- the toolbar: the filters, then the page's own setting (where API keys are kept) -->
+    <div class="toolbar">
+      <section class="card filters" id="filters" hidden></section>
+      <div class="tool-row">
+        <section class="keystore">
+          <fieldset id="keystore">
+            <legend class="lab"><span class="pico" data-icon="lock"></span><span data-en="API key storage">API key storage</span></legend>
+            <div class="seg radio sm">
+              <span><input type="radio" name="keystore" id="ks-memory" value="memory" aria-describedby="ks-hint" disabled><label for="ks-memory" data-en="Don't store keys">Don't store keys</label></span><span><input type="radio" name="keystore" id="ks-encrypted" value="encrypted" aria-describedby="ks-hint" disabled><label for="ks-encrypted" data-en="Store encrypted on this machine">Store encrypted on this machine</label></span>
+            </div>
+            <p class="hint" id="ks-hint"></p>
+          </fieldset>
+        </section>
+      </div>
+    </div>
 
     <div class="card card-pad tab-card">
       <div class="tabs" role="tablist" aria-label="Monitor views" data-en-aria-label="Monitor views">
@@ -455,8 +462,8 @@
       EkteNotice.callout("warning", '<h4 id="su-' + w.id + '">' + esc(T("设置后即可启用", "Finish setup to switch it on")) + "</h4> " +
         '<span class="meta">' + esc(T("配置取自检测历史中的那次运行。设置运行间隔后启用即可。", "The configuration comes from the run in History. Set how often it runs, then activate it.")) + "</span>", { role: false }) +
       '<div class="fields">' + fields + "</div>" +
-      '<button type="submit" class="btn pri go" data-act="activate" data-id="' + w.id + '"' + (s.busy ? ' disabled aria-busy="true"' : "") + ">" +
-      icon("play") + esc(T("启用监控", "Activate monitor")) + "</button></form>";
+      '<div class="actions"><button type="submit" class="btn pri go" data-act="activate" data-id="' + w.id + '"' + (s.busy ? ' disabled aria-busy="true"' : "") + ">" +
+      icon("play") + esc(T("启用监控", "Activate monitor")) + "</button></div></form>";
   }
 
   function intervalCell(w, s) {
@@ -807,8 +814,8 @@
     if (s.confirm) {
       actions =
         '<span class="ask" id="ask-' + w.id + '">' + esc(T("删除这个监控？", "Delete this monitor?")) + "</span>" +
-        '<button type="button" class="btn danger" data-act="del-yes" data-id="' + w.id + '" aria-describedby="ask-' + w.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
-        '<button type="button" class="btn" data-act="del-no" data-id="' + w.id + '">' + esc(T("取消", "Cancel")) + "</button>";
+        '<button type="button" class="btn" data-act="del-no" data-id="' + w.id + '">' + esc(T("取消", "Cancel")) + "</button>" +
+        '<button type="button" class="btn danger" data-act="del-yes" data-id="' + w.id + '" aria-describedby="ask-' + w.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>";
     } else {
       // A draft can run once right away; the interval is only for the schedule.
       var run =
@@ -817,8 +824,9 @@
             icon("x") + esc(s.stopping ? T("正在取消…", "Cancelling…") : T("取消运行", "Cancel run")) + "</button>"
           : '<button type="button" class="btn' + (draft ? "" : " pri") + '" data-act="run" data-id="' + w.id + '">' +
             icon("play") + esc(T("立即运行", "Run now")) + "</button>";
-      actions = run +
-        '<button type="button" class="btn danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
+      // the destructive action first, the main one (run) last
+      actions = '<button type="button" class="btn danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
+        run +
         (outsideWindow(w) && !running ? '<p class="hint mon-act-note">' + esc(T("立即运行不受运行时段限制。", "Run now ignores the run window.")) + "</p>" : "");
     }
     var stateLine = running
@@ -890,7 +898,7 @@
         progress +
         (draft ? setupBox(w, s) : "") +
         '<div class="mon-msg ' + (s.msgKind || "") + '" role="status">' + (s.msg ? esc(s.msg()) : "") + "</div>" +
-        '<div class="mon-act" id="ma-' + w.id + '"' + hide + ">" + actions + "</div>" +
+        '<div class="mon-act actions" id="ma-' + w.id + '"' + hide + ">" + actions + "</div>" +
       "</article>"
     );
   }

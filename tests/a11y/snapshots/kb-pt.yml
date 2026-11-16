@@ -103,8 +103,8 @@
       - text: Fornecedor Opcional
       - textbox "Fornecedor Opcional":
         - /placeholder: p. ex. openai / deepseek
-      - button "Copiar prompt"
       - status
+      - button "Copiar prompt"
       - group:
         - button "Mostrar o prompt" [expanded]
         - textbox "Prompt"

@@ -103,8 +103,8 @@
       - text: Leverandør Valgfritt
       - textbox "Leverandør Valgfritt":
         - /placeholder: f.eks. openai / deepseek
-      - button "Kopier prompt"
       - status
+      - button "Kopier prompt"
       - group:
         - button "Vis prompten" [expanded]
         - textbox "Prompt"

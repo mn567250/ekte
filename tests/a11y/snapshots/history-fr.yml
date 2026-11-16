@@ -335,8 +335,8 @@
               - text: ekte fournit des
               - strong: preuves reproductibles d'écart de comportement et de risque
               - text: ", pas une preuve juridique ou cryptographique de fraude. Les relais peuvent router de façon probabiliste ; tenez compte vous-même de la taille de l'échantillon, des paramètres de facturation et du droit local, et n'accusez jamais publiquement un fournisseur sur la base d'une seule exécution."
-            - button "Planifier comme surveillance"
             - button "Relancer l’audit"
+            - button "Planifier comme surveillance"
             - group "Télécharger le rapport":
               - text: Télécharger le rapport
               - button "JSON"

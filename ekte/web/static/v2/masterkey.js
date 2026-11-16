@@ -241,7 +241,7 @@
       '<form method="dialog" class="zmk-body" novalidate>' +
         '<h2 id="zmk-title">' + icon("lock") + esc(c.title) + "</h2>" +
         '<div class="zmk-step" data-step="intro"><p>' + esc(c.intro) + "</p>" + errLine() +
-          '<div class="zmk-act"><button type="button" class="btn pri" data-zmk="show" autofocus>' + esc(T("生成并显示密钥", "Show the new key")) + "</button>" + cancelBtn() + "</div></div>" +
+          '<div class="zmk-act actions">' + cancelBtn() + '<button type="button" class="btn pri" data-zmk="show" autofocus>' + esc(T("生成并显示密钥", "Show the new key")) + "</button>" + "</div></div>" +
         '<div class="zmk-step" data-step="show" hidden>' +
           "<p>" + esc(T("这是唯一一次显示。请立即保存：", "This is the only time it is shown. Save it now:")) + "</p>" +
           '<label class="lab" for="zmk-key">' + esc(T("新的主密钥", "New master key")) + ' <span class="opt" data-zmk="fp"></span></label>' +
@@ -251,7 +251,7 @@
           '<span class="hint" data-zmk="copied" role="status"></span></div>' +
           '<label class="zmk-check"><input type="checkbox" data-zmk="saved"> ' +
             esc(T("我已把它保存在安全的地方（不在 ekte 数据目录中）", "I stored it somewhere safe (not in ekte's data folder)")) + "</label>" +
-          '<div class="zmk-act"><button type="button" class="btn pri" data-zmk="next" disabled>' + esc(T("下一步", "Next")) + "</button>" + cancelBtn() + "</div></div>" +
+          '<div class="zmk-act actions">' + cancelBtn() + '<button type="button" class="btn pri" data-zmk="next" disabled>' + esc(T("下一步", "Next")) + "</button>" + "</div></div>" +
         '<div class="zmk-step" data-step="confirm" hidden>' +
           "<p>" + esc(T("请粘贴刚才保存的密钥以确认。浏览器可能会提示你把它保存到密码管理器。",
             "Paste the key you saved to confirm. Your browser may offer to save it in its password manager.")) + "</p>" +
@@ -259,7 +259,7 @@
           '<label class="lab" for="zmk-typed">' + esc(T("主密钥", "Master key")) + "</label>" +
           '<input class="in mono" id="zmk-typed" type="password" name="password" autocomplete="new-password" spellcheck="false" autocapitalize="off" required>' +
           errLine() +
-          '<div class="zmk-act"><button type="submit" class="btn pri" data-zmk="confirm">' + esc(T("确认并启用", "Confirm and use it")) + "</button>" + cancelBtn() + "</div></div>" +
+          '<div class="zmk-act actions">' + cancelBtn() + '<button type="submit" class="btn pri" data-zmk="confirm">' + esc(T("确认并启用", "Confirm and use it")) + "</button>" + "</div></div>" +
       "</form>";
     return open(html, function (d, done) {
       function step(name) {
@@ -330,7 +330,7 @@
         '<label class="lab" for="zmk-unlock">' + esc(T("主密钥", "Master key")) + "</label>" +
         '<input class="in mono" id="zmk-unlock" type="password" name="password" autocomplete="current-password" spellcheck="false" autocapitalize="off" required autofocus>' +
         errLine() +
-        '<div class="zmk-act"><button type="submit" class="btn pri" data-zmk="unlock">' + esc(T("解锁", "Unlock")) + "</button>" + cancelBtn() + "</div>" +
+        '<div class="zmk-act actions">' + cancelBtn() + '<button type="submit" class="btn pri" data-zmk="unlock">' + esc(T("解锁", "Unlock")) + "</button>" + "</div>" +
       "</form>";
     return open(html, function (d, done) {
       var input = d.querySelector("#zmk-unlock");

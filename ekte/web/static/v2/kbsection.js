@@ -274,8 +274,8 @@
         '<label class="lab" for="' + id("prov") + '"><span data-en="Provider">Provider</span> <span class="opt" data-en="Optional">Optional</span></label>' +
         '<input class="in" id="' + id("prov") + '" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="e.g. openai / deepseek" data-en-placeholder="e.g. openai / deepseek">' +
         "</div></div>" +
-        '<div class="row"><button class="btn pri" type="button" id="' + id("copy") + '">' + icon("arrowRight") + ' <span data-en="Copy prompt">Copy prompt</span></button>' +
-        '<span class="hint" id="' + id("copy-msg") + '" role="status"></span></div>' +
+        '<div class="actions"><span class="hint" id="' + id("copy-msg") + '" role="status"></span>' +
+        '<button class="btn pri" type="button" id="' + id("copy") + '">' + icon("arrowRight") + ' <span data-en="Copy prompt">Copy prompt</span></button></div>' +
         '<div class="prompt-disc">' + window.EkteDisclosure.html({ id: id("prompt-body"),
           label: '<span data-en="Show the prompt">Show the prompt</span>',
           body: '<textarea class="in prompt" id="' + id("prompt") + '" readonly aria-label="Prompt" data-en-aria-label="Prompt"></textarea>' }) + "</div>" +
@@ -291,7 +291,7 @@
       '<span class="hint mono" id="' + id("file-name") + '"></span></div></div>' +
       '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Check and save">Check and save</span></h3>' +
       '<p class="hint" data-en="The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.">The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.</p>' +
-      '<div class="row"><button class="btn" type="button" id="' + id("check") + '">' + icon("search") + ' <span data-en="Check">Check</span></button>' +
+      '<div class="actions"><button class="btn" type="button" id="' + id("check") + '">' + icon("search") + ' <span data-en="Check">Check</span></button>' +
       '<button class="btn pri" type="button" id="' + id("save") + '" disabled>' + icon("check") + ' <span data-en="Save to knowledge base">Save to knowledge base</span></button></div>' +
       '<div aria-live="polite"><div class="scan" id="' + id("scan") + '" hidden></div>' +
       '<div id="' + id("err") + '" role="alert" hidden></div>' +
@@ -474,7 +474,7 @@
       '<label class="lab" for="' + id("url") + '"><span data-en="Relay URL">Relay URL</span> <span class="key">base_url</span></label>' +
       '<input class="in" id="' + id("url") + '" type="text" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" maxlength="500" placeholder="https://relay.example.com/v1" aria-describedby="' + id("err") + '">' +
       "</div></div>" +
-      '<div class="row"><button class="btn pri" type="submit" id="' + id("save") + '">' + icon("plus") + ' <span data-en="Save relay">Save relay</span></button></div>' +
+      '<div class="actions"><button class="btn pri" type="submit" id="' + id("save") + '">' + icon("plus") + ' <span data-en="Save relay">Save relay</span></button></div>' +
       '<div aria-live="polite"><div id="' + id("err") + '" role="alert" hidden></div>' +
       '<div id="' + id("ok") + '" hidden></div></div></form>';
     translate(el);

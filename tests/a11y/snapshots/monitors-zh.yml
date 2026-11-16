@@ -43,13 +43,6 @@
     - link "检测历史":
       - /url: /history
     - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
-  - group "API 密钥保存方式":
-    - text: API 密钥保存方式
-    - radio "不保存密钥" [checked]
-    - text: 不保存密钥
-    - radio "加密保存在本机"
-    - text: 加密保存在本机
-    - paragraph: API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。
   - region "筛选":
     - button "筛选" [expanded]
     - text: 搜索
@@ -95,6 +88,13 @@
     - status
     - button "复制此视图的链接"
   - status
+  - group "API 密钥保存方式":
+    - text: API 密钥保存方式
+    - radio "不保存密钥" [checked]
+    - text: 不保存密钥
+    - radio "加密保存在本机"
+    - text: 加密保存在本机
+    - paragraph: API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。
   - tablist "监控视图":
     - tab "配置" [selected]
     - tab "运行中"
@@ -189,8 +189,8 @@
         - button "显示密钥"
         - paragraph: 检测历史不保存密钥。本地或自托管模型可留空。
         - button "启用监控"
-      - button "立即运行"
       - button "删除"
+      - button "立即运行"
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
   - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

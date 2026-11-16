@@ -222,8 +222,6 @@
 .zr .zr-foot { border-top: 1px solid var(--line); background: var(--sunken); padding: 16px 26px 22px; }
 .zr .disc { font-size: var(--t-xs); color: var(--ink-muted); line-height: 1.6; margin: 0; }
 .zr .disc strong { color: var(--ink-muted); }
-.zr .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-.zr .actions .btn { flex: 1 1 200px; min-width: 0; padding: 6px 14px; white-space: normal; text-align: center; }
 .zr .zr-dl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .zr .zr-dl .dl-l { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm); color: var(--ink-muted); margin-right: 4px; }
 .zr .zr-dl .dl-msg { flex-basis: 100%; margin: 0; font-size: var(--t-sm); color: var(--danger); }
@@ -236,7 +234,6 @@
   .zr .meta-strip .mi { flex-wrap: wrap; }
   .zr-dim { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
   .zr-dim .bar { grid-column: 1 / -1; order: 3; }
-  .zr .actions .btn { flex-basis: 100%; }
   .zr-dd { margin-left: 0; }
   .zr-xr { grid-template-columns: 16px minmax(0, 1fr) auto; row-gap: 5px; }
   .zr-xr .xbar { grid-column: 2 / 3; }

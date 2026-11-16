@@ -30,9 +30,9 @@
    * stacks; wide tables scroll inside their own focusable region, never the
    * page (BITV 9.1.4.10). */
 
-  /* each top-level tab panel is one card (.tab-card, ekte.css): its
-   * sub-tab switch first, then the selected sub-panel inside the same card */
-  #views > .tab-card { min-width: 0; }
+  /* the views are one tab card (.tab-card, ekte.css, issue 230): the
+   * primary tabs first, then the selected panel with its sub-tab switch */
+  #views { min-width: 0; }
   .panel { min-width: 0; }
   .psub { margin: 0; font-size: var(--t-sm); color: var(--ink-muted); line-height: 1.5; }
   .pbody { margin-top: 14px; min-width: 0; transition: opacity var(--dur-base); }
@@ -52,7 +52,6 @@
      (.tabs, .tabs.sub; issue 225); a panel's heading would repeat the
      selected tab's label, so it is for screen readers only (.sr-only) */
   .views[hidden] { display: none; }
-  .atabs { margin-top: 16px; }
 
   /* a panel's headline tiles (kpi.js, kpi.css) and what they compare with */
   .kpihead { margin: 0 0 14px; }
@@ -193,11 +192,11 @@
     <div class="znote" id="note" hidden></div>
     <p class="sr-only" id="live" role="status"></p>
 
-    <section class="card" id="empty" hidden></section>
-
     <section class="card filters" id="filters" hidden></section>
 
-    <div class="views" id="views" hidden>
+    <section class="card" id="empty" hidden></section>
+
+    <div class="views card card-pad tab-card" id="views" hidden>
       <div class="tabs atabs" role="tablist" id="atabs" aria-label="Analytics views" data-en-aria-label="Analytics views">
         <button type="button" role="tab" id="tab-overview" aria-selected="true" aria-controls="panel-overview" tabindex="0"><span class="pico" data-icon="bars"></span><span data-en="Overview">Overview</span></button>
         <button type="button" role="tab" id="tab-trends" aria-selected="false" aria-controls="panel-trends" tabindex="-1"><span class="pico" data-icon="chart"></span><span data-en="Trends">Trends</span></button>
@@ -206,7 +205,7 @@
         <button type="button" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1"><span class="pico" data-icon="coin"></span><span data-en="Billing">Billing</span></button>
       </div>
 
-      <section class="card card-pad tab-card" role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="0">
+      <section role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="0">
         <div class="tabs sub" role="tablist" id="stabs-overview" aria-labelledby="tab-overview">
           <button type="button" role="tab" id="tab-kpi" aria-selected="true" aria-controls="panel-kpi" tabindex="0"><span data-en="Key figures">Key figures</span></button>
           <button type="button" role="tab" id="tab-lb" aria-selected="false" aria-controls="panel-lb" tabindex="-1"><span data-en="Leaderboard">Leaderboard</span></button>
@@ -227,7 +226,7 @@
         </section>
       </section>
 
-      <section class="card card-pad tab-card" role="tabpanel" id="panel-trends" aria-labelledby="tab-trends" tabindex="0" hidden>
+      <section role="tabpanel" id="panel-trends" aria-labelledby="tab-trends" tabindex="0" hidden>
         <div class="tabs sub" role="tablist" id="stabs-trends" aria-labelledby="tab-trends">
           <button type="button" role="tab" id="tab-cmp" aria-selected="true" aria-controls="panel-cmp" tabindex="0"><span data-en="Comparison over time">Comparison over time</span></button>
           <button type="button" role="tab" id="tab-heat" aria-selected="false" aria-controls="panel-heat" tabindex="-1"><span data-en="Peak hours">Peak hours</span></button>
@@ -252,7 +251,7 @@
         </section>
       </section>
 
-      <section class="card card-pad tab-card" role="tabpanel" id="panel-reliability" aria-labelledby="tab-reliability" tabindex="0" hidden>
+      <section role="tabpanel" id="panel-reliability" aria-labelledby="tab-reliability" tabindex="0" hidden>
         <div class="tabs sub" role="tablist" id="stabs-reliability" aria-labelledby="tab-reliability">
           <button type="button" role="tab" id="tab-err" aria-selected="true" aria-controls="panel-err" tabindex="0"><span data-en="Errors and reliability">Errors and reliability</span></button>
           <button type="button" role="tab" id="tab-ovh" aria-selected="false" aria-controls="panel-ovh" tabindex="-1"><span data-en="Relay overhead">Relay overhead</span></button>
@@ -274,7 +273,7 @@
         </section>
       </section>
 
-      <section class="card card-pad tab-card" role="tabpanel" id="panel-integrity" aria-labelledby="tab-integrity" tabindex="0" hidden>
+      <section role="tabpanel" id="panel-integrity" aria-labelledby="tab-integrity" tabindex="0" hidden>
         <section class="panel" id="panel-int" aria-labelledby="int-h" aria-busy="true">
           <h2 class="sr-only" id="int-h" data-en="Model integrity">Model integrity</h2>
           <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.</p>
@@ -283,7 +282,7 @@
         </section>
       </section>
 
-      <section class="card card-pad tab-card" role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" tabindex="0" hidden>
+      <section role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" tabindex="0" hidden>
         <section class="panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true">
           <h2 class="sr-only" id="bill-h" data-en="Billing and tokens">Billing and tokens</h2>
           <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.">Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.</p>

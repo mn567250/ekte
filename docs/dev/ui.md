@@ -18,6 +18,20 @@ on wider screens the button is hidden and the switches sit in the row.
 Rows that scroll sideways (the section links, a primary tab bar of five or
 more tabs, which never wraps) fade at the edge that hides more
 (`EkteScroll.fade`, `.scroll-x.fl` / `.fr`).
+Every page follows **one template** (#230): `<main>` holds, in this order,
+the `.hero`, the page notice (`.znote#note`, History's `#fresh`, the
+Monitors' master-key bar), the `.toolbar` (the filter panel and, in a
+`.tool-row`, the page's own actions: Knowledge's Export, the Monitors' API
+key storage) and the content (a `.tab-card` whose first child is the primary
+tab bar, Analytics included, or the page's cards). `ekte.css` spaces the
+blocks with one gap (`--s-5`, 24 px; an empty or visually hidden live
+region takes none; no block sets a margin of its own) and pads every card,
+the filter panel and the page notice by one `--pad` (24 px, 18 px on
+phones), so text in the column starts at two x positions: the hero's and
+the cards' content. Actions sit in an `.actions` row (`ekte.css`): each
+button as wide as its label, right-aligned (left on phones), at most one
+primary and it comes last; a destructive action is a plain `.btn.danger`
+beside it. Only the audit's Start audit (`.cta`) spans the width.
 Every color of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal color.

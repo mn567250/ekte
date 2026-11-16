@@ -103,8 +103,8 @@
       - text: 厂商 可选
       - textbox "厂商 可选":
         - /placeholder: 例如 openai / deepseek
-      - button "复制提示词"
       - status
+      - button "复制提示词"
       - group:
         - button "查看提示词" [expanded]
         - textbox "提示词"

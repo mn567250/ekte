@@ -5,7 +5,7 @@
  * names them; the page's note and "Reset filters" below stay visible either
  * way. The fields inside #fbody are the page's own, or those of filters.js
  * (the .ekf-* rules below). */
-.filters { margin-top: 22px; padding: 6px 18px 12px; min-width: 0; }
+.filters { padding: 6px var(--pad) 12px; min-width: 0; }
 .filters[hidden] { display: none; }
 .ftop { display: flex; align-items: center; gap: 10px; }
 .ftop .disclosure { flex: 1 1 auto; width: auto; padding: 8px 0; margin: 0; background: none; }
@@ -74,5 +74,5 @@
 @media (max-width: 600px) { .ekf-grid { grid-template-columns: 1fr 1fr; } .ekf-grid .ekf-q { grid-column: 1 / -1; } }
 
 @media (max-width: 600px) {
-  .filters { padding: 12px 14px 14px; }
+  .filters { padding: 12px var(--pad) 14px; }
 }

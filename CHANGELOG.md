@@ -20,6 +20,23 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: one page template ([#230](https://github.com/mn567250/ekte/issues/230))
+
+Every page had its own skeleton: text started at six x positions, cards were
+padded by 24, 20, 18, 14 or 0 px and blocks were 12 to 23 px apart.
+
+- Every page is the same column: hero, page notice, toolbar (the filters and
+  the page's own actions), then the content, 24 px apart. Analytics' main
+  tabs now open inside their tab card; the Monitors' API key storage is a
+  compact setting in the toolbar and Knowledge's Export sits there too.
+- One card padding for every page-level card, the filters, History's list
+  and the page notice, so text starts at the hero's edge or at the cards'
+  content and nowhere else.
+- Actions are as wide as their labels, right-aligned, with the main action
+  last (e.g. Delete, then Run now); only Start audit spans the width.
+- Tests check the block order, gap, text start and action rows on every page
+  in the browser, and keep the markup and stylesheets to the template.
+
 ### Web UI: compact header on phones ([#231](https://github.com/mn567250/ekte/issues/231))
 
 At 390 px the header took about 170 px over three rows before any content,

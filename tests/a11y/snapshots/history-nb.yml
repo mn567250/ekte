@@ -335,8 +335,8 @@
               - text: ekte gir
               - strong: reproduserbare bevis på avvikende atferd og risiko
               - text: ", ikke juridiske eller kryptografiske bevis på svindel. Releer kan rute tilfeldig; vurder selv utvalgsstørrelse, faktureringsinnstillinger og lokal lovgivning, og anklag aldri en leverandør offentlig på grunnlag av én enkelt kjøring."
-            - button "Planlegg som overvåking"
             - button "Kjør revisjonen på nytt"
+            - button "Planlegg som overvåking"
             - group "Last ned rapport":
               - text: Last ned rapport
               - button "JSON"

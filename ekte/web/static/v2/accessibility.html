@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="/static/chartmotion.css" />
 <style>
   /* ---- accessibility conformance report (v2) — page-only rules; colours via ekte.css tokens ---- */
-  .card + .card, .card + h2 { margin-top: 20px; }
+  .card + h2 { margin-top: 20px; }
   .form-title { font-family: var(--disp); font-weight: 600; font-size: var(--t-lg); margin: 0 0 12px; }
   .verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; }
   .verdict .badge { font-size: var(--t-sm); padding: 5px 12px; }
@@ -102,7 +102,7 @@
 
     <div id="loaderr" role="alert" hidden></div>
 
-    <section class="card card-pad" style="margin-top:20px" aria-labelledby="status-title">
+    <section class="card card-pad" aria-labelledby="status-title">
       <h2 class="form-title" id="status-title" data-en="Status">Status</h2>
       <div id="status"><p class="lead" data-en="Loading…">Loading…</p></div>
     </section>

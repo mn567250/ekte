@@ -43,13 +43,6 @@
     - link "Cronologia":
       - /url: /history
     - text: e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima volta, ekte avvisa i tuoi webhook (Slack / Feishu / DingTalk / JSON generico).
-  - group "Archiviazione delle chiavi API":
-    - text: Archiviazione delle chiavi API
-    - radio "Non salvare le chiavi" [checked]
-    - text: Non salvare le chiavi
-    - radio "Salva cifrate su questo computer"
-    - text: Salva cifrate su questo computer
-    - paragraph: Le chiavi API restano nella memoria di ekte serve e non vengono mai scritte su disco; reinseriscile dopo ogni riavvio. Usa env:VAR per i monitor che devono funzionare senza supervisione.
   - region "Filtri":
     - button "Filtri" [expanded]
     - text: Cerca
@@ -95,6 +88,13 @@
     - status
     - button "Copia il link a questa vista"
   - status
+  - group "Archiviazione delle chiavi API":
+    - text: Archiviazione delle chiavi API
+    - radio "Non salvare le chiavi" [checked]
+    - text: Non salvare le chiavi
+    - radio "Salva cifrate su questo computer"
+    - text: Salva cifrate su questo computer
+    - paragraph: Le chiavi API restano nella memoria di ekte serve e non vengono mai scritte su disco; reinseriscile dopo ogni riavvio. Usa env:VAR per i monitor che devono funzionare senza supervisione.
   - tablist "Viste dei monitor":
     - tab "Configura" [selected]
     - tab "In corso"
@@ -189,8 +189,8 @@
         - button "Mostra chiave"
         - paragraph: La cronologia non salva mai la chiave. Lasciala vuota per un modello locale o self-hosted.
         - button "Attiva monitor"
-      - button "Esegui ora"
       - button "Elimina"
+      - button "Esegui ora"
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
   - paragraph: "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

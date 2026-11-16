@@ -43,13 +43,6 @@
     - link "Histórico":
       - /url: /history
     - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa o seu limite ou piora em relação à última vez, o ekte alerta os seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
-  - group "Armazenamento das chaves de API":
-    - text: Armazenamento das chaves de API
-    - radio "Não guardar chaves" [checked]
-    - text: Não guardar chaves
-    - radio "Guardar cifradas neste computador"
-    - text: Guardar cifradas neste computador
-    - paragraph: As chaves de API ficam na memória do ekte serve e nunca são escritas no disco; introduza-as novamente após cada reinício. Use env:VAR para monitores que tenham de funcionar sem supervisão.
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Pesquisar
@@ -95,6 +88,13 @@
     - status
     - button "Copiar a ligação para esta vista"
   - status
+  - group "Armazenamento das chaves de API":
+    - text: Armazenamento das chaves de API
+    - radio "Não guardar chaves" [checked]
+    - text: Não guardar chaves
+    - radio "Guardar cifradas neste computador"
+    - text: Guardar cifradas neste computador
+    - paragraph: As chaves de API ficam na memória do ekte serve e nunca são escritas no disco; introduza-as novamente após cada reinício. Use env:VAR para monitores que tenham de funcionar sem supervisão.
   - tablist "Vistas de monitores":
     - tab "Configurar" [selected]
     - tab "Em curso"
@@ -189,8 +189,8 @@
         - button "Mostrar chave"
         - paragraph: O histórico nunca guarda a chave. Deixe vazio para um modelo local ou autoalojado.
         - button "Ativar monitor"
-      - button "Executar agora"
       - button "Eliminar"
+      - button "Executar agora"
 - contentinfo:
   - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
   - paragraph: "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

@@ -335,8 +335,8 @@
               - text: ekte fornisce
               - strong: prove riproducibili di scostamento del comportamento e di rischio
               - text: ", non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicamente un fornitore sulla base di una singola esecuzione."
-            - button "Pianifica come monitor"
             - button "Riesegui audit"
+            - button "Pianifica come monitor"
             - group "Scarica il rapporto":
               - text: Scarica il rapporto
               - button "JSON"
