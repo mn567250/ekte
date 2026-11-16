@@ -595,22 +595,40 @@ u objeto JSON cuando la función no se declara, o cualquier resultado del esquem
 estricto cuando el perfil dice que el modelo no tiene esquemas estrictos— se
 anota pero no computa: un modelo nunca pierde puntos por algo que nadie declara.
 
+Una sonda que el relay responde con un 4xx (salvo 401, 403, 408 y 429) aunque
+el perfil declara la función es una capacidad rechazada: computa como una no
+entregada, y su resumen cita el código de estado y el mensaje de error. Solo
+computa si el relay responde a la misma petición sin el parámetro de la función
+(una petición extra, enviada solo mientras ninguna otra sonda ha vuelto) y una
+referencia configurada con el mismo protocolo no rechaza también la sonda; si
+no, cuenta como sin respuesta útil o como un límite del modelo. Un 4xx para una
+función que nadie declara se anota pero no computa.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `capability.tools` | Volvió una llamada a herramienta ante una petición explícita de herramienta. | Correcto | 100 pts |
 |  | Se declara la llamada a herramientas pero no volvió ninguna llamada. | Fallo · Media | 0 pts |
 |  | No volvió ninguna llamada a herramienta, y no se declara esa capacidad. | Info | No computa |
+|  | Se declara la llamada a herramientas pero el relay rechazó la sonda con un 4xx. | Fallo · Media | 0 pts |
+|  | Rechazado con un 4xx, y la referencia también lo rechaza: un límite del modelo. | Info | No computa |
+|  | Rechazado con un 4xx; la capacidad no se declara. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.tools.encoding` | Los argumentos de la herramienta llegaron como objeto, no como la cadena JSON de OpenAI. | Advertencia · Baja | No computa |
 | `capability.json_mode` | El modo JSON devolvió un objeto analizable con el valor pedido. | Correcto | 100 pts |
 |  | Volvió un objeto JSON con un valor incorrecto; el modo JSON no se declara. | Info | No computa |
 |  | No volvió ningún objeto JSON analizable; el modo JSON no se declara. | Info | No computa |
 |  | Se declara el modo JSON pero no volvió un objeto válido con el valor. | Fallo · Media | 0 pts |
+|  | Se declara el modo JSON pero el relay rechazó la sonda con un 4xx. | Fallo · Media | 0 pts |
+|  | Rechazado con un 4xx, y la referencia también lo rechaza: un límite del modelo. | Info | No computa |
+|  | Rechazado con un 4xx; la capacidad no se declara. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.json_schema` | Se declara el esquema estricto y la respuesta lo cumplió. | Correcto | 100 pts |
 |  | El esquema estricto no se aplicó, de acuerdo con lo declarado. | Info | No computa |
 |  | La respuesta lo cumplió aunque el modelo declarado no tiene esquemas estrictos. | Info | No computa |
 |  | Se declara el esquema estricto pero la respuesta no lo cumplió. | Advertencia · Baja | 40 pts |
+|  | Se declara el esquema estricto pero el relay rechazó la sonda con un 4xx. | Fallo · Media | 0 pts |
+|  | Rechazado con un 4xx, y la referencia también lo rechaza: un límite del modelo. | Info | No computa |
+|  | Rechazado con un 4xx; la capacidad no se declara. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.max_output` | La salida continuó hasta el tope de tokens solicitado. | Correcto | 100 pts |
 |  | La salida terminó antes del tope con una longitud plausible. | Correcto | 90 pts |

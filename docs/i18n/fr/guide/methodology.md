@@ -599,22 +599,41 @@ quand la fonction n'est pas annoncée, ou tout résultat du schéma strict quand
 profil indique que le modèle n'a pas de schémas stricts — est notée mais non
 comptée : un modèle ne perd jamais de points pour ce que personne n'annonce.
 
+Une sonde à laquelle le relais répond par un 4xx (hors 401, 403, 408 et 429)
+alors que le profil annonce la fonction est une capacité refusée : elle compte
+comme une capacité non fournie, et son résumé cite le code de statut et le
+message d'erreur. Elle n'est comptée que si le relais répond à la même requête
+sans le paramètre de la fonction (une requête de plus, envoyée seulement tant
+qu'aucune autre sonde n'est revenue) et qu'une référence configurée sur le même
+protocole ne rejette pas aussi la sonde ; sinon, c'est une absence de réponse
+exploitable, ou une limite du modèle. Un 4xx pour une fonction que personne
+n'annonce est noté mais non compté.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `capability.tools` | Un appel d'outil est revenu pour une demande explicite d'outil. | Réussi | 100 pts |
 |  | L'appel d'outils est annoncé mais aucun appel d'outil n'est revenu. | Échec · Moyenne | 0 pts |
 |  | Aucun appel d'outil n'est revenu, et l'appel d'outils n'est pas annoncé. | Info | Non compté |
+|  | L'appel d'outils est annoncé mais le relais a rejeté la sonde avec un 4xx. | Échec · Moyenne | 0 pts |
+|  | Rejeté avec un 4xx, et la référence le rejette aussi : une limite du modèle. | Info | Non compté |
+|  | Rejeté avec un 4xx ; la capacité n'est pas annoncée. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.tools.encoding` | Les arguments de l'outil sont arrivés en objet, pas en chaîne JSON comme chez OpenAI. | Avertissement · Faible | Non compté |
 | `capability.json_mode` | Le mode JSON a renvoyé un objet analysable avec la valeur demandée. | Réussi | 100 pts |
 |  | Un objet JSON est revenu avec une mauvaise valeur ; le mode JSON n'est pas annoncé. | Info | Non compté |
 |  | Aucun objet JSON analysable n'est revenu ; le mode JSON n'est pas annoncé. | Info | Non compté |
 |  | Le mode JSON est annoncé mais aucun objet valide avec la valeur n'est revenu. | Échec · Moyenne | 0 pts |
+|  | Le mode JSON est annoncé mais le relais a rejeté la sonde avec un 4xx. | Échec · Moyenne | 0 pts |
+|  | Rejeté avec un 4xx, et la référence le rejette aussi : une limite du modèle. | Info | Non compté |
+|  | Rejeté avec un 4xx ; la capacité n'est pas annoncée. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.json_schema` | Le schéma strict est annoncé et la réponse s'y conformait. | Réussi | 100 pts |
 |  | Le schéma strict n'a pas été appliqué, conformément à l'annonce. | Info | Non compté |
 |  | La réponse s'y conformait bien que le modèle annoncé n'ait pas de schémas stricts. | Info | Non compté |
 |  | Le schéma strict est annoncé mais la réponse ne s'y conformait pas. | Avertissement · Faible | 40 pts |
+|  | Le schéma strict est annoncé mais le relais a rejeté la sonde avec un 4xx. | Échec · Moyenne | 0 pts |
+|  | Rejeté avec un 4xx, et la référence le rejette aussi : une limite du modèle. | Info | Non compté |
+|  | Rejeté avec un 4xx ; la capacité n'est pas annoncée. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.max_output` | La sortie a continué jusqu'au plafond de tokens demandé. | Réussi | 100 pts |
 |  | La sortie s'est arrêtée avant le plafond, à une longueur plausible. | Réussi | 90 pts |

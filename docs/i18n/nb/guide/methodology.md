@@ -567,22 +567,40 @@ JSON-objekt når funksjonen ikke påstås, eller et hvilket som helst resultat f
 strengt skjema når profilen sier at modellen mangler strenge skjemaer — noteres,
 men telles ikke, så en modell aldri trekkes ned for noe ingen har påstått.
 
+En probe som reléet besvarer med en 4xx (unntatt 401, 403, 408 og 429) selv om
+profilen påstår funksjonen, er en avvist egenskap: den telles som en som ikke
+leveres, og sammendraget gjengir statuskoden og feilmeldingen. Den telles bare
+hvis reléet besvarer den samme forespørselen uten funksjonsparameteren (én ekstra
+forespørsel, sendt bare så lenge ingen annen probe har kommet tilbake) og en
+konfigurert referanse med samme protokoll ikke også avviser proben; ellers
+regnes den som ikke noe brukbart svar, eller som en begrensning i modellen. En
+4xx for en funksjon ingen påstår, noteres, men telles ikke.
+
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `capability.tools` | Et verktøykall kom tilbake for en uttrykkelig forespørsel om verktøybruk. | Bestått | 100 poeng |
 |  | Verktøykall er påstått, men ikke noe verktøykall kom tilbake. | Ikke bestått · Middels | 0 poeng |
 |  | Ikke noe verktøykall kom tilbake, og verktøykall er ikke påstått. | Info | Telles ikke |
+|  | Verktøykall er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.tools.encoding` | Verktøyargumentene kom som et objekt, ikke som JSON-strengen OpenAI returnerer. | Advarsel · Lav | Telles ikke |
 | `capability.json_mode` | JSON-modus returnerte et objekt som kan tolkes, med den forespurte verdien. | Bestått | 100 poeng |
 |  | Et JSON-objekt kom tilbake med feil verdi; JSON-modus er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe JSON-objekt som kan tolkes, kom tilbake; JSON-modus er ikke påstått. | Info | Telles ikke |
 |  | JSON-modus er påstått, men ikke noe gyldig objekt med verdien kom tilbake. | Ikke bestått · Middels | 0 poeng |
+|  | JSON-modus er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.json_schema` | Det strenge skjemaet er påstått, og svaret fulgte det. | Bestått | 100 poeng |
 |  | Det strenge skjemaet ble ikke håndhevet, i samsvar med påstanden. | Info | Telles ikke |
 |  | Svaret fulgte skjemaet selv om den oppgitte modellen mangler strenge skjemaer. | Info | Telles ikke |
 |  | Det strenge skjemaet er påstått, men svaret fulgte det ikke. | Advarsel · Lav | 40 poeng |
+|  | Det strenge skjemaet er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.max_output` | Utdataen fortsatte opp til det forespurte tokentaket. | Bestått | 100 poeng |
 |  | Utdataen stoppet før taket ved en troverdig lengde. | Bestått | 90 poeng |

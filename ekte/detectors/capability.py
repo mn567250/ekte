@@ -7,7 +7,8 @@ premium model yet quietly serve a cheaper substitute that lacks — or, tellingl
 *over*-delivers — these features. Findings stay observation-first; when no
 profile is resolved we report observed behavior only and make no downgrade claim.
 
-Budget: up to 4 chat completions.
+Budget: up to 4 chat completions, plus at most one plain control request and,
+with a baseline on the same protocol, one baseline request per rejected probe.
 
 Each check scores points from the published scale ``SCALE``; the detector score
 is the mean of the counted checks. A probe that failed to complete is not
@@ -16,19 +17,39 @@ or no JSON object when the feature is not claimed, and the strict-schema result
 when the profile says the model lacks strict schemas. A model is never marked
 down for what nobody claimed (a tool call or JSON object that does come back
 still passes).
+
+A relay that answers the tools, JSON-mode or strict-schema probe with a 4xx
+(not 401, 403, 408 or 429) although the profile claims the feature has refused
+a claimed capability: ``rejected``, counted like ``not_delivered``. It is only
+counted when the relay does answer a request without the feature parameter
+(else it rejects everything: ``failed``) and a baseline on the same protocol,
+if configured, does not reject the probe too (else ``model_limit``).
 """
 
 from __future__ import annotations
 
-from ekte import prompts
+from typing import Any
+
+from ekte import errorclass, prompts
+from ekte.clients import detect_api
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import first_json_object
 from ekte.detectors.scale import Scale, outcome
-from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.models import CompletionOutcome, DetectorResult, Dimension, RequestSpec, Severity, Status
 
 _NO_RESPONSE = "No usable response to judge by."  # same sentence as protocol's scale
+_MODEL_LIMIT = "Rejected with a 4xx, and the baseline rejects it too: a limit of the model."
+_REJECTED_UNCLAIMED = "Rejected with a 4xx; the capability is not claimed."
+# 4xx answers that say nothing about the feature: credentials, policy, the
+# relay giving up on time, rate limits.
+_NOT_A_REJECTION = frozenset({401, 403, 408, 429})
+_PREVIEW = 200
+REJECTED_ADVICE = (
+    "The relay refuses a request parameter the claimed model supports; ask the provider "
+    "to forward it, or use an endpoint that serves the feature."
+)
 
 SCALE = Scale(
     outcome("capability.tools", "delivered", 100.0, Status.PASS,
@@ -37,6 +58,12 @@ SCALE = Scale(
             label="Tool calling is claimed but no tool call came back."),
     outcome("capability.tools", "not_claimed", None, Status.INFO,
             label="No tool call came back, and tool calling is not claimed."),
+    outcome("capability.tools", "rejected", 0.0, Status.FAIL, Severity.MEDIUM,
+            label="Tool calling is claimed but the relay rejected the probe with a 4xx."),
+    outcome("capability.tools", "model_limit", None, Status.INFO,
+            label=_MODEL_LIMIT),
+    outcome("capability.tools", "rejected_unclaimed", None, Status.INFO,
+            label=_REJECTED_UNCLAIMED),
     outcome("capability.tools", "failed", None, Status.INCONCLUSIVE, Severity.LOW,
             label=_NO_RESPONSE),
     outcome("capability.tools.encoding", "non_openai", None, Status.WARN, Severity.LOW,
@@ -49,6 +76,12 @@ SCALE = Scale(
             label="No parseable JSON object came back; JSON mode is not claimed."),
     outcome("capability.json_mode", "not_delivered", 0.0, Status.FAIL, Severity.MEDIUM,
             label="JSON mode is claimed but no valid object with the value came back."),
+    outcome("capability.json_mode", "rejected", 0.0, Status.FAIL, Severity.MEDIUM,
+            label="JSON mode is claimed but the relay rejected the probe with a 4xx."),
+    outcome("capability.json_mode", "model_limit", None, Status.INFO,
+            label=_MODEL_LIMIT),
+    outcome("capability.json_mode", "rejected_unclaimed", None, Status.INFO,
+            label=_REJECTED_UNCLAIMED),
     outcome("capability.json_mode", "failed", None, Status.INCONCLUSIVE, Severity.LOW,
             label=_NO_RESPONSE),
     outcome("capability.json_schema", "honored", 100.0, Status.PASS,
@@ -59,6 +92,12 @@ SCALE = Scale(
             label="The response conformed although the claimed model lacks strict schemas."),
     outcome("capability.json_schema", "not_enforced", 40.0, Status.WARN, Severity.LOW,
             label="The strict schema is claimed but the response did not conform."),
+    outcome("capability.json_schema", "rejected", 0.0, Status.FAIL, Severity.MEDIUM,
+            label="The strict schema is claimed but the relay rejected the probe with a 4xx."),
+    outcome("capability.json_schema", "model_limit", None, Status.INFO,
+            label=_MODEL_LIMIT),
+    outcome("capability.json_schema", "rejected_unclaimed", None, Status.INFO,
+            label=_REJECTED_UNCLAIMED),
     outcome("capability.json_schema", "failed", None, Status.INCONCLUSIVE, Severity.LOW,
             label=_NO_RESPONSE),
     outcome("capability.max_output", "to_cap", 100.0, Status.PASS,
@@ -74,6 +113,34 @@ SCALE = Scale(
 )
 
 
+# A rejected probe: how prose names its feature, and its result titles.
+_FEATURE_NAMES = {
+    "capability.tools": "tool calling",
+    "capability.json_mode": "JSON mode",
+    "capability.json_schema": "strict JSON schemas",
+}
+_REJECTED_TITLES = {
+    "capability.tools": "Claimed tool calling rejected by the relay",
+    "capability.json_mode": "Claimed JSON mode rejected by the relay",
+    "capability.json_schema": "Claimed strict JSON schema rejected by the relay",
+}
+_UNCOUNTED_TITLES = {
+    "capability.tools": "Tool-calling probe rejected (not counted)",
+    "capability.json_mode": "JSON-mode probe rejected (not counted)",
+    "capability.json_schema": "JSON-schema probe rejected (not counted)",
+}
+
+
+def is_feature_rejection(out: CompletionOutcome) -> bool:
+    """The relay itself answered with a 4xx that can be about the request's
+    content: not 401/403 (credentials, policy), 408 (the relay's own timeout) or
+    429 (rate limit), and not a failure on ekte's side or the network path."""
+    code = out.status_code
+    if out.ok or code is None or not 400 <= code <= 499 or code in _NOT_A_REJECTION:
+        return False
+    return out.error_class not in errorclass.IMPAIRED
+
+
 @register
 class CapabilityDetector(Detector):
     id = "capability"
@@ -86,6 +153,9 @@ class CapabilityDetector(Detector):
         result = self.new_result(scoring=SCALE.scoring())
         model = ctx.profile.model if ctx.profile else None
         result.evidence["has_profile"] = model is not None
+        # Whether the relay answers a request without a feature parameter: a
+        # probe that came back, or the one plain control request (_rejection).
+        self._relay_answers: bool | None = None
 
         await self._check_tools(ctx, result, model)
         await self._check_json_mode(ctx, result, model)
@@ -115,6 +185,8 @@ class CapabilityDetector(Detector):
         claimed = bool(model and model.supports_tools)
 
         if not outcome.ok:
+            if await self._rejection(ctx, result, spec, outcome, claimed, "capability.tools"):
+                return
             result.findings.append(
                 SCALE.finding(
                     "capability.tools",
@@ -128,6 +200,7 @@ class CapabilityDetector(Detector):
             )
             return
 
+        self._relay_answers = True
         call = outcome.tool_calls[0] if outcome.tool_calls else None
         fn = call.get("function") if isinstance(call, dict) else None
         fn_name = fn.get("name") if isinstance(fn, dict) else None
@@ -213,6 +286,8 @@ class CapabilityDetector(Detector):
         claimed = bool(model and model.supports_json_mode)
 
         if not outcome.ok:
+            if await self._rejection(ctx, result, spec, outcome, claimed, "capability.json_mode"):
+                return
             result.findings.append(
                 SCALE.finding(
                     "capability.json_mode",
@@ -226,6 +301,7 @@ class CapabilityDetector(Detector):
             )
             return
 
+        self._relay_answers = True
         parsed = first_json_object(outcome.content)
         value_ok = parsed is not None and parsed.get("value") == 7429
 
@@ -297,6 +373,9 @@ class CapabilityDetector(Detector):
         outcome = await ctx.client.complete(spec)
 
         if not outcome.ok:
+            claimed = bool(model.supports_json_schema)
+            if await self._rejection(ctx, result, spec, outcome, claimed, "capability.json_schema"):
+                return
             result.findings.append(
                 SCALE.finding(
                     "capability.json_schema",
@@ -310,6 +389,7 @@ class CapabilityDetector(Detector):
             )
             return
 
+        self._relay_answers = True
         parsed = first_json_object(outcome.content)
         enforced = self._matches_person_schema(parsed)
 
@@ -477,6 +557,113 @@ class CapabilityDetector(Detector):
                     evidence=evidence,
                 )
             )
+
+    # -- rejected probes --------------------------------------------------- #
+    async def _rejection(
+        self,
+        ctx: AuditContext,
+        result: DetectorResult,
+        spec: RequestSpec,
+        out: CompletionOutcome,
+        claimed: bool,
+        check: str,
+    ) -> bool:
+        """Report a probe the relay rejected with a 4xx. False when ``out`` is no
+        such rejection or the relay rejects a plain request too: the caller then
+        reports ``failed``."""
+        if not is_feature_rejection(out):
+            return False
+        name = _FEATURE_NAMES[check]
+        error = (out.error_message or "").strip()[:_PREVIEW] or "no error message"
+        evidence: dict[str, Any] = {
+            "status_code": out.status_code,
+            "error_type": out.error_type,
+            "relay_error": error,
+            "claimed": claimed,
+        }
+        calls = [out]
+        if not claimed:
+            result.findings.append(
+                SCALE.finding(
+                    check,
+                    "rejected_unclaimed",
+                    calls=calls,
+                    title=_UNCOUNTED_TITLES[check],
+                    summary=(
+                        f"The relay rejected the {name} probe with HTTP {out.status_code}: {error}. "
+                        f"The profile does not claim {name}, so this is not counted."
+                    ),
+                    evidence=evidence,
+                )
+            )
+            return True
+
+        base = await self._baseline_probe(ctx, spec)
+        if base is not None:
+            evidence["baseline_status_code"] = base.status_code
+            calls.append(base)
+            if is_feature_rejection(base):
+                result.findings.append(
+                    SCALE.finding(
+                        check,
+                        "model_limit",
+                        calls=calls,
+                        title=_UNCOUNTED_TITLES[check],
+                        summary=(
+                            f"The relay rejected the {name} probe with HTTP {out.status_code}: {error}. "
+                            f"The baseline rejects it too (HTTP {base.status_code}): a limit of the "
+                            "model, not of the relay, so this is not counted."
+                        ),
+                        evidence=evidence,
+                    )
+                )
+                return True
+
+        if not await self._relay_answers_plain(ctx, spec, evidence, calls):
+            return False
+        result.findings.append(
+            SCALE.finding(
+                check,
+                "rejected",
+                calls=calls,
+                title=_REJECTED_TITLES[check],
+                summary=(
+                    f"The profile claims {name}, but the relay rejected the probe with "
+                    f"HTTP {out.status_code}: {error}"
+                ),
+                evidence=evidence,
+                recommendation=REJECTED_ADVICE,
+            )
+        )
+        return True
+
+    async def _relay_answers_plain(
+        self,
+        ctx: AuditContext,
+        spec: RequestSpec,
+        evidence: dict[str, Any],
+        calls: list[CompletionOutcome],
+    ) -> bool:
+        """Whether the relay answers a request at all: known once a probe of
+        this run came back, else asked once with ``spec`` minus its feature
+        parameters."""
+        if self._relay_answers is None:
+            plain = spec.model_copy(update={"tools": None, "tool_choice": None, "response_format": None})
+            control = await ctx.client.complete(plain)
+            self._relay_answers = control.ok
+            evidence["plain_status_code"] = control.status_code
+            calls.append(control)
+        return bool(self._relay_answers)
+
+    @staticmethod
+    async def _baseline_probe(ctx: AuditContext, spec: RequestSpec) -> CompletionOutcome | None:
+        """The same probe against the baseline, when one speaks the target's
+        protocol; None otherwise."""
+        if ctx.baseline_client is None or ctx.baseline is None:
+            return None
+        if detect_api(ctx.baseline) != detect_api(ctx.target):
+            return None
+        return await ctx.baseline_client.complete(spec)
 
     # -- helpers ----------------------------------------------------------- #
     @staticmethod

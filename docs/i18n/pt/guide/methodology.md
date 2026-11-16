@@ -591,22 +591,40 @@ objeto JSON quando a função não é declarada, ou qualquer resultado do esquem
 estrito quando o perfil diz que o modelo não tem esquemas estritos — é registada
 mas não contabilizada: um modelo nunca perde pontos pelo que ninguém declara.
 
+Uma sonda a que o relay responde com um 4xx (exceto 401, 403, 408 e 429)
+embora o perfil declare a função é uma capacidade recusada: conta como uma não
+cumprida, e o seu resumo cita o código de estado e a mensagem de erro. Só é
+contabilizada se o relay responder ao mesmo pedido sem o parâmetro da função (um
+pedido extra, enviado apenas enquanto nenhuma outra sonda tiver voltado) e uma
+referência configurada no mesmo protocolo não rejeitar também a sonda; caso
+contrário, vale como nenhuma resposta utilizável, ou como um limite do modelo.
+Um 4xx para uma função que ninguém declara é registado mas não contabilizado.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `capability.tools` | Voltou uma chamada de ferramenta para um pedido explícito de ferramenta. | Aprovado | 100 pts |
 |  | A chamada de ferramentas é declarada, mas nenhuma chamada voltou. | Falha · Média | 0 pts |
 |  | Nenhuma chamada de ferramenta voltou, e essa capacidade não é declarada. | Info | Não contabilizado |
+|  | A chamada de ferramentas é declarada, mas o relay rejeitou a sonda com um 4xx. | Falha · Média | 0 pts |
+|  | Rejeitado com um 4xx, e a referência também o rejeita: um limite do modelo. | Info | Não contabilizado |
+|  | Rejeitado com um 4xx; a capacidade não é declarada. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.tools.encoding` | Os argumentos da ferramenta chegaram como objeto, não como a string JSON da OpenAI. | Aviso · Baixa | Não contabilizado |
 | `capability.json_mode` | O modo JSON devolveu um objeto analisável com o valor pedido. | Aprovado | 100 pts |
 |  | Voltou um objeto JSON com o valor errado; o modo JSON não é declarado. | Info | Não contabilizado |
 |  | Não voltou nenhum objeto JSON analisável; o modo JSON não é declarado. | Info | Não contabilizado |
 |  | O modo JSON é declarado, mas não voltou um objeto válido com o valor. | Falha · Média | 0 pts |
+|  | O modo JSON é declarado, mas o relay rejeitou a sonda com um 4xx. | Falha · Média | 0 pts |
+|  | Rejeitado com um 4xx, e a referência também o rejeita: um limite do modelo. | Info | Não contabilizado |
+|  | Rejeitado com um 4xx; a capacidade não é declarada. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.json_schema` | O esquema estrito é declarado e a resposta foi conforme. | Aprovado | 100 pts |
 |  | O esquema estrito não foi aplicado, de acordo com o declarado. | Info | Não contabilizado |
 |  | A resposta foi conforme embora o modelo declarado não tenha esquemas estritos. | Info | Não contabilizado |
 |  | O esquema estrito é declarado, mas a resposta não foi conforme. | Aviso · Baixa | 40 pts |
+|  | O esquema estrito é declarado, mas o relay rejeitou a sonda com um 4xx. | Falha · Média | 0 pts |
+|  | Rejeitado com um 4xx, e a referência também o rejeita: um limite do modelo. | Info | Não contabilizado |
+|  | Rejeitado com um 4xx; a capacidade não é declarada. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.max_output` | A saída continuou até ao limite de tokens pedido. | Aprovado | 100 pts |
 |  | A saída terminou antes do limite com um comprimento plausível. | Aprovado | 90 pts |
