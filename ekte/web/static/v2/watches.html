@@ -92,10 +92,8 @@
   .mon-msg.ok { color: var(--success); }
   .mon-msg.bad { color: var(--danger); }
   /* the actions span the card, like the report's page actions (report.css) */
-  .mon-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-  .mon-act .btn { flex: 1 1 200px; min-width: 0; padding: 6px 14px; white-space: normal; text-align: center; }
-  .mon-act .ask { flex-basis: 100%; font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
-  @media (max-width: 520px) { .mon-act .btn { flex-basis: 100%; } }
+  /* the monitor's actions: the shared .actions row (ekte.css) */
+  .mon-act .ask { font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
   .mon-prog { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: var(--t-sm); font-weight: 700; color: var(--info); }
   .mon-prog .bar { flex: 1; height: 6px; border-radius: var(--r-pill); background: var(--info-tint); overflow: hidden; }
   .mon-prog .bar > span { display: block; height: 100%; background: var(--info); border-radius: var(--r-pill); transition: width var(--dur-slow) var(--ease-out); }
@@ -114,15 +112,21 @@
   /* run window editor */
   .mon-meta dd .edit.rw { max-width: 560px; gap: 16px; margin-top: 8px; }
   .rw fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-  /* field labels inside the editor: sentence case, so they don't compete with the card's uppercase field names */
-  .rw .sub { display: block; font-size: var(--t-xs); font-weight: 700; color: var(--ink-muted); padding: 0; margin: 0 0 6px; }
-  .rw .seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  @media (max-width: 520px) { .rw .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .rw .seg button { min-width: 0; padding: 9px 8px; }
+  /* the editor's field labels: the one field label style (ekte.css .lab) */
+  .rw label.sub, .rw legend.sub {
+    display: block; padding: 0; margin: 0 0 7px;
+    font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--track-label); color: var(--ink-muted); text-transform: uppercase;
+  }
+  /* the presets: a segmented control across the whole width, its options
+     sharing it equally; each label on one line (a wrapped one would make the
+     control taller than --h-md); where a language's labels do not fit in
+     one row, the options wrap; never cut off */
+  .rw .seg { display: flex; flex-wrap: wrap; }
+  .rw .seg button { flex: 1 1 0; min-width: max-content; white-space: nowrap; overflow-wrap: normal; padding-inline: 12px; }
   .rw .ferr { margin-top: 8px; }
   @media (max-width: 520px) { .rw .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); } .rw .chips button { padding-inline: 4px; white-space: nowrap; } }
-  .rw-times { display: grid; grid-template-columns: 8.5rem 8.5rem minmax(0, 1fr); gap: 12px; align-items: end; }
-  @media (max-width: 520px) { .rw-times { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rw-times > .tz { grid-column: 1 / -1; } }
+  /* From, To, Time zone: equal columns across the width, the setup's field gaps */
+  .rw-times { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 12px 16px; align-items: end; }
   .rw-times select.in { width: 100%; }
   .rw-times + .hint { margin-top: -8px; }
   /* the week as the Analytics peak-hours heatmap draws it (charts.js), in blocks of hours */
@@ -130,15 +134,18 @@
   .rw-cov { margin: -8px 0 0; font-size: var(--t-sm); color: var(--ink); line-height: 1.45; }
   .rw-cov b { font-variant-numeric: tabular-nums; }
   .rw > .znote.inline { margin: 0; }
-  .mon-act-note { flex-basis: 100%; margin: 0; }
+  .mon-act-note { flex-basis: 100%; margin: 0; text-align: right; }
+  @media (max-width: 600px) { .mon-act-note { text-align: left; } }
   /* draft: a watch scheduled from a history run that still needs its interval / key */
   /* "Finish setup": a warning Callout, the form below it (not a coloured box around it) */
   .setup { margin-top: 14px; }
   .setup h4 { display: inline; margin: 0; font-size: var(--t-base); font-weight: 700; color: var(--ink); }
   .setup > .znote.inline { margin: 0 0 12px; }
   .setup .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; align-items: start; }
-  .setup .lab { font-size: var(--t-sm); }
-  .setup .go { margin-top: 12px; }
+  /* a draft's run window, set before it is activated (the same editor as on an active card) */
+  .setup-rw { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+  /* its label sits as close to the presets as any field label to its field */
+  .setup-rw > .lab { margin-bottom: calc(7px - 16px); }
   /* nested in the .tab-card: a quieter item surface instead of a second card shadow */
   .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: var(--r-md); }
   .tab-card .section-title { margin-top: 0; }
@@ -160,10 +167,14 @@
 
   /* API key storage: native radios dressed as a segmented control (as the
      audit page's endpoint type) */
-  .keystore { margin: 12px 0 16px; }
-  .keystore fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
-  .keystore legend { padding: 0; }
-  .keystore .hint { margin: 8px 0 0; }
+  /* where API keys are kept: a compact toolbar setting (issue 230), its
+     label (with a lock) beside the choice, the hint under it */
+  .keystore { min-width: 0; }
+  .keystore fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 10px; }
+  .keystore legend { float: left; padding: 0; display: inline-flex; align-items: center; gap: 6px; }
+  .keystore legend .zicon { width: 14px; height: 14px; color: var(--ink-muted); }
+  .keystore .hint { flex-basis: 100%; margin: 0; text-align: right; }
+  @media (max-width: 600px) { .keystore fieldset { justify-content: flex-start; } .keystore .hint { text-align: left; } }
 </style>
 </head>
 <body>
@@ -180,21 +191,26 @@
     <div class="znote" id="note" role="status" hidden></div>
 
     <!-- where the monitors' API keys are kept: the user's choice -->
-    <section class="card card-pad keystore">
-      <fieldset id="keystore">
-        <legend class="lab" data-en="API key storage">API key storage</legend>
-        <div class="seg radio">
-          <span><input type="radio" name="keystore" id="ks-memory" value="memory" aria-describedby="ks-hint" disabled><label for="ks-memory" data-en="Don't store keys">Don't store keys</label></span><span><input type="radio" name="keystore" id="ks-encrypted" value="encrypted" aria-describedby="ks-hint" disabled><label for="ks-encrypted" data-en="Store encrypted on this machine">Store encrypted on this machine</label></span>
-        </div>
-        <p class="hint" id="ks-hint"></p>
-      </fieldset>
-    </section>
 
     <!-- the master key that encrypts the stored API keys (only when they are stored) -->
     <div id="mk-bar" aria-live="polite"></div>
 
     <!-- the shared filter panel (filters.js), above the card as on History and Analytics; the filters live in the URL query string -->
-    <section class="card filters" id="filters" hidden></section>
+    <!-- the toolbar: the filters, then the page's own setting (where API keys are kept) -->
+    <div class="toolbar">
+      <section class="card filters" id="filters" hidden></section>
+      <div class="tool-row">
+        <section class="keystore">
+          <fieldset id="keystore">
+            <legend class="lab"><span class="pico" data-icon="lock"></span><span data-en="API key storage">API key storage</span></legend>
+            <div class="seg radio sm">
+              <span><input type="radio" name="keystore" id="ks-memory" value="memory" aria-describedby="ks-hint" disabled><label for="ks-memory" data-en="Don't store keys">Don't store keys</label></span><span><input type="radio" name="keystore" id="ks-encrypted" value="encrypted" aria-describedby="ks-hint" disabled><label for="ks-encrypted" data-en="Store encrypted on this machine">Store encrypted on this machine</label></span>
+            </div>
+            <p class="hint" id="ks-hint"></p>
+          </fieldset>
+        </section>
+      </div>
+    </div>
 
     <div class="card card-pad tab-card">
       <div class="tabs" role="tablist" aria-label="Monitor views" data-en-aria-label="Monitor views">
@@ -451,12 +467,15 @@
       fields += '<div><label class="lab" for="k-' + w.id + '">' + esc(T("API 密钥", "API key")) + ' <span class="opt">' + esc(T("（可选）", "(optional)")) + "</span></label>" + keyInput(w, s) +
         '<p class="hint">' + esc(T("检测历史不保存密钥。本地或自托管模型可留空。", "History never stores the key. Leave it empty for a local or self-hosted model.")) + "</p></div>";
     }
+    // a draft also sets when it runs here (its card shows no window row until it is active)
+    var rw = isDraft(w) ? '<div class="rw setup-rw" role="group" aria-labelledby="srw-' + w.id + '"><span class="lab" id="srw-' + w.id + '">' +
+      esc(T("运行时段", "Run window")) + "</span>" + windowInput(w, s) + "</div>" : "";
     return '<form class="setup" id="sb-' + w.id + '" data-id="' + w.id + '" novalidate aria-labelledby="su-' + w.id + '"' + (isShut(w) ? " hidden" : "") + ">" +
       EkteNotice.callout("warning", '<h4 id="su-' + w.id + '">' + esc(T("设置后即可启用", "Finish setup to switch it on")) + "</h4> " +
-        '<span class="meta">' + esc(T("配置取自检测历史中的那次运行。设置运行间隔后启用即可。", "The configuration comes from the run in History. Set how often it runs, then activate it.")) + "</span>", { role: false }) +
-      '<div class="fields">' + fields + "</div>" +
-      '<button type="submit" class="btn pri go" data-act="activate" data-id="' + w.id + '"' + (s.busy ? ' disabled aria-busy="true"' : "") + ">" +
-      icon("play") + esc(T("启用监控", "Activate monitor")) + "</button></form>";
+        '<span class="meta">' + esc(T("配置取自检测历史中的那次运行。设置运行间隔和运行时段后启用即可。", "The configuration comes from the run in History. Set how often and when it runs, then activate it.")) + "</span>", { role: false }) +
+      '<div class="fields">' + fields + "</div>" + rw +
+      '<div class="actions"><button type="submit" class="btn pri go" data-act="activate" data-id="' + w.id + '"' + (s.busy ? ' disabled aria-busy="true"' : "") + ">" +
+      icon("play") + esc(T("启用监控", "Activate monitor")) + "</button></div></form>";
   }
 
   function intervalCell(w, s) {
@@ -544,14 +563,15 @@
       (r ? '<span class="aside">' + esc(r.tz) + "</span>" : "");
   }
   // runs a week: each open stretch starts with a run, then one per interval
+  // (in hours; under an hour too: a 10 min interval runs six times an hour)
   function winRuns(win, interval) {
-    var every = Math.max(1, (interval || 3600) / 3600), runs = 0, run = 0, first = -1;
+    var every = (interval || 3600) / 3600, runs = 0, run = 0, first = -1;
     for (var i = 0; i < 168; i++) if (!winOn(win, Math.floor(i / 24), i % 24)) { first = i; break; }
     if (first < 0) return Math.round(168 / every);
     for (var k = 1; k <= 168; k++) {
       var j = (first + k) % 168, on = winOn(win, Math.floor(j / 24), j % 24);
       if (on) run++;
-      if ((!on || k === 168) && run) { runs += Math.ceil(run / every); run = 0; }
+      if ((!on || k === 168) && run) { runs += Math.ceil(run / every - 1e-9); run = 0; }
     }
     return runs;
   }
@@ -597,7 +617,7 @@
     if (!v.days.length) return html;
     var hrs = winHours(v);
     html += '<div class="rw-heat" data-rw="' + id + '"></div>';
-    var all = Math.round(168 * 3600 / (w.interval_sec || 3600)), runs = winRuns(v, w.interval_sec);
+    var every = intervalOf(w, s), all = Math.round(168 * 3600 / (every || 3600)), runs = winRuns(v, every);
     html += '<p class="rw-cov">' + (hrs >= 168
       ? esc(T("每周 168 小时全部检测。", "Checked all 168 hours a week."))
       : fill(esc(T("每周 {h} / 168 小时 · 约 {runs} 次运行，而不是 {all} 次（−{pct} %）。",
@@ -606,14 +626,20 @@
     if (hrs > 0 && hrs < 168) {
       html += EkteNotice.callout("warning", "<b>" + esc(Tf("每周有 {n} 小时不检测。", "{n} h a week are not checked.", { n: 168 - hrs })) + "</b> " +
         esc(T("中转站可能恰好在这些时段换用其他模型，且其规律可以被摸清。", "A relay could serve another model in exactly these hours, and its pattern can be learned.")), { role: false });
-      if (w.interval_sec && w.interval_sec > winLongest(v) * 3600) {
+      if (every && every > winLongest(v) * 3600) {
         html += '<p class="note">' + icon("info") + "<span>" +
           esc(Tf("检测间隔（{every}）长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
             "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.",
-            { every: fmtEvery(w.interval_sec) })) + "</span></p>";
+            { every: fmtEvery(every) })) + "</span></p>";
       }
     }
     return html;
+  }
+  // the interval the window's estimate counts with: for a draft the one being
+  // chosen in its setup (0 until it is valid), else the monitor's
+  function intervalOf(w, s) {
+    if (!isDraft(w)) return w.interval_sec;
+    return s.vals.interval != null && !checkInterval(s.vals.interval) ? minutesOf(s.vals.interval) * 60 : 0;
   }
   // the run window's heatmap uses the blocks of the Analytics peak-hours default (4 h), so the two grids line up
   var RW_BLOCK = 4;
@@ -631,7 +657,8 @@
       }
       var hrs = winHours(v);
       window.EkteCharts.heatmap(host, {
-        id: "rwh-" + host.getAttribute("data-rw"), unit: "ratio", block: B, lo: 0, hi: 1, maxH: 216, cells: cells,
+        // sized as the Analytics peak-hours heatmap: square cells as wide as the columns allow
+        id: "rwh-" + host.getAttribute("data-rw"), unit: "ratio", block: B, lo: 0, hi: 1, cells: cells,
         title: T("运行时段", "Run window"),
         desc: Tf("每周有 {h} / 168 小时运行。", "Runs {h} of 168 hours a week.", { h: hrs }),
         days: WIN_ALL.map(dayName),
@@ -807,8 +834,8 @@
     if (s.confirm) {
       actions =
         '<span class="ask" id="ask-' + w.id + '">' + esc(T("删除这个监控？", "Delete this monitor?")) + "</span>" +
-        '<button type="button" class="btn danger" data-act="del-yes" data-id="' + w.id + '" aria-describedby="ask-' + w.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
-        '<button type="button" class="btn" data-act="del-no" data-id="' + w.id + '">' + esc(T("取消", "Cancel")) + "</button>";
+        '<button type="button" class="btn" data-act="del-no" data-id="' + w.id + '">' + esc(T("取消", "Cancel")) + "</button>" +
+        '<button type="button" class="btn danger" data-act="del-yes" data-id="' + w.id + '" aria-describedby="ask-' + w.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>";
     } else {
       // A draft can run once right away; the interval is only for the schedule.
       var run =
@@ -817,8 +844,9 @@
             icon("x") + esc(s.stopping ? T("正在取消…", "Cancelling…") : T("取消运行", "Cancel run")) + "</button>"
           : '<button type="button" class="btn' + (draft ? "" : " pri") + '" data-act="run" data-id="' + w.id + '">' +
             icon("play") + esc(T("立即运行", "Run now")) + "</button>";
-      actions = run +
-        '<button type="button" class="btn danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
+      // the destructive action first, the main one (run) last
+      actions = '<button type="button" class="btn danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
+        run +
         (outsideWindow(w) && !running ? '<p class="hint mon-act-note">' + esc(T("立即运行不受运行时段限制。", "Run now ignores the run window.")) + "</p>" : "");
     }
     var stateLine = running
@@ -874,9 +902,10 @@
             meta(T("协议", "Protocol"), protoCell(w)) +
             (embed ? meta(T("声称维度", "Claimed dimension"), dimsCell(w, s))
               : tool ? "" : meta(T("性能探测请求", "Performance probe requests"), streamCell(w))) +
-            meta(T("检测间隔", "Check interval"), intervalCell(w, s)) +
+            // a draft sets interval, run window and (taken from a run) its key in the setup below, not here
+            (draft ? "" : meta(T("检测间隔", "Check interval"), intervalCell(w, s))) +
             (draft ? "" : meta(T("运行时段", "Run window"), windowCell(w, s))) +
-            meta(T("API 密钥", "API key"), keyCell(w, s)) +
+            (draft && w.source_report_id != null && !w.has_key ? "" : meta(T("API 密钥", "API key"), keyCell(w, s))) +
             meta(thrLabel, '<select class="in" data-act="alert" data-id="' + w.id + '" aria-label="' + esc(thrLabel + " — " + name) + '">' + thresholdOptions(w.alert_on || "medium") + "</select>") +
             meta(T("Webhook", "Webhooks"), hooksCell(w, s)) +
             meta(langLabel, '<select class="in" data-act="lang" data-id="' + w.id + '" aria-label="' + esc(langLabel + " — " + name) + '">' + langOptions(w.language) + "</select>") +
@@ -890,7 +919,7 @@
         progress +
         (draft ? setupBox(w, s) : "") +
         '<div class="mon-msg ' + (s.msgKind || "") + '" role="status">' + (s.msg ? esc(s.msg()) : "") + "</div>" +
-        '<div class="mon-act" id="ma-' + w.id + '"' + hide + ">" + actions + "</div>" +
+        '<div class="mon-act actions" id="ma-' + w.id + '"' + hide + ">" + actions + "</div>" +
       "</article>"
     );
   }
@@ -1233,6 +1262,13 @@
       s.errs.interval = checkInterval(s.vals.interval);
       if (s.errs.interval) first = first || "f-interval";
       else body.interval_sec = minutesOf(s.vals.interval) * 60;
+      // the run window chosen in the setup ("Always" or untouched: none)
+      var wv = s.vals.win;
+      s.errs.window = wv ? checkWindow(wv) : null;
+      if (s.errs.window) first = first || "f-window";
+      else if (wv && wv.preset !== "always") {
+        body.run_window = { tz: wv.tz, days: wv.days.slice().sort(), start: pad2(wv.start) + ":00", end: pad2(wv.end) + ":00" };
+      }
     }
     if (String(s.vals.key || "").trim()) body.api_key = s.vals.key.trim();
     s.msg = null;
@@ -1320,6 +1356,12 @@
         var box = $({ interval: "ive-", key: "ke-", hooks: "hke-", dims: "dme-" }[field] + id);
         if (box) { box.hidden = true; box.textContent = ""; }
       }
+    }
+    // a draft's run window counts its runs with the interval being chosen: redraw it
+    var w = byId(id);
+    if (field === "interval" && w && isDraft(w) && s.vals.win && s.vals.win.preset !== "always") {
+      render();
+      focusAct("f-interval", id);
     }
   });
 

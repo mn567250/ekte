@@ -43,13 +43,6 @@
     - link "Historikk":
       - /url: /history
     - text: og velg Planlegg som overvåking — angi deretter intervallet her og slå den på. Når risikoen krysser terskelen din eller blir verre enn forrige gang, varsler ekte webhookene dine (Slack / Feishu / DingTalk / generisk JSON).
-  - group "Lagring av API-nøkler":
-    - text: Lagring av API-nøkler
-    - radio "Ikke lagre nøkler" [checked]
-    - text: Ikke lagre nøkler
-    - radio "Lagre kryptert på denne maskinen"
-    - text: Lagre kryptert på denne maskinen
-    - paragraph: API-nøkler blir værende i minnet til ekte serve og skrives aldri til disk; oppgi dem igjen etter hver omstart. Bruk env:VAR for overvåkinger som må kjøre uten tilsyn.
   - region "Filtre":
     - button "Filtre" [expanded]
     - text: Søk
@@ -95,6 +88,13 @@
     - status
     - button "Kopier lenke til denne visningen"
   - status
+  - group "Lagring av API-nøkler":
+    - text: Lagring av API-nøkler
+    - radio "Ikke lagre nøkler" [checked]
+    - text: Ikke lagre nøkler
+    - radio "Lagre kryptert på denne maskinen"
+    - text: Lagre kryptert på denne maskinen
+    - paragraph: API-nøkler blir værende i minnet til ekte serve og skrives aldri til disk; oppgi dem igjen etter hver omstart. Bruk env:VAR for overvåkinger som må kjøre uten tilsyn.
   - tablist "Overvåkingsvisninger":
     - tab "Konfigurer" [selected]
     - tab "Kjører"
@@ -122,12 +122,6 @@
         - text: · oppdaget automatisk
       - term: Forespørsler fra ytelsesproben
       - definition: Strømming
-      - term: Kontrollintervall
-      - definition: Ikke satt
-      - term: API-nøkkel
-      - definition:
-        - text: Ingen
-        - button "Bytt ut"
       - term: Varslingsterskel
       - definition:
         - combobox "Varslingsterskel — gpt-4o":
@@ -166,7 +160,7 @@
         - text: Åpne i Analyse
       - form "Fullfør oppsettet for å slå den på":
         - heading "Fullfør oppsettet for å slå den på" [level=4]
-        - text: Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den. Kontrollintervall
+        - text: Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte og når den skal kjøre, og aktiver den. Kontrollintervall
         - combobox "Kontrollintervall":
           - option "Velg …" [selected]
           - option "hvert 5. minutt"
@@ -188,9 +182,17 @@
           - /placeholder: sk-... eller env:EKTE_API_KEY
         - button "Vis nøkkel"
         - paragraph: Historikken lagrer aldri nøkkelen. La feltet stå tomt for en lokal eller selvdriftet modell.
+        - group "Kjøretidsvindu":
+          - text: Kjøretidsvindu
+          - group "Forhåndsvalg":
+            - button "Alltid" [pressed]
+            - button "Ukedager"
+            - button "Ukedager 07–19"
+            - button "Egendefinert"
+          - paragraph: Monitoren kjører med sitt kontrollintervall til alle døgnets tider.
         - button "Aktiver overvåking"
-      - button "Kjør nå"
       - button "Slett"
+      - button "Kjør nå"
 - contentinfo:
   - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
   - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

@@ -43,13 +43,6 @@
     - link "Historial":
       - /url: /history
     - text: y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última vez, ekte avisa a tus webhooks (Slack / Feishu / DingTalk / JSON genérico).
-  - group "Almacenamiento de claves API":
-    - text: Almacenamiento de claves API
-    - radio "No guardar claves" [checked]
-    - text: No guardar claves
-    - radio "Guardar cifradas en este equipo"
-    - text: Guardar cifradas en este equipo
-    - paragraph: Las claves API permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Buscar
@@ -95,6 +88,13 @@
     - status
     - button "Copiar el enlace a esta vista"
   - status
+  - group "Almacenamiento de claves API":
+    - text: Almacenamiento de claves API
+    - radio "No guardar claves" [checked]
+    - text: No guardar claves
+    - radio "Guardar cifradas en este equipo"
+    - text: Guardar cifradas en este equipo
+    - paragraph: Las claves API permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.
   - tablist "Vistas de monitores":
     - tab "Configurar" [selected]
     - tab "En curso"
@@ -122,12 +122,6 @@
         - text: · detectado automáticamente
       - term: Peticiones de la sonda de rendimiento
       - definition: Streaming
-      - term: Intervalo de comprobación
-      - definition: Sin definir
-      - term: Clave de API
-      - definition:
-        - text: Ninguna
-        - button "Reemplazar"
       - term: Umbral de alerta
       - definition:
         - combobox "Umbral de alerta — gpt-4o":
@@ -166,7 +160,7 @@
         - text: Abrir en Analítica
       - form "Completa la configuración para activarlo":
         - heading "Completa la configuración para activarlo" [level=4]
-        - text: La configuración proviene de la ejecución del Historial. Define cada cuánto se ejecuta y actívalo. Intervalo de comprobación
+        - text: La configuración proviene de la ejecución del Historial. Define cada cuánto y cuándo se ejecuta y actívalo. Intervalo de comprobación
         - combobox "Intervalo de comprobación":
           - option "Elegir…" [selected]
           - option "cada 5 min"
@@ -188,9 +182,17 @@
           - /placeholder: sk-... o env:EKTE_API_KEY
         - button "Mostrar clave"
         - paragraph: El historial nunca guarda la clave. Déjala vacía para un modelo local o autoalojado.
+        - group "Ventana de ejecución":
+          - text: Ventana de ejecución
+          - group "Preajustes":
+            - button "Siempre" [pressed]
+            - button "Días laborables"
+            - button "Días laborables 07–19"
+            - button "Personalizado"
+          - paragraph: El monitor se ejecuta con su intervalo de comprobación a cualquier hora del día.
         - button "Activar monitor"
-      - button "Ejecutar ahora"
       - button "Eliminar"
+      - button "Ejecutar ahora"
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
   - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

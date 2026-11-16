@@ -335,8 +335,8 @@
               - text: ekte liefert
               - strong: reproduzierbare Belege für Verhaltensabweichungen und Risiken
               - text: ", keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie öffentlich auf Grundlage eines einzigen Laufs."
-            - button "Als Überwachung einplanen"
             - button "Audit erneut ausführen"
+            - button "Als Überwachung einplanen"
             - group "Bericht herunterladen":
               - text: Bericht herunterladen
               - button "JSON"

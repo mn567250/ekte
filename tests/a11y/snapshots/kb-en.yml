@@ -103,8 +103,8 @@
       - text: Provider Optional
       - textbox "Provider Optional":
         - /placeholder: e.g. openai / deepseek
-      - button "Copy prompt"
       - status
+      - button "Copy prompt"
       - group:
         - button "Show the prompt" [expanded]
         - textbox "Prompt"

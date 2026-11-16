@@ -103,8 +103,8 @@
       - text: Fornitore Facoltativo
       - textbox "Fornitore Facoltativo":
         - /placeholder: ad es. openai / deepseek
-      - button "Copia prompt"
       - status
+      - button "Copia prompt"
       - group:
         - button "Mostra il prompt" [expanded]
         - textbox "Prompt"

@@ -259,11 +259,31 @@ main[tabindex="-1"]:focus { outline: none; }
 
 /* ---------- cards ---------- */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-card); }
-.card-pad { padding: 24px; }
-@media (max-width: 520px) { .card-pad { padding: 18px; } }
+/* one card padding (--pad, issue 230): every page-level card, the filter
+   panel and the page notice inset their content by it, so text in the
+   column starts at two x positions only: the hero's and the cards' */
+:root { --pad: var(--s-5); }
+@media (max-width: 520px) { :root { --pad: 18px; } }
+.card-pad { padding: var(--pad); }
 /* the page's main block: a card whose first child is the tab switch
    (.tabs[role=tablist]); the selected tab's panel opens inside it */
-.tab-card { margin-top: 20px; }
+
+/* ---------- the page template (issue 230) ----------
+   every page's <main> is one column, in this order:
+     .hero  →  page notice (.znote#note …)  →  .toolbar (the filters and the
+     page's own actions, e.g. Export, API key storage)  →  the content
+     (a .tab-card, or the page's cards)
+   with one gap between the blocks (--s-5); no block sets a margin of its
+   own (an empty live region or a visually hidden one takes no gap) */
+main#main { display: flow-root; }
+main#main > * { margin-top: 0; margin-bottom: 0; }
+main#main > :not(:empty):not(.sr-only) ~ :not(:empty):not(.sr-only) { margin-top: var(--s-5); }
+.toolbar { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.toolbar[hidden] { display: none; }
+/* a toolbar's own actions: one row, right-aligned (left on phones) */
+.tool-row { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: var(--s-2) var(--s-3); min-width: 0; }
+.tool-row:not(:has(> :not([hidden]))) { display: none; }
+@media (max-width: 600px) { .tool-row { justify-content: flex-start; } }
 .section-title { font-family: var(--disp); font-weight: 600; font-size: var(--t-lg); margin: 28px 0 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
 .section-title .count { font-family: var(--sans); font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
 
@@ -337,6 +357,8 @@ select.in {
   color: var(--ink-muted); background: var(--surface); border: 1.5px solid transparent; border-radius: var(--r-sm);
   min-height: var(--h-md); padding: 6px 8px; transition: background var(--dur-fast), color var(--dur-fast);
 }
+/* a small one (a toolbar setting, e.g. the monitors' key storage) */
+.seg.sm button, .seg.radio.sm label { min-height: var(--h-sm); padding: 3px 12px; }
 /* the radio itself covers its option: it draws the boundary (3:1, like the
    text fields) and carries the focus ring */
 .seg.radio input {
@@ -436,6 +458,14 @@ select.in {
 .btn.pri:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--primary-strong); border-color: var(--primary-strong); }
 .btn.danger { color: var(--danger); }
 .btn.danger:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--danger-tint); border-color: var(--danger); }
+/* a group of actions (issue 230): each button as wide as its label, the
+   row right-aligned (left on phones), the one primary action last; a
+   destructive action is a plain .btn.danger beside it, never a wide block.
+   Only the page's single submit (the audit's Start audit, .cta) is full width. */
+.actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--s-2) var(--s-3); margin-top: var(--s-4); min-width: 0; }
+.actions > .btn { flex: none; max-width: 100%; white-space: normal; text-align: center; }
+.actions > .hint, .actions > .ask { margin: 0 auto 0 0; }
+@media (max-width: 600px) { .actions { justify-content: flex-start; } .actions > .hint, .actions > .ask { flex-basis: 100%; } }
 .btn.sm { min-height: var(--h-sm); padding: 4px 11px; font-size: var(--t-sm); border-radius: var(--r-sm); }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 .btn .zicon { width: 1em; height: 1em; }
@@ -479,6 +509,8 @@ select.in {
   border: 1px solid var(--line); background: var(--sunken);
 }
 .znote[hidden] { display: none; }
+/* the page notice (a block of <main>): its icon starts where card content does */
+main#main > .znote { padding-left: var(--pad); padding-right: var(--pad); }
 .znote .ico { display: inline-flex; }
 .znote .ico .zicon { width: 18px; height: 18px; }
 .znote .txt { flex: 1 1 260px; min-width: 0; font-size: var(--t-base); line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }

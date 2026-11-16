@@ -86,7 +86,7 @@ gerem-na na linha de comandos.
 
 ### Janela de execução
 
-Um monitor pode ter uma **janela de execução**: os dias da semana e as horas em que o agendador o inicia, por exemplo seg–sex, 07:00–19:00, Europe/Berlin. Edita-se na própria página Monitores (**Janela de execução**, depois de **Intervalo de verificação**). Fora da janela o monitor não corre; sem janela corre 24 horas por dia, como antes.
+Um monitor pode ter uma **janela de execução**: os dias da semana e as horas em que o agendador o inicia, por exemplo seg–sex, 07:00–19:00, Europe/Berlin. Edita-se na própria página Monitores (**Janela de execução**, depois de **Intervalo de verificação**); um monitor agendado a partir do Histórico define-a na sua configuração, antes de ser ativado. Fora da janela o monitor não corre; sem janela corre 24 horas por dia, como antes.
 
 - Apenas horas inteiras; `24:00` é o fim do dia. Um fim igual ou anterior ao início é uma janela noturna: termina na manhã seguinte e pertence ao dia em que começa (uma janela de sexta 22:00–06:00 cobre o sábado das 00:00 às 06:00).
 - Vale o fuso horário guardado com a janela (nome IANA), nunca o do servidor. As mudanças de hora não têm efeito: o ekte só verifica se *agora* está dentro da janela.

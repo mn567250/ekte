@@ -103,8 +103,8 @@
       - text: Anbieter Optional
       - textbox "Anbieter Optional":
         - /placeholder: z. B. openai / deepseek
-      - button "Prompt kopieren"
       - status
+      - button "Prompt kopieren"
       - group:
         - button "Prompt anzeigen" [expanded]
         - textbox "Prompt"

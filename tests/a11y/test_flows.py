@@ -530,10 +530,19 @@ def test_monitor_flow(browser, contexts, ekte, relay, lang: str) -> None:
     def setup() -> None:
         page.select_option(".setup select[data-act=f-interval]", index=1)
         page.fill(".setup input[data-act=f-key]", "sk-test")
+        # the run window is set in the setup too, before the monitor is on
+        press(page, ".setup [data-act=win-preset][data-v=weekdays7]", " ")
+        page.wait_for_selector(".setup [data-act=win-day]")
 
-    flow.step("set interval and API key", setup)
-    flow.step("activate: the key stays in memory, no master key needed", lambda: (
-        press(page, ".setup [data-act=activate]"), wait_text(page, ".mon-msg")))
+    def activated() -> None:
+        press(page, ".setup [data-act=activate]")
+        wait_text(page, ".mon-msg")
+        page.wait_for_selector("[data-act=edit-window]")
+        row = page.locator("dd:has([data-act=edit-window])").first.inner_text()
+        assert "07" in row and "19" in row, f"the run window chosen in the setup was not saved: {row!r}"
+
+    flow.step("set interval, run window and API key", setup)
+    flow.step("activate: the key stays in memory, no master key needed", activated)
     flow.step("choose to store keys encrypted: the notice asks", lambda: (
         press(page, "#ks-encrypted", " "), page.wait_for_selector("#note [data-note-act=ks-yes]")))
     flow.step("confirm: the master-key dialog opens", lambda: (

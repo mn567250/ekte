@@ -78,7 +78,8 @@ enter them again). For unattended or Docker use, pass the key as
 
 A monitor can have a **run window**: the days of the week and hours in which
 the scheduler starts it, for example Mon–Fri, 07:00–19:00, Europe/Berlin. Edit
-it in place on the Monitors page (**Run window**, after **Check interval**).
+it in place on the Monitors page (**Run window**, after **Check interval**); a
+monitor scheduled from History sets it in its setup, before it is activated.
 Outside the window the monitor does not run. Without a window it runs around
 the clock, as before.
 

@@ -89,7 +89,7 @@ unbeaufsichtigten Betrieb oder Docker übergeben Sie den Schlüssel als
 
 ### Laufzeitfenster
 
-Ein Monitor kann ein **Laufzeitfenster** haben: die Wochentage und Stunden, in denen der Scheduler ihn startet, etwa Mo–Fr, 07:00–19:00, Europe/Berlin. Es wird direkt auf der Seite „Monitore“ bearbeitet (**Laufzeitfenster**, nach **Prüfintervall**). Außerhalb des Fensters läuft der Monitor nicht; ohne Fenster läuft er wie bisher rund um die Uhr.
+Ein Monitor kann ein **Laufzeitfenster** haben: die Wochentage und Stunden, in denen der Scheduler ihn startet, etwa Mo–Fr, 07:00–19:00, Europe/Berlin. Es wird direkt auf der Seite „Monitore“ bearbeitet (**Laufzeitfenster**, nach **Prüfintervall**); ein aus dem Verlauf geplanter Monitor legt es in seiner Einrichtung fest, bevor er aktiviert wird. Außerhalb des Fensters läuft der Monitor nicht; ohne Fenster läuft er wie bisher rund um die Uhr.
 
 - Nur volle Stunden; `24:00` ist das Tagesende. Ein Ende vor oder gleich dem Start ergibt ein Nachtfenster: Es endet am nächsten Morgen und gehört zu dem Tag, an dem es beginnt (Freitag 22:00–06:00 umfasst Samstag 00:00–06:00).
 - Maßgeblich ist die mitgespeicherte Zeitzone (IANA-Name), nie die des Servers. Sommerzeitwechsel schaden nicht: ekte prüft nur, ob *jetzt* im Fenster liegt.

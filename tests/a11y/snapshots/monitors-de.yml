@@ -43,13 +43,6 @@
     - link "Verlauf":
       - /url: /history
     - text: und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder wird es schlechter als beim letzten Mal, alarmiert ekte Ihre Webhooks (Slack / Feishu / DingTalk / generisches JSON).
-  - group "Speicherung der API-Schlüssel":
-    - text: Speicherung der API-Schlüssel
-    - radio "Schlüssel nicht speichern" [checked]
-    - text: Schlüssel nicht speichern
-    - radio "Verschlüsselt auf diesem Rechner speichern"
-    - text: Verschlüsselt auf diesem Rechner speichern
-    - paragraph: API-Schlüssel bleiben im Arbeitsspeicher von ekte serve und werden nie auf die Festplatte geschrieben; geben Sie sie nach jedem Neustart erneut ein. Nutzen Sie env:VAR für Überwachungen, die unbeaufsichtigt laufen müssen.
   - region "Filter":
     - button "Filter" [expanded]
     - text: Suche
@@ -95,6 +88,13 @@
     - status
     - button "Link zu dieser Ansicht kopieren"
   - status
+  - group "Speicherung der API-Schlüssel":
+    - text: Speicherung der API-Schlüssel
+    - radio "Schlüssel nicht speichern" [checked]
+    - text: Schlüssel nicht speichern
+    - radio "Verschlüsselt auf diesem Rechner speichern"
+    - text: Verschlüsselt auf diesem Rechner speichern
+    - paragraph: API-Schlüssel bleiben im Arbeitsspeicher von ekte serve und werden nie auf die Festplatte geschrieben; geben Sie sie nach jedem Neustart erneut ein. Nutzen Sie env:VAR für Überwachungen, die unbeaufsichtigt laufen müssen.
   - tablist "Überwachungsansichten":
     - tab "Konfigurieren" [selected]
     - tab "Läuft"
@@ -122,12 +122,6 @@
         - text: · automatisch erkannt
       - term: Anfragen der Leistungsmessung
       - definition: Streaming
-      - term: Prüfintervall
-      - definition: Nicht festgelegt
-      - term: API-Schlüssel
-      - definition:
-        - text: Keiner
-        - button "Ersetzen"
       - term: Warnschwelle
       - definition:
         - combobox "Warnschwelle — gpt-4o":
@@ -166,7 +160,7 @@
         - text: In Analyse öffnen
       - form "Einrichtung abschließen, um sie einzuschalten":
         - heading "Einrichtung abschließen, um sie einzuschalten" [level=4]
-        - text: Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie. Prüfintervall
+        - text: Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft und wann sie läuft, und aktivieren Sie sie. Prüfintervall
         - combobox "Prüfintervall":
           - option "Auswählen…" [selected]
           - option "alle 5 Min."
@@ -188,9 +182,17 @@
           - /placeholder: sk-... oder env:EKTE_API_KEY
         - button "Schlüssel anzeigen"
         - paragraph: Der Verlauf speichert den Schlüssel nie. Für lokale oder selbst gehostete Modelle leer lassen.
+        - group "Laufzeitfenster":
+          - text: Laufzeitfenster
+          - group "Voreinstellungen":
+            - button "Immer" [pressed]
+            - button "Werktage"
+            - button "Werktage 07–19"
+            - button "Benutzerdefiniert"
+          - paragraph: Der Monitor läuft zu jeder Tageszeit in seinem Prüfintervall.
         - button "Überwachung aktivieren"
-      - button "Jetzt ausführen"
       - button "Löschen"
+      - button "Jetzt ausführen"
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
   - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

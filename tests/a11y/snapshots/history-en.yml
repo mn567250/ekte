@@ -335,8 +335,8 @@
               - text: ekte provides
               - strong: reproducible evidence of behavioral deviation and risk
               - text: ", not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
-            - button "Schedule as monitor"
             - button "Re-run audit"
+            - button "Schedule as monitor"
             - group "Download report":
               - text: Download report
               - button "JSON"

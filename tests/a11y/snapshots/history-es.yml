@@ -335,8 +335,8 @@
               - text: ekte aporta
               - strong: evidencias reproducibles de desviación de comportamiento y riesgo
               - text: ", no una prueba legal ni criptográfica de fraude. Los intermediarios pueden enrutar de forma probabilística; valore usted mismo el tamaño de la muestra, la configuración de facturación y la legislación local, y nunca acuse públicamente a un proveedor por una sola ejecución."
-            - button "Programar como monitor"
             - button "Repetir auditoría"
+            - button "Programar como monitor"
             - group "Descargar informe":
               - text: Descargar informe
               - button "JSON"

@@ -43,13 +43,6 @@
     - link "检测历史":
       - /url: /history
     - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
-  - group "API 密钥保存方式":
-    - text: API 密钥保存方式
-    - radio "不保存密钥" [checked]
-    - text: 不保存密钥
-    - radio "加密保存在本机"
-    - text: 加密保存在本机
-    - paragraph: API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。
   - region "筛选":
     - button "筛选" [expanded]
     - text: 搜索
@@ -95,6 +88,13 @@
     - status
     - button "复制此视图的链接"
   - status
+  - group "API 密钥保存方式":
+    - text: API 密钥保存方式
+    - radio "不保存密钥" [checked]
+    - text: 不保存密钥
+    - radio "加密保存在本机"
+    - text: 加密保存在本机
+    - paragraph: API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。
   - tablist "监控视图":
     - tab "配置" [selected]
     - tab "运行中"
@@ -122,12 +122,6 @@
         - text: · 自动识别
       - term: 性能探测请求
       - definition: 流式
-      - term: 检测间隔
-      - definition: 未设置
-      - term: API 密钥
-      - definition:
-        - text: 无
-        - button "更换"
       - term: 告警阈值
       - definition:
         - combobox "告警阈值 — gpt-4o":
@@ -166,7 +160,7 @@
         - text: 在分析中打开
       - form "设置后即可启用":
         - heading "设置后即可启用" [level=4]
-        - text: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。 检测间隔
+        - text: 配置取自检测历史中的那次运行。设置运行间隔和运行时段后启用即可。 检测间隔
         - combobox "检测间隔":
           - option "请选择…" [selected]
           - option "每 5 分钟"
@@ -188,9 +182,17 @@
           - /placeholder: sk-... 或 env:EKTE_API_KEY
         - button "显示密钥"
         - paragraph: 检测历史不保存密钥。本地或自托管模型可留空。
+        - group "运行时段":
+          - text: 运行时段
+          - group "预设":
+            - button "始终" [pressed]
+            - button "工作日"
+            - button "工作日 07–19"
+            - button "自定义"
+          - paragraph: 监控按检测间隔全天候运行。
         - button "启用监控"
-      - button "立即运行"
       - button "删除"
+      - button "立即运行"
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
   - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

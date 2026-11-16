@@ -30,14 +30,14 @@
      marchandise") of every language stay on one line. */
   .hist { --cols: minmax(0, 1.1fr) minmax(0, 1.5fr) 2.8em 4.8em 18px; --cgap: 12px; --del: 36px; }
 
-  .hist { margin-top: 22px; overflow: hidden; }
+  .hist { overflow: hidden; }
   .hist:focus { outline: none; }
-  .hist .state { padding: 26px 22px; color: var(--ink-muted); font-size: var(--t-base); }
+  .hist .state { padding: 26px var(--pad); color: var(--ink-muted); font-size: var(--t-base); }
   .hist .state.loading { font-family: var(--mono); font-size: var(--t-sm); color: var(--ink-muted); }
-  .hist > .znote.inline { margin: 18px; }
+  .hist > .znote.inline { margin: var(--pad); }
 
   /* shared column header = sort controls (+ collapse / expand all groups) */
-  .colhead { display: grid; grid-template-columns: 1fr calc(var(--del) * 3 + 12px); gap: 6px; padding: 10px 18px 6px; border-bottom: 1px solid var(--line); align-items: center; }
+  .colhead { display: grid; grid-template-columns: 1fr calc(var(--del) * 3 + 12px); gap: 6px; padding: 10px calc(var(--pad) - 10px) 6px; border-bottom: 1px solid var(--line); align-items: center; }
   /* same font size as .rmain, so the em columns line up with the rows */
   .colhead .cells { display: grid; grid-template-columns: var(--cols); gap: var(--cgap); padding: 0 10px; align-items: center; font-size: var(--t-sm); }
   .colhead .slabel { display: none; }
@@ -61,7 +61,7 @@
 
   /* group collapse toggle: the group heading's text is the button */
   .gtog {
-    display: inline-flex; align-items: center; gap: 8px; max-width: 100%; margin: -3px 0 -3px -26px; padding: 3px 6px 3px 4px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; max-width: 100%; margin: -3px 0 -3px -28px; padding: 3px 6px 3px 4px; cursor: pointer;
     font: inherit; letter-spacing: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: var(--r-sm);
   }
   .gtog:hover { background: var(--sunken); }
@@ -72,7 +72,7 @@
   .group.shut .grp-h { padding-bottom: 16px; }
 
   /* group */
-  .grp-h { display: flex; align-items: center; gap: 14px; padding: 18px 18px 8px 28px; flex-wrap: wrap; }
+  .grp-h { display: flex; align-items: center; gap: 14px; padding: 18px var(--pad) 8px; flex-wrap: wrap; }
   .group + .group { border-top: 1px solid var(--line); }
   /* off-screen groups skip style/layout/paint until scrolled near; their
      rendered rows stay in the DOM, so find-in-page, Tab order and the
@@ -142,7 +142,7 @@
   .f-lat { color: var(--info); } .f-tps { color: var(--chart-3); }
 
   /* rows */
-  .rows { list-style: none; margin: 0; padding: 0 18px 10px; }
+  .rows { list-style: none; margin: 0; padding: 0 calc(var(--pad) - 10px) 10px; }
   .row + .row { border-top: 1px dotted var(--line); }
   /* --l1: the first line's height; the actions are centred on it */
   .hist { --l1: 26px; --rpad: 10px; }
@@ -217,9 +217,9 @@
 
   /* list footer: quiet clear-history */
   /* "Show more" under a group's first rows */
-  .gmore { padding: 2px 28px 16px; }
+  .gmore { padding: 2px var(--pad) 16px; }
   .gmore .btn { max-width: 100%; white-space: normal; text-align: center; }
-  .lfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 18px 14px 28px; border-top: 1px solid var(--line); background: var(--sunken); }
+  .lfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px var(--pad) 14px; border-top: 1px solid var(--line); background: var(--sunken); }
   .lfoot .aside { font-size: var(--t-xs); }
   .lfoot .confirm { flex: 1 1 100%; margin: 0; }
   .clr { color: var(--ink-muted); font-weight: 600; font-size: var(--t-sm); }
@@ -264,12 +264,12 @@
     </div>
     <!-- the page notice (notice.js) -->
     <div class="znote" id="note" hidden></div>
-
-    <section class="card filters" id="filters" hidden></section>
-    <p class="sr-only" id="live" role="status"></p>
     <!-- new runs since the list was loaded (live.js): a notice that offers to
          show them; not a live region itself (#live announces it once) -->
     <div class="znote" id="fresh" hidden></div>
+
+    <section class="card filters" id="filters" hidden></section>
+    <p class="sr-only" id="live" role="status"></p>
 
     <section class="card hist" id="hist" tabindex="-1" aria-busy="true">
       <div class="state loading" data-en="Loading history…">Loading history…</div>

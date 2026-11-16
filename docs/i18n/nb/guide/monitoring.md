@@ -83,7 +83,7 @@ håndterer den på kommandolinjen.
 
 ### Kjøretidsvindu
 
-En monitor kan ha et **kjøretidsvindu**: ukedagene og timene planleggeren starter den, for eksempel man–fre, 07:00–19:00, Europe/Berlin. Det redigeres direkte på Monitorer-siden (**Kjøretidsvindu**, etter **Kontrollintervall**). Utenfor vinduet kjører ikke monitoren; uten vindu kjører den døgnet rundt, som før.
+En monitor kan ha et **kjøretidsvindu**: ukedagene og timene planleggeren starter den, for eksempel man–fre, 07:00–19:00, Europe/Berlin. Det redigeres direkte på Monitorer-siden (**Kjøretidsvindu**, etter **Kontrollintervall**); en monitor planlagt fra Historikk angir det i oppsettet sitt, før den aktiveres. Utenfor vinduet kjører ikke monitoren; uten vindu kjører den døgnet rundt, som før.
 
 - Kun hele timer; `24:00` er slutten av dagen. En slutt som er lik eller før starten gir et nattvindu: det slutter neste morgen og hører til dagen det starter (et vindu fredag 22:00–06:00 dekker lørdag 00:00–06:00).
 - Tidssonen som er lagret med vinduet (IANA-navn) gjelder, aldri serverens. Sommertidsskifter gjør ingenting: ekte sjekker bare om *nå* ligger i vinduet.
