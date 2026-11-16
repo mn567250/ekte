@@ -49,13 +49,13 @@
     - definition:
       - code: <id>
     - term: Versión de ekte
-    - definition: 0.30.0
+    - definition: 0.35.0
     - term: Versión de axe-core
     - definition: 4.13.0
     - term: Pruebas
-    - definition: 1156 ejecutadas, 1156 superadas, 0 fallidas, 0 omitidas
+    - definition: 1337 ejecutadas, 1337 superadas, 0 fallidas, 1 omitidas
     - term: Idiomas
-    - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
+    - definition: English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文
     - term: Temas
     - definition: Claro, Oscuro
     - term: Páginas
@@ -130,7 +130,7 @@
               - group:
                 - button "Contenido no textual" [expanded]
                 - paragraph: "Cómo se prueba: Las imágenes, iconos, SVG y controles tienen una alternativa textual. Si cada alternativa tiene sentido lo juzga una persona."
-                - paragraph: "Pruebas automatizadas: 30 ejecutadas, 30 superadas, 0 fallidas, 156 omitidas"
+                - paragraph: "Pruebas automatizadas: 34 ejecutadas, 34 superadas, 0 fallidas, 176 omitidas"
                 - paragraph:
                   - code: test_audit_surface_states
                   - code: test_wcag_rules_as_loaded

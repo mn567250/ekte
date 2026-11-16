@@ -49,13 +49,13 @@
     - definition:
       - code: <id>
     - term: ekte version
-    - definition: 0.30.0
+    - definition: 0.35.0
     - term: axe-core version
     - definition: 4.13.0
     - term: Tests
-    - definition: 1156 run, 1156 passed, 0 failed, 0 skipped
+    - definition: 1337 run, 1337 passed, 0 failed, 1 skipped
     - term: Languages
-    - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
+    - definition: English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文
     - term: Themes
     - definition: Light, Dark
     - term: Pages
@@ -130,7 +130,7 @@
               - group:
                 - button "Non-text Content" [expanded]
                 - paragraph: "How it is tested: Images, icons, SVGs and controls have a text alternative. Whether each alternative is meaningful is judged by a person."
-                - paragraph: "Automated tests: 30 run, 30 passed, 0 failed, 156 skipped"
+                - paragraph: "Automated tests: 34 run, 34 passed, 0 failed, 176 skipped"
                 - paragraph:
                   - code: test_audit_surface_states
                   - code: test_wcag_rules_as_loaded
