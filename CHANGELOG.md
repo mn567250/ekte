@@ -20,6 +20,13 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Added
+
+- **Upgrade fixture for 0.35.0.** `tests/fixtures/upgrade/v0.35.0/` is a data
+  directory written by the released 0.35.0 from PyPI (history, monitors with
+  stored and unstored keys, your own knowledge-base entries); the upgrade tests
+  open it with the current code and check that nothing is lost.
+
 ## [0.35.0] - 2026-11-16
 
 History and Analytics now show the same numbers, computed once on the server
