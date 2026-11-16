@@ -176,7 +176,7 @@
           - option "alle 8 Std."
           - option "alle 12 Std."
           - option "alle 24 Std."
-        - paragraph: Ein vollständiger Lauf dauerte <duration>, daher läuft sie höchstens alle 5 Min..
+        - paragraph: Ein vollständiger Lauf dauerte <duration>, daher läuft sie alle 5 Min. höchstens einmal.
         - text: API-Schlüssel (optional)
         - textbox "API-Schlüssel (optional)":
           - /placeholder: sk-... oder env:EKTE_API_KEY
