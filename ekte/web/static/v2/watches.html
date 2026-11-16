@@ -137,6 +137,8 @@
   .setup > .znote.inline { margin: 0 0 12px; }
   .setup .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; align-items: start; }
   .setup .lab { font-size: var(--t-sm); }
+  /* a draft's run window, set before it is activated (the same editor as on an active card) */
+  .setup-rw { display: flex; flex-direction: column; gap: 16px; max-width: 560px; margin-top: 16px; }
   /* nested in the .tab-card: a quieter item surface instead of a second card shadow */
   .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: var(--r-md); }
   .tab-card .section-title { margin-top: 0; }
@@ -458,10 +460,13 @@
       fields += '<div><label class="lab" for="k-' + w.id + '">' + esc(T("API 密钥", "API key")) + ' <span class="opt">' + esc(T("（可选）", "(optional)")) + "</span></label>" + keyInput(w, s) +
         '<p class="hint">' + esc(T("检测历史不保存密钥。本地或自托管模型可留空。", "History never stores the key. Leave it empty for a local or self-hosted model.")) + "</p></div>";
     }
+    // a draft also sets when it runs here (its card shows no window row until it is active)
+    var rw = isDraft(w) ? '<div class="rw setup-rw" role="group" aria-labelledby="swl-' + w.id + '"><span class="lab" id="swl-' + w.id + '">' +
+      esc(T("运行时段", "Run window")) + "</span>" + windowInput(w, s) + "</div>" : "";
     return '<form class="setup" id="sb-' + w.id + '" data-id="' + w.id + '" novalidate aria-labelledby="su-' + w.id + '"' + (isShut(w) ? " hidden" : "") + ">" +
       EkteNotice.callout("warning", '<h4 id="su-' + w.id + '">' + esc(T("设置后即可启用", "Finish setup to switch it on")) + "</h4> " +
-        '<span class="meta">' + esc(T("配置取自检测历史中的那次运行。设置运行间隔后启用即可。", "The configuration comes from the run in History. Set how often it runs, then activate it.")) + "</span>", { role: false }) +
-      '<div class="fields">' + fields + "</div>" +
+        '<span class="meta">' + esc(T("配置取自检测历史中的那次运行。设置运行间隔和运行时段后启用即可。", "The configuration comes from the run in History. Set how often and when it runs, then activate it.")) + "</span>", { role: false }) +
+      '<div class="fields">' + fields + "</div>" + rw +
       '<div class="actions"><button type="submit" class="btn pri go" data-act="activate" data-id="' + w.id + '"' + (s.busy ? ' disabled aria-busy="true"' : "") + ">" +
       icon("play") + esc(T("启用监控", "Activate monitor")) + "</button></div></form>";
   }
@@ -551,14 +556,15 @@
       (r ? '<span class="aside">' + esc(r.tz) + "</span>" : "");
   }
   // runs a week: each open stretch starts with a run, then one per interval
+  // (in hours; under an hour too: a 10 min interval runs six times an hour)
   function winRuns(win, interval) {
-    var every = Math.max(1, (interval || 3600) / 3600), runs = 0, run = 0, first = -1;
+    var every = (interval || 3600) / 3600, runs = 0, run = 0, first = -1;
     for (var i = 0; i < 168; i++) if (!winOn(win, Math.floor(i / 24), i % 24)) { first = i; break; }
     if (first < 0) return Math.round(168 / every);
     for (var k = 1; k <= 168; k++) {
       var j = (first + k) % 168, on = winOn(win, Math.floor(j / 24), j % 24);
       if (on) run++;
-      if ((!on || k === 168) && run) { runs += Math.ceil(run / every); run = 0; }
+      if ((!on || k === 168) && run) { runs += Math.ceil(run / every - 1e-9); run = 0; }
     }
     return runs;
   }
@@ -604,7 +610,7 @@
     if (!v.days.length) return html;
     var hrs = winHours(v);
     html += '<div class="rw-heat" data-rw="' + id + '"></div>';
-    var all = Math.round(168 * 3600 / (w.interval_sec || 3600)), runs = winRuns(v, w.interval_sec);
+    var every = intervalOf(w, s), all = Math.round(168 * 3600 / (every || 3600)), runs = winRuns(v, every);
     html += '<p class="rw-cov">' + (hrs >= 168
       ? esc(T("每周 168 小时全部检测。", "Checked all 168 hours a week."))
       : fill(esc(T("每周 {h} / 168 小时 · 约 {runs} 次运行，而不是 {all} 次（−{pct} %）。",
@@ -613,14 +619,20 @@
     if (hrs > 0 && hrs < 168) {
       html += EkteNotice.callout("warning", "<b>" + esc(Tf("每周有 {n} 小时不检测。", "{n} h a week are not checked.", { n: 168 - hrs })) + "</b> " +
         esc(T("中转站可能恰好在这些时段换用其他模型，且其规律可以被摸清。", "A relay could serve another model in exactly these hours, and its pattern can be learned.")), { role: false });
-      if (w.interval_sec && w.interval_sec > winLongest(v) * 3600) {
+      if (every && every > winLongest(v) * 3600) {
         html += '<p class="note">' + icon("info") + "<span>" +
           esc(Tf("检测间隔（{every}）长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
             "The check interval ({every}) is longer than the window: start times slide, and a run that would start after the window waits for the next one.",
-            { every: fmtEvery(w.interval_sec) })) + "</span></p>";
+            { every: fmtEvery(every) })) + "</span></p>";
       }
     }
     return html;
+  }
+  // the interval the window's estimate counts with: for a draft the one being
+  // chosen in its setup (0 until it is valid), else the monitor's
+  function intervalOf(w, s) {
+    if (!isDraft(w)) return w.interval_sec;
+    return s.vals.interval != null && !checkInterval(s.vals.interval) ? minutesOf(s.vals.interval) * 60 : 0;
   }
   // the run window's heatmap uses the blocks of the Analytics peak-hours default (4 h), so the two grids line up
   var RW_BLOCK = 4;
@@ -882,9 +894,10 @@
             meta(T("协议", "Protocol"), protoCell(w)) +
             (embed ? meta(T("声称维度", "Claimed dimension"), dimsCell(w, s))
               : tool ? "" : meta(T("性能探测请求", "Performance probe requests"), streamCell(w))) +
-            meta(T("检测间隔", "Check interval"), intervalCell(w, s)) +
+            // a draft sets interval, run window and (taken from a run) its key in the setup below, not here
+            (draft ? "" : meta(T("检测间隔", "Check interval"), intervalCell(w, s))) +
             (draft ? "" : meta(T("运行时段", "Run window"), windowCell(w, s))) +
-            meta(T("API 密钥", "API key"), keyCell(w, s)) +
+            (draft && w.source_report_id != null && !w.has_key ? "" : meta(T("API 密钥", "API key"), keyCell(w, s))) +
             meta(thrLabel, '<select class="in" data-act="alert" data-id="' + w.id + '" aria-label="' + esc(thrLabel + " — " + name) + '">' + thresholdOptions(w.alert_on || "medium") + "</select>") +
             meta(T("Webhook", "Webhooks"), hooksCell(w, s)) +
             meta(langLabel, '<select class="in" data-act="lang" data-id="' + w.id + '" aria-label="' + esc(langLabel + " — " + name) + '">' + langOptions(w.language) + "</select>") +
@@ -1241,6 +1254,13 @@
       s.errs.interval = checkInterval(s.vals.interval);
       if (s.errs.interval) first = first || "f-interval";
       else body.interval_sec = minutesOf(s.vals.interval) * 60;
+      // the run window chosen in the setup ("Always" or untouched: none)
+      var wv = s.vals.win;
+      s.errs.window = wv ? checkWindow(wv) : null;
+      if (s.errs.window) first = first || "f-window";
+      else if (wv && wv.preset !== "always") {
+        body.run_window = { tz: wv.tz, days: wv.days.slice().sort(), start: pad2(wv.start) + ":00", end: pad2(wv.end) + ":00" };
+      }
     }
     if (String(s.vals.key || "").trim()) body.api_key = s.vals.key.trim();
     s.msg = null;
@@ -1328,6 +1348,12 @@
         var box = $({ interval: "ive-", key: "ke-", hooks: "hke-", dims: "dme-" }[field] + id);
         if (box) { box.hidden = true; box.textContent = ""; }
       }
+    }
+    // a draft's run window counts its runs with the interval being chosen: redraw it
+    var w = byId(id);
+    if (field === "interval" && w && isDraft(w) && s.vals.win && s.vals.win.preset !== "always") {
+      render();
+      focusAct("f-interval", id);
     }
   });
 

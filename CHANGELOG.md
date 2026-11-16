@@ -34,6 +34,11 @@ padded by 24, 20, 18, 14 or 0 px and blocks were 12 to 23 px apart.
   content and nowhere else.
 - Actions are as wide as their labels, right-aligned, with the main action
   last (e.g. Delete, then Run now); only Start audit spans the width.
+- A monitor scheduled from History sets its run window (days, hours, time
+  zone, with the week heatmap) in its setup, before it is activated; its card
+  no longer repeats the interval and key rows the setup asks for. The
+  editor's runs-a-week estimate now counts intervals under an hour (every
+  10 min over 60 h: about 360 runs, not 60).
 - Tests check the block order, gap, text start and action rows on every page
   in the browser, and keep the markup and stylesheets to the template.
 

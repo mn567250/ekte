@@ -23,7 +23,7 @@
   "Save": "Lagre",
   "Schedule as monitor": "Planlegg som overvåking",
   "Stored": "Lagret",
-  "The configuration comes from the run in History. Set how often it runs, then activate it.": "Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den.",
+  "The configuration comes from the run in History. Set how often and when it runs, then activate it.": "Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte og når den skal kjøre, og aktiver den.",
   "Webhook URLs (one per line)": "Webhook-URL-er (én per linje)",
   "Webhooks saved.": "Webhookene er lagret.",
   "(optional)": "(valgfritt)",

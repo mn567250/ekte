@@ -91,7 +91,7 @@ gèrent en ligne de commande.
 
 ### Fenêtre d’exécution
 
-Un moniteur peut avoir une **fenêtre d’exécution** : les jours de la semaine et les heures où le planificateur le lance, par exemple lun–ven, 07:00–19:00, Europe/Berlin. Elle se modifie directement sur la page Moniteurs (**Fenêtre d’exécution**, après **Intervalle de contrôle**). Hors de la fenêtre, le moniteur ne s’exécute pas ; sans fenêtre, il tourne en continu, comme avant.
+Un moniteur peut avoir une **fenêtre d’exécution** : les jours de la semaine et les heures où le planificateur le lance, par exemple lun–ven, 07:00–19:00, Europe/Berlin. Elle se modifie directement sur la page Moniteurs (**Fenêtre d’exécution**, après **Intervalle de contrôle**) ; un moniteur planifié depuis l’Historique la définit dans sa configuration, avant d’être activé. Hors de la fenêtre, le moniteur ne s’exécute pas ; sans fenêtre, il tourne en continu, comme avant.
 
 - Heures entières uniquement ; `24:00` est la fin de la journée. Une fin égale ou antérieure au début donne une fenêtre de nuit : elle se termine le lendemain matin et appartient au jour où elle commence (une fenêtre du vendredi 22:00–06:00 couvre le samedi de 00:00 à 06:00).
 - Le fuseau horaire enregistré avec la fenêtre (nom IANA) fait foi, jamais celui du serveur. Les changements d’heure sont sans effet : ekte vérifie seulement si *maintenant* est dans la fenêtre.

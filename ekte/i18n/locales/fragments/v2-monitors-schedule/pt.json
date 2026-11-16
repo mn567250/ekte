@@ -23,7 +23,7 @@
   "Save": "Guardar",
   "Schedule as monitor": "Agendar como monitor",
   "Stored": "Guardada",
-  "The configuration comes from the run in History. Set how often it runs, then activate it.": "A configuração vem da execução no Histórico. Defina com que frequência é executado e ative-o.",
+  "The configuration comes from the run in History. Set how often and when it runs, then activate it.": "A configuração vem da execução no Histórico. Defina com que frequência e quando é executado e ative-o.",
   "Webhook URLs (one per line)": "URLs de webhook (uma por linha)",
   "Webhooks saved.": "Webhooks guardados.",
   "(optional)": "(opcional)",

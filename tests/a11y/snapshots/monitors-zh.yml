@@ -122,12 +122,6 @@
         - text: · 自动识别
       - term: 性能探测请求
       - definition: 流式
-      - term: 检测间隔
-      - definition: 未设置
-      - term: API 密钥
-      - definition:
-        - text: 无
-        - button "更换"
       - term: 告警阈值
       - definition:
         - combobox "告警阈值 — gpt-4o":
@@ -166,7 +160,7 @@
         - text: 在分析中打开
       - form "设置后即可启用":
         - heading "设置后即可启用" [level=4]
-        - text: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。 检测间隔
+        - text: 配置取自检测历史中的那次运行。设置运行间隔和运行时段后启用即可。 检测间隔
         - combobox "检测间隔":
           - option "请选择…" [selected]
           - option "每 5 分钟"
@@ -188,6 +182,14 @@
           - /placeholder: sk-... 或 env:EKTE_API_KEY
         - button "显示密钥"
         - paragraph: 检测历史不保存密钥。本地或自托管模型可留空。
+        - group "监控生效":
+          - text: 运行时段
+          - group "预设":
+            - button "始终" [pressed]
+            - button "工作日"
+            - button "工作日 07–19"
+            - button "自定义"
+          - paragraph: 监控按检测间隔全天候运行。
         - button "启用监控"
       - button "删除"
       - button "立即运行"
