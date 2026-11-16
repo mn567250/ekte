@@ -5,10 +5,10 @@
   "en": "EN 301 549 V3.2.1, chapter 9",
   "wcag": "WCAG 2.1 level A + AA"
  },
- "generated_at": "2026-11-16T16:37:15+00:00",
- "tests_run_at": "2026-10-31T00:04:43+00:00",
- "ekte_version": "0.30.0",
- "commit": "5885ea322d17",
+ "generated_at": "2026-11-16T18:03:26+00:00",
+ "tests_run_at": "2026-11-16T18:02:50+00:00",
+ "ekte_version": "0.35.0",
+ "commit": "700e822f51bb",
  "axe_version": "4.13.0",
  "tested": {
   "languages": [
@@ -17,6 +17,7 @@
    "es",
    "fr",
    "it",
+   "nb",
    "pt",
    "zh"
   ],
@@ -83,10 +84,10 @@
    }
   },
   "tests": {
-   "run": 1156,
-   "passed": 1156,
+   "run": 1337,
+   "passed": 1337,
    "failed": 0,
-   "skipped": 0
+   "skipped": 1
   }
  },
  "steps": [
@@ -100,10 +101,10 @@
    "status": "pass",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 30,
-    "passed": 30,
+    "run": 34,
+    "passed": 34,
     "failed": 0,
-    "skipped": 156
+    "skipped": 176
    },
    "test_names": [
     "test_audit_surface_states",
@@ -225,8 +226,8 @@
    "status": "manual review pending",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 357,
-    "passed": 357,
+    "run": 420,
+    "passed": 420,
     "failed": 0,
     "skipped": 4
    },
@@ -236,7 +237,12 @@
     "test_audit_surface_states",
     "test_best_practices",
     "test_consistent_navigation_and_landmarks",
+    "test_fields_are_labelled_and_the_panel_passes_axe",
     "test_heading_structure",
+    "test_kpi_grid_is_four_by_three",
+    "test_more_columns_chips_show_and_hide_a_column",
+    "test_table_sorts_by_its_columns",
+    "test_trend_picker",
     "test_wcag_rules_as_loaded",
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
@@ -269,14 +275,17 @@
    "status": "manual review pending",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 25,
-    "passed": 25,
+    "run": 42,
+    "passed": 42,
     "failed": 0,
     "skipped": 0
    },
    "test_names": [
+    "test_pages_follow_one_template",
     "test_reading_order_matches_visual_order",
-    "test_sort_buttons"
+    "test_rows_have_one_shape",
+    "test_sort_buttons",
+    "test_wide_tables_fit_and_keep_their_first_column"
    ],
    "failures": [],
    "status_machine": "manual review pending",
@@ -306,8 +315,8 @@
    "status": "pass",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 44,
-    "passed": 44,
+    "run": 50,
+    "passed": 50,
     "failed": 0,
     "skipped": 0
    },
@@ -356,10 +365,10 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 122,
-    "passed": 122,
+    "run": 138,
+    "passed": 138,
     "failed": 0,
-    "skipped": 64
+    "skipped": 72
    },
    "test_names": [
     "test_audit_surface_states",
@@ -380,10 +389,10 @@
    "status": "manual review pending",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 100,
-    "passed": 100,
+    "run": 112,
+    "passed": 112,
     "failed": 0,
-    "skipped": 126
+    "skipped": 142
    },
    "test_names": [
     "test_audit_surface_states",
@@ -442,8 +451,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 186,
-    "passed": 186,
+    "run": 210,
+    "passed": 210,
     "failed": 0,
     "skipped": 4
    },
@@ -468,8 +477,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 224,
-    "passed": 224,
+    "run": 254,
+    "passed": 254,
     "failed": 0,
     "skipped": 4
    },
@@ -514,16 +523,21 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 45,
-    "passed": 45,
+    "run": 74,
+    "passed": 74,
     "failed": 0,
     "skipped": 0
    },
    "test_names": [
     "test_controls_reflow_at_320_css_px",
+    "test_kpi_grid_is_four_by_three",
     "test_paged_history_reflows_at_320_css_px",
+    "test_phone_header_is_two_rows",
     "test_reflow_at_320_css_px",
-    "test_view_controls_reflow_at_320_css_px"
+    "test_rows_have_one_shape",
+    "test_tiles_share_baselines_and_short_labels",
+    "test_view_controls_reflow_at_320_css_px",
+    "test_wide_tables_fit_and_keep_their_first_column"
    ],
    "failures": [],
    "status_machine": "pass"
@@ -576,10 +590,10 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 214,
-    "passed": 214,
+    "run": 232,
+    "passed": 232,
     "failed": 0,
-    "skipped": 14
+    "skipped": 26
    },
    "test_names": [
     "test_audit_surface_states",
@@ -639,10 +653,10 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 68,
-    "passed": 68,
+    "run": 95,
+    "passed": 95,
     "failed": 0,
-    "skipped": 184
+    "skipped": 191
    },
    "test_names": [
     "test_analytics_filter_panel_disclosure",
@@ -653,9 +667,13 @@
     "test_filter_panel_disclosure",
     "test_group_collapse",
     "test_popups_close_with_escape_and_return_focus",
+    "test_relay_and_model_are_dropdowns_with_checkboxes",
+    "test_settings_popover_keyboard",
     "test_show_more_by_keyboard",
+    "test_show_more_groups",
     "test_sort_buttons",
     "test_tabs_follow_arrow_key_pattern",
+    "test_trend_picker",
     "test_wcag_rules_as_loaded",
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
@@ -673,8 +691,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 42,
-    "passed": 42,
+    "run": 48,
+    "passed": 48,
     "failed": 0,
     "skipped": 0
    },
@@ -718,7 +736,7 @@
     "run": 15,
     "passed": 15,
     "failed": 0,
-    "skipped": 186
+    "skipped": 210
    },
    "test_names": [
     "test_audit_surface_states",
@@ -743,7 +761,7 @@
     "run": 36,
     "passed": 36,
     "failed": 0,
-    "skipped": 186
+    "skipped": 210
    },
    "test_names": [
     "test_audit_surface_states",
@@ -804,8 +822,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 231,
-    "passed": 231,
+    "run": 262,
+    "passed": 262,
     "failed": 0,
     "skipped": 4
    },
@@ -830,8 +848,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 189,
-    "passed": 189,
+    "run": 214,
+    "passed": 214,
     "failed": 0,
     "skipped": 4
    },
@@ -855,8 +873,8 @@
    "status": "manual review pending",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 102,
-    "passed": 102,
+    "run": 113,
+    "passed": 113,
     "failed": 0,
     "skipped": 0
    },
@@ -870,7 +888,10 @@
     "test_group_collapse",
     "test_kb_flow",
     "test_monitor_flow",
+    "test_run_outside_another_filter_shows_it",
+    "test_settings_popover_keyboard",
     "test_show_more_by_keyboard",
+    "test_show_more_groups",
     "test_surface_flow",
     "test_tool_monitor_cards"
    ],
@@ -902,13 +923,14 @@
    "status": "pass",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 182,
-    "passed": 182,
+    "run": 207,
+    "passed": 207,
     "failed": 0,
     "skipped": 4
    },
    "test_names": [
     "test_audit_surface_states",
+    "test_group_opens_in_analytics",
     "test_wcag_rules_as_loaded",
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
@@ -953,8 +975,8 @@
    "status": "pass",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 168,
-    "passed": 168,
+    "run": 192,
+    "passed": 192,
     "failed": 0,
     "skipped": 0
    },
@@ -1063,8 +1085,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 42,
-    "passed": 42,
+    "run": 48,
+    "passed": 48,
     "failed": 0,
     "skipped": 0
    },
@@ -1105,8 +1127,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 224,
-    "passed": 224,
+    "run": 254,
+    "passed": 254,
     "failed": 0,
     "skipped": 4
    },
@@ -1130,10 +1152,10 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 90,
-    "passed": 90,
+    "run": 104,
+    "passed": 104,
     "failed": 0,
-    "skipped": 132
+    "skipped": 148
    },
    "test_names": [
     "test_audit_surface_states",
@@ -1155,8 +1177,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 42,
-    "passed": 42,
+    "run": 48,
+    "passed": 48,
     "failed": 0,
     "skipped": 0
    },
@@ -1212,8 +1234,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 7,
-    "passed": 7,
+    "run": 8,
+    "passed": 8,
     "failed": 0,
     "skipped": 0
    },
@@ -1233,14 +1255,16 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 14,
-    "passed": 14,
+    "run": 18,
+    "passed": 18,
     "failed": 0,
     "skipped": 0
    },
    "test_names": [
     "test_consistent_identification",
-    "test_consistent_navigation_and_landmarks"
+    "test_consistent_navigation_and_landmarks",
+    "test_fields_are_labelled_and_the_panel_passes_axe",
+    "test_filters_follow_the_navigation_unless_kept_per_page"
    ],
    "failures": [],
    "status_machine": "pass"
@@ -1255,8 +1279,8 @@
    "status": "manual review pending",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 55,
-    "passed": 55,
+    "run": 62,
+    "passed": 62,
     "failed": 0,
     "skipped": 0
    },
@@ -1295,8 +1319,8 @@
    "status": "pass",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 189,
-    "passed": 189,
+    "run": 214,
+    "passed": 214,
     "failed": 0,
     "skipped": 4
    },
@@ -1326,8 +1350,8 @@
    "status": "pass",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 42,
-    "passed": 42,
+    "run": 48,
+    "passed": 48,
     "failed": 0,
     "skipped": 0
    },
@@ -1374,8 +1398,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 48,
-    "passed": 48,
+    "run": 54,
+    "passed": 54,
     "failed": 0,
     "skipped": 0
    },
@@ -1396,8 +1420,8 @@
    "status": "pass",
    "status_tests": "pass",
    "tests": {
-    "run": 291,
-    "passed": 291,
+    "run": 348,
+    "passed": 348,
     "failed": 0,
     "skipped": 4
    },
@@ -1406,16 +1430,28 @@
     "test_aria_snapshot_unchanged",
     "test_aria_tree_names",
     "test_audit_surface_states",
+    "test_check_columns_sort_worst_first",
     "test_controls_wcag_rules",
+    "test_copied_link_reproduces_the_view",
+    "test_fields_are_labelled_and_the_panel_passes_axe",
     "test_filter_panel_disclosure",
+    "test_filters_follow_the_navigation_unless_kept_per_page",
+    "test_forecast_rows_stay_after_the_measured_rows",
     "test_group_collapse",
+    "test_group_opens_in_analytics",
+    "test_leaderboard_sort_survives_another_grouping",
     "test_monitor_flow",
+    "test_more_columns_chips_show_and_hide_a_column",
     "test_paged_history_wcag_rules",
     "test_peak_hours_aggregation",
+    "test_relay_and_model_are_dropdowns_with_checkboxes",
+    "test_settings_popover_keyboard",
     "test_sort_buttons",
+    "test_table_sorts_by_its_columns",
     "test_tabs_follow_arrow_key_pattern",
     "test_tabs_load_only_their_panels",
     "test_tool_monitor_cards",
+    "test_trend_picker",
     "test_wcag_rules_as_loaded",
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
@@ -1433,23 +1469,35 @@
    "status": "manual review pending",
    "status_tests": "manual review pending",
    "tests": {
-    "run": 21,
-    "passed": 21,
+    "run": 49,
+    "passed": 49,
     "failed": 0,
-    "skipped": 0
+    "skipped": 1
    },
    "test_names": [
+    "test_a_copied_link_reproduces_the_view_in_a_fresh_browser",
     "test_analytics_filter_panel_disclosure",
     "test_audit_flow",
-    "test_copy_link_announces_it",
+    "test_changes_go_to_the_url_and_are_announced",
+    "test_copied_link_reproduces_the_view_in_a_fresh_browser",
     "test_copy_link_falls_back_to_a_selected_field",
+    "test_critical_notice_is_an_alert",
     "test_failing_audit_flow",
     "test_filter_panel_disclosure",
+    "test_history_shows_new_runs_notice_once",
     "test_kb_flow",
+    "test_link_to_an_old_run_widens_the_range",
     "test_monitor_flow",
+    "test_more_columns_chips_show_and_hide_a_column",
+    "test_other_notices_are_status",
+    "test_relay_and_model_are_dropdowns_with_checkboxes",
+    "test_run_outside_another_filter_shows_it",
     "test_show_more_by_keyboard",
+    "test_show_more_groups",
     "test_sort_buttons",
-    "test_surface_flow"
+    "test_surface_flow",
+    "test_table_sorts_by_its_columns",
+    "test_trend_picker"
    ],
    "failures": [],
    "status_machine": "manual review pending",
