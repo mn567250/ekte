@@ -181,7 +181,9 @@ class MockServer:
     def _usage(self, body: dict, completion_tokens: int) -> dict | None:
         if not self.emit_usage:
             return None
-        prompt = max(1, len(json.dumps(body.get("messages", []))) // 4)
+        # ~5 characters of the JSON messages per token: an English BPE tokenizer
+        # lands within the billing detector's slope tolerance of ekte's estimate.
+        prompt = max(1, len(json.dumps(body.get("messages", []))) // 5)
         prompt = int(prompt * self.inflate_usage_factor)
         completion = int(completion_tokens * self.inflate_usage_factor)
         return {

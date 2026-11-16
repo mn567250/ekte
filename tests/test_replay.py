@@ -78,8 +78,8 @@ def test_a_question_the_recorded_run_never_asked_is_inconclusive(tmp_path, monke
     billing = next(d for d in after.detectors if d.id == "billing")
     assert billing.status == Status.INCONCLUSIVE and billing.score is None
     missing = next(f for f in billing.findings if f.id == replay.MISSING_ID)
-    assert missing.evidence["missing_requests"] == 1 and missing.evidence_seqs == []
-    assert after.rescored_from.missing == {"billing": 1}
+    assert missing.evidence["missing_requests"] == 3 and missing.evidence_seqs == []  # three prompt sizes
+    assert after.rescored_from.missing == {"billing": 3}
     assert all(r.seq >= REPLAY_MISS_SEQ for r in after.performance.requests if r.detector == "billing")
     others = {k: v for k, v in _scores(json.loads(after.model_dump_json())).items() if k != "billing"}
     assert others == {k: v for k, v in _scores(before).items() if k != "billing"}
