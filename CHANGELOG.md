@@ -719,6 +719,16 @@ how many saved runs it re-extracts.
 
 ### Fixed
 
+- **The accessibility LLM review is current for the changed pages**
+  ([#265](https://github.com/mn567250/ekte/issues/265)). All 54 requests (6
+  pages × 8 languages, plus one translation comparison per page) were exported
+  again and answered by Claude Code subagents without an API call. The review
+  found nothing in any step. `a11y-llm-review.json` and the conformance report
+  (`bitv-report.json`) carry the new review, and exporting again changes no
+  request. The review also caught a German typo: the Monitors hint "… läuft sie
+  höchstens alle 5 Min.." ended in two full stops. It now reads "… läuft sie
+  alle 5 Min. höchstens einmal."
+
 - **A page notice's role follows its importance**
   ([#193](https://github.com/mn567250/ekte/issues/193)). `EkteNotice.show`
   (`notice.js`) now takes the role from one pure choice, `EkteNotice.roleFor`:
