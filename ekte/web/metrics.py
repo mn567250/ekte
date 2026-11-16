@@ -71,7 +71,9 @@ class Metric:
 
     ``fmt`` overrides the display format of the unit (:data:`FORMATS`);
     ``short`` / ``kpi`` say the metric has a shorter label (narrow tiles) / a
-    label of its own as an aggregate over runs ("Median score").
+    label of its own as an aggregate over runs ("Median score"); ``tag`` says
+    its tile carries a small tag (``metric.<id>.tag``) naming what sets it
+    apart from the tiles before it (another base: "All calls").
     """
 
     id: str
@@ -85,6 +87,7 @@ class Metric:
     fmt: str = ""  # display format; "" = the unit's
     short: bool = False  # has metric.<id>.short
     kpi: bool = False  # has metric.<id>.kpi
+    tag: bool = False  # has metric.<id>.tag
 
     @property
     def format(self) -> str:
@@ -103,6 +106,16 @@ class Metric:
         return f"metric.{self.id}.kpi" if self.kpi else self.label_key
 
     @property
+    def tile_label_key(self) -> str:
+        """A KPI tile's label (#233): the aggregate's own label, else the
+        short one (tiles are narrow: at most two lines), else the name."""
+        return self.kpi_label_key if self.kpi else self.short_label_key
+
+    @property
+    def tag_key(self) -> str | None:
+        return f"metric.{self.id}.tag" if self.tag else None
+
+    @property
     def agg_hint_key(self) -> str:
         return f"metric.{self.id}.agg_hint"
 
@@ -110,7 +123,8 @@ class Metric:
         return {"id": self.id, "unit": self.unit, "format": self.format, "higher_is_better": self.higher_is_better,
                 "agg": self.agg, "surfaces": [s for s in SURFACES if s in self.surfaces],
                 "label_key": self.label_key, "short_label_key": self.short_label_key,
-                "kpi_label_key": self.kpi_label_key, "agg_hint_key": self.agg_hint_key}
+                "kpi_label_key": self.kpi_label_key, "tile_label_key": self.tile_label_key,
+                "tag_key": self.tag_key, "agg_hint_key": self.agg_hint_key}
 
     def applies(self, surface: str) -> bool:
         return surface in self.surfaces
@@ -135,9 +149,9 @@ METRICS: dict[str, Metric] = {m.id: m for m in (
     _m("risk_high_share", "risk_level", "ratio", False, "share", short=True),
     _pooled("success_rate", True, (errorclass.SUCCESS,)),
     _pooled("error_rate", False, errorclass.RELAY_ERRORS),
-    _pooled("timeout_rate", False, (errorclass.RELAY_TIMEOUT,)),
+    _pooled("timeout_rate", False, (errorclass.RELAY_TIMEOUT,), short=True),
     _pooled("rate_limited_rate", False, (errorclass.RATE_LIMITED,), short=True),
-    _pooled("impaired_rate", False, errorclass.IMPAIRED, "requests_total", short=True),
+    _pooled("impaired_rate", False, errorclass.IMPAIRED, "requests_total", short=True, tag=True),
     _m("latency_p50", "latency_p50_ms", "ms", False),
     _m("latency_p95", "latency_p95_ms", "ms", False),
     _m("ttft_p50", "ttft_p50_ms", "ms", False, surfaces=CHAT_ONLY, short=True),
@@ -180,7 +194,7 @@ KPI_GRID: tuple[str, ...] = (
     "ttft_p50", "decode_tps", "billing_ratio_prompt", "billing_ratio_completion",
 )
 # Every KPI tile row of the web UI, by name: the ids in reading order, as
-# groups (a new group starts after a divider; its tiles share one base). The
+# groups (a new group starts with a tagged tile; its tiles share one base). The
 # Analytics summary answers one set (``kpi.set``, default "overview": the
 # grid above); the other sets head their panels (#208).
 KPI_SETS: dict[str, tuple[tuple[str, ...], ...]] = {
@@ -221,7 +235,7 @@ def catalogue() -> dict[str, Any]:
 
     every = [m.public() for m in (*METRICS.values(), *COUNTS.values())]
     keys = [k for m in every for k in (m["label_key"], m["short_label_key"], m["kpi_label_key"],
-                                       m["agg_hint_key"])]
+                                       m["agg_hint_key"], m["tag_key"]) if k]
     keys += [TREND_KEYS[k] for k in (1, -1, 0)]
     return {
         "metrics": every,
@@ -366,9 +380,11 @@ def tile(metric: str | Metric, cell: Any = None, previous: Any = None, *,
     """One KPI tile (#208): :func:`present` of ``cell`` against ``previous``
     (aggregated cells: ``value``, ``n``, ``coverage``, ``numerator``,
     ``denominator``; None for none), plus what every tile row draws: the
-    metric's ``format``, its ``label_key`` (the KPI label), ``hint_key``
-    (how a pooled rate is aggregated; None for other metrics) and ``group``
-    (the tile's group in its set: a divider before a new one)."""
+    metric's ``format``, its ``label_key`` (the tile label:
+    :attr:`Metric.tile_label_key`), ``hint_key`` (how a pooled rate is
+    aggregated; None for other metrics), ``tag_key`` (a tag naming what sets
+    the tile apart; None for most) and ``group`` (the tile's group in its
+    set: a new group starts with a tagged tile)."""
     m = metric if isinstance(metric, Metric) else get(metric)
     shown = present(m, cell.value if cell else None, previous.value if previous else None,
                     cell.n if cell else None, previous.n if previous else None, surface=surface)
@@ -381,8 +397,8 @@ def tile(metric: str | Metric, cell: Any = None, previous: Any = None, *,
         "previous_n": previous.n if previous and applies else None,
         "numerator": cell.numerator if cell else None,
         "denominator": cell.denominator if cell else None,
-        "format": m.format, "label_key": m.kpi_label_key,
-        "hint_key": m.agg_hint_key if m.agg == "pooled" else None,
+        "format": m.format, "label_key": m.tile_label_key,
+        "hint_key": m.agg_hint_key if m.agg == "pooled" else None, "tag_key": m.tag_key,
         "group": group,
     }
 

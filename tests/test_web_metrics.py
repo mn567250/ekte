@@ -129,7 +129,7 @@ def test_registry_shape():
                 "decode_tps", "runs", "relays", "models"):
         assert mid in ids
     fields = {"id", "unit", "format", "agg", "surfaces", "higher_is_better", "label_key", "short_label_key",
-              "kpi_label_key", "agg_hint_key"}
+              "kpi_label_key", "tile_label_key", "tag_key", "agg_hint_key"}
     for m in cat["metrics"]:
         assert set(m) == fields
         assert m["format"] in metrics.FORMATS and m["agg"] in metrics.AGGS

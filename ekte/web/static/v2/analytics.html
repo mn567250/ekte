@@ -781,10 +781,10 @@
         action: !$("#freset").hidden ? '<button type="button" class="btn sm" id="kreset">' + esc(T("重置筛选", "Reset filters")) + "</button>" : "" });
       return;
     }
-    // always 4 columns x 3 rows (2 columns on phones), in the server's
-    // order; a tile that does not apply keeps its slot ("n/a")
+    // as many columns as fit (4 x 3 here, 2 columns on phones), in the
+    // server's order; a tile that does not apply keeps its slot ("n/a")
     var tiles = kpiTiles(s, few ? "kpi-few" : null);
-    body.innerHTML = K.html(tiles, { label: T("关键指标", "Key figures"), cols: 4, idp: "kh" });
+    body.innerHTML = K.html(tiles, { label: T("关键指标", "Key figures"), idp: "kh" });
     countKpis(body, tiles, "kpi");
   }
   $("#kpi-body").addEventListener("click", function (ev) {
@@ -1420,7 +1420,7 @@
     }
     // the relay's rates (over the calls it answered), then, after a divider,
     // the impaired share (over all calls): tiles of the summary's errors set
-    var head = kpiHead("err", p.data[1], function (t) { return t.group ? T("占全部调用", "Of all calls") : ""; });
+    var head = kpiHead("err", p.data[1]);
     var cats = errCats();
     // weekday x hour: a grid of the relay error rate (the tables keep the classes)
     var grid = eb === "dow_hour";
