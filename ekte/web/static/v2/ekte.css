@@ -166,6 +166,40 @@ main[tabindex="-1"]:focus { outline: none; }
 @media (max-width: 720px) {
   .znav .links { margin: 0 -16px; padding: 0 16px; }
 }
+/* the display settings (theme, motion, language): in the row on wide
+   screens; on phones (issue 231) behind one button, in a popover under it, so
+   the header is two rows: logo + version + settings + accessibility, then
+   the section links (nav.js) */
+.znav .tail { position: relative; }
+.zset-panel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.znav .zset {
+  display: none; align-items: center; justify-content: center; flex: none; cursor: pointer;
+  width: var(--h-sm); height: var(--h-sm); padding: 0; color: var(--ink-muted);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 50%;
+  transition: border-color var(--dur-fast), color var(--dur-fast);
+}
+.znav .zset:hover, .znav .zset[aria-expanded="true"] { border-color: var(--ink-muted); color: var(--primary); }
+@media (max-width: 600px) {
+  .znav { flex-wrap: wrap; padding-top: 14px; }
+  .znav .tail { flex-wrap: nowrap; }
+  .znav .zset { display: inline-flex; }
+  .zset-panel {
+    position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; flex-direction: column; align-items: stretch;
+    width: max-content; max-width: calc(100vw - 32px); padding: var(--s-3); gap: var(--s-2);
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-pop);
+  }
+  .zset-panel:not(.open) { display: none; }
+}
+/* a row that scrolls sideways (nav.js EkteScroll.fade) fades at the edge
+   (a mask: only its alpha counts, the colour is any opaque token)
+   that hides more of it, so the hidden items show as such */
+.scroll-x { --fl: 0px; --fr: 0px; }
+.scroll-x.fl { --fl: 28px; }
+.scroll-x.fr { --fr: 28px; }
+.scroll-x.fl, .scroll-x.fr {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, var(--ink) var(--fl), var(--ink) calc(100% - var(--fr)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, var(--ink) var(--fl), var(--ink) calc(100% - var(--fr)), transparent 100%);
+}
 
 /* ---------- pills / language switch ---------- */
 .pill {
@@ -538,9 +572,11 @@ select.in {
 .tabs [role="tab"]:hover { color: var(--ink); }
 .tabs [role="tab"][aria-selected="true"] { color: var(--ink); background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow-pop); }
 .tabs [role="tab"][aria-selected="true"] .zicon { color: var(--primary); }
-/* five or more tabs: each as wide as its label, wrapping onto a second row */
-.tabs:has(> [role="tab"]:nth-of-type(5)) { flex-wrap: wrap; }
-.tabs:has(> [role="tab"]:nth-of-type(5)) > [role="tab"] { flex: 0 0 auto; }
+/* five or more tabs: each as wide as its label, in one row that scrolls
+   sideways where it does not fit (phones), with fading edges (nav.js) */
+.tabs:has(> [role="tab"]:nth-of-type(5)) { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.tabs:has(> [role="tab"]:nth-of-type(5))::-webkit-scrollbar { display: none; }
+.tabs:has(> [role="tab"]:nth-of-type(5)) > [role="tab"] { flex: 1 0 auto; white-space: nowrap; }
 /* a tab tabs.js skips (aria-disabled) */
 .tabs [role="tab"][aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
 .tabs [role="tab"][aria-disabled="true"]:hover { color: var(--ink-muted); }

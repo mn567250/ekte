@@ -6,22 +6,23 @@
     - text: ekte.
   - link "v<version> Endringslogg":
     - /url: /changelog
-  - combobox "Tema":
-    - option "Automatisk tema"
-    - option "Lyst" [selected]
-    - option "Mørkt"
-  - combobox "Bevegelse":
-    - option "Bevegelse på" [selected]
-    - option "Bevegelse av"
-  - combobox "Språk":
-    - option "English"
-    - option "中文"
-    - option "Français"
-    - option "Español"
-    - option "Português"
-    - option "Italiano"
-    - option "Deutsch"
-    - option "Norsk" [selected]
+  - group "Visningsinnstillinger":
+    - combobox "Tema":
+      - option "Automatisk tema"
+      - option "Lyst" [selected]
+      - option "Mørkt"
+    - combobox "Bevegelse":
+      - option "Bevegelse på" [selected]
+      - option "Bevegelse av"
+    - combobox "Språk":
+      - option "English"
+      - option "中文"
+      - option "Français"
+      - option "Español"
+      - option "Português"
+      - option "Italiano"
+      - option "Deutsch"
+      - option "Norsk" [selected]
   - link "Tilgjengelighet":
     - /url: /accessibility
   - navigation "Hovednavigasjon":

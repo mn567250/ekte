@@ -9,6 +9,15 @@ onto `<header class="znav">` in `caching.stamp_version`), the report renderer
 `lang.js` (language switch), `locales.js` (translation data), `i18n.js` (finding
 translations), `icons.js` (including the ekte logo), `secretfield.js` and
 `perf.js` (performance charts).
+On phones (≤ 600 px, #231) the header is two rows: the logo with the version,
+one **Display settings** button (a disclosure, `aria-expanded` /
+`aria-controls`) and the accessibility link, then the section links. The
+button opens the theme, motion and language switches in a popover under it
+(Escape or a click outside closes it, Escape returns the focus to the button);
+on wider screens the button is hidden and the switches sit in the row.
+Rows that scroll sideways (the section links, a primary tab bar of five or
+more tabs, which never wraps) fade at the edge that hides more
+(`EkteScroll.fade`, `.scroll-x.fl` / `.fr`).
 Every color of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal color.

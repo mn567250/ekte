@@ -6,22 +6,23 @@
     - text: ekte.
   - link "v<version> Changelog":
     - /url: /changelog
-  - combobox "Theme":
-    - option "Auto theme"
-    - option "Light" [selected]
-    - option "Dark"
-  - combobox "Motion":
-    - option "Motion on" [selected]
-    - option "Motion off"
-  - combobox "Language":
-    - option "English" [selected]
-    - option "中文"
-    - option "Français"
-    - option "Español"
-    - option "Português"
-    - option "Italiano"
-    - option "Deutsch"
-    - option "Norsk"
+  - group "Display settings":
+    - combobox "Theme":
+      - option "Auto theme"
+      - option "Light" [selected]
+      - option "Dark"
+    - combobox "Motion":
+      - option "Motion on" [selected]
+      - option "Motion off"
+    - combobox "Language":
+      - option "English" [selected]
+      - option "中文"
+      - option "Français"
+      - option "Español"
+      - option "Português"
+      - option "Italiano"
+      - option "Deutsch"
+      - option "Norsk"
   - link "Accessibility":
     - /url: /accessibility
   - navigation "Main navigation":

@@ -20,6 +20,21 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: compact header on phones ([#231](https://github.com/mn567250/ekte/issues/231))
+
+At 390 px the header took about 170 px over three rows before any content,
+the section links hid "Audit" off the left edge without a hint, and the five
+Analytics tabs wrapped with "Billing" alone on a second line.
+
+- The phone header is two rows: the logo, version, one display settings
+  button (theme, motion and language in a popover) and the accessibility link,
+  then the section links. The hero starts about 115 px from the top.
+- The section links and a primary tab bar of five or more tabs stay in one
+  row and scroll sideways, fading at the edge that hides more.
+- Tests measure the header rows, the hero position, the one-row bars and
+  their fading edges on every page at 390 px, and the popover's keyboard
+  behaviour; no page may style the header.
+
 ### Web UI: History run rows rebuilt ([#232](https://github.com/mn567250/ekte/issues/232))
 
 History rows were 58, 88 or 108 px tall depending on how their mono details
