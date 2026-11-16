@@ -21,6 +21,19 @@
  * the same place on every page (BITV 9.3.2.3). Its accessible name comes from
  * aria-label (the icon is aria-hidden), its tooltip from title.
  *
+ * On phones (issue 231) the header is two rows: the logo with the version,
+ * one "Display settings" button and the accessibility link, then the section
+ * links. The button (a disclosure: aria-expanded / aria-controls) opens the
+ * theme, motion and language switches in a popover below it; Escape or a
+ * click outside closes it and Escape returns the focus to the button. On
+ * wider screens the button is hidden and the switches sit in the row. The
+ * switches come right after the button in the DOM, so reading and Tab order
+ * match what is shown (BITV 9.1.3.2 / 9.2.4.3).
+ *
+ * Rows that scroll sideways (the section links, a primary tab bar of five or
+ * more tabs) fade at the edge that hides more (EkteScroll.fade: .fl / .fr),
+ * so hidden items are visible as such.
+ *
  * The first item of .tail is the running version (v0.34.0, or v0.34.0+dev in
  * a source checkout), a link to its changelog. The server writes both onto the
  * header as data-version / data-changelog (ekte/web/changelog.py); without
@@ -73,6 +86,9 @@
       '<a class="logo" href="/" aria-label="ekte"><span class="b">' + ico("logo", { size: 18 }) +
       "</span><span>ekte<b>.</b></span></a>" +
       '<div class="tail">' + versionLink +
+      '<button type="button" class="zset" aria-expanded="false" aria-controls="zset" aria-label="Display settings" title="Display settings"' +
+      ' data-en-aria-label="Display settings" data-en-title="Display settings">' + ico("sliders", { size: 16 }) + "</button>" +
+      '<div class="zset-panel" id="zset" role="group" aria-label="Display settings" data-en-aria-label="Display settings">' +
       '<select class="theme-sel" aria-label="Theme" title="Theme" data-en-aria-label="Theme" data-en-title="Theme">' +
       '<option value="system" data-en="Auto theme">Auto theme</option>' +
       '<option value="light" data-en="Light">Light</option>' +
@@ -81,6 +97,7 @@
       '<option value="on" data-en="Motion on">Motion on</option>' +
       '<option value="off" data-en="Motion off">Motion off</option></select>' +
       '<select class="lang-sel" aria-label="Language" title="Language" data-en-aria-label="Language" data-en-title="Language"></select>' +
+      "</div>" +
       '<a class="a11y" href="/accessibility"' + (page === "a11y" ? ' aria-current="page"' : "") +
       ' aria-label="Accessibility" title="Accessibility" data-en-aria-label="Accessibility" data-en-title="Accessibility">' +
       ico("a11y", { size: 16 }) + "</a>" +
@@ -100,6 +117,8 @@
     } else {
       ms.remove();
     }
+    settings(header);
+    fade(header.querySelector(".links"));
     // keep the active tab visible when the link row scrolls (phones). Scroll
     // the row itself: scrollIntoView() would also move Chromium's sequential
     // focus starting point to the active link, so the first Tab would jump
@@ -127,6 +146,51 @@
     }
   }
 
+  // The display settings popover (phones): a disclosure button and its panel.
+  function settings(header) {
+    var btn = header.querySelector(".zset"), panel = header.querySelector(".zset-panel");
+    if (!btn || !panel) return;
+    function set(open, focusBtn) {
+      btn.setAttribute("aria-expanded", String(open));
+      panel.classList.toggle("open", open);
+      if (!open && focusBtn) btn.focus();
+    }
+    btn.addEventListener("click", function () { set(btn.getAttribute("aria-expanded") !== "true"); });
+    header.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && btn.getAttribute("aria-expanded") === "true") {
+        ev.preventDefault();
+        set(false, panel.contains(document.activeElement) || document.activeElement === btn);
+      }
+    });
+    document.addEventListener("click", function (ev) {
+      if (btn.getAttribute("aria-expanded") === "true" && !btn.contains(ev.target) && !panel.contains(ev.target)) set(false);
+    });
+    // the focus leaving both (Tab past the last switch) closes it
+    header.addEventListener("focusout", function (ev) {
+      var to = ev.relatedTarget;
+      if (to && !btn.contains(to) && !panel.contains(to) && btn.getAttribute("aria-expanded") === "true") set(false);
+    });
+  }
+
+  // A row that scrolls sideways fades at each edge that hides more of it
+  // (.fl: more to the left, .fr: more to the right; ekte.css draws the fade).
+  function fade(row) {
+    if (!row || row._fade) return;
+    row._fade = true;
+    row.classList.add("scroll-x");
+    var tick = function () {
+      var max = row.scrollWidth - row.clientWidth;
+      row.classList.toggle("fl", max > 1 && row.scrollLeft > 1);
+      row.classList.toggle("fr", max > 1 && row.scrollLeft < max - 1);
+    };
+    row.addEventListener("scroll", tick, { passive: true });
+    if (window.ResizeObserver) new window.ResizeObserver(tick).observe(row);
+    else window.addEventListener("resize", tick);
+    if (window.requestAnimationFrame) window.requestAnimationFrame(tick);
+    else tick();
+  }
+  window.EkteScroll = { fade: fade };
+
   // The shared footer: after <main>, as the last child of .wrap.
   function footer(header) {
     var wrap = header.parentNode;
@@ -144,6 +208,9 @@
   // Appended once the page is parsed, so it lands after <main>, not before it.
   function addFooters() {
     for (var k = 0; k < headers.length; k++) footer(headers[k]);
+    // a primary tab bar of five or more tabs scrolls sideways on phones
+    var bars = document.querySelectorAll('.tabs:not(.sub)[role="tablist"]');
+    for (var t = 0; t < bars.length; t++) if (bars[t].querySelectorAll('[role="tab"]').length >= 5) fade(bars[t]);
     if (window.EKTE_LANG) window.EKTE_LANG.apply(document);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addFooters);

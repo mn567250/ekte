@@ -9,6 +9,15 @@ onto `<header class="znav">` in `caching.stamp_version`), the report renderer
 `lang.js` (language switch), `locales.js` (translation data), `i18n.js` (finding
 translations), `icons.js` (including the ekte logo), `secretfield.js` and
 `perf.js` (performance charts).
+On phones (≤ 600 px, #231) the header is two rows: the logo with the version,
+one **Display settings** button (a disclosure, `aria-expanded` /
+`aria-controls`) and the accessibility link, then the section links. The
+button opens the theme, motion and language switches in a popover under it
+(Escape or a click outside closes it, Escape returns the focus to the button);
+on wider screens the button is hidden and the switches sit in the row.
+Rows that scroll sideways (the section links, a primary tab bar of five or
+more tabs, which never wraps) fade at the edge that hides more
+(`EkteScroll.fade`, `.scroll-x.fl` / `.fr`).
 Every color of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal color.
@@ -266,7 +275,13 @@ a copied link shows that run again, also outside the filters: when only the rang
 out (`focus.by_range_only`), the range widens to a custom range from the run's
 day and the page notice says so once; otherwise the notice offers "Show it",
 which clears the filters in `focus.excluded_by` and moves focus to the run
-(see `docs/dev/web-server.md`, **The `focus` answer**). The trend picker (in the filter panel,
+(see `docs/dev/web-server.md`, **The `focus` answer**). A **run row** (#232)
+is two lines of one height: time, verdict badge, score and grade, then one
+muted sans details line (`metaHTML`: mode · Monitor · suite · surface ·
+protocol · stream mode · p50; on phones it wraps, and its " · " separators are
+drawn by CSS so no line starts or ends with one). The row's actions (re-run,
+schedule, delete; a monitor's run links to its monitor instead) are centred on
+the first line and always show (quiet, muted icons). On phones the group's trends follow its title in one row. The trend picker (in the filter panel,
 `EkteFilters` `extra`) lists `history_trends` of `GET /api/metrics` by
 `label_key`; `v2/trendpick.js` (`EkteTrendPick.clean / toggle / buttons`,
 tested under node) keeps one or two on: with two on the others are `disabled`

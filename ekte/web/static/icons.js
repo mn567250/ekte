@@ -91,6 +91,8 @@
     // a coin: Analytics' Billing tab
     coin: '<circle cx="12" cy="12" r="9"/><path d="M14.6 9.4c-.5-.9-1.5-1.4-2.6-1.4-1.4 0-2.6.8-2.6 2s1.2 1.6 2.6 1.9 2.6.8 2.6 2-1.2 2.1-2.6 2.1c-1.2 0-2.2-.6-2.7-1.5M12 6v2M12 16v2"/>',
     // "about equal": the verdict scale's "mostly consistent" (ekte/risk_scale.py)
+    // sliders: the header's display settings (theme, motion, language) on phones
+    sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
     approx: '<path d="M5 9.5c2.3-2 4.7-2 7 0s4.7 2 7 0M5 15c2.3-2 4.7-2 7 0s4.7 2 7 0"/>',
     // search — search
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',

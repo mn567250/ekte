@@ -6,22 +6,23 @@
     - text: ekte.
   - link "v<version> Registro de cambios":
     - /url: /changelog
-  - combobox "Tema":
-    - option "Automático"
-    - option "Claro" [selected]
-    - option "Oscuro"
-  - combobox "Animación":
-    - option "Animación activada" [selected]
-    - option "Animación desactivada"
-  - combobox "Idioma":
-    - option "English"
-    - option "中文"
-    - option "Français"
-    - option "Español" [selected]
-    - option "Português"
-    - option "Italiano"
-    - option "Deutsch"
-    - option "Norsk"
+  - group "Ajustes de visualización":
+    - combobox "Tema":
+      - option "Automático"
+      - option "Claro" [selected]
+      - option "Oscuro"
+    - combobox "Animación":
+      - option "Animación activada" [selected]
+      - option "Animación desactivada"
+    - combobox "Idioma":
+      - option "English"
+      - option "中文"
+      - option "Français"
+      - option "Español" [selected]
+      - option "Português"
+      - option "Italiano"
+      - option "Deutsch"
+      - option "Norsk"
   - link "Accesibilidad":
     - /url: /accessibility
   - navigation "Navegación principal":

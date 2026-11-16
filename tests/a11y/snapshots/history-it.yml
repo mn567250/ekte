@@ -6,22 +6,23 @@
     - text: ekte.
   - link "v<version> Registro delle modifiche":
     - /url: /changelog
-  - combobox "Tema":
-    - option "Automatico"
-    - option "Chiaro" [selected]
-    - option "Scuro"
-  - combobox "Animazione":
-    - option "Animazione attiva" [selected]
-    - option "Animazione disattivata"
-  - combobox "Lingua":
-    - option "English"
-    - option "中文"
-    - option "Français"
-    - option "Español"
-    - option "Português"
-    - option "Italiano" [selected]
-    - option "Deutsch"
-    - option "Norsk"
+  - group "Impostazioni di visualizzazione":
+    - combobox "Tema":
+      - option "Automatico"
+      - option "Chiaro" [selected]
+      - option "Scuro"
+    - combobox "Animazione":
+      - option "Animazione attiva" [selected]
+      - option "Animazione disattivata"
+    - combobox "Lingua":
+      - option "English"
+      - option "中文"
+      - option "Français"
+      - option "Español"
+      - option "Português"
+      - option "Italiano" [selected]
+      - option "Deutsch"
+      - option "Norsk"
   - link "Accessibilità":
     - /url: /accessibility
   - navigation "Navigazione principale":
@@ -146,39 +147,40 @@
         - text: Latenza p50 <duration>
     - list:
       - listitem:
-        - button "30 set 2026, 11:02 Coerente Punteggio 82 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "30 set 2026, 11:02 Coerente Punteggio 82 Voto B Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "30 set 2026, 10:02 Coerente Punteggio 85 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "30 set 2026, 10:02 Coerente Punteggio 85 Voto B Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "30 set 2026, 09:02 Coerente Punteggio 88 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "30 set 2026, 09:02 Coerente Punteggio 88 Voto B Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "28 set 2026, 10:02 Per lo più coerente Punteggio 78 Voto D check · standard openai · Streaming p50 <duration>"
+        - button "28 set 2026, 10:02 Per lo più coerente Punteggio 78 Voto D Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "28 set 2026, 09:02 Coerente Punteggio 80 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "28 set 2026, 09:02 Coerente Punteggio 80 Voto B Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "28 set 2026, 07:02 Coerente Punteggio 84 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "28 set 2026, 07:02 Coerente Punteggio 84 Voto B Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "26 set 2026, 08:02 Per lo più coerente Punteggio 70 Voto D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "26 set 2026, 08:02 Per lo più coerente Punteggio 70 Voto D Controllo Monitor standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
-        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - link "Apri il monitor di questa esecuzione":
+          - /url: /watches#w-1
         - button "Elimina voce"
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
@@ -199,24 +201,27 @@
         - text: Latenza p50 <duration>
     - list:
       - listitem:
-        - button "30 set 2026, 08:02 Probabilmente sostituito Punteggio 64 Voto D check · standard openai · Streaming p50 <duration>"
+        - button "30 set 2026, 08:02 Probabilmente sostituito Punteggio 64 Voto D Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "29 set 2026, 11:02 Probabilmente sostituito Punteggio 60 Voto D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 11:02 Probabilmente sostituito Punteggio 60 Voto D Controllo Monitor standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
-        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - link "Apri il monitor di questa esecuzione":
+          - /url: /watches#w-1
         - button "Elimina voce"
       - listitem:
-        - button "29 set 2026, 10:02 Per lo più coerente Punteggio 66 Voto D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 10:02 Per lo più coerente Punteggio 66 Voto D Controllo Monitor standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
-        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - link "Apri il monitor di questa esecuzione":
+          - /url: /watches#w-1
         - button "Elimina voce"
       - listitem:
-        - button "29 set 2026, 09:02 Probabilmente sostituito Punteggio 58 Voto D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 09:02 Probabilmente sostituito Punteggio 58 Voto D Controllo Monitor standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
-        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - link "Apri il monitor di questa esecuzione":
+          - /url: /watches#w-1
         - button "Elimina voce"
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
@@ -237,12 +242,12 @@
         - text: Latenza p50 <duration>
     - list:
       - listitem:
-        - button "29 set 2026, 07:02 Coerente Punteggio 91 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 07:02 Coerente Punteggio 91 Voto B Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
       - listitem:
-        - button "29 set 2026, 06:02 Coerente Punteggio 89 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "29 set 2026, 06:02 Coerente Punteggio 89 Voto B Controllo standard openai Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
@@ -261,11 +266,11 @@
       - listitem: Latenza p50 <duration>
     - list:
       - listitem:
-        - button "27 set 2026, 10:02 Per lo più coerente Punteggio 72 Voto D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "27 set 2026, 10:02 Per lo più coerente Punteggio 72 Voto D Controllo standard openai Streaming p50 <duration>" [expanded]
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
-        - region "27 set 2026, 10:02 Per lo più coerente Punteggio 72 Voto D check · standard openai · Streaming p50 <duration>":
+        - region "27 set 2026, 10:02 Per lo più coerente Punteggio 72 Voto D Controllo standard openai Streaming p50 <duration>":
           - article "Per lo più coerente, con alcuni problemi minori":
             - text: Per lo più coerente
             - heading "Per lo più coerente, con alcuni problemi minori" [level=2]
@@ -353,7 +358,7 @@
       - listitem: Latenza p50 nessun dato
     - list:
       - listitem:
-        - button "27 set 2026, 07:47 Probabilmente sostituito Punteggio 53 Voto F check · standard"
+        - button "27 set 2026, 07:47 Probabilmente sostituito Punteggio 53 Voto F Controllo standard"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce" [expanded]

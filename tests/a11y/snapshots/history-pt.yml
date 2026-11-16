@@ -6,22 +6,23 @@
     - text: ekte.
   - link "v<version> Registro de alterações":
     - /url: /changelog
-  - combobox "Tema":
-    - option "Automático"
-    - option "Claro" [selected]
-    - option "Escuro"
-  - combobox "Animação":
-    - option "Animação ligada" [selected]
-    - option "Animação desligada"
-  - combobox "Idioma":
-    - option "English"
-    - option "中文"
-    - option "Français"
-    - option "Español"
-    - option "Português" [selected]
-    - option "Italiano"
-    - option "Deutsch"
-    - option "Norsk"
+  - group "Configurações de exibição":
+    - combobox "Tema":
+      - option "Automático"
+      - option "Claro" [selected]
+      - option "Escuro"
+    - combobox "Animação":
+      - option "Animação ligada" [selected]
+      - option "Animação desligada"
+    - combobox "Idioma":
+      - option "English"
+      - option "中文"
+      - option "Français"
+      - option "Español"
+      - option "Português" [selected]
+      - option "Italiano"
+      - option "Deutsch"
+      - option "Norsk"
   - link "Acessibilidade":
     - /url: /accessibility
   - navigation "Navegação principal":
@@ -146,39 +147,40 @@
         - text: Latência p50 <duration>
     - list:
       - listitem:
-        - button "30/09/2026, 11:02 Coerente Pontuação 82 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "30/09/2026, 11:02 Coerente Pontuação 82 Nota B Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "30/09/2026, 10:02 Coerente Pontuação 85 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "30/09/2026, 10:02 Coerente Pontuação 85 Nota B Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "30/09/2026, 09:02 Coerente Pontuação 88 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "30/09/2026, 09:02 Coerente Pontuação 88 Nota B Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "28/09/2026, 10:02 Maioritariamente coerente Pontuação 78 Nota D check · standard openai · Streaming p50 <duration>"
+        - button "28/09/2026, 10:02 Maioritariamente coerente Pontuação 78 Nota D Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "28/09/2026, 09:02 Coerente Pontuação 80 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "28/09/2026, 09:02 Coerente Pontuação 80 Nota B Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "28/09/2026, 07:02 Coerente Pontuação 84 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "28/09/2026, 07:02 Coerente Pontuação 84 Nota B Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "26/09/2026, 08:02 Maioritariamente coerente Pontuação 70 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "26/09/2026, 08:02 Maioritariamente coerente Pontuação 70 Nota D Verificação Monitor standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
-        - button "Esta execução foi gerada por um monitor" [disabled]
+        - link "Abrir o monitor desta execução":
+          - /url: /watches#w-1
         - button "Eliminar entrada"
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
@@ -199,24 +201,27 @@
         - text: Latência p50 <duration>
     - list:
       - listitem:
-        - button "30/09/2026, 08:02 Provavelmente substituído Pontuação 64 Nota D check · standard openai · Streaming p50 <duration>"
+        - button "30/09/2026, 08:02 Provavelmente substituído Pontuação 64 Nota D Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "29/09/2026, 11:02 Provavelmente substituído Pontuação 60 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 11:02 Provavelmente substituído Pontuação 60 Nota D Verificação Monitor standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
-        - button "Esta execução foi gerada por um monitor" [disabled]
+        - link "Abrir o monitor desta execução":
+          - /url: /watches#w-1
         - button "Eliminar entrada"
       - listitem:
-        - button "29/09/2026, 10:02 Maioritariamente coerente Pontuação 66 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 10:02 Maioritariamente coerente Pontuação 66 Nota D Verificação Monitor standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
-        - button "Esta execução foi gerada por um monitor" [disabled]
+        - link "Abrir o monitor desta execução":
+          - /url: /watches#w-1
         - button "Eliminar entrada"
       - listitem:
-        - button "29/09/2026, 09:02 Provavelmente substituído Pontuação 58 Nota D Monitor check · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 09:02 Provavelmente substituído Pontuação 58 Nota D Verificação Monitor standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
-        - button "Esta execução foi gerada por um monitor" [disabled]
+        - link "Abrir o monitor desta execução":
+          - /url: /watches#w-1
         - button "Eliminar entrada"
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
@@ -237,12 +242,12 @@
         - text: Latência p50 <duration>
     - list:
       - listitem:
-        - button "29/09/2026, 07:02 Coerente Pontuação 91 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 07:02 Coerente Pontuação 91 Nota B Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
       - listitem:
-        - button "29/09/2026, 06:02 Coerente Pontuação 89 Nota B check · standard openai · Streaming p50 <duration>"
+        - button "29/09/2026, 06:02 Coerente Pontuação 89 Nota B Verificação standard openai Streaming p50 <duration>"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
@@ -261,11 +266,11 @@
       - listitem: Latência p50 <duration>
     - list:
       - listitem:
-        - button "27/09/2026, 10:02 Maioritariamente coerente Pontuação 72 Nota D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "27/09/2026, 10:02 Maioritariamente coerente Pontuação 72 Nota D Verificação standard openai Streaming p50 <duration>" [expanded]
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
-        - region "27/09/2026, 10:02 Maioritariamente coerente Pontuação 72 Nota D check · standard openai · Streaming p50 <duration>":
+        - region "27/09/2026, 10:02 Maioritariamente coerente Pontuação 72 Nota D Verificação standard openai Streaming p50 <duration>":
           - article "Globalmente coerente, com alguns pequenos problemas":
             - text: Maioritariamente coerente
             - heading "Globalmente coerente, com alguns pequenos problemas" [level=2]
@@ -353,7 +358,7 @@
       - listitem: Latência p50 sem dados
     - list:
       - listitem:
-        - button "27/09/2026, 07:47 Provavelmente substituído Pontuação 53 Nota F check · standard"
+        - button "27/09/2026, 07:47 Provavelmente substituído Pontuação 53 Nota F Verificação standard"
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada" [expanded]

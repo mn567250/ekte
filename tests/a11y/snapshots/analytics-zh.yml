@@ -6,22 +6,23 @@
     - text: ekte.
   - link "v<version> 更新日志":
     - /url: /changelog
-  - combobox "主题":
-    - option "跟随系统"
-    - option "浅色" [selected]
-    - option "深色"
-  - combobox "动画":
-    - option "动画开" [selected]
-    - option "动画关"
-  - combobox "语言":
-    - option "English"
-    - option "中文" [selected]
-    - option "Français"
-    - option "Español"
-    - option "Português"
-    - option "Italiano"
-    - option "Deutsch"
-    - option "Norsk"
+  - group "显示设置":
+    - combobox "主题":
+      - option "跟随系统"
+      - option "浅色" [selected]
+      - option "深色"
+    - combobox "动画":
+      - option "动画开" [selected]
+      - option "动画关"
+    - combobox "语言":
+      - option "English"
+      - option "中文" [selected]
+      - option "Français"
+      - option "Español"
+      - option "Português"
+      - option "Italiano"
+      - option "Deutsch"
+      - option "Norsk"
   - link "无障碍":
     - /url: /accessibility
   - navigation "主导航":

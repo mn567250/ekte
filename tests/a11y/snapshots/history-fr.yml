@@ -6,22 +6,23 @@
     - text: ekte.
   - link "v<version> Journal des modifications":
     - /url: /changelog
-  - combobox "Thème":
-    - option "Automatique"
-    - option "Clair" [selected]
-    - option "Sombre"
-  - combobox "Animation":
-    - option "Animation activée" [selected]
-    - option "Animation désactivée"
-  - combobox "Langue":
-    - option "English"
-    - option "中文"
-    - option "Français" [selected]
-    - option "Español"
-    - option "Português"
-    - option "Italiano"
-    - option "Deutsch"
-    - option "Norsk"
+  - group "Paramètres d'affichage":
+    - combobox "Thème":
+      - option "Automatique"
+      - option "Clair" [selected]
+      - option "Sombre"
+    - combobox "Animation":
+      - option "Animation activée" [selected]
+      - option "Animation désactivée"
+    - combobox "Langue":
+      - option "English"
+      - option "中文"
+      - option "Français" [selected]
+      - option "Español"
+      - option "Português"
+      - option "Italiano"
+      - option "Deutsch"
+      - option "Norsk"
   - link "Accessibilité":
     - /url: /accessibility
   - navigation "Navigation principale":
@@ -146,39 +147,40 @@
         - text: Latence p50 <duration>
     - list:
       - listitem:
-        - button "30 sept. 2026, 11:02 Conforme Score 82 Note B check · standard openai · Streaming p50 <duration>"
+        - button "30 sept. 2026, 11:02 Conforme Score 82 Note B Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "30 sept. 2026, 10:02 Conforme Score 85 Note B check · standard openai · Streaming p50 <duration>"
+        - button "30 sept. 2026, 10:02 Conforme Score 85 Note B Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "30 sept. 2026, 09:02 Conforme Score 88 Note B check · standard openai · Streaming p50 <duration>"
+        - button "30 sept. 2026, 09:02 Conforme Score 88 Note B Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "28 sept. 2026, 10:02 Globalement conforme Score 78 Note D check · standard openai · Streaming p50 <duration>"
+        - button "28 sept. 2026, 10:02 Globalement conforme Score 78 Note D Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "28 sept. 2026, 09:02 Conforme Score 80 Note B check · standard openai · Streaming p50 <duration>"
+        - button "28 sept. 2026, 09:02 Conforme Score 80 Note B Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "28 sept. 2026, 07:02 Conforme Score 84 Note B check · standard openai · Streaming p50 <duration>"
+        - button "28 sept. 2026, 07:02 Conforme Score 84 Note B Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "26 sept. 2026, 08:02 Globalement conforme Score 70 Note D Surveillance check · standard openai · Streaming p50 <duration>"
+        - button "26 sept. 2026, 08:02 Globalement conforme Score 70 Note D Contrôle Surveillance standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
-        - button "Cette exécution provient d’une surveillance" [disabled]
+        - link "Ouvrir la surveillance de cette exécution":
+          - /url: /watches#w-1
         - button "Supprimer l'entrée"
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
@@ -199,24 +201,27 @@
         - text: Latence p50 <duration>
     - list:
       - listitem:
-        - button "30 sept. 2026, 08:02 Probablement substitué Score 64 Note D check · standard openai · Streaming p50 <duration>"
+        - button "30 sept. 2026, 08:02 Probablement substitué Score 64 Note D Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "29 sept. 2026, 11:02 Probablement substitué Score 60 Note D Surveillance check · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 11:02 Probablement substitué Score 60 Note D Contrôle Surveillance standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
-        - button "Cette exécution provient d’une surveillance" [disabled]
+        - link "Ouvrir la surveillance de cette exécution":
+          - /url: /watches#w-1
         - button "Supprimer l'entrée"
       - listitem:
-        - button "29 sept. 2026, 10:02 Globalement conforme Score 66 Note D Surveillance check · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 10:02 Globalement conforme Score 66 Note D Contrôle Surveillance standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
-        - button "Cette exécution provient d’une surveillance" [disabled]
+        - link "Ouvrir la surveillance de cette exécution":
+          - /url: /watches#w-1
         - button "Supprimer l'entrée"
       - listitem:
-        - button "29 sept. 2026, 09:02 Probablement substitué Score 58 Note D Surveillance check · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 09:02 Probablement substitué Score 58 Note D Contrôle Surveillance standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
-        - button "Cette exécution provient d’une surveillance" [disabled]
+        - link "Ouvrir la surveillance de cette exécution":
+          - /url: /watches#w-1
         - button "Supprimer l'entrée"
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
@@ -237,12 +242,12 @@
         - text: Latence p50 <duration>
     - list:
       - listitem:
-        - button "29 sept. 2026, 07:02 Conforme Score 91 Note B check · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 07:02 Conforme Score 91 Note B Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
       - listitem:
-        - button "29 sept. 2026, 06:02 Conforme Score 89 Note B check · standard openai · Streaming p50 <duration>"
+        - button "29 sept. 2026, 06:02 Conforme Score 89 Note B Contrôle standard openai Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
@@ -261,11 +266,11 @@
       - listitem: Latence p50 <duration>
     - list:
       - listitem:
-        - button "27 sept. 2026, 10:02 Globalement conforme Score 72 Note D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "27 sept. 2026, 10:02 Globalement conforme Score 72 Note D Contrôle standard openai Streaming p50 <duration>" [expanded]
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
-        - region "27 sept. 2026, 10:02 Globalement conforme Score 72 Note D check · standard openai · Streaming p50 <duration>":
+        - region "27 sept. 2026, 10:02 Globalement conforme Score 72 Note D Contrôle standard openai Streaming p50 <duration>":
           - article "Globalement cohérent, avec quelques défauts mineurs":
             - text: Globalement conforme
             - heading "Globalement cohérent, avec quelques défauts mineurs" [level=2]
@@ -353,7 +358,7 @@
       - listitem: Latence p50 aucune donnée
     - list:
       - listitem:
-        - button "27 sept. 2026, 07:47 Probablement substitué Score 53 Note F check · standard"
+        - button "27 sept. 2026, 07:47 Probablement substitué Score 53 Note F Contrôle standard"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée" [expanded]
