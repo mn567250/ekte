@@ -20,6 +20,28 @@ ekte has three eras:
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-11-16
+
+History and Analytics now show the same numbers, computed once on the server
+in SQLite: every request of a run has exactly one outcome, so the success,
+error and rate-limited rates add up to 100%, History reaches every saved run,
+and every widget answers in under 50 ms p95 on a 20,000-run history (#117).
+History, Analytics and Monitors share one filter panel, keep their filters in
+the URL and show new data without a reload (#150). A monitor can have a run
+window (#165), Analytics can forecast its trends (#148), and every result
+that could not judge says why (#204). The web UI was rebuilt on one page
+template, one set of design tokens and shared components, with a compact
+header on phones (#202–#233). Reports gain schema 1.3 and 1.4, evidence
+schema 1.1.
+
+**Upgrading.** The first start migrates `history.db` (to schema version 16)
+and the monitors database (to schema version 5), writes a backup first and
+says so on stderr; older runs are re-extracted once. Two groups of breaking
+changes affect the stored rates and the web UI's internal HTTP API:
+the rate definitions and several `/api/` endpoints and parameters (#117), and
+the History default period, day ranges, the shared `tz` and
+`GET /api/watches` (#150). See the *Breaking changes* lists below.
+
 ### Web UI: one page template ([#230](https://github.com/mn567250/ekte/issues/230))
 
 Every page had its own skeleton: text started at six x positions, cards were
