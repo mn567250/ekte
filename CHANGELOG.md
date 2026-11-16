@@ -43,8 +43,7 @@ wrapped, and their actions floated between the lines.
 - Every row has two lines of one height: time, verdict, score and grade, then
   one muted details line ("Check · Monitor · standard · openai · Streaming ·
   p50 1,300 ms") in the UI font.
-- The row actions are centred on the first line and, with a mouse, appear
-  while the row is hovered or focused (always on touch screens).
+- The row actions are centred on the first line.
 - A monitor's run links to its monitor instead of showing a disabled bell.
 - On phones the details wrap without a line starting or ending in " · ", and
   a group's trends sit in one row under its title.

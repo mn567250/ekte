@@ -281,8 +281,7 @@ muted sans details line (`metaHTML`: mode · Monitor · suite · surface ·
 protocol · stream mode · p50; on phones it wraps, and its " · " separators are
 drawn by CSS so no line starts or ends with one). The row's actions (re-run,
 schedule, delete; a monitor's run links to its monitor instead) are centred on
-the first line and, with a mouse, show while the row is hovered or holds the
-focus. On phones the group's trends follow its title in one row. The trend picker (in the filter panel,
+the first line and always show (quiet, muted icons). On phones the group's trends follow its title in one row. The trend picker (in the filter panel,
 `EkteFilters` `extra`) lists `history_trends` of `GET /api/metrics` by
 `label_key`; `v2/trendpick.js` (`EkteTrendPick.clean / toggle / buttons`,
 tested under node) keeps one or two on: with two on the others are `disabled`

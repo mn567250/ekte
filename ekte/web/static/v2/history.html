@@ -193,14 +193,9 @@
   /* a monitor's run links to its monitor instead of offering a second one */
   a.rsched { text-decoration: none; }
   a.rsched:hover { color: var(--primary); background: var(--sunken); border-color: var(--primary); }
-  /* with a mouse, a row's actions show while the row is hovered or holds the
-     focus (keyboard users reach them by Tab: :focus-within shows them); on
-     touch screens they always show */
-  @media (hover: hover) and (pointer: fine) {
-    .row .rline > :not(.rmain) { opacity: 0; }
-    /* shown at once (no fade): a focused action is never even briefly invisible */
-    .row:hover .rline > :not(.rmain), .row:focus-within .rline > :not(.rmain), .row .rline > [aria-expanded="true"] { opacity: 1; transition: none; }
-  }
+  /* a row's actions always show, quiet (muted icons) until hovered: content
+     revealed on hover would be one more thing per row to find and to keep
+     persistent, hoverable and dismissible (WCAG 1.4.13) */
   .rmsg { margin: 2px 10px 10px; font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
   .rmsg:empty { display: none; }
   .rdel:hover { color: var(--danger); background: var(--danger-tint); border-color: var(--danger); }

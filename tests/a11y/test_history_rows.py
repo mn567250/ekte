@@ -5,8 +5,7 @@
 - each row action (re-run, schedule or the link to its monitor, delete) is
   centred on the first line, at every width;
 - a monitor's run links to that monitor instead of showing a disabled bell;
-- with a mouse, a row's actions show only while the row is hovered or holds
-  the focus; Tab reaches them and shows them;
+- a row's actions always show (never revealed on hover only);
 - on phones the group header keeps its trends in one row under the title.
 
 tests/test_web_history_rows.py keeps the details out of mono and the row
@@ -60,25 +59,14 @@ def test_rows_have_one_shape(open_page: Any, width: int) -> None:
     assert_no_issues(issues, f"history [en, {width}px]", "run-rows")
 
 
-def test_row_actions_show_on_hover_and_focus(open_page: Any) -> None:
+def test_row_actions_always_show(open_page: Any) -> None:
+    """The actions are never hidden until hover: content revealed on hover
+    would have to be persistent, hoverable and dismissible on every row
+    (WCAG 1.4.13) and is harder to find."""
     page = open_history(open_page, open_page.base_url)
-    row = page.locator("#hist .row").nth(2)
-    act = row.locator(".rrerun")
-    op = lambda: float(act.evaluate("el => getComputedStyle(el).opacity"))  # noqa: E731
-    issues: list[str] = []
     page.mouse.move(0, 0)
     settle(page)
-    if op() != 0:
-        issues.append(f"actions show on a row that is not hovered (opacity {op()})")
-    row.locator(".rmain").hover()
-    page.wait_for_timeout(300)
-    if op() != 1:
-        issues.append("actions do not show on hover")
-    page.mouse.move(0, 0)
-    row.locator(".rmain").focus()
-    page.keyboard.press("Tab")
-    page.wait_for_timeout(300)
-    focused = page.evaluate("() => document.activeElement.className")
-    if "rrerun" not in focused or op() != 1:
-        issues.append(f"Tab from the row does not reach and show its actions ({focused!r}, opacity {op()})")
+    hidden = page.evaluate("() => [...document.querySelectorAll('#hist .rline > :not(.rmain)')]"
+                           ".filter(a => getComputedStyle(a).opacity !== '1' || getComputedStyle(a).visibility !== 'visible').length")
+    issues = [f"{hidden} row actions are hidden while the row is not hovered"] if hidden else []
     assert_no_issues(issues, "history [en]", "run-row-actions")
