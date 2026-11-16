@@ -125,12 +125,18 @@ def _freeze(monkeypatch, clock: list[datetime]) -> None:
 
 # --------------------------------------------------------------------------- #
 def test_dod_01_one_changelog_entry_names_every_step_and_its_breaking_changes():
-    """The umbrella lands as one CHANGELOG entry under Unreleased, naming
-    #151 … #161 and the breaking changes the umbrella asks to mark."""
+    """The umbrella lands as one CHANGELOG entry (under Unreleased, then under
+    the release that ships it), naming #151 … #161 and the breaking changes
+    the umbrella asks to mark."""
     text = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    unreleased = text.split("## [Unreleased]", 1)[1].split("\n## [", 1)[0]
-    entries = re.split(r"\n(?=### )", unreleased)
-    mine = [e for e in entries if e.startswith("### ") and "issues/150)" in e.splitlines()[0]]
+    sections = re.split(r"\n(?=## \[)", text)
+    mine = []
+    for section in sections:
+        entries = re.split(r"\n(?=### )", section)
+        found = [e for e in entries if e.startswith("### ") and "issues/150)" in e.splitlines()[0]]
+        if found:
+            mine += found
+            break
     assert len(mine) == 1, "one entry for #150"
     entry = mine[0]
     for n in range(151, 162):
