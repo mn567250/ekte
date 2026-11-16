@@ -112,6 +112,22 @@ def test_every_uppercase_label_uses_the_label_tokens():
     assert not hits, "uppercase labels use --label-size, --label-weight and --track-label:\n" + "\n".join(hits)
 
 
+def test_no_page_restyles_the_field_label():
+    # the field label (.lab) has one look, ekte.css's: a page rule that only
+    # resizes it (".setup .lab { font-size: … }") escapes the uppercase check
+    # above, so no other stylesheet sets its type
+    sel = re.compile(r"\.lab(?![\w-])\s*$")
+    typ = re.compile(r"(?:^|[;{\s])(?:font-size|font-weight|letter-spacing|text-transform)\s*:")
+    hits = []
+    for path, text in _sources():
+        if path.name == "ekte.css" or path.suffix not in (".css", ".html"):
+            continue
+        for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", text):
+            if any(sel.search(part.strip()) for part in m.group(1).split(",")) and typ.search(m.group(2)):
+                hits.append(f"{path.relative_to(STATIC).as_posix()}:{_line(text, m.start())}: {m.group(1).strip()[:60]}")
+    assert not hits, "the field label's type is ekte.css's (.lab):\n" + "\n".join(hits)
+
+
 def test_every_design_token_used_is_defined():
     defined = set(re.findall(r"(?<![\w-])--([\w-]+)\s*:", _token_block()))
     hits = []

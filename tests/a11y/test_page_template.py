@@ -74,3 +74,34 @@ TEMPLATE_JS = """() => {
 def test_pages_follow_one_template(open_page: Any, page_id: str) -> None:
     page = open_page(PAGES[page_id], "en")
     assert_no_issues(page.evaluate(TEMPLATE_JS), f"{page_id} [en]", "page-template")
+
+
+# A monitor's setup form (Monitors, a draft): its parts span the form like its
+# fields do, and every field label has the one label style.
+SETUP_JS = """async () => {
+  const out = [], form = document.querySelector(".setup");
+  if (!form) return ["no draft monitor with a setup form"];
+  form.querySelector("[data-act=win-preset][data-v=weekdays7]").click();
+  await new Promise((r) => setTimeout(r, 300));
+  const f = document.querySelector(".setup"), fr = f.getBoundingClientRect();
+  const parts = [f.querySelector(".fields"), ...f.querySelectorAll(".setup-rw > *:not(.lab), .setup-rw .rw-times")];
+  parts.forEach((p) => {
+    if (!p) return;
+    const r = p.getBoundingClientRect();
+    if (r.width && (Math.abs(r.left - fr.left) > 1 || Math.abs(r.right - fr.right) > 1)) {
+      out.push(`${p.className || p.tagName}: spans ${Math.round(r.left - fr.left)}..${Math.round(r.right - fr.left)} of 0..${Math.round(fr.width)}`);
+    }
+  });
+  const style = (e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight, c.textTransform, c.letterSpacing].join(" "); };
+  const ref = style(f.querySelector(".fields .lab"));
+  f.querySelectorAll(".lab, label.sub, legend.sub").forEach((l) => {
+    if (style(l) !== ref) out.push(`label "${l.textContent.trim()}" is styled ${style(l)}, not ${ref}`);
+  });
+  return out;
+}"""
+
+
+@pytest.mark.parametrize("width", [1280, 390])
+def test_monitor_setup_spans_one_column(open_page: Any, width: int) -> None:
+    page = open_page(PAGES["monitors"], "en", viewport={"width": width, "height": 900})
+    assert_no_issues(page.evaluate(SETUP_JS), f"monitors [en, {width}px]", "setup-form")
