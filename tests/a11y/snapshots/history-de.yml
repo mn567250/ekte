@@ -146,39 +146,40 @@
         - text: Latenz p50 <duration>
     - list:
       - listitem:
-        - button "30.09.2026, 11:02 Konsistent Score 82 Note B check · standard openai · Streaming p50 <duration>"
+        - button "30.09.2026, 11:02 Konsistent Score 82 Note B Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "30.09.2026, 10:02 Konsistent Score 85 Note B check · standard openai · Streaming p50 <duration>"
+        - button "30.09.2026, 10:02 Konsistent Score 85 Note B Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "30.09.2026, 09:02 Konsistent Score 88 Note B check · standard openai · Streaming p50 <duration>"
+        - button "30.09.2026, 09:02 Konsistent Score 88 Note B Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "28.09.2026, 10:02 Weitgehend konsistent Score 78 Note D check · standard openai · Streaming p50 <duration>"
+        - button "28.09.2026, 10:02 Weitgehend konsistent Score 78 Note D Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "28.09.2026, 09:02 Konsistent Score 80 Note B check · standard openai · Streaming p50 <duration>"
+        - button "28.09.2026, 09:02 Konsistent Score 80 Note B Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "28.09.2026, 07:02 Konsistent Score 84 Note B check · standard openai · Streaming p50 <duration>"
+        - button "28.09.2026, 07:02 Konsistent Score 84 Note B Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "26.09.2026, 08:02 Weitgehend konsistent Score 70 Note D Überwachung check · standard openai · Streaming p50 <duration>"
+        - button "26.09.2026, 08:02 Weitgehend konsistent Score 70 Note D Prüfen Überwachung standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
-        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - link "Überwachung dieses Laufs öffnen":
+          - /url: /watches#w-1
         - button "Eintrag löschen"
   - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
@@ -199,24 +200,27 @@
         - text: Latenz p50 <duration>
     - list:
       - listitem:
-        - button "30.09.2026, 08:02 Vermutlich ausgetauscht Score 64 Note D check · standard openai · Streaming p50 <duration>"
+        - button "30.09.2026, 08:02 Vermutlich ausgetauscht Score 64 Note D Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "29.09.2026, 11:02 Vermutlich ausgetauscht Score 60 Note D Überwachung check · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 11:02 Vermutlich ausgetauscht Score 60 Note D Prüfen Überwachung standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
-        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - link "Überwachung dieses Laufs öffnen":
+          - /url: /watches#w-1
         - button "Eintrag löschen"
       - listitem:
-        - button "29.09.2026, 10:02 Weitgehend konsistent Score 66 Note D Überwachung check · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 10:02 Weitgehend konsistent Score 66 Note D Prüfen Überwachung standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
-        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - link "Überwachung dieses Laufs öffnen":
+          - /url: /watches#w-1
         - button "Eintrag löschen"
       - listitem:
-        - button "29.09.2026, 09:02 Vermutlich ausgetauscht Score 58 Note D Überwachung check · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 09:02 Vermutlich ausgetauscht Score 58 Note D Prüfen Überwachung standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
-        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - link "Überwachung dieses Laufs öffnen":
+          - /url: /watches#w-1
         - button "Eintrag löschen"
   - region "model-b Example Relay":
     - heading "model-b" [level=2]:
@@ -237,12 +241,12 @@
         - text: Latenz p50 <duration>
     - list:
       - listitem:
-        - button "29.09.2026, 07:02 Konsistent Score 91 Note B check · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 07:02 Konsistent Score 91 Note B Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
       - listitem:
-        - button "29.09.2026, 06:02 Konsistent Score 89 Note B check · standard openai · Streaming p50 <duration>"
+        - button "29.09.2026, 06:02 Konsistent Score 89 Note B Prüfen standard openai Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
@@ -261,11 +265,11 @@
       - listitem: Latenz p50 <duration>
     - list:
       - listitem:
-        - button "27.09.2026, 10:02 Weitgehend konsistent Score 72 Note D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "27.09.2026, 10:02 Weitgehend konsistent Score 72 Note D Prüfen standard openai Streaming p50 <duration>" [expanded]
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen"
-        - region "27.09.2026, 10:02 Weitgehend konsistent Score 72 Note D check · standard openai · Streaming p50 <duration>":
+        - region "27.09.2026, 10:02 Weitgehend konsistent Score 72 Note D Prüfen standard openai Streaming p50 <duration>":
           - article "Weitgehend konsistent, mit einigen kleineren Mängeln":
             - text: Weitgehend konsistent
             - heading "Weitgehend konsistent, mit einigen kleineren Mängeln" [level=2]
@@ -353,7 +357,7 @@
       - listitem: Latenz p50 keine Daten
     - list:
       - listitem:
-        - button "27.09.2026, 07:47 Vermutlich ausgetauscht Score 53 Note F check · standard"
+        - button "27.09.2026, 07:47 Vermutlich ausgetauscht Score 53 Note F Prüfen standard"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
         - button "Eintrag löschen" [expanded]

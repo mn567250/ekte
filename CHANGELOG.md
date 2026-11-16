@@ -20,6 +20,23 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: History run rows rebuilt ([#232](https://github.com/mn567250/ekte/issues/232))
+
+History rows were 58, 88 or 108 px tall depending on how their mono details
+wrapped, and their actions floated between the lines.
+
+- Every row has two lines of one height: time, verdict, score and grade, then
+  one muted details line ("Check · Monitor · standard · openai · Streaming ·
+  p50 1,300 ms") in the UI font.
+- The row actions are centred on the first line and, with a mouse, appear
+  while the row is hovered or focused (always on touch screens).
+- A monitor's run links to its monitor instead of showing a disabled bell.
+- On phones the details wrap without a line starting or ending in " · ", and
+  a group's trends sit in one row under its title.
+- Tests measure row heights, action alignment, the hover and focus reveal and
+  the separators in the browser, and keep the details out of mono and the row
+  free of offsets.
+
 ### Web UI: one responsive KPI grid ([#233](https://github.com/mn567250/ekte/issues/233))
 
 Key-figure tiles changed their column count by tab (4, 5 or 2), wrapped

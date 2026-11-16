@@ -266,7 +266,14 @@ a copied link shows that run again, also outside the filters: when only the rang
 out (`focus.by_range_only`), the range widens to a custom range from the run's
 day and the page notice says so once; otherwise the notice offers "Show it",
 which clears the filters in `focus.excluded_by` and moves focus to the run
-(see `docs/dev/web-server.md`, **The `focus` answer**). The trend picker (in the filter panel,
+(see `docs/dev/web-server.md`, **The `focus` answer**). A **run row** (#232)
+is two lines of one height: time, verdict badge, score and grade, then one
+muted sans details line (`metaHTML`: mode · Monitor · suite · surface ·
+protocol · stream mode · p50; on phones it wraps, and its " · " separators are
+drawn by CSS so no line starts or ends with one). The row's actions (re-run,
+schedule, delete; a monitor's run links to its monitor instead) are centred on
+the first line and, with a mouse, show while the row is hovered or holds the
+focus. On phones the group's trends follow its title in one row. The trend picker (in the filter panel,
 `EkteFilters` `extra`) lists `history_trends` of `GET /api/metrics` by
 `label_key`; `v2/trendpick.js` (`EkteTrendPick.clean / toggle / buttons`,
 tested under node) keeps one or two on: with two on the others are `disabled`

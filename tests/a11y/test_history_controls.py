@@ -391,35 +391,37 @@ def test_controls_reflow_at_320_css_px(open_page, history_server) -> None:
 
 
 LINE_EDGES_JS = """() => {
+  // the details are nowrap spans, each with its " · " drawn before it; the
+  // list is shifted left by one separator and clipped (issue 232): on every
+  // line the first span's separator is out of sight, the others' in sight
   const bad = [];
-  document.querySelectorAll(".c-mode").forEach((el) => {
-    const lines = {};
-    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-      for (let i = 0; i < n.length; i++) {
-        const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1);
-        const b = r.getBoundingClientRect();
-        if (b.width) (lines[Math.round(b.top)] = lines[Math.round(b.top)] || []).push(n.data[i]);
-      }
-    }
-    Object.values(lines).forEach((chars) => {
-      const t = chars.join("").replace(/\\u00a0/g, " ").trim();
-      if (t.startsWith("·") || t.endsWith("·")) bad.push(t);
+  document.querySelectorAll(".c-meta").forEach((el) => {
+    const left = el.getBoundingClientRect().left, lines = {};
+    el.querySelectorAll(".mi > span").forEach((s) => {
+      const r = s.getBoundingClientRect();
+      (lines[Math.round(r.top)] = lines[Math.round(r.top)] || []).push([r.left, s.textContent]);
+    });
+    Object.values(lines).forEach((items) => {
+      items.sort((a, b) => a[0] - b[0]);
+      const text = items.map((i) => i[1]).join(" · ");
+      if (items[0][0] > left - 2) bad.push("starts with a separator: " + text);
+      if (items.slice(1).some((i) => i[0] < left)) bad.push("a separator is cut off: " + text);
     });
   });
-  return { rows: document.querySelectorAll(".c-mode .badge.sky").length, bad };
+  return { rows: document.querySelectorAll(".c-meta[data-monitor]").length, bad };
 }"""
 
 
 @pytest.mark.parametrize("width", [1280, 390])
 def test_run_details_never_start_or_end_a_line_with_a_separator(open_page, width: int) -> None:
-    """#219: a run's details ("Monitor", check · standard, the protocol, p50)
-    wrap in their narrow column; no line may start or end with a " · "."""
+    """#219, #232: a run's details (Check · Monitor · standard · protocol ·
+    p50) are one line on desktop and wrap on phones; no line may start or end
+    with a " · "."""
     page = open_history(open_page, open_page.base_url, viewport={"width": width, "height": 900})
     settle(page)
     got = page.evaluate(LINE_EDGES_JS)
     issues = []
     if not got["rows"]:
         issues.append("the seeded history has no monitor runs to check")
-    issues += [f"a line starts or ends with a separator: {t!r}" for t in got["bad"]]
+    issues += got["bad"]
     assert_no_issues(issues, "history [en]", f"run-details-{width}")
