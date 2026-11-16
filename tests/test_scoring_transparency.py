@@ -167,7 +167,7 @@ async def test_markdown_explains_scores_status_and_scale():
     md = render_markdown(await _report())
     details = md[md.index("## Dimension details"):md.index("## Findings")]
     assert "### ⚠️ protocol — 88.8 (warn)" in details
-    assert "Mean of 2 detectors, equal weight: OpenAI-compatibility conformance 77.5, Determinism 100 → 88.8." in details
+    assert "Mean of 2 detectors, equal weight: Wire-protocol conformance 77.5, Determinism 100 → 88.8." in details
     assert "- Status warn: the worst status its detectors concluded." in details
     # every check with its outcome and points, positive and negative
     assert "| ⚠️ | Multi-turn conversation memory | The color from an earlier turn was not recalled. | 55 |" in details
@@ -183,7 +183,7 @@ async def test_markdown_explains_scores_status_and_scale():
 
 async def test_html_has_expandable_dimension_details():
     page = render_html(await _report())
-    assert page.count('<details class="dim">') == 10  # every dimension, run or not
+    assert page.count('<details class="dim">') == 11  # every dimension, run or not
     assert "Scoring scale" in page and "not counted" in page
     assert "The invalid request was accepted (2xx)." in page
 

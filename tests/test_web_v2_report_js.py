@@ -84,11 +84,12 @@ def test_report_severity_dots_meters_and_summary(tmp_path):
         assert glyph == out["icons"][glyph_for[colour]], colour
     assert "Severity: High." in html and "Severity: Medium." in html
     # dimensions: meters for those that ran; every dimension listed and
-    # expandable, the fixture's missing performance one included as not run
+    # expandable; the fixture predates the performance and integrity dimensions,
+    # which are listed as not run
     assert html.count('role="meter"') == 8
     assert 'aria-valuenow="93"' in html or 'aria-valuenow="92"' in html
-    assert "8 of 10 dimensions run" in html and "findings" in html
-    assert html.count('class="dtog"') == 10 and html.count('<div class="zr-dimw off">') == 2
+    assert "8 of 11 dimensions run" in html and "findings" in html
+    assert html.count('class="dtog"') == 11 and html.count('<div class="zr-dimw off">') == 3
     assert "Context window" in html and "Performance" in html
     # the risk pill uses the shared vocabulary; the summary drops score + disclaimer
     assert "Likely substituted" in html
@@ -253,7 +254,7 @@ async def test_dimension_rows_expand_into_scoring_details(tmp_path):
     html = _render(tmp_path, "en", report)["html"]
     # one disclosure per dimension (run or not), collapsed, controlling its panel
     toggles = re.findall(r'<button type="button" class="dtog" aria-expanded="false" aria-controls="(zr-dd-\d+)">', html)
-    assert len(toggles) == 10 and all(f'id="{t}" role="region"' in html for t in toggles)
+    assert len(toggles) == 11 and all(f'id="{t}" role="region"' in html for t in toggles)
     assert html.count('role="meter"') == 1
     panel = _text(_panel(html))
     assert "Score: mean of 2 detectors, equal weight." in panel
@@ -309,7 +310,7 @@ def test_old_reports_still_expand(tmp_path):
     # reports from before the breakdown/scale existed: detectors and findings
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     html = _render(tmp_path, "en", report)["html"]
-    assert html.count('class="dtog"') == 10
+    assert html.count('class="dtog"') == 11
     assert "Score: mean of" in html or "Score from one detector." in html
     assert "Status: the worst status" not in html  # needs the breakdown
     assert not re.search(r"\d pts\b", _text(html))  # no points without a published scale
