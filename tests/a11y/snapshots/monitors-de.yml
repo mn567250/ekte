@@ -182,7 +182,7 @@
           - /placeholder: sk-... oder env:EKTE_API_KEY
         - button "Schlüssel anzeigen"
         - paragraph: Der Verlauf speichert den Schlüssel nie. Für lokale oder selbst gehostete Modelle leer lassen.
-        - group "Überwachung aktiv":
+        - group "Laufzeitfenster":
           - text: Laufzeitfenster
           - group "Voreinstellungen":
             - button "Immer" [pressed]

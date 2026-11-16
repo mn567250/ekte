@@ -182,7 +182,7 @@
           - /placeholder: sk-... or env:EKTE_API_KEY
         - button "Show key"
         - paragraph: History never stores the key. Leave it empty for a local or self-hosted model.
-        - group "Monitor active":
+        - group "Run window":
           - text: Run window
           - group "Presets":
             - button "Always" [pressed]

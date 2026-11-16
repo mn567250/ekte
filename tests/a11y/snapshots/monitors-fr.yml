@@ -182,7 +182,7 @@
           - /placeholder: sk-... ou env:EKTE_API_KEY
         - button "Afficher la clé"
         - paragraph: L’historique ne conserve jamais la clé. Laissez vide pour un modèle local ou auto-hébergé.
-        - group "Surveillance active":
+        - group "Fenêtre d’exécution":
           - text: Fenêtre d’exécution
           - group "Préréglages":
             - button "Toujours" [pressed]

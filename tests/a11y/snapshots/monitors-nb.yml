@@ -182,7 +182,7 @@
           - /placeholder: sk-... eller env:EKTE_API_KEY
         - button "Vis nøkkel"
         - paragraph: Historikken lagrer aldri nøkkelen. La feltet stå tomt for en lokal eller selvdriftet modell.
-        - group "Overvåking aktiv":
+        - group "Kjøretidsvindu":
           - text: Kjøretidsvindu
           - group "Forhåndsvalg":
             - button "Alltid" [pressed]

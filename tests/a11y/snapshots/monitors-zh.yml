@@ -182,7 +182,7 @@
           - /placeholder: sk-... 或 env:EKTE_API_KEY
         - button "显示密钥"
         - paragraph: 检测历史不保存密钥。本地或自托管模型可留空。
-        - group "监控生效":
+        - group "运行时段":
           - text: 运行时段
           - group "预设":
             - button "始终" [pressed]

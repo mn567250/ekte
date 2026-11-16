@@ -114,9 +114,11 @@
   .rw fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   /* field labels inside the editor: sentence case, so they don't compete with the card's uppercase field names */
   .rw .sub { display: block; font-size: var(--t-xs); font-weight: 700; color: var(--ink-muted); padding: 0; margin: 0 0 6px; }
-  .rw .seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  @media (max-width: 520px) { .rw .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .rw .seg button { min-width: 0; padding: 9px 8px; }
+  /* the presets: each label on one line (a wrapped one would make the control
+     taller than --h-md), the buttons sharing a row and wrapping onto the next
+     where a language's labels do not fit; never cut off */
+  .rw .seg { display: flex; flex-wrap: wrap; }
+  .rw .seg button { flex: 1 0 auto; min-width: 0; white-space: nowrap; overflow-wrap: normal; padding-inline: 12px; }
   .rw .ferr { margin-top: 8px; }
   @media (max-width: 520px) { .rw .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); } .rw .chips button { padding-inline: 4px; white-space: nowrap; } }
   .rw-times { display: grid; grid-template-columns: 8.5rem 8.5rem minmax(0, 1fr); gap: 12px; align-items: end; }
@@ -461,7 +463,7 @@
         '<p class="hint">' + esc(T("检测历史不保存密钥。本地或自托管模型可留空。", "History never stores the key. Leave it empty for a local or self-hosted model.")) + "</p></div>";
     }
     // a draft also sets when it runs here (its card shows no window row until it is active)
-    var rw = isDraft(w) ? '<div class="rw setup-rw" role="group" aria-labelledby="swl-' + w.id + '"><span class="lab" id="swl-' + w.id + '">' +
+    var rw = isDraft(w) ? '<div class="rw setup-rw" role="group" aria-labelledby="srw-' + w.id + '"><span class="lab" id="srw-' + w.id + '">' +
       esc(T("运行时段", "Run window")) + "</span>" + windowInput(w, s) + "</div>" : "";
     return '<form class="setup" id="sb-' + w.id + '" data-id="' + w.id + '" novalidate aria-labelledby="su-' + w.id + '"' + (isShut(w) ? " hidden" : "") + ">" +
       EkteNotice.callout("warning", '<h4 id="su-' + w.id + '">' + esc(T("设置后即可启用", "Finish setup to switch it on")) + "</h4> " +
