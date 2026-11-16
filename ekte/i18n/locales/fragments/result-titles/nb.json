@@ -42,6 +42,7 @@
   "Echoed model field": "Gjengitt model-felt",
   "Echoed model field consistent": "Gjengitt model-felt er konsistent",
   "Echoed model field differs from requested": "Gjengitt model-felt avviker fra det forespurte",
+  "Echoed model field not recognized": "Gjengitt model-felt ikke gjenkjent",
   "Embedding endpoint reachable": "Embedding-endepunktet kan nås",
   "Embedding endpoint unreachable": "Embedding-endepunktet kan ikke nås",
   "Embedding response malformed": "Embedding-svaret er feilformet",

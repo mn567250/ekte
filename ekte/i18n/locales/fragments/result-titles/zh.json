@@ -42,6 +42,7 @@
     "Echoed model field": "回显的 model 字段",
     "Echoed model field consistent": "回显的 model 字段一致",
     "Echoed model field differs from requested": "回显的 model 字段与请求不符",
+    "Echoed model field not recognized": "回显的 model 字段无法识别",
     "Embedding endpoint reachable": "嵌入端点可达",
     "Embedding endpoint unreachable": "嵌入端点不可达",
     "Embedding response malformed": "嵌入响应格式错误",

@@ -42,6 +42,7 @@
     "Echoed model field": "Campo model devuelto",
     "Echoed model field consistent": "Campo model devuelto coherente",
     "Echoed model field differs from requested": "El campo model devuelto difiere del solicitado",
+    "Echoed model field not recognized": "Campo model devuelto no reconocido",
     "Embedding endpoint reachable": "Endpoint de embeddings accesible",
     "Embedding endpoint unreachable": "Endpoint de embeddings no accesible",
     "Embedding response malformed": "Respuesta de embeddings mal formada",

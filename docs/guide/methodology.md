@@ -468,9 +468,19 @@ when they change behavior.
    listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
    one alone stays LOW, two or more add a MEDIUM aggregate.
-3. **Echoed `model` field** of a plain call: snapshot suffixes and aliases are
-   tolerated; a smaller-tier word (`mini`, `flash`, `lite`, `8b`, …) or a
-   different family is flagged.
+3. **Echoed `model` field** of a plain call, compared with the claimed model
+   and with the id sent (a deployment alias may differ from the claim). Both
+   ids are normalized first: lower case, no `provider/` or `vendor.` prefix
+   (`openai/`, `models/`, `anthropic.`), no `:tag`, Bedrock `-v2:0` or
+   snapshot-date suffix. Then the knowledge base decides: an id that resolves
+   to the claimed model's profile is consistent (exact, alias or snapshot),
+   one that resolves to another profile diverges, and the evidence names both
+   profiles. An id the knowledge base cannot place is flagged when it carries
+   a smaller-tier word the request lacks (`mini`, `flash`, `lite`, `8b`, …,
+   whole words only, so `mini` is not found in `gemini`), names a different
+   family, or carries a different version number (`gpt-4o` → `gpt-3.5-turbo`);
+   a different id that none of these explains is recorded as unknown, with no
+   deduction.
 
 Without a knowledge-base profile the detector is inconclusive.
 It is also inconclusive and unscored (`model_identity.no_evidence`) when
@@ -494,6 +504,7 @@ requested name proves nothing on its own. Partial evidence scores normally.
 | `model_identity.fp_aggregate` | Two or more behavioral fingerprints diverged. | Warning · Medium | No deduction |
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |
+|  | The echoed model field names a different id that ekte cannot place: recorded, not judged. | Info | No deduction |
 |  | The response had no usable model field. | Inconclusive | No deduction |
 | `model_identity.no_evidence` | No self-identification or fingerprint answer was usable and the model field did not diverge: not scored. | Inconclusive | No deduction |
 

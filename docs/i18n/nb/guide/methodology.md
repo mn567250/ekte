@@ -474,9 +474,19 @@ de endrer atferden.
    oppføres som Info, og en annen probe tar plassen. Et avvikende fingeravtrykk
    trekker fra sin vektandel av 100 poeng (høyst 25); ett alene forblir LOW, to
    eller flere legger til et samlet MEDIUM-funn.
-3. **Gjengitt `model`-felt** fra et vanlig kall: snapshot-suffikser og aliaser
-   tåles; et ord for et mindre nivå (`mini`, `flash`, `lite`, `8b`, …) eller en
-   annen familie flagges.
+3. **Gjengitt `model`-felt** fra et vanlig kall, sammenlignet med den oppgitte
+   modellen og med ID-en som ble sendt (et deployment-alias kan avvike fra det
+   oppgitte). Begge ID-ene normaliseres først: små bokstaver, uten prefiks
+   `provider/` eller `vendor.` (`openai/`, `models/`, `anthropic.`), uten
+   `:tag`, Bedrock-`-v2:0` eller snapshot-dato. Deretter avgjør
+   kunnskapsbasen: en ID som slås opp til den oppgitte modellens profil er
+   konsistent (eksakt, alias eller snapshot), en som slås opp til en annen
+   profil avviker, og bevisene nevner begge profilene. En ID kunnskapsbasen
+   ikke kan plassere flagges når den har et ord for et mindre nivå som
+   forespørselen mangler (`mini`, `flash`, `lite`, `8b`, …, bare som hele ord,
+   så `mini` finnes ikke i `gemini`), nevner en annen familie eller har et
+   annet versjonsnummer (`gpt-4o` → `gpt-3.5-turbo`); en annen ID som ingen av
+   disse forklarer, registreres som ukjent, uten fradrag.
 
 Uten en profil i kunnskapsbasen er detektoren uavklart. Den er også uavklart og
 uten score (`model_identity.no_evidence`) når verken selvidentifikasjonen eller
@@ -500,6 +510,7 @@ Delvise bevis gir score som vanlig.
 | `model_identity.fp_aggregate` | To eller flere atferdsfingeravtrykk avvek. | Advarsel · Middels | Ingen fradrag |
 | `model_identity.model_field` | Det gjengitte model-feltet stemte med den forespurte modellen. | Bestått | Ingen fradrag |
 |  | Det gjengitte model-feltet nevner en annen eller mindre modell. | Advarsel · Middels | Ingen fradrag |
+|  | Det gjengitte model-feltet nevner en annen ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Ingen fradrag |
 |  | Svaret hadde ikke noe brukbart model-felt. | Uavklart | Ingen fradrag |
 | `model_identity.no_evidence` | Ingen selvidentifikasjon eller fingeravtrykkssvar var brukbart, og model-feltet avvek ikke: gir ikke score. | Uavklart | Ingen fradrag |
 

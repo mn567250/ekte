@@ -42,6 +42,7 @@
     "Echoed model field": "Zurückgegebenes model-Feld",
     "Echoed model field consistent": "Zurückgegebenes model-Feld stimmt überein",
     "Echoed model field differs from requested": "Zurückgegebenes model-Feld weicht vom angefragten ab",
+    "Echoed model field not recognized": "Zurückgegebenes model-Feld nicht erkannt",
     "Embedding endpoint reachable": "Embedding-Endpunkt erreichbar",
     "Embedding endpoint unreachable": "Embedding-Endpunkt nicht erreichbar",
     "Embedding response malformed": "Embedding-Antwort fehlerhaft",

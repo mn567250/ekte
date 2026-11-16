@@ -42,6 +42,7 @@
     "Echoed model field": "Champ model renvoyé",
     "Echoed model field consistent": "Champ model renvoyé cohérent",
     "Echoed model field differs from requested": "Le champ model renvoyé diffère de celui demandé",
+    "Echoed model field not recognized": "Champ model renvoyé non reconnu",
     "Embedding endpoint reachable": "Point d'accès d'embedding accessible",
     "Embedding endpoint unreachable": "Point d'accès d'embedding inaccessible",
     "Embedding response malformed": "Réponse d'embedding malformée",

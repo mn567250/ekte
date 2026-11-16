@@ -20,6 +20,29 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Model identity: the echoed `model` field is compared through the knowledge base ([#250](https://github.com/mn567250/ekte/issues/250))
+
+The echoed `model` field was compared with the requested id by tier words and
+the leading token only: `gpt-4o` answered by `gpt-3.5-turbo`, `claude-opus-4-5`
+by `claude-haiku-4-5` or `deepseek-reasoner` by `deepseek-chat` passed, while
+an honest aggregator requested as `openai/gpt-4o` that echoed
+`gpt-4o-2024-08-06` got a MEDIUM warning and the risk "Deviations found".
+
+- Both ids are normalized (lower case, no `provider/` or `vendor.` prefix, no
+  `:tag`, Bedrock `-v2:0` or snapshot date), then the knowledge base decides:
+  an echoed id that resolves to the claimed model's profile is consistent,
+  one that resolves to another profile diverges, with both profile ids in the
+  evidence.
+- The echo is compared with the claimed model as well as with the id sent,
+  so a deployment alias (`my-gpt4o-deployment` claimed as `gpt-4o`) is fine.
+- An id the knowledge base cannot place is flagged for a smaller-tier word
+  (whole words now: `mini` is not found in `gemini`), a different family or a
+  different version number; any other different id gets the new outcome
+  `model_identity.model_field` · `unknown` (Info, no deduction).
+- The embedding and rerank identity checks (`embed.model_field`,
+  `rerank.model_field`) use the same comparison and gain the same `unknown`
+  outcome (Info, not scored).
+
 ### Web UI: one page template ([#230](https://github.com/mn567250/ekte/issues/230))
 
 Every page had its own skeleton: text started at six x positions, cards were

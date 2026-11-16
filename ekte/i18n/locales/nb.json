@@ -326,6 +326,7 @@
   "A response naming a different vendor strongly suggests model substitution.": "Et svar som nevner en annen leverandør, tyder sterkt på at modellen er byttet ut.",
   "Run `ekte compare` against a trusted baseline to disambiguate.": "Kjør `ekte compare` mot en pålitelig referanse for å skille tilfellene.",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "En modell-ID fra et mindre nivå eller en annen familie i svaret tyder på ruting til en erstatning.",
+  "Ask the relay what the echoed id names, or add it to the knowledge base as an alias.": "Spør reléet hvilken modell den gjengitte ID-en betegner, eller legg den til som alias i kunnskapsbasen.",
   "Lower --concurrency or --reliability-requests and re-run.": "Senk --concurrency eller --reliability-requests og kjør på nytt.",
   "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "Sjekk nettverksveien fra ekte til reléet (proxy, DNS, brannmur) og kjør på nytt.",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Sjekk reléets tilkoblingspool og stabiliteten oppstrøms under parallell last (HTTP 429-struping er holdt utenfor denne raten).",

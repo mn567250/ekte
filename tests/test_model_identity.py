@@ -17,23 +17,154 @@ from ekte.config import AuditOptions
 from ekte.context import AuditContext
 from ekte.detectors.helpers import contains_word, contains_word_any, words_present
 from ekte.detectors.model_identity import ModelIdentityDetector
+from ekte.knowledge.model_ids import compare_echoed_model, heuristic_verdict, normalize_model_id
 from ekte.models import Severity, Status, TargetConfig
 
 
+# Requested id, echoed id, verdict (issue #250).
+_ECHO_TABLE = [
+    ("gpt-4o", "gpt-4o-mini", "diverges"),           # the #1 silent downgrade
+    ("gpt-4o", "gpt-3.5-turbo", "diverges"),
+    ("gpt-5", "gpt-4.1", "diverges"),
+    ("claude-opus-4-5", "claude-3-haiku-20240307", "diverges"),
+    ("claude-opus-4-5", "claude-haiku-4-5", "diverges"),
+    ("gemini-2.5-pro", "gemini-2.0-pro", "diverges"),
+    ("deepseek-reasoner", "deepseek-chat", "diverges"),
+    ("qwen-max", "qwen-turbo", "diverges"),
+    ("openai/gpt-4o", "gpt-4o-2024-08-06", "consistent"),
+    ("anthropic/claude-sonnet-4-5", "claude-sonnet-4-5-20250929", "consistent"),
+    ("gpt-4o", "azure/gpt-4o", "consistent"),
+    ("gpt-4o", "gpt-4o-2024-08-06", "consistent"),
+]
+_NEEDS_KB = {
+    ("claude-opus-4-5", "claude-haiku-4-5"),
+    ("deepseek-reasoner", "deepseek-chat"),
+    ("qwen-max", "qwen-turbo"),
+}
+
+
+@pytest.mark.parametrize("requested,returned,verdict", _ECHO_TABLE)
+def test_echoed_model_comparison(knowledge_base, requested, returned, verdict):
+    cmp = compare_echoed_model(
+        knowledge_base, returned, requested, claimed_profile=knowledge_base.resolve(requested)
+    )
+    assert cmp.verdict == verdict
+
+
 @pytest.mark.parametrize(
-    "requested,returned,diverges",
+    "requested,returned,verdict",
     [
-        ("gpt-4o", "gpt-4o-mini", True),     # the #1 silent downgrade
-        ("gpt-4.1", "gpt-4.1-nano", True),
-        ("gpt-5.4", "gpt-5.4-mini", True),
-        ("gpt-4o", "gpt-4o-2024-08-06", False),         # snapshot, not a downgrade
-        ("claude-3-haiku", "claude-3-haiku-20240307", False),
-        ("gpt-4o", "qwen-max", True),                    # different family
-        ("gpt-4o", "gpt-4o", False),
+        # Sibling tiers with no tier word or version change need the knowledge
+        # base to tell them apart; lexically they are only "unknown".
+        *[
+            (req, ret, "unknown" if (req, ret) in _NEEDS_KB else verdict)
+            for req, ret, verdict in _ECHO_TABLE
+        ],
+        ("gpt-4.1", "gpt-4.1-nano", "diverges"),
+        ("gpt-5.4", "gpt-5.4-mini", "diverges"),
+        ("claude-3-haiku", "claude-3-haiku-20240307", "consistent"),
+        ("gpt-4o", "qwen-max", "diverges"),                  # different family
+        ("gpt-4o", "gpt-4o", "consistent"),
+        ("gemini-2.5-pro", "models/gemini-2.5-pro", "consistent"),
+        ("claude-sonnet-4-5", "anthropic.claude-sonnet-4-5-20250929-v1:0", "consistent"),
+        ("llama3.1:8b", "llama3.1:70b", "diverges"),          # a size tag is kept
+        ("acme-chat", "acme-coder", "unknown"),               # different, not placeable
     ],
 )
-def test_model_field_diverges(requested, returned, diverges):
-    assert ModelIdentityDetector._model_field_diverges(requested, returned) is diverges
+def test_echoed_model_heuristic_without_kb(requested, returned, verdict):
+    # The fallback alone (no knowledge base): never a false "diverges".
+    assert compare_echoed_model(None, returned, requested).verdict == verdict
+
+
+def test_tier_words_match_whole_tokens():
+    assert heuristic_verdict("gemini-2.5-pro", "gemini-2.5-pro-exp") == "consistent"
+    assert heuristic_verdict("acme-pro", "acme-gemini") == "unknown"  # no "mini" in gemini
+    assert heuristic_verdict("acme-pro", "acme-pro-mini") == "diverges"
+
+
+@pytest.mark.parametrize(
+    "raw,norm",
+    [
+        ("openai/gpt-4o", "gpt-4o"),
+        ("models/gemini-2.5-pro", "gemini-2.5-pro"),
+        ("us.anthropic.claude-3-haiku-20240307-v1:0", "claude-3-haiku"),
+        ("claude-3-5-sonnet@20240620", "claude-3-5-sonnet"),
+        ("llama3.1:latest", "llama3.1"),
+        ("llama3.1:8b", "llama3.1-8b"),
+        ("gpt-4.1", "gpt-4.1"),
+        ("deepseek-v3-0324", "deepseek-v3"),
+        ("GPT-4o-2024-08-06", "gpt-4o"),
+    ],
+)
+def test_normalize_model_id(raw, norm):
+    assert normalize_model_id(raw) == norm
+
+
+def test_deployment_alias_compares_against_the_claim(knowledge_base):
+    # The id sent is a deployment alias the KB does not know; the claim decides.
+    cmp = compare_echoed_model(
+        knowledge_base, "gpt-4o-2024-08-06", "gpt-4o", "my-gpt4o-deployment",
+        claimed_profile=knowledge_base.resolve("gpt-4o"),
+    )
+    assert cmp.verdict == "consistent"
+
+
+def _field(result):
+    return next(f for f in result.findings if f.id == "model_identity.model_field")
+
+
+async def test_deployment_alias_echo_is_consistent(knowledge_base):
+    mock = _SelfIdMock("I am GPT-4o, made by OpenAI.", served_model="gpt-4o-2024-08-06")
+    target = TargetConfig(
+        base_url="https://relay.test/v1", api_key="sk-x-123456",
+        model="my-gpt4o-deployment", claimed_model="gpt-4o",
+    )
+    async with OpenAICompatibleClient(target, transport=mock.transport) as c:
+        ctx = AuditContext(
+            target=target, client=c, options=AuditOptions(suite="full"),
+            kb=knowledge_base, profile=knowledge_base.resolve(target.claimed),
+        )
+        result = await ModelIdentityDetector().run(ctx)
+    field = _field(result)
+    assert field.outcome == "consistent" and field.status == Status.PASS
+    assert field.evidence["claimed"] == "gpt-4o"
+    assert field.evidence["requested"] == "my-gpt4o-deployment"
+
+
+async def test_provider_prefixed_request_is_not_flagged(knowledge_base):
+    mock = _SelfIdMock("I am GPT-4o, made by OpenAI.", served_model="gpt-4o-2024-08-06")
+    target = TargetConfig(base_url="https://relay.test/v1", api_key="sk-x-123456",
+                          model="openai/gpt-4o")
+    async with OpenAICompatibleClient(target, transport=mock.transport) as c:
+        ctx = AuditContext(
+            target=target, client=c, options=AuditOptions(suite="full"),
+            kb=knowledge_base, profile=knowledge_base.resolve(target.claimed),
+        )
+        result = await ModelIdentityDetector().run(ctx)
+    assert _field(result).outcome == "consistent"
+
+
+async def test_same_family_substitution_names_both_profiles(audit_context, mock_server):
+    mock_server.served_model = "gpt-3.5-turbo-0125"
+    result = await ModelIdentityDetector().run(audit_context)
+    field = _field(result)
+    assert field.outcome == "diverges" and field.status == Status.WARN
+    assert field.evidence["claimed_profile"] == "gpt-4o"
+
+    mock_server.served_model = "gpt-4.1"
+    field = _field(await ModelIdentityDetector().run(audit_context))
+    assert field.outcome == "diverges"
+    assert (field.evidence["returned_profile"], field.evidence["claimed_profile"]) == ("gpt-4.1", "gpt-4o")
+
+
+async def test_unplaceable_echoed_model_is_info(audit_context, mock_server):
+    # Same family, no version, not in the KB: a different id ekte cannot place.
+    mock_server.served_model = "gpt-omni"
+    result = await ModelIdentityDetector().run(audit_context)
+    field = _field(result)
+    assert (field.outcome, field.status, field.deduction) == ("unknown", Status.INFO, None)
+    assert field.evidence["basis"] == "heuristic" and field.evidence["returned_profile"] is None
+    assert result.status == Status.PASS and result.score == 100.0
 
 
 def test_contains_word_respects_boundaries():
