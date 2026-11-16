@@ -88,9 +88,9 @@ SCALE = DeductionScale(
     outcome("billing.prompt-slope", "proportional", None, Status.PASS,
             label="Reported prompt tokens grow in proportion to the estimate (slope up to 1.35)."),
     outcome("billing.prompt-slope", "elevated", None, Status.WARN, Severity.MEDIUM, cap=70.0,
-            label="Reported prompt tokens grow 1.35-1.6x faster than the estimate."),
+            label="Reported prompt tokens grow 1.35 to 1.6 times as fast as the estimate."),
     outcome("billing.prompt-slope", "inflated", None, Status.FAIL, Severity.HIGH, cap=55.0,
-            label="Reported prompt tokens grow more than 1.6x faster than the estimate."),
+            label="Reported prompt tokens grow more than 1.6 times as fast as the estimate."),
     outcome("billing.prompt-slope", "unmeasured", None, Status.INFO,
             label="Only one prompt size returned usable counts; the slope could not be measured."),
     outcome("billing.fixed-overhead", "small", None, Status.INFO,
@@ -519,6 +519,7 @@ class BillingDetector(Detector):
         evidence = {
             "slope": slope,
             "intercept": intercept,
+            "sizes": len(calls),
             "points": [{"size": c.size, "estimated_prompt": c.est_prompt, "reported_prompt": c.prompt} for c in calls],
             "exact_tokenizer": False,
         }
@@ -588,6 +589,7 @@ class BillingDetector(Detector):
             SCALE.finding(
                 "billing.prompt-slope",
                 "unmeasured",
+                id="billing.prompt-slope-unmeasured",
                 calls=[call.outcome],
                 title="Prompt-token slope not measured",
                 summary=(

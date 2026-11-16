@@ -331,6 +331,8 @@
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Confirm with the provider how usage is metered if billing is per-token.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Cross-check billing against a known-size prompt; possible per-token overbilling.",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.",
   "Confirm with the provider how prompt/completion tokens are metered.": "Confirm with the provider how prompt/completion tokens are metered.",
   "Cross-check billing against output length; possible per-token overbilling.": "Cross-check billing against output length; possible per-token overbilling.",
   "Compare token accounting against a trusted baseline of the same model.": "Compare token accounting against a trusted baseline of the same model.",

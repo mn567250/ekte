@@ -199,11 +199,11 @@ async def test_single_usable_size_falls_back_to_the_wide_margin():
     # Only the first call succeeds: 2.4x is under the 2.5x single-request margin.
     result = await BillingDetector().run(_ctx(_UsageStub(factor=2.4, fail_after=1)))
     found = _by_id(result)
-    assert found["billing.prompt-slope"].outcome == "unmeasured"
+    assert found["billing.prompt-slope-unmeasured"].outcome == "unmeasured"
     assert "billing.usage-inflation" not in found and result.status == Status.PASS
     result = await BillingDetector().run(_ctx(_UsageStub(factor=3.0, fail_after=1)))
     found = _by_id(result)
-    assert found["billing.prompt-slope"].outcome == "unmeasured"
+    assert found["billing.prompt-slope-unmeasured"].outcome == "unmeasured"
     assert found["billing.usage-inflation"].cap == 55.0 and result.status == Status.FAIL
 
 
