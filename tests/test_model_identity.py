@@ -20,7 +20,6 @@ from ekte.detectors.model_identity import ModelIdentityDetector
 from ekte.knowledge.model_ids import compare_echoed_model, heuristic_verdict, normalize_model_id
 from ekte.models import Severity, Status, TargetConfig
 
-
 # Requested id, echoed id, verdict (issue #250).
 _ECHO_TABLE = [
     ("gpt-4o", "gpt-4o-mini", "diverges"),           # the #1 silent downgrade

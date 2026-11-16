@@ -144,10 +144,10 @@ def compare_echoed_model(
     consistent with any of them is consistent, else ``unknown`` when any
     comparison could not tell, else ``diverges``.
     """
-    names = [w for w in dict.fromkeys(w.strip() for w in wanted if w and w.strip())]
+    names = list(dict.fromkeys(w.strip() for w in wanted if w and w.strip()))
     claimed = claimed_profile
     if claimed is None:
-        claimed = next((r for r in map(lambda n: _resolve(kb, n), names) if r), None)
+        claimed = next((r for r in (_resolve(kb, n) for n in names) if r), None)
     got = _resolve(kb, returned)
     claimed_id = claimed.model.id if claimed else None
     if got is not None and claimed is not None:
