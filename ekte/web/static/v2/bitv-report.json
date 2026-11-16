@@ -5,7 +5,7 @@
   "en": "EN 301 549 V3.2.1, chapter 9",
   "wcag": "WCAG 2.1 level A + AA"
  },
- "generated_at": "2026-11-16T18:03:26+00:00",
+ "generated_at": "2026-11-16T18:06:55+00:00",
  "tests_run_at": "2026-11-16T18:02:50+00:00",
  "ekte_version": "0.35.0",
  "commit": "700e822f51bb",
@@ -1548,9 +1548,9 @@
  "manual_review": {
   "method": "human",
   "generated_from": {
-   "commit": "5885ea322d17",
-   "ekte_version": "0.30.0",
-   "tests_run_at": "2026-10-31T00:04:43+00:00"
+   "commit": "700e822f51bb",
+   "ekte_version": "0.35.0",
+   "tests_run_at": "2026-11-16T18:02:50+00:00"
   },
   "checks": {
    "total": 94,
