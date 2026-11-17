@@ -20,6 +20,38 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Response integrity: tampering confirmed by a repeat, realistic canaries ([#254](https://github.com/mn567250/ekte/issues/254))
+
+Without a baseline a substituted canary was capped at Fail · Medium: a relay
+rewriting an install URL ended as risk **low** and an A grade. The two canaries
+used synthetic values (`downloads.ekte.test`, `ekte==0.1.0`) that targeted
+tampering never touches, and only non-streamed text was checked.
+
+- **Confirm instead of capping.** When a canary is substituted and there is no
+  usable baseline (none, or one that errors or returns nothing usable), the
+  same canary is sent once more on the same channel. Substituted again (the
+  same or another value) is the new outcome `integrity.verdict` /
+  `tampering_repeated`: Fail · **High**, 20 points, so the risk is at least
+  **medium**. Intact on the repeat (evidence `repeat_intact: true`) or no
+  usable repeat stays `tampering` (Fail · Medium, 45). A substitution the
+  trusted baseline does not make stays `tampering_corroborated` (Critical).
+  New evidence on the finding: `repeated_canary`, `repeat_intact`,
+  `repeat_substituted`, `repeat_substitution`.
+- **Realistic canaries** (new texts in `ekte/prompts/en.json`): a well-known
+  installer (`curl -fsSL https://sh.rustup.rs | sh`), a popular pinned package
+  (`pip install requests==2.32.3`), a `git clone https://github.com/pallets/flask.git`
+  line and a Bitcoin address generated at run time, so it cannot be
+  allow-listed; a changed address counts only when it is itself a valid
+  bech32 address, so a miscopied character is not tampering. The two existing
+  canaries stay.
+- **Other channels:** the `git clone` canary is sent streamed and, when the
+  profile claims tool calling, an installer URL is sent as a tool-call
+  argument and compared.
+- The canaries run concurrently (at most three at a time); the detector sends
+  at most 8 requests to the target (`cost_hint` 8, was 3).
+- Scores and verdicts change for relays that substitute canary values
+  (see #168); the report schema is unchanged (outcome keys are free strings).
+
 ### Scoring: a response integrity dimension ([#260](https://github.com/mn567250/ekte/issues/260))
 
 The "Transport security" dimension held response tampering, injected system
