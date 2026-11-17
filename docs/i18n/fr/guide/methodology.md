@@ -503,9 +503,19 @@ moins cher ou ouvert), ainsi que les signaux de
    empreinte qui s'écarte
    retire sa part de poids sur 100 points (25 au plus) ; seule, elle reste
    FAIBLE, deux ou plus ajoutent un constat agrégé MOYEN.
-3. **Champ `model` renvoyé** par un appel simple : suffixes d'instantané et
-   alias sont tolérés ; un mot de gamme inférieure (`mini`, `flash`, `lite`,
-   `8b`, …) ou une autre famille est signalé.
+3. **Champ `model` renvoyé** par un appel simple, comparé au modèle annoncé
+   et à l'id envoyé (un alias de déploiement peut différer de l'annonce). Les
+   deux ids sont d'abord normalisés : minuscules, sans préfixe `provider/` ni
+   `vendor.` (`openai/`, `models/`, `anthropic.`), sans `:tag`, `-v2:0` de
+   Bedrock ni date d'instantané. La base de connaissances décide ensuite : un
+   id résolu vers le profil du modèle annoncé est cohérent (exact, alias ou
+   instantané), un id résolu vers un autre profil diverge, et les éléments de
+   preuve nomment les deux profils. Un id que la base de connaissances ne sait
+   pas identifier est signalé s'il porte un mot de gamme inférieure absent de
+   la requête (`mini`, `flash`, `lite`, `8b`, …, en mot entier uniquement :
+   `mini` n'est pas trouvé dans `gemini`), nomme une autre famille ou porte un
+   autre numéro de version (`gpt-4o` → `gpt-3.5-turbo`) ; un id différent que
+   rien de cela n'explique est consigné comme inconnu, sans déduction.
 
 Sans profil dans la base de connaissances, le détecteur est non concluant.
 Il est aussi non concluant et non noté (`model_identity.no_evidence`)
@@ -530,6 +540,7 @@ normalement.
 | `model_identity.fp_aggregate` | Deux empreintes comportementales ou plus s'écartaient. | Avertissement · Moyenne | Aucune déduction |
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |
+|  | Le champ model renvoyé désigne un autre id qu'ekte ne sait pas identifier : consigné, non jugé. | Info | Aucune déduction |
 |  | La réponse n'avait pas de champ model exploitable. | Non concluant | Aucune déduction |
 | `model_identity.no_evidence` | Ni l'auto-identification ni aucune empreinte n'ont donné de réponse exploitable et le champ model ne divergeait pas : non noté. | Non concluant | Aucune déduction |
 

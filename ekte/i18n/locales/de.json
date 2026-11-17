@@ -326,6 +326,7 @@
   "A response naming a different vendor strongly suggests model substitution.": "Eine Antwort, die einen anderen Anbieter nennt, deutet stark auf einen Modellaustausch hin.",
   "Run `ekte compare` against a trusted baseline to disambiguate.": "Führen Sie `ekte compare` gegen eine vertrauenswürdige Referenz aus, um dies zu klären.",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "Eine Modell-ID einer kleineren Stufe oder anderen Familie in der Antwort deutet auf ein Routing zu einem Ersatz hin.",
+  "Ask the relay what the echoed id names, or add it to the knowledge base as an alias.": "Fragen Sie das Relay, welches Modell die zurückgegebene ID bezeichnet, oder tragen Sie sie als Alias in die Wissensbasis ein.",
   "Lower --concurrency or --reliability-requests and re-run.": "--concurrency oder --reliability-requests senken und erneut ausführen.",
   "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "Den Netzwerkweg von ekte zum Relay prüfen (Proxy, DNS, Firewall) und erneut ausführen.",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Prüfen Sie den Verbindungspool des Relays und die Upstream-Stabilität unter paralleler Last (HTTP-429-Drosselung ist aus dieser Quote ausgenommen).",

@@ -9,6 +9,7 @@
   "No vector was returned to measure.": "没有返回可测量的向量。",
   "The relay echoes the requested model.": "中转站回显了所请求的模型。",
   "The relay echoes a different model than the one requested.": "中转站回显的模型与所请求的不同。",
+  "The relay echoes a different model id that ekte cannot place: recorded, not judged.": "中转站回显了 ekte 无法识别的另一个模型 id：仅记录，不作判断。",
   "The relay echoes no model field.": "中转站没有回显模型字段。",
   "The pinned input's vector matches the previous run.": "固定输入的向量与上一次运行一致。",
   "The pinned input's vector moved since the previous run (cosine 0.95 to 0.995).": "固定输入的向量自上一次运行以来发生了偏移（余弦 0.95 至 0.995）。",
