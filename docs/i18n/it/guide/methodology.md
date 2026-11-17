@@ -601,8 +601,16 @@ alle capacità del profilo:
   se il modello la dichiara e solo annotata (informativa) se no. Saltato senza
   profilo.
 - **Output massimo:** una generazione lunga limitata a min(output massimo
-  dichiarato, 2048) token; raggiungere il limite o una lunghezza plausibile è
-  superato, fermarsi sotto un quarto viene segnalato.
+  dichiarato, `--max-output-probe-tokens`) token, 2048 per impostazione
+  predefinita. Una risposta troncata con `finish_reason: length` raggiunge il
+  limite solo se è tornato almeno l'80 % dei token richiesti: i token di
+  completion riportati, altrimenti una stima dal testo; per un modello di
+  ragionamento i token di ragionamento contano come forniti. Troncata al di
+  sotto, il relay limita l'output, e il controllo fallisce. Una lunghezza
+  plausibile è superata, fermarsi sotto un quarto viene segnalato. Se i token
+  di completion riportati e la stima del testo di un modello senza
+  ragionamento differiscono di oltre 3 volte, l'evidenza lo annota (la
+  fatturazione giudica il conteggio).
 
 Un'osservazione senza una dichiarazione da verificare — nessuna chiamata a
 strumento o oggetto JSON quando la funzione non è dichiarata, o qualsiasi esito
@@ -647,6 +655,7 @@ conteggiato.
 |  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.max_output` | L'output è proseguito fino al limite di token richiesto. | Superato | 100 pt |
+|  | L'output è stato troncato con finish_reason length molto al di sotto del limite richiesto: il relay limita i token di output. | Fallito · Media | 0 pt |
 |  | L'output si è fermato prima del limite con una lunghezza plausibile. | Superato | 90 pt |
 |  | L'output si è fermato sotto un quarto della lunghezza richiesta. | Avviso · Bassa | 70 pt |
 |  | L'output si è fermato sotto un quarto della richiesta nonostante un massimo dichiarato elevato. | Avviso · Bassa | 60 pt |

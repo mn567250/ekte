@@ -570,8 +570,15 @@ egenskapsflagg:
   påstår det, og noteres (til informasjon) når den ikke gjør det. Hoppes over uten
   profil.
 - **Maks utdata:** en lang generering begrenset til min(oppgitt maks utdata,
-  2048) tokens; å nå taket eller en troverdig lengde er bestått, å stoppe under en
-  firedel av det flagges.
+  `--max-output-probe-tokens`) tokens, 2048 som standard. Et svar som kuttes med
+  `finish_reason: length`, når taket bare når minst 80 % av de forespurte
+  tokenene kom tilbake: de rapporterte completion-tokenene, ellers et estimat
+  fra teksten; for en resonneringsmodell teller resonneringstokenene som
+  levert. Kuttet under det begrenser reléet utdataen, og det er ikke bestått.
+  En troverdig lengde er bestått, å stoppe under en firedel av det flagges.
+  Når de rapporterte completion-tokenene og tekstestimatet for en modell uten
+  resonnering ligger mer enn 3 ganger fra hverandre, noterer bevisene det
+  (fakturering vurderer tellingen).
 
 En observasjon uten en påstand å verifisere — ikke noe verktøykall eller
 JSON-objekt når funksjonen ikke påstås, eller et hvilket som helst resultat for
@@ -614,6 +621,7 @@ regnes den som ikke noe brukbart svar, eller som en begrensning i modellen. En
 |  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.max_output` | Utdataen fortsatte opp til det forespurte tokentaket. | Bestått | 100 poeng |
+|  | Utdataen ble kuttet med finish_reason length langt under den forespurte grensen: reléet begrenser utdata-tokenene. | Ikke bestått · Middels | 0 poeng |
 |  | Utdataen stoppet før taket ved en troverdig lengde. | Bestått | 90 poeng |
 |  | Utdataen stoppet under en firedel av den forespurte lengden. | Advarsel · Lav | 70 poeng |
 |  | Utdataen stoppet under en firedel av forespørselen til tross for et stort oppgitt maksimum. | Advarsel · Lav | 60 poeng |

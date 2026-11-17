@@ -233,6 +233,11 @@
     "capability.json_mode": [["pass", "JSON mode honored; parsed keys: {parsed_keys|list}."]].concat(CAPABILITY_REJECTED),
     "capability.tools": [["pass", "Tool call delivered ({tool_name}); arguments returned as {arguments_type}."]].concat(CAPABILITY_REJECTED),
     "capability.json_schema": CAPABILITY_REJECTED,
+    // the relay clamped max_tokens: delivered_tokens is only in the evidence of
+    // an answer cut off by length, and only clamped fails.
+    "capability.max_output": [
+      ["fail", "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens."],
+    ],
     "connectivity.models": [["warn", "/v1/models is not available (HTTP {status_code})."]],
     "reliability.success_rate": [
       ["inconclusive", "At concurrency {concurrency}, all {requests} requests were rate-limited ({rate_limited} × HTTP 429)."],

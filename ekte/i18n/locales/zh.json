@@ -90,6 +90,8 @@
   "Confirm the served engine actually supports function calling.": "确认所提供的引擎确实支持函数调用。",
   "Verify the served engine honors response_format=json_object.": "确认所提供的引擎遵守 response_format=json_object。",
   "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "中转拒绝了声称模型所支持的请求参数；请要求服务商转发该参数，或改用提供该功能的端点。",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "中转把 max_tokens 限制在请求值之下，长回答会被截断。请要求服务商转发 max_tokens，或改用遵守该参数的端点。",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "在请求的 {requested_max_tokens} token 中约 {delivered_tokens} 处即被截断（finish_reason=length）：中转限制了输出 token。",
   "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified.": "usage 仅给出 total={reported_total}（prompt={reported_prompt}，completion={reported_completion}）；按 token 计费所依赖的分项缺失、无法核验。",
   "JSON mode honored; parsed keys: {parsed_keys|list}.": "JSON 模式生效；解析出的键：{parsed_keys|list}。",
   "Tool call delivered ({tool_name}); arguments returned as {arguments_type}.": "已返回工具调用（{tool_name}）；参数类型为 {arguments_type}。",

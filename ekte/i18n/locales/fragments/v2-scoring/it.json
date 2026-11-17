@@ -100,6 +100,7 @@
   "Output stopped before the cap at a plausible length.": "L'output si è fermato prima del limite con una lunghezza plausibile.",
   "Output stopped below a quarter of the requested length.": "L'output si è fermato sotto un quarto della lunghezza richiesta.",
   "Output stopped below a quarter of the request despite a large claimed maximum.": "L'output si è fermato sotto un quarto della richiesta nonostante un massimo dichiarato elevato.",
+  "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "L'output è stato troncato con finish_reason length molto al di sotto del limite richiesto: il relay limita i token di output.",
   "Recall held at the top rung (90% of the probed window): no deduction.": "Il richiamo ha tenuto al gradino più alto (90% della finestra sondata): nessuna detrazione.",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "Richiamo verificato fino al limite della sonda; la finestra dichiarata oltre non è stata provata.",
   "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "Il richiamo ha tenuto fino al 50-90% della finestra sondata; detrae la quota del gradino più alto non richiamata.",

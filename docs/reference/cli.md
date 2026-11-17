@@ -97,6 +97,7 @@ Audit one relay endpoint and write a report.
 | `--reliability-requests` | int |  | Reliability probe request count (0 disables). |
 | `--concurrency` | int |  | Reliability probe concurrency. |
 | `--max-context-tokens` | int |  | Cap for the real-context-window probe. |
+| `--max-output-probe-tokens` | int |  | Cap for the max-output probe (default 2048). |
 | `--performance-requests` | int |  | Performance probe requests per endpoint (deep/full/custom; 0 disables). |
 | `--performance-max-tokens` | int |  | Output tokens per performance probe request. |
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
@@ -137,6 +138,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--timeout` | float |  | Base HTTP timeout (seconds); grows with prompt and output size. |
 | `--max-request-time` | float |  | Hard cap for one request (seconds, default 900). |
 | `--max-context-tokens` | int |  | Cap for the context-window probe. |
+| `--max-output-probe-tokens` | int |  | Cap for the max-output probe (default 2048). |
 | `--performance-requests` | int |  | Performance probe requests per endpoint (0 disables; standard suite uses 5). |
 | `--performance-max-tokens` | int |  | Output tokens per performance probe request. |
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
