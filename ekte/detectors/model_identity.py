@@ -1,10 +1,12 @@
 """Model identity & downgrade fingerprinting — the core 货不对板 detector.
 
 A relay can claim to serve an expensive model while quietly routing to a cheaper
-substitute. This detector triangulates identity three ways: a direct self-id
-prompt checked against the genuine brand words (and rival brands that betray a
-swap), the knowledge base's pure-code behavioral fingerprints (knowledge cutoff,
-tokenizer quirks, etc.), and the ``model`` field the relay echoes back. Divergence
+substitute. This detector checks a direct self-id prompt against the genuine
+brand words (and rival brands that betray a swap), the knowledge base's
+pure-code behavioral fingerprints (the model's own first: only they can tell it
+from a sibling of the same vendor), the self-reported knowledge cutoff against
+the profile's, and the ``model`` field the relay echoes back. In compare mode
+every fingerprint and the cutoff probe also go to the baseline. Divergence
 between the claim and what the model actually behaves like is the signal.
 
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
