@@ -55,10 +55,11 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "请调高 --timeout / --max-request-time，或调低 --max-context-tokens，以测量完整窗口。",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "请检查该错误（例如该端点拒绝的某个请求参数），然后重新运行以测量窗口。",
   "Raise --max-context-tokens to exercise the full declared window.": "请调高 --max-context-tokens 以测试完整的声明窗口。",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "请将最大的已回忆提示以上的窗口视为未经核实；为该分词器系列测得的 token 系数可让探测覆盖它。",
   "Compare against a trusted baseline to confirm.": "请对照可信基线加以确认。",
   "The relay likely truncates or summarizes long prompts.": "该中转站很可能截断或摘要长提示词。",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} << 声称的 {declared}（占比 {ratio}，疑似静默截断）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} 低于声称的 {declared}（占比 {ratio}，在到达上限前回忆已退化）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} << 声称的 {declared}（占 {top_rung} token 最高探测档的 {top_rung_share}，疑似静默截断）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} 低于声称的 {declared}（占 {top_rung} token 最高探测档的 {top_rung_share}，在到达上限前回忆已退化）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "连 ~{smallest_probed} token 的提示都无法回忆；可用窗口远小于声称的 {declared}。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "无声称窗口可对比；实测有效窗口 ~{effective_window} token。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "服务端会静默丢弃长提示的开头；请调大其上下文长度设置，或将声称的窗口视为未经验证。",
@@ -262,15 +263,15 @@
   ],
   "context_window.truncation": [
    "真实上下文窗口远小于声称值",
-   "真实上下文窗口 ~{effective_window} << 实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，疑似静默截断）。"
+   "真实上下文窗口 ~{effective_window} << 实际探测的 {upper} token 窗口（声称 {declared}；占 {top_rung} token 最高探测档的 {top_rung_share}，疑似静默截断）。"
   ],
   "context_window.short": [
    "真实上下文窗口低于声称值",
-   "真实上下文窗口 ~{effective_window} 低于实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，在到达上限前回忆已退化）。"
+   "真实上下文窗口 ~{effective_window} 低于实际探测的 {upper} token 窗口（声称 {declared}；占 {top_rung} token 最高探测档的 {top_rung_share}，在到达上限前回忆已退化）。"
   ],
   "context_window.consistent": [
    "实测上下文窗口与声称一致",
-   "在 ~{effective_window} token 处仍能回忆出针，接近声称的 {declared}（占比 {ratio}）。"
+   "在 ~{effective_window} token 处仍能回忆出针，接近声称的 {declared}（占 {top_rung} token 最高探测档的 {top_rung_share}）。"
   ],
   "context_window.measured": [
    "实测有效上下文窗口",
@@ -279,6 +280,10 @@
   "context_window.verified_to_cap": [
    "上下文窗口已在探测上限内验证",
    "在 ~{effective_window} token 处仍能回忆出针（{probe_cap} token 探测上限下的最高档）；上限以上的声称窗口 {declared} 未被测试。"
+  ],
+  "context_window.overshot": [
+   "上下文窗口探测超出了 token 预算",
+   "端点把 ~{effective_window} token 的提示计为 {reported_prompt_tokens} 个 prompt token（预算的 {overshoot} 倍），且只有 {top_rung} token 的最高探测档失败：探测超出了预算，~{reported_prompt_tokens} token 以上的窗口未被测试（并非窗口小于声称的 {declared} 的证据）。"
   ],
   "context_window.probe_error": [
    "上下文窗口探测收到错误响应",

@@ -311,10 +311,11 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Aumente --timeout / --max-request-time, ou reduza --max-context-tokens, para medir a janela completa.",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Verifique o erro (p. ex., um parâmetro de pedido que este endpoint rejeita) e execute novamente para medir a janela.",
   "Raise --max-context-tokens to exercise the full declared window.": "Aumente --max-context-tokens para testar a janela declarada completa.",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "Trate a janela acima do maior prompt recordado como não verificada; um fator de tokens medido para esta família de tokenizadores permitiria à sonda alcançá-la.",
   "Compare against a trusted baseline to confirm.": "Compare com uma referência de confiança para confirmar.",
   "The relay likely truncates or summarizes long prompts.": "O intermediário provavelmente trunca ou resume os prompts longos.",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Janela real ~{effective_window} << {declared} declarados (rácio {ratio}, suspeita de truncagem silenciosa). O início de um prompt de ~{front_truncated_at} tokens foi descartado enquanto o final ainda era recordado (truncagem pelo início).",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Janela real ~{effective_window} inferior aos {declared} declarados (rácio {ratio}, a recordação degrada-se antes do limite). O início de um prompt de ~{front_truncated_at} tokens foi descartado enquanto o final ainda era recordado (truncagem pelo início).",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Janela real ~{effective_window} << {declared} declarados (fração {top_rung_share} do degrau superior de {top_rung} tokens, suspeita de truncagem silenciosa). O início de um prompt de ~{front_truncated_at} tokens foi descartado enquanto o final ainda era recordado (truncagem pelo início).",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Janela real ~{effective_window} inferior aos {declared} declarados (fração {top_rung_share} do degrau superior de {top_rung} tokens, a recordação degrada-se antes do limite). O início de um prompt de ~{front_truncated_at} tokens foi descartado enquanto o final ainda era recordado (truncagem pelo início).",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Nem sequer um prompt de ~{smallest_probed} tokens é recordado; a janela útil é muito inferior aos {declared} declarados. O início de um prompt de ~{front_truncated_at} tokens foi descartado enquanto o final ainda era recordado (truncagem pelo início).",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Não há janela declarada para comparar; janela efetiva medida ~{effective_window} tokens. O início de um prompt de ~{front_truncated_at} tokens foi descartado enquanto o final ainda era recordado (truncagem pelo início).",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "O servidor descarta silenciosamente o início dos prompts longos; aumente a sua definição de comprimento de contexto ou trate a janela declarada como não verificada.",
@@ -559,15 +560,15 @@
   ],
   "context_window.truncation": [
    "Janela de contexto real muito inferior à declarada",
-   "Janela de contexto real ~{effective_window} << janela sondada de {upper} tokens (declarada {declared}; rácio {ratio}, suspeita de truncagem silenciosa)."
+   "Janela de contexto real ~{effective_window} << janela sondada de {upper} tokens (declarada {declared}; fração {top_rung_share} do degrau superior de {top_rung} tokens, suspeita de truncagem silenciosa)."
   ],
   "context_window.short": [
    "Janela de contexto real inferior à declarada",
-   "Janela de contexto real ~{effective_window} abaixo da janela sondada de {upper} tokens (declarada {declared}; rácio {ratio}, a recordação degrada-se antes do limite)."
+   "Janela de contexto real ~{effective_window} abaixo da janela sondada de {upper} tokens (declarada {declared}; fração {top_rung_share} do degrau superior de {top_rung} tokens, a recordação degrada-se antes do limite)."
   ],
   "context_window.consistent": [
    "Janela de contexto medida coerente com a declarada",
-   "A agulha continua a ser recordada a ~{effective_window} tokens, perto dos {declared} declarados (rácio {ratio})."
+   "A agulha continua a ser recordada a ~{effective_window} tokens, perto dos {declared} declarados (fração {top_rung_share} do degrau superior de {top_rung} tokens)."
   ],
   "context_window.measured": [
    "Janela de contexto efetiva medida",
@@ -576,6 +577,10 @@
   "context_window.verified_to_cap": [
    "Janela de contexto verificada até ao limite da sonda",
    "A agulha foi recordada a ~{effective_window} tokens, o degrau superior abaixo do limite de sonda de {probe_cap} tokens; a janela declarada de {declared} tokens acima dele não foi testada."
+  ],
+  "context_window.overshot": [
+   "A sonda da janela de contexto excedeu o seu orçamento de tokens",
+   "O endpoint contou o prompt de ~{effective_window} tokens como {reported_prompt_tokens} tokens de prompt ({overshoot} vezes o seu orçamento) e só o degrau superior de {top_rung} tokens falhou: a sonda excedeu-se, por isso a janela acima de ~{reported_prompt_tokens} tokens não foi testada (não é prova de uma janela abaixo dos {declared} declarados)."
   ],
   "context_window.probe_error": [
    "A sonda da janela de contexto recebeu um erro",

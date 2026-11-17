@@ -34,6 +34,7 @@
     "Context window verified up to the probe cap": "Kontextfenster bis zur Probe-Obergrenze bestätigt",
     "Context-window probe answered with an error": "Kontextfenster-Sonde mit Fehler beantwortet",
     "Context-window probe could not run": "Kontextfenster-Sonde nicht ausführbar",
+    "Context-window probe overshot its token budget": "Kontextfenster-Sonde hat ihr Token-Budget überschritten",
     "Context-window probe timed out": "Zeitüberschreitung bei der Kontextfenster-Sonde",
     "Could not assess temperature=0 stability": "Stabilität bei temperature=0 nicht bewertbar",
     "Could not assess temperature=1.0 variability": "Variabilität bei temperature=1.0 nicht bewertbar",

@@ -34,6 +34,7 @@
   "Context window verified up to the probe cap": "Kontekstvinduet er verifisert opp til probens tak",
   "Context-window probe answered with an error": "Kontekstvindu-proben fikk en feil som svar",
   "Context-window probe could not run": "Kontekstvindu-proben kunne ikke kjøres",
+  "Context-window probe overshot its token budget": "Kontekstvindu-proben gikk over tokenbudsjettet sitt",
   "Context-window probe timed out": "Kontekstvindu-proben fikk tidsavbrudd",
   "Could not assess temperature=0 stability": "Kunne ikke vurdere stabilitet ved temperature=0",
   "Could not assess temperature=1.0 variability": "Kunne ikke vurdere variasjon ved temperature=1.0",

@@ -34,6 +34,7 @@
     "Context window verified up to the probe cap": "Context window verified up to the probe cap",
     "Context-window probe answered with an error": "Context-window probe answered with an error",
     "Context-window probe could not run": "Context-window probe could not run",
+    "Context-window probe overshot its token budget": "Context-window probe overshot its token budget",
     "Context-window probe timed out": "Context-window probe timed out",
     "Could not assess temperature=0 stability": "Could not assess temperature=0 stability",
     "Could not assess temperature=1.0 variability": "Could not assess temperature=1.0 variability",
