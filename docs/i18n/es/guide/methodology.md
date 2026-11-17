@@ -691,7 +691,7 @@ inflados), `billing.missing-usage` (`usage` ausente, parcial o incoherente) y,
 como señal de corroboración, `prompt.injected-system-prompt`.
 
 **Cómo funciona.** Tres llamadas deterministas: la misma tarea de resumen en
-tres tamaños de prompt (unos 150, 600 y 2400 tokens de párrafos fijos,
+tres tamaños de prompt (unos 150, 600 y 2.400 tokens de párrafos fijos,
 `temperature=0`). Los prompts y las respuestas visibles se cuentan de forma
 independiente con una heurística sensible al idioma (aprox. ±25 %; cuenta entre
 un 12 y un 15 % menos que los tokenizers reales), para todas las familias de
@@ -747,7 +747,7 @@ Una petición de sonda fallida deja el detector sin puntuación.
 pequeño desfase fijo; no se espera una coincidencia exacta. Si el modelo servido
 difiere del declarado, el tokenizer «correcto» es desconocido. Los tokens de
 razonamiento ocultos no pueden contarse desde fuera. Tres tamaños de hasta unos
-2400 tokens separan un factor proporcional de una sobrecarga fija; un
+2.400 tokens separan un factor proporcional de una sobrecarga fija; un
 multiplicador que solo aparece con prompts mucho mayores pasa inadvertido.
 
 ---
