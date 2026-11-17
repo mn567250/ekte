@@ -669,22 +669,46 @@ på nytt og sammenlign med en referanse som er kjent for å strømme.
 fullføringstokens), `billing.missing-usage` (ingen, delvis eller inkonsistent
 `usage`) og, som støttende signal, `prompt.injected-system-prompt`.
 
-**Slik virker den.** Ett deterministisk kall (et kjent avsnitt som skal
-oppsummeres, `temperature=0`). Prompten og det synlige svaret telles uavhengig
-med en språkbevisst heuristikk (omtrent ±25 %), for hver modellfamilie: ekte
-bruker ikke noe tokenizer-bibliotek og laster ikke ned noe. Rapporterte
-prompttokens over 2,5× anslaget og mer enn 50 tokens over det regnes som
-oppblåsing. Fullføringstokens fra en resonnerende modell inkluderer med rette
-skjulte resonneringstokens og flagges ikke; ellers er fullføringstokens over 3×
-anslaget og mer enn 80 tokens over det en myk advarsel, aldri en feil, fordi
-anslaget for et kort svar er usikkert. `total` må være lik `prompt + completion`
-(±2), og en total uten fordelingen flagges. En undertelling (under halvparten av
-anslaget) er til informasjon (ikke til skade for kjøperen).
+**Slik virker den.** Tre deterministiske kall: den samme oppsummeringsoppgaven
+i tre promptstørrelser (omtrent 150, 600 og 2 400 tokens med faste avsnitt,
+`temperature=0`). Promptene og de synlige svarene telles uavhengig med en
+språkbevisst heuristikk (omtrent ±25 %; den teller 12 til 15 % lavere enn ekte
+tokenizere), for hver modellfamilie: ekte bruker ikke noe tokenizer-bibliotek og
+laster ikke ned noe. De rapporterte prompttokens tilpasses mot anslaget:
+stigningstallet er den proporsjonale faktoren, konstantleddet en fast overhead.
+Et stigningstall opptil 1,35 består (heuristikkens undertelling pluss en tett
+tokenizer), 1,35 til 1,6 er en advarsel og over 1,6 en feil. En fast overhead
+med normalt stigningstall er ikke oppblåsing: under 30 tokens er den til
+informasjon, fra 30 tokens er den en lav advarsel som viser til
+`injected_prompt`. I sammenligningsmodus, med en referanse for samme modell på
+samme protokoll, sendes de samme tre promptene til referansen, og
+`prompt_tokens` sammenlignes direkte: mer enn 3 % eller 5 tokens over
+referansen (den største av de to) er en feil, og dette erstatter vurderingen
+av stigningstallet. Hvis bare ett av de tre kallene gir brukbare tall, brukes
+kontrollen for én enkelt forespørsel, med en merknad om at stigningstallet ikke
+kunne måles: prompttokens over 2,5× anslaget og mer enn 50 tokens over det
+regnes som oppblåsing. Fullføringstokens fra en resonnerende modell (ifølge
+kunnskapsbasen, eller fordi svaret rapporterer resonneringstokens) inkluderer
+med rette skjulte resonneringstokens og flagges ikke; ellers er
+fullføringstokens over 3× anslaget og mer enn 80 tokens per svar over det en
+myk advarsel, aldri en feil, fordi anslaget for et kort svar er usikkert.
+`total` må være lik `prompt + completion` (±2), og en total uten fordelingen
+flagges. En undertelling (under halvparten av anslaget) er til informasjon
+(ikke til skade for kjøperen).
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `billing.request-failed` | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Ingen fradrag |
 | `billing.missing-usage` | Svaret inneholdt ikke noe tokenforbruk i det hele tatt. | Advarsel · Middels | tak 75 |
+| `billing.prompt-vs-baseline` | Rapporterte prompttokens stemmer med referansens for de samme promptene. | Bestått | Ingen fradrag |
+| `billing.prompt-vs-baseline` | Rapporterte prompttokens er høyere enn referansens for de samme promptene. | Ikke bestått · Høy | tak 55 |
+| `billing.prompt-vs-baseline` | Rapporterte prompttokens er lavere enn referansens (ikke til skade for kjøperen). | Info | Ingen fradrag |
+| `billing.prompt-slope` | Rapporterte prompttokens vokser proporsjonalt med anslaget (stigningstall opptil 1,35). | Bestått | Ingen fradrag |
+| `billing.prompt-slope` | Rapporterte prompttokens vokser 1,35 til 1,6 ganger så raskt som anslaget. | Advarsel · Middels | tak 70 |
+| `billing.prompt-slope` | Rapporterte prompttokens vokser mer enn 1,6 ganger så raskt som anslaget. | Ikke bestått · Høy | tak 55 |
+| `billing.prompt-slope` | Bare én promptstørrelse ga brukbare tall; stigningstallet kunne ikke måles. | Info | Ingen fradrag |
+| `billing.fixed-overhead` | En liten fast overhead i prompttokens (under 30 tokens), slik chatmaler legger til. | Info | Ingen fradrag |
+| `billing.fixed-overhead` | En fast overhead i prompttokens på 30 tokens eller mer i hver forespørsel. | Advarsel · Lav | tak 90 |
 | `billing.usage-inflation` | Rapporterte prompttokens er langt over det uavhengige anslaget. | Ikke bestått · Høy | tak 55 |
 | `billing.usage-inflation-completion` | Rapporterte fullføringstokens er langt over et heuristisk anslag. | Advarsel · Middels | tak 70 |
 | `billing.reasoning-tokens` | Fullføringstokens overstiger den synlige teksten, som forventet for en resonnerende modell. | Info | Ingen fradrag |
@@ -699,8 +723,9 @@ En mislykket probeforespørsel etterlater detektoren uten score.
 **Forbehold.** Chat-maler og spesialtokens legger til en liten fast forskyvning,
 så et nøyaktig samsvar forventes ikke. Hvis den leverte modellen er en annen enn
 den oppgitte, er den «riktige» tokenizeren ukjent. Skjulte resonneringstokens kan
-ikke telles utenfra. Én probe måler én størrelse; en multiplikator som skalerer
-med størrelsen, krever gjentatte kjøringer eller sammenligningsmodus.
+ikke telles utenfra. Tre størrelser opptil omtrent 2 400 tokens skiller en
+proporsjonal faktor fra en fast overhead; en multiplikator som først slår inn
+ved mye større prompter, forblir usett.
 
 ---
 
@@ -1041,7 +1066,7 @@ De 16 relétriksene fra undersøkelsen fordeler seg slik på ekte.
 | 5 | `context.window-truncation` | høy | `context_window` | stige med nål ved kanten + binærsøk; målt mot oppgitt |
 | 6 | `context.lost-in-middle-rag` | høy | `context_window` | dybdene 0,1/0,5/0,9 ved en middels størrelse |
 | 7 | `stream.fake-streaming` | middels | `streaming` | antall biter, tidspunkt for første token, jevnhet i oppholdene |
-| 8 | `billing.usage-inflation` | høy | `billing` | uavhengig heuristisk tokenanslag for én kjent probe |
+| 8 | `billing.usage-inflation` | høy | `billing` | stigningstallet for rapporterte prompttokens over tre promptstørrelser mot et heuristisk anslag; i sammenligningsmodus referansens eksakte tall |
 | 9 | `billing.missing-usage` | middels | `billing`, `protocol_response`, `streaming` | om usage finnes, fordelingen og regnestykket; usage-bit i strømmen |
 | 10 | `privacy.prompt-logging-leakage` | høy | `prompt_cache` | prefiksbufring etter TTFT (til informasjon); deling mellom brukere og logging kan fortsatt ikke bevises med én nøkkel |
 | 11 | `infra.shared-upstream-key` | høy | — | veikart (kvote som synker i ro, lekkede forespørsels-ID-er fra oppstrøms) |

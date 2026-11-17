@@ -656,22 +656,44 @@ known-streaming baseline.
 tokens), `billing.missing-usage` (no, partial or inconsistent `usage`) and, as
 a corroborating signal, `prompt.injected-system-prompt`.
 
-**How it works.** One deterministic call (a known paragraph to summarize,
-`temperature=0`). The prompt and the visible answer are counted independently
-with a language-aware heuristic (about ±25%), for every model family: ekte uses
-no tokenizer library and downloads none. Reported prompt tokens above 2.5× the
-estimate and more than 50 tokens over it count as inflation. Completion tokens
-of a reasoning model legitimately include hidden reasoning tokens and are not
-flagged; otherwise completion tokens above 3× the estimate and more than 80
-tokens over it are a soft warning, never a failure, because the estimate of a
-short answer is noisy. `total` must equal `prompt + completion` (±2), and a
-total without the split is flagged. An undercount (below half the estimate) is
-informational (not buyer-harmful).
+**How it works.** Three deterministic calls: the same summarization task at
+three prompt sizes (about 150, 600 and 2,400 tokens of fixed paragraphs,
+`temperature=0`). The prompts and the visible answers are counted
+independently with a language-aware heuristic (about ±25%; it under-counts real
+tokenizers by 12 to 15%), for every model family: ekte uses no tokenizer library
+and downloads none. The reported prompt tokens are fitted against the estimate:
+the slope is the proportional factor, the intercept a fixed overhead. A slope up
+to 1.35 passes (the heuristic's under-count plus a dense tokenizer), 1.35 to 1.6
+is a warning and above 1.6 a failure. A fixed overhead with a normal slope is
+not inflation: below 30 tokens it is informational, from 30 tokens a low warning
+that points to `injected_prompt`. In compare mode, with a baseline of the same
+model on the same protocol, the same three prompts go to the baseline and
+`prompt_tokens` are compared directly: more than 3% or 5 tokens above the
+baseline (whichever is larger) is a failure, and this replaces the slope
+verdict. If only one of the three calls returns usable counts, the
+single-request check stands in, with a note that the slope could not be
+measured: prompt tokens above 2.5× the estimate and more than 50 tokens over it
+count as inflation. Completion tokens of a reasoning model (per the knowledge
+base, or because the response reports reasoning tokens) legitimately include
+hidden reasoning tokens and are not flagged; otherwise completion tokens above
+3× the estimate and more than 80 tokens per answer over it are a soft warning,
+never a failure, because the estimate of a short answer is noisy. `total` must
+equal `prompt + completion` (±2), and a total without the split is flagged. An
+undercount (below half the estimate) is informational (not buyer-harmful).
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `billing.request-failed` | No usable response to judge by. | Inconclusive · Low | No deduction |
 | `billing.missing-usage` | The response carried no token usage at all. | Warning · Medium | cap 75 |
+| `billing.prompt-vs-baseline` | Reported prompt tokens match the baseline's for the same prompts. | Pass | No deduction |
+| `billing.prompt-vs-baseline` | Reported prompt tokens exceed the baseline's for the same prompts. | Fail · High | cap 55 |
+| `billing.prompt-vs-baseline` | Reported prompt tokens are below the baseline's (not buyer-harmful). | Info | No deduction |
+| `billing.prompt-slope` | Reported prompt tokens grow in proportion to the estimate (slope up to 1.35). | Pass | No deduction |
+| `billing.prompt-slope` | Reported prompt tokens grow 1.35 to 1.6 times as fast as the estimate. | Warning · Medium | cap 70 |
+| `billing.prompt-slope` | Reported prompt tokens grow more than 1.6 times as fast as the estimate. | Fail · High | cap 55 |
+| `billing.prompt-slope` | Only one prompt size returned usable counts; the slope could not be measured. | Info | No deduction |
+| `billing.fixed-overhead` | A small fixed prompt-token overhead (under 30 tokens), as chat templates add. | Info | No deduction |
+| `billing.fixed-overhead` | A fixed prompt-token overhead of 30 tokens or more on every request. | Warning · Low | cap 90 |
 | `billing.usage-inflation` | Reported prompt tokens far exceed the independent estimate. | Fail · High | cap 55 |
 | `billing.usage-inflation-completion` | Reported completion tokens are far above a heuristic estimate. | Warning · Medium | cap 70 |
 | `billing.reasoning-tokens` | Completion tokens exceed the visible text, as expected for a reasoning model. | Info | No deduction |
@@ -686,8 +708,9 @@ A failed probe request leaves the detector unscored.
 **Caveats.** Chat templates and special tokens add a small fixed offset, so an
 exact match is not expected. If the served model differs from the claimed one,
 the "right" tokenizer is unknown. Hidden reasoning tokens cannot be counted
-from outside. One probe measures one size; a size-scaling multiplier needs
-repeated runs or compare mode.
+from outside. Three sizes up to about 2,400 tokens separate a proportional
+factor from a fixed overhead; a multiplier that only sets in on much larger
+prompts stays unseen.
 
 ---
 
@@ -1022,7 +1045,7 @@ The 16 relay tricks from the research map onto ekte as follows.
 | 5 | `context.window-truncation` | high | `context_window` | edge-needle ladder + binary search; measured vs declared |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | depths 0.1/0.5/0.9 at a mid size |
 | 7 | `stream.fake-streaming` | medium | `streaming` | chunk count, first-token timing, gap uniformity |
-| 8 | `billing.usage-inflation` | high | `billing` | independent heuristic token estimate of one known probe |
+| 8 | `billing.usage-inflation` | high | `billing` | slope of reported prompt tokens over three prompt sizes against a heuristic estimate; the baseline's exact counts in compare mode |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | usage presence, split and arithmetic; stream usage chunk |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | prefix caching by TTFT (informational); cross-user sharing and logging stay unprovable from one key |
 | 11 | `infra.shared-upstream-key` | high | — | roadmap (quota decreasing while idle, leaked upstream request ids) |

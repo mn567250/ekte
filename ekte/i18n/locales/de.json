@@ -336,6 +336,8 @@
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Prüfen Sie den Verbindungspool des Relays und die Upstream-Stabilität unter paralleler Last (HTTP-429-Drosselung ist aus dieser Quote ausgenommen).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Klären Sie mit dem Anbieter, wie der Verbrauch gemessen wird, falls pro Token abgerechnet wird.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Gleichen Sie die Abrechnung mit einem Prompt bekannter Größe ab; mögliche Überabrechnung pro Token.",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "Vergleichen Sie die abgerechneten Prompt-Tokens mit denen der Baseline; das Relay meldet zu viele Input-Tokens.",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "Ein so großer fester Overhead deutet auf einen verborgenen System-Prompt hin; führen Sie die Prüfung injected_prompt (Suite deep) aus, um ihn zu untersuchen.",
   "Confirm with the provider how prompt/completion tokens are metered.": "Klären Sie mit dem Anbieter, wie Prompt-/Completion-Tokens gemessen werden.",
   "Cross-check billing against output length; possible per-token overbilling.": "Gleichen Sie die Abrechnung mit der Ausgabelänge ab; mögliche Überabrechnung pro Token.",
   "Compare token accounting against a trusted baseline of the same model.": "Vergleichen Sie die Token-Zählung mit einer vertrauenswürdigen Referenz desselben Modells.",
@@ -667,6 +669,22 @@
   "billing.missing-usage": [
    "Keine Verbrauchsangaben zurückgegeben",
    "Die Antwort enthält keinen Token-Verbrauch; die Abrechnung lässt sich nicht unabhängig prüfen (usage vorhanden: {usage_present})."
+  ],
+  "billing.prompt-vs-baseline": [
+   "Prompt-Tokens im Vergleich zur Baseline",
+   "Für denselben Prompt meldete das Ziel {target_prompt} Prompt-Tokens, die Baseline {baseline_prompt}."
+  ],
+  "billing.prompt-slope": [
+   "Wachstum der Prompt-Tokens gegenüber der Schätzung",
+   "Über {sizes} Prompt-Größen wachsen die gemeldeten Prompt-Tokens {slope}-mal so schnell wie die unabhängige Schätzung (fester Versatz {intercept} Tokens)."
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "Steigung der Prompt-Tokens nicht gemessen",
+   "Nur eine Prompt-Größe lieferte verwertbare Zahlen (gemeldet {reported_prompt}, geschätzt ~{estimated_prompt}); die Steigung ließ sich nicht messen, daher gilt die Toleranz für eine einzelne Anfrage."
+  ],
+  "billing.fixed-overhead": [
+   "Fester Prompt-Token-Overhead",
+   "Jede Anfrage enthält unabhängig von ihrer Größe etwa {intercept} Prompt-Tokens mehr als die Schätzung (Steigung {slope})."
   ],
   "billing.usage-inflation": [
    "Gemeldete Prompt-Tokens weit über der Schätzung",

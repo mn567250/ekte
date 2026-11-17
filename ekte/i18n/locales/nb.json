@@ -336,6 +336,8 @@
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Sjekk reléets tilkoblingspool og stabiliteten oppstrøms under parallell last (HTTP 429-struping er holdt utenfor denne raten).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Avklar med leverandøren hvordan forbruket måles hvis fakturering skjer per token.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Kontroller faktureringen mot en prompt av kjent størrelse; mulig overfakturering per token.",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "Sammenlign fakturerte prompttokens med referansens; reléet rapporterer for mange inndatatokens.",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "En så stor fast overhead tyder på en skjult systemprompt; kjør kontrollen injected_prompt (deep-suiten) for å undersøke den.",
   "Confirm with the provider how prompt/completion tokens are metered.": "Avklar med leverandøren hvordan prompt- og fullføringstokens måles.",
   "Cross-check billing against output length; possible per-token overbilling.": "Kontroller faktureringen mot lengden på utdata; mulig overfakturering per token.",
   "Compare token accounting against a trusted baseline of the same model.": "Sammenlign tokenregnskapet med en pålitelig referanse for samme modell.",
@@ -662,6 +664,22 @@
   "billing.missing-usage": [
    "Ikke noe forbruksregnskap returnert",
    "Svaret inneholder ikke noe tokenforbruk; faktureringen kan ikke kontrolleres uavhengig (usage til stede: {usage_present})."
+  ],
+  "billing.prompt-vs-baseline": [
+   "Prompttokens sammenlignet med referansen",
+   "For samme prompt rapporterte målet {target_prompt} prompttokens, referansen {baseline_prompt}."
+  ],
+  "billing.prompt-slope": [
+   "Vekst i prompttokens mot anslaget",
+   "Over {sizes} promptstørrelser vokser rapporterte prompttokens {slope} ganger så raskt som det uavhengige anslaget (fast forskyvning {intercept} tokens)."
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "Stigningstall for prompttokens ikke målt",
+   "Bare én promptstørrelse ga brukbare tall (rapportert {reported_prompt}, anslått ~{estimated_prompt}); stigningstallet kunne ikke måles, så marginen for én enkelt forespørsel gjelder."
+  ],
+  "billing.fixed-overhead": [
+   "Fast overhead i prompttokens",
+   "Hver forespørsel har omtrent {intercept} flere prompttokens enn anslaget, uansett størrelse (stigningstall {slope})."
   ],
   "billing.usage-inflation": [
    "Rapporterte prompttokens langt over anslaget",
