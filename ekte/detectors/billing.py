@@ -35,7 +35,7 @@ from ekte.clients import Client, detect_api
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
-from ekte.detectors.helpers import usage_field
+from ekte.detectors.helpers import is_reasoning, usage_field
 from ekte.detectors.scale import DeductionScale, outcome
 from ekte.models import (
     CompletionOutcome,
@@ -45,7 +45,6 @@ from ekte.models import (
     Severity,
     Status,
 )
-from ekte.perf.recorder import usage_tokens
 from ekte.utils.tokenize import estimate_messages_tokens, estimate_tokens
 
 # Prompt-token slope (reported / estimated, fitted over the three sizes). Up to
@@ -297,12 +296,11 @@ class BillingDetector(Detector):
         # Completion-token inflation — the trickiest. For a REASONING model the
         # reported completion legitimately includes hidden reasoning/thinking tokens
         # that our visible-text estimate cannot see, so a higher count is EXPECTED,
-        # not inflation. Reasoning = the profile says so or the response reports
-        # reasoning tokens. The completion estimate is heuristic and short outputs
+        # not inflation. Reasoning = the profile says so, the client learned that
+        # the endpoint reasons, or a response reports reasoning tokens
+        # (helpers.is_reasoning). The completion estimate is heuristic and short outputs
         # make it noisy, so only a gross divergence is flagged, and only as a soft WARN.
-        reasoning = bool(ctx.profile and ctx.profile.model.reasoning) or any(
-            (usage_tokens(c.outcome.usage)["reasoning"] or 0) > 0 for c in usable
-        )
+        reasoning = is_reasoning(ctx, *(c.outcome for c in usable))
         if completion_sum is not None and est_completion_sum > 0:
             comp_ratio = completion_sum / est_completion_sum
             n = len(with_completion)

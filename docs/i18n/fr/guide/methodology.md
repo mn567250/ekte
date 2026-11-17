@@ -231,6 +231,11 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
   Dès qu'un endpoint est connu pour raisonner (son profil indique
   `reasoning: true`, ou après sa première répétition de ce type), les sondes
   courtes partent d'emblée avec la limite de 4 096 tokens au lieu de deux fois.
+  Les vérifications qui traitent un modèle de raisonnement autrement
+  (facturation, déterminisme, sortie maximale, attributs de requête) le
+  reconnaissent toutes de la même façon : le profil l'indique, le client l'a
+  appris d'une telle répétition, ou une réponse signale des tokens de
+  raisonnement.
 - **Paramètres de requête :** les modèles de raisonnement refusent certains
   paramètres : sur Chat Completions `max_tokens` (ils prennent
   `max_completion_tokens`) et, quel que soit le protocole, les paramètres

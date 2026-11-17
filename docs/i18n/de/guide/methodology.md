@@ -233,6 +233,10 @@ Ergebnis zur Modellidentität sagt, dass die Modellidentität nicht geprüft wur
   bekannt ist, dass ein Endpunkt nachdenkt (sein Profil sagt
   `reasoning: true`, oder nach seiner ersten solchen Wiederholung), gehen kurze
   Proben gleich mit dem Limit von 4.096 Token hinaus statt zweimal.
+  Die Prüfungen, die ein Reasoning-Modell anders behandeln (Abrechnung,
+  Determinismus, maximale Ausgabe, Anfrageattribute), erkennen es alle auf
+  dieselbe Weise: das Profil sagt es, der Client hat es aus einer solchen
+  Wiederholung gelernt, oder eine Antwort meldet Reasoning-Token.
 - **Anfrageparameter:** Reasoning-Modelle lehnen manche Parameter ab: bei Chat
   Completions `max_tokens` (sie nehmen `max_completion_tokens`) und in jedem
   Protokoll Sampling-Parameter wie `temperature`. Der Client lässt die Parameter

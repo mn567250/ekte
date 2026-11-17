@@ -230,6 +230,11 @@ sull'identità del modello dice che l'identità del modello non è stata verific
   vengono mai ripetute. Una volta noto che un endpoint ragiona (il suo profilo
   indica `reasoning: true`, o dopo la sua prima ripetizione di questo tipo), le
   sonde brevi partono subito con il limite di 4.096 token invece che due volte.
+  I controlli che trattano diversamente un modello di ragionamento
+  (fatturazione, determinismo, output massimo, attributi della richiesta) lo
+  riconoscono tutti allo stesso modo: lo dice il profilo, il client l'ha
+  appreso da una tale ripetizione, oppure una risposta riporta token di
+  ragionamento.
 - **Parametri della richiesta:** i modelli di ragionamento rifiutano alcuni
   parametri: su Chat Completions `max_tokens` (vogliono `max_completion_tokens`)
   e, in ogni protocollo, i parametri di campionamento come `temperature`. Il

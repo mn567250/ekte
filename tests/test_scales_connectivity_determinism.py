@@ -127,6 +127,31 @@ async def test_determinism_identical_samples_of_a_reasoning_model_are_not_cachin
     assert result.score == 100.0 and result.status == Status.PASS
 
 
+async def test_determinism_identical_samples_reporting_reasoning_tokens_are_not_caching():
+    # #262: an unprofiled model that reports reasoning tokens is a reasoning model
+    same = [
+        CompletionOutcome(ok=True, status_code=200, content="The very same story.",
+                          usage={"completion_tokens": 300,
+                                 "completion_tokens_details": {"reasoning_tokens": 280}})
+        for _ in range(_N)
+    ]
+    result = await _determinism(same, _STABLE)
+    f = _by_id(result)["determinism.temp1_variability"]
+    assert (f.outcome, f.status) == ("identical_reasoning", Status.INFO)
+
+
+async def test_determinism_uses_the_clients_learned_reasoning_state():
+    queue = list(_SAME) + list(_STABLE)
+
+    async def complete(_spec):
+        return queue.pop(0)
+
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete, reasoning_room=True),
+                          profile=None)
+    result = await DeterminismDetector().run(ctx)  # type: ignore[arg-type]
+    assert _by_id(result)["determinism.temp1_variability"].outcome == "identical_reasoning"
+
+
 async def test_determinism_without_usable_samples_has_no_score():
     result = await _determinism([_DOWN] * _N, [_DOWN, _DOWN])
     _matches_scale(result, determinism.SCALE)
@@ -160,3 +185,23 @@ async def test_determinism_three_identical_usable_samples_warn():
     f = _by_id(result)["determinism.temp1_variability"]
     assert (f.outcome, f.status, f.evidence["samples"]) == ("identical", Status.WARN, 3)
     assert result.score == 55.0 and result.status == Status.WARN
+
+
+# --------------------------------------------------------------------------- #
+# helpers.is_reasoning: one rule for every detector (#262)
+# --------------------------------------------------------------------------- #
+def test_is_reasoning_reads_profile_client_state_and_usage():
+    from ekte.detectors.helpers import is_reasoning
+
+    plain = SimpleNamespace(profile=None, client=SimpleNamespace())
+    assert not is_reasoning(plain)
+    assert not is_reasoning(plain, _ok("x"), None)
+    profiled = SimpleNamespace(profile=SimpleNamespace(model=SimpleNamespace(reasoning=True)),
+                               client=SimpleNamespace())
+    assert is_reasoning(profiled)
+    learned = SimpleNamespace(profile=None, client=SimpleNamespace(reasoning_room=True))
+    assert is_reasoning(learned)
+    thinking = CompletionOutcome(ok=True, status_code=200, content="x",
+                                 usage={"output_tokens": 50,
+                                        "output_tokens_details": {"reasoning_tokens": 40}})
+    assert is_reasoning(plain, _ok("x"), thinking)

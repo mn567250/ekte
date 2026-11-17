@@ -13,6 +13,7 @@ from functools import lru_cache
 from typing import Any
 
 from ekte import prompts
+from ekte.perf.recorder import usage_tokens
 from ekte.utils.tokenize import estimate_tokens
 
 # The filler's pool of natural-ish sentences (ekte/prompts/en.json). Varied so it
@@ -146,6 +147,29 @@ def contains_word_any(text: str, words: list[str]) -> bool:
 def words_present(text: str, words: list[str]) -> list[str]:
     """Return the subset of ``words`` present in ``text`` as whole words."""
     return [w for w in (words or []) if contains_word(text, w)]
+
+
+def is_reasoning(ctx: Any, *outcomes: Any) -> bool:
+    """Whether the endpoint under test is a reasoning model, decided the same
+    way by every detector (#262).
+
+    True when the claimed profile says ``reasoning: true``, when the client
+    has learned that the endpoint reasons (``reasoning_room``: a short probe
+    already needed the reasoning repeat, see "Reasoning models" in the
+    methodology), or when any of ``outcomes`` reports reasoning tokens. An
+    unprofiled reasoning model is therefore recognised by what it does, not
+    only by its knowledge-base entry.
+    """
+    profile = getattr(ctx, "profile", None)
+    if profile is not None and getattr(profile.model, "reasoning", False) is True:
+        return True
+    if getattr(getattr(ctx, "client", None), "reasoning_room", False) is True:
+        return True
+    return any(
+        (usage_tokens(getattr(o, "usage", None))["reasoning"] or 0) > 0
+        for o in outcomes
+        if o is not None
+    )
 
 
 def first_json_object(text: str) -> dict[str, Any] | None:

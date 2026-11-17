@@ -26,6 +26,14 @@ ekte has three eras:
   so enabling `--judge` no longer lowers a perfect model-identity dimension
   (100 + 95 averaged to 97.5). Scores of judged runs change; see
   [#168](https://github.com/mn567250/ekte/issues/168).
+- **One reasoning rule:** `ekte.detectors.helpers.is_reasoning(ctx, *outcomes)`
+  treats the endpoint as a reasoning model when the profile says so, when the
+  client has learned it (a short probe needed the reasoning repeat), or when a
+  response reports reasoning tokens. `billing`, `determinism`, the maximum
+  output check and the request/response attribute probes use it, so an
+  unprofiled reasoning model no longer gets a `determinism.temp1_variability:
+  identical` or `billing.usage-inflation-completion` finding for its hidden
+  thinking.
 
 ### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
 

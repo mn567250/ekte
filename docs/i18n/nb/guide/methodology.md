@@ -221,6 +221,10 @@ at modellidentiteten ikke ble verifisert.
   (profilen sier `reasoning: true`, eller etter den første slike gjentakelsen),
   sendes korte prober med grensen på 4 096 tokens fra starten i stedet for to
   ganger.
+  Kontrollene som behandler en resonnerende modell annerledes (fakturering,
+  determinisme, maksimal utdata, forespørselsattributter) gjenkjenner den alle
+  på samme måte: profilen sier det, klienten har lært det av en slik
+  gjentakelse, eller et svar rapporterer resonneringstokens.
 - **Forespørselsparametere:** resonnerende modeller avviser noen parametere: på
   Chat Completions `max_tokens` (de tar `max_completion_tokens`), og på alle
   protokoller samplingsparametere som `temperature`. Klienten utelater

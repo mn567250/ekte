@@ -35,7 +35,7 @@ from ekte.clients import detect_api
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
-from ekte.detectors.helpers import first_json_object, usage_field
+from ekte.detectors.helpers import first_json_object, is_reasoning, usage_field
 from ekte.detectors.scale import Scale, outcome
 from ekte.models import CompletionOutcome, DetectorResult, Dimension, RequestSpec, Severity, Status
 from ekte.perf.recorder import usage_tokens
@@ -619,7 +619,7 @@ class CapabilityDetector(Detector):
         :data:`USAGE_MISMATCH_FACTOR` apart gets that noted in ``evidence``."""
         reported = usage_field(out.usage, "completion_tokens", "output_tokens")
         reasoning_tokens = usage_tokens(out.usage)["reasoning"] or 0
-        reasoning = bool(ctx.profile and ctx.profile.model.reasoning) or reasoning_tokens > 0
+        reasoning = is_reasoning(ctx, out)
         estimated = estimate_tokens(content)
         evidence["reported_completion_tokens"] = reported
         evidence["estimated_text_tokens"] = estimated

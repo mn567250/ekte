@@ -217,6 +217,10 @@ result says that model identity was not verified.
   repeated. Once an endpoint is known to reason (its profile says
   `reasoning: true`, or after its first such repeat), short probes are sent
   with the 4,096-token limit from the start instead of twice.
+  The checks that treat a reasoning model differently (billing, determinism,
+  maximum output, request attributes) all recognise one the same way: the
+  profile says so, the client has learned it from such a repeat, or a
+  response reports reasoning tokens.
 - **Request parameters:** reasoning models refuse some parameters: on Chat
   Completions `max_tokens` (they take `max_completion_tokens`), and on every
   protocol sampling parameters such as `temperature`. The client leaves out the

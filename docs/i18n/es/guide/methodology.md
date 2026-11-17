@@ -227,6 +227,10 @@ identidad del modelo indica que la identidad del modelo no se verificó.
   razona (su perfil dice `reasoning: true`, o tras su primera repetición de este
   tipo), las sondas cortas se envían desde el principio con el límite de 4.096
   tokens en lugar de dos veces.
+  Las comprobaciones que tratan de otra forma a un modelo de razonamiento
+  (facturación, determinismo, salida máxima, atributos de la petición) lo
+  reconocen todas igual: lo dice el perfil, el cliente lo ha aprendido de una
+  repetición así, o una respuesta informa tokens de razonamiento.
 - **Parámetros de la petición:** los modelos de razonamiento rechazan algunos
   parámetros: en Chat Completions `max_tokens` (usan `max_completion_tokens`) y,
   en cualquier protocolo, parámetros de muestreo como `temperature`. El cliente
