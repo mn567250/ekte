@@ -56,12 +56,19 @@ Gegenstände unter ihrer Prüfung.
 ekte bewertet elf Dimensionen. Die Bewertung einer Dimension ist der
 **gleich gewichtete Mittelwert der Bewertungen ihrer Detektoren**: ein Detektor
 mit vielen Prüfungen wiegt nicht schwerer als einer mit wenigen, und ein
-Detektor ohne numerische Bewertung bleibt außen vor. Ihr Status ist der
+Detektor ohne numerische Bewertung bleibt außen vor. Ein Detektor mit einem
+Befund mit Schweregrad HOCH/KRITISCH **begrenzt** die Dimension auf seine eigene
+Bewertung, damit bestandene Nachbardetektoren ein Versagen nicht wegmitteln: ein
+Manipulationsdetektor mit 10 neben drei sauberen Integritätsdetektoren ergibt für
+die Antwortintegrität 10, nicht 77,5 (es gilt der niedrigste solche Detektor).
+Transport-Hinweise (siehe [Risikourteil](#risikourteil)) und die Dimension
+Konnektivität begrenzen nichts. Ihr Status ist der
 schlechteste Status, den ihre Detektoren ermittelt haben — außer dass ein Befund
 mit Schweregrad HOCH/KRITISCH **Fehlgeschlagen** erzwingt und ein Befund mit
 Schweregrad MITTEL **Bestanden** auf **Warnung** anhebt, unabhängig von der
 Bewertung. Jeder Bericht hält das je Dimension fest (`DimensionScore.breakdown`:
-die Bewertung jedes Detektors, ob sie gewertet wurde, und eine etwaige
+die Bewertung jedes Detektors, ob sie gewertet wurde, die Begrenzung der
+Bewertung samt auslösendem Detektor und Befunden und eine etwaige
 Statusänderung samt auslösender Befunde) und zeigt es unter **Dimension
 details** (Markdown/HTML/PDF) und in den aufklappbaren Zeilen von **Prüfungen
 je Dimension** in der Weboberfläche. Ein abstürzender Detektor erscheint mit
@@ -73,7 +80,16 @@ Der **Gesamt-Health-Score** ist der gewichtete Mittelwert über die Dimensionen,
 die eine Bewertung ergeben haben (`DIMENSION_WEIGHTS` in `ekte/scoring.py`).
 Eine Dimension, die nicht lief (nicht in der Suite oder in einem
 `custom`-Lauf nicht ausgewählt), fällt heraus, und die übrigen Gewichte werden
-neu normiert. Die Note ist A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) oder F.
+neu normiert. Die [Risikostufe](#risikourteil) **begrenzt** die Bewertung dann
+(`RISK_SCORE_CAPS` in `ekte/scoring.py`): höchstens **49** bei `high` und **69**
+bei `medium`; `low`, `clean` und `inconclusive` lassen sie unverändert. Die Note
+folgt aus der begrenzten Bewertung und ist A (≥ 90), B (≥ 80), C (≥ 70),
+D (≥ 60) oder F, sodass ein hohes Risiko immer F ergibt und ein mittleres
+höchstens D, und `--fail-under` prüft die begrenzte Bewertung. Greift die
+Begrenzung, sagt die Zusammenfassung das, `verdict.uncapped_score` behält den
+gewichteten Mittelwert und `verdict.score_cap` hält Risikostufe, Obergrenze und
+die Befunde fest, die das Risiko bestimmt haben; die Berichte zeigen es neben
+der Bewertung.
 
 | Dimension | Kennung | Gewicht | Rolle |
 |---|---|---|---|
