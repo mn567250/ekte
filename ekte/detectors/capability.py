@@ -523,7 +523,7 @@ class CapabilityDetector(Detector):
             evidence["delivered_tokens"] = delivered
             evidence["delivered_source"] = source
             evidence["to_cap_share"] = TO_CAP_SHARE
-            if delivered >= TO_CAP_SHARE * cap:
+            if delivered is None or delivered >= TO_CAP_SHARE * cap:
                 # Hit the cap — expected, the model kept producing as asked.
                 result.findings.append(
                     SCALE.finding(
@@ -532,8 +532,9 @@ class CapabilityDetector(Detector):
                         calls=[outcome],
                         title="Sustained output to the request cap",
                         summary=(
-                            f"Produced ~{line_count} lines (~{delivered} tokens) and stopped at "
-                            f"the {cap}-token cap (finish_reason=length)."
+                            f"Produced ~{line_count} lines"
+                            + (f" (~{delivered} tokens)" if delivered is not None else "")
+                            + f" and stopped at the {cap}-token cap (finish_reason=length)."
                         ),
                         evidence=evidence,
                     )
@@ -608,11 +609,12 @@ class CapabilityDetector(Detector):
     @staticmethod
     def _delivered_tokens(
         ctx: AuditContext, out: CompletionOutcome, content: str, evidence: dict[str, Any]
-    ) -> tuple[int, str]:
+    ) -> tuple[int | None, str]:
         """Tokens an answer cut off by ``length`` delivered, and where the count
         comes from: the reported completion tokens when present, else an
         estimate from the text. For a reasoning model the reasoning tokens count
-        as delivered (they spend the same budget); a non-reasoning model whose
+        as delivered (they spend the same budget), and without any usage the
+        count is unknown (None); a non-reasoning model whose
         reported count and text estimate are more than
         :data:`USAGE_MISMATCH_FACTOR` apart gets that noted in ``evidence``."""
         reported = usage_field(out.usage, "completion_tokens", "output_tokens")
@@ -632,6 +634,10 @@ class CapabilityDetector(Detector):
                 source = "reasoning tokens + text estimate"
         elif reasoning and reasoning_tokens:
             delivered, source = reasoning_tokens + estimated, "reasoning tokens + text estimate"
+        elif reasoning:
+            # No usage at all: the hidden reasoning cannot be counted, so a
+            # short visible answer says nothing about a clamp.
+            return None, "not countable (reasoning model without usage)"
         else:
             delivered, source = estimated, "text estimate"
         if not reasoning and reported is not None:
