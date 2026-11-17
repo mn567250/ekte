@@ -349,14 +349,18 @@ den.
 
 - **Probet vindu.** Proben kjører opp til `upper` = det oppgitte vinduet, begrenset
   av `--max-context-tokens` (standard 200K). Hver konklusjon vurderes mot
-  `upper`, aldri mot delen av et større oppgitt vindu over taket.
+  øverste trinn (90 % av `upper`, se under), aldri mot delen av et større
+  oppgitt vindu over taket.
 - **Størrelsene er ekte tokens.** ektes innebygde tokenanslag teller denne
   fyllteksten omtrent 12 % (o200k) til 15 % (cl100k) for lavt sammenlignet med
   ekte tokenizere, så hver prompt bygges med størrelse ÷ 1,2 etter anslaget (nål
   og spørsmål inkludert): et trinn på størrelse N holder seg innenfor N ekte
-  tokens. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
+  tokens. En tokenizer-familie med en faktor målt offline ville bruke sin egen
+  faktor (`real_per_heuristic` i bevisene); ingen er målt ennå, så alle familier
+  bruker 1,2. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
   disse budsjettene i ekte tokens; radene i stigen har også anslaget en prompt ble
-  bygget etter (`heuristic_tokens`).
+  bygget etter (`heuristic_tokens`) og prompttokenene endepunktet rapporterte for
+  den (`prompt_tokens`).
 
 1. En stige med høyst sju størrelser, som halveres nedover fra et **øverste trinn
    på 90 % av `upper`** (så ingen trinn når hele vinduet, og det blir plass til
@@ -384,19 +388,26 @@ den.
    rapporteres som ikke verifisert (uavklart, gir ikke score), aldri som
    avkorting eller `no_recall`. Bare et svar uten nålen er en bom.
 
-Det målte vinduet (den største huskede størrelsen) sammenlignes med `upper`:
-gjenkalling på øverste trinn er konsistent (eller, når det oppgitte vinduet er
-større enn taket, **verifisert opp til taket**: vinduet over det ble ikke prøvd);
-under det trekker konklusjonen fra andelen av øverste trinn som ikke ble husket —
-en WARN fra halvparten av `upper` og opp, en FAIL under halvparten. Uten et
+Det målte vinduet (den største huskede størrelsen) sammenlignes med øverste
+trinn: gjenkalling på øverste trinn er konsistent (eller, når det oppgitte
+vinduet er større enn taket, **verifisert opp til taket**: vinduet over det ble
+ikke prøvd); under det trekker konklusjonen fra andelen av øverste trinn som
+ikke ble husket (`top_rung_share`) — en WARN fra halvparten av øverste trinn og
+opp, en FAIL under halvparten. Konklusjonen og fradraget har samme referanse, så
+en WARN trekker aldri fra mer enn 50 poeng. Når bare øverste trinn sviktet og
+endepunktet rapporterte mer enn 5 % flere prompttokens for den største huskede
+størrelsen enn budsjettet, **skjøt proben over** (endepunktets tokenizer teller
+fyllteksten tettere enn faktoren tillater): vinduet over rapporteres som ikke
+prøvd (Info), aldri som for kort eller som en avvisning under påstanden. Uten et
 oppgitt vindu rapporteres målingen, men gir ikke score.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `context_window.window` (Effektivt kontekstvindu) | Gjenkallingen holdt på øverste trinn (90 % av det probede vinduet): ingen fradrag. | Bestått | Ingen fradrag |
 |  | Gjenkallingen er verifisert opp til probens tak; det oppgitte vinduet over det ble ikke prøvd. | Bestått | Ingen fradrag |
-|  | Gjenkallingen holdt opp til 50–90 % av det probede vinduet; trekker fra andelen av øverste trinn som ikke ble husket. | Advarsel · Middels | opptil −50 poeng |
-|  | Gjenkallingen sviktet under halvparten av det probede vinduet; trekker fra andelen av øverste trinn som ikke ble husket. | Ikke bestått · Høy | opptil −100 poeng |
+|  | Bare øverste trinn sviktet, og endepunktet telte den største huskede prompten mer enn 5 % over budsjettet: proben skjøt over, vinduet over den ble ikke prøvd. | Info | Ingen fradrag |
+|  | Gjenkallingen holdt fra halvparten av øverste trinn og opp, men ikke på øverste trinn; trekker fra andelen av øverste trinn som ikke ble husket. | Advarsel · Middels | opptil −50 poeng |
+|  | Gjenkallingen sviktet under halvparten av øverste trinn; trekker fra andelen av øverste trinn som ikke ble husket. | Ikke bestått · Høy | opptil −100 poeng |
 |  | Ikke engang den minste probestørrelsen fikk nålen husket. | Ikke bestått · Høy | −100 poeng |
 | `context_window.lost_in_middle` | Starten og slutten ble husket, men ikke midten, to ganger. | Advarsel · Middels | −15 poeng |
 | `context_window.rejected_below_claim` | En prompt godt under det oppgitte vinduet ble avvist som for lang. | Ikke bestått · Høy | Ingen fradrag |

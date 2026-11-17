@@ -359,16 +359,20 @@ marcador único é inserido num texto de enchimento não repetitivo, e o modelo
 tem de o devolver.
 
 - **Janela sondada.** A sonda vai até `upper` = a janela declarada, limitada
-  por `--max-context-tokens` (200K por omissão). Cada veredicto é julgado face a
-  `upper`, nunca face à parte de uma janela declarada maior que fica acima do
-  limite.
+  por `--max-context-tokens` (200K por omissão). Cada veredicto é julgado face ao
+  degrau superior (90% de `upper`, abaixo), nunca face à parte de uma janela
+  declarada maior que fica acima do limite.
 - **Os tamanhos são tokens reais.** A estimativa de tokens embutida no ekte
   conta este enchimento cerca de 12% (o200k) a 15% (cl100k) abaixo dos
   tokenizers reais, por isso cada prompt é construído a tamanho ÷ 1,2 segundo a
   estimativa (agulha e pergunta incluídas): um degrau de tamanho N cabe em N
-  tokens reais. Os tamanhos nas evidências (`size`, `effective_window`,
-  `top_rung`) são esses orçamentos de tokens reais; as linhas da escada trazem
-  também a estimativa com que um prompt foi construído (`heuristic_tokens`).
+  tokens reais. Uma família de tokenizers com um fator medido offline usaria o
+  seu próprio fator (`real_per_heuristic` nas evidências); ainda nenhum foi
+  medido, por isso todas as famílias usam 1,2. Os tamanhos nas evidências
+  (`size`, `effective_window`, `top_rung`) são esses orçamentos de tokens reais;
+  as linhas da escada trazem também a estimativa com que um prompt foi
+  construído (`heuristic_tokens`) e os tokens de prompt que o endpoint reportou
+  para ele (`prompt_tokens`).
 
 1. Uma escada de no máximo sete tamanhos, dividida ao meio a partir de um
    **degrau superior a 90% de `upper`** (nenhum degrau atinge a janela inteira,
@@ -399,19 +403,26 @@ tem de o devolver.
    como não verificada (inconclusiva, sem pontuação), nunca como truncamento nem
    `no_recall`. Só uma resposta sem a agulha é uma falha.
 
-A janela medida (o maior tamanho recordado) é comparada com `upper`: recordar no
-degrau superior é coerente (ou, se a janela declarada exceder o limite,
-**verificada até ao limite**: a janela acima dele não foi testada); abaixo
-disso, o veredicto deduz a parte do degrau superior não recordada — um aviso a
-partir de metade de `upper`, uma falha abaixo. Sem janela declarada, a medida é
-reportada mas não pontuada.
+A janela medida (o maior tamanho recordado) é comparada com o degrau superior:
+recordar no degrau superior é coerente (ou, se a janela declarada exceder o
+limite, **verificada até ao limite**: a janela acima dele não foi testada);
+abaixo disso, o veredicto deduz a parte do degrau superior não recordada
+(`top_rung_share`) — um aviso a partir de metade do degrau superior, uma falha
+abaixo. O veredicto e a dedução usam a mesma referência, por isso um aviso
+nunca deduz mais de 50 pontos. Quando só o degrau superior falhou e o endpoint
+reportou para o maior tamanho recordado mais de 5% de tokens de prompt acima do
+seu orçamento, a sonda **excedeu-se** (o tokenizer do endpoint conta o
+enchimento de forma mais densa do que o fator permite): a janela acima é
+reportada como não testada (Info), nunca como curta nem como rejeição abaixo do
+declarado. Sem janela declarada, a medida é reportada mas não pontuada.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `context_window.window` (Janela de contexto efetiva) | A recordação manteve-se no degrau superior (90% da janela sondada): sem dedução. | Aprovado | Sem dedução |
 |  | Recordação verificada até ao limite da sonda; a janela declarada acima dele não foi testada. | Aprovado | Sem dedução |
-|  | A recordação manteve-se até 50-90% da janela sondada; deduz a parte do degrau superior não recordada. | Aviso · Média | até −50 pts |
-|  | A recordação falhou abaixo de metade da janela sondada; deduz a parte do degrau superior não recordada. | Falha · Alta | até −100 pts |
+|  | Só o degrau superior falhou e o endpoint contou o maior prompt recordado mais de 5% acima do seu orçamento: a sonda excedeu-se, a janela acima dele não foi testada. | Info | Sem dedução |
+|  | A recordação manteve-se a partir de metade do degrau superior, mas não no degrau superior; deduz a parte do degrau superior não recordada. | Aviso · Média | até −50 pts |
+|  | A recordação falhou abaixo de metade do degrau superior; deduz a parte do degrau superior não recordada. | Falha · Alta | até −100 pts |
 |  | Nem o menor tamanho de sonda recordou a agulha. | Falha · Alta | −100 pts |
 | `context_window.lost_in_middle` | O início e o fim foram recordados, mas o meio não, por duas vezes. | Aviso · Média | −15 pts |
 | `context_window.rejected_below_claim` | Um prompt bem abaixo da janela declarada foi rejeitado como longo demais. | Falha · Alta | Sem dedução |

@@ -315,10 +315,11 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Augmentez --timeout / --max-request-time, ou réduisez --max-context-tokens, pour mesurer la fenêtre complète.",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Vérifiez l'erreur (par ex. un paramètre de requête refusé par ce point de terminaison) et relancez pour mesurer la fenêtre.",
   "Raise --max-context-tokens to exercise the full declared window.": "Augmentez --max-context-tokens pour tester toute la fenêtre déclarée.",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "Considérez la fenêtre au-delà du plus grand prompt retrouvé comme non vérifiée ; un facteur de jetons mesuré pour cette famille de tokeniseurs permettrait à la sonde de l'atteindre.",
   "Compare against a trusted baseline to confirm.": "Comparez avec une référence de confiance pour confirmer.",
   "The relay likely truncates or summarizes long prompts.": "Le relais tronque ou résume probablement les longs prompts.",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Fenêtre réelle ~{effective_window} << {declared} annoncés (ratio {ratio}, troncature silencieuse suspectée). Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Fenêtre réelle ~{effective_window} inférieure aux {declared} annoncés (ratio {ratio}, le rappel se dégrade avant la limite). Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Fenêtre réelle ~{effective_window} << {declared} annoncés (part {top_rung_share} du palier supérieur de {top_rung} jetons, troncature silencieuse suspectée). Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Fenêtre réelle ~{effective_window} inférieure aux {declared} annoncés (part {top_rung_share} du palier supérieur de {top_rung} jetons, le rappel se dégrade avant la limite). Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Même un prompt de ~{smallest_probed} tokens n'est pas retrouvé ; la fenêtre utile est bien inférieure aux {declared} annoncés. Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Pas de fenêtre annoncée à comparer ; fenêtre effective mesurée ~{effective_window} tokens. Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "Le serveur écarte silencieusement le début des longs prompts ; augmentez son réglage de longueur de contexte ou considérez la fenêtre annoncée comme non vérifiée.",
@@ -568,15 +569,15 @@
   ],
   "context_window.truncation": [
    "Fenêtre de contexte réelle bien inférieure à l'annonce",
-   "Fenêtre de contexte réelle ~{effective_window} << fenêtre sondée de {upper} jetons (déclarée {declared} ; ratio {ratio}, troncature silencieuse soupçonnée)."
+   "Fenêtre de contexte réelle ~{effective_window} << fenêtre sondée de {upper} jetons (déclarée {declared} ; part {top_rung_share} du palier supérieur de {top_rung} jetons, troncature silencieuse soupçonnée)."
   ],
   "context_window.short": [
    "Fenêtre de contexte réelle inférieure à l'annonce",
-   "Fenêtre de contexte réelle ~{effective_window} sous la fenêtre sondée de {upper} jetons (déclarée {declared} ; ratio {ratio}, le rappel se dégrade avant la limite)."
+   "Fenêtre de contexte réelle ~{effective_window} sous la fenêtre sondée de {upper} jetons (déclarée {declared} ; part {top_rung_share} du palier supérieur de {top_rung} jetons, le rappel se dégrade avant la limite)."
   ],
   "context_window.consistent": [
    "Fenêtre de contexte mesurée conforme à l'annonce",
-   "L'aiguille est encore retrouvée à ~{effective_window} tokens, proche des {declared} annoncés (ratio {ratio})."
+   "L'aiguille est encore retrouvée à ~{effective_window} tokens, proche des {declared} annoncés (part {top_rung_share} du palier supérieur de {top_rung} jetons)."
   ],
   "context_window.measured": [
    "Fenêtre de contexte effective mesurée",
@@ -585,6 +586,10 @@
   "context_window.verified_to_cap": [
    "Fenêtre de contexte vérifiée jusqu'au plafond de la sonde",
    "L'aiguille est retrouvée à ~{effective_window} tokens, le palier supérieur sous le plafond de sonde de {probe_cap} tokens ; la fenêtre déclarée de {declared} tokens au-delà n'a pas été testée."
+  ],
+  "context_window.overshot": [
+   "La sonde de fenêtre de contexte a dépassé son budget de jetons",
+   "Le point d'accès a compté le prompt de ~{effective_window} jetons comme {reported_prompt_tokens} jetons de prompt ({overshoot} fois son budget) et seul le palier supérieur de {top_rung} jetons a échoué : la sonde a dépassé, la fenêtre au-delà de ~{reported_prompt_tokens} jetons n'a donc pas été testée (ce n'est pas la preuve d'une fenêtre inférieure aux {declared} annoncés)."
   ],
   "context_window.probe_error": [
    "La sonde de fenêtre de contexte a reçu une erreur",
