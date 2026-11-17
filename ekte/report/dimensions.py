@@ -37,7 +37,14 @@ from ekte.models import (
     Status,
 )
 from ekte.report import performance as perf_render
-from ekte.scoring import _worst_status, weights_for
+from ekte.scoring import (
+    COVERAGE_LIMITED_BELOW,
+    COVERAGE_UNRATED_BELOW,
+    DIMENSION_NAMES,
+    _worst_status,
+    coverage_pct,
+    weights_for,
+)
 
 _STATUS_EMOJI: dict[Status, str] = {
     Status.PASS: "✅",
@@ -151,6 +158,48 @@ def overall_cap_note(report: AuditReport) -> str:
         f"(weighted mean of the dimensions {_num(v.uncapped_score)}); "
         f"set by: {', '.join(c.findings) or '—'}."
     )
+
+
+NOT_RATED = "not rated: too little was judged"
+
+
+def rating_text(report: AuditReport) -> str:
+    """The rating as the reports show it: the letter, "not rated: too little
+    was judged" when coverage withheld it (issue 249), else "—"."""
+    v = report.verdict
+    if v.rating:
+        return v.rating
+    if v.rating_limit is not None and v.rating_limit.limit is None:
+        return NOT_RATED
+    return "—"
+
+
+def coverage_text(report: AuditReport) -> str:
+    """The coverage as a percentage ("81%"), "—" when none was recorded."""
+    c = report.verdict.coverage
+    return "—" if c is None else f"{coverage_pct(c)}%"
+
+
+def coverage_note(report: AuditReport) -> str:
+    """One line when a dimension ran but could not be judged or coverage
+    limited the rating (issue 249), else ""."""
+    v = report.verdict
+    bits = []
+    if v.not_judged:
+        names = ", ".join(DIMENSION_NAMES.get(Dimension(d), d) for d in v.not_judged)
+        bits.append(f"not judged (ran without a usable result): {names}")
+    lim = v.rating_limit
+    if lim is not None:
+        why = (
+            "a core dimension could not be judged" if lim.reason == "core_not_judged"
+            else f"coverage below {coverage_pct(COVERAGE_UNRATED_BELOW)}%" if lim.limit is None
+            else f"coverage below {coverage_pct(COVERAGE_LIMITED_BELOW)}%"
+        )
+        head = "no rating" if lim.limit is None else f"rating at most {lim.limit}"
+        bits.append(f"{head} ({why}; the score alone gives {lim.unlimited_rating or '—'})")
+    if not bits:
+        return ""
+    return f"Coverage {coverage_text(report)}: " + "; ".join(bits) + "."
 
 
 def status_explanation(d: DimensionScore) -> str:

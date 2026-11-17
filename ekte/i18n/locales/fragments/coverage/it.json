@@ -1,0 +1,12 @@
+{
+ "strings": {
+  "Coverage {1}%: {2} ran but could not be judged.": "Copertura {1}%: eseguito ma non valutabile: {2}.",
+  "Not rated: too little was judged (coverage below {1}%).": "Nessuna valutazione: è stato valutato troppo poco (copertura sotto il {1}%).",
+  "Rating limited to {1} because coverage is below {2}%.": "Valutazione limitata a {1} perché la copertura è sotto il {2}%.",
+  "Rating limited to {1} because a core dimension could not be judged.": "Valutazione limitata a {1} perché non è stato possibile valutare una dimensione principale.",
+  "Not rated: too little was judged": "Nessuna valutazione: è stato valutato troppo poco",
+  "Rating at most {r}": "Valutazione al massimo {r}",
+  "Coverage": "Copertura",
+  "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score.": "La quota del peso delle dimensioni eseguite che è stato possibile valutare; una dimensione non valutabile esce dal punteggio."
+ }
+}

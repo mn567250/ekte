@@ -237,13 +237,27 @@
     var K = window.EkteKpi;
     if (!K) return "";
     var none = scoreTxt === "—";
-    return K.html([
+    // coverage limits the rating (verdict.rating_limit, report schema 1.6, issue 249)
+    var lim = v.rating_limit;
+    var unrated = !!lim && lim.limit == null;
+    var note = unrated
+      ? T("未评级：可判断的内容太少", "Not rated: too little was judged")
+      : lim ? Tf("评级最高为 {r}", "Rating at most {r}", { r: lim.limit }) : null;
+    var tiles = [
       { id: "score", label: T("综合健康分", "Overall health score"), text: scoreTxt, unit: "/100",
         // the grade's step when the report has one, so score and grade agree
         family: v.rating ? window.EKTE_I18N.gradeStep(v.rating).family : scoreC(sc),
+        note: note,
         sr: none ? null : scoreTxt + "/100" + (v.rating ? " (" + Tf("评级 {r}", "Rating {r}", { r: v.rating }) + ")" : "") },
-      { id: "confidence", label: T("结论置信度", "Verdict confidence"), text: v.confidence ? label("CONFIDENCE", v.confidence) : "—" },
-    ], { variant: "compact" });
+    ];
+    // the judged share of the weight of the dimensions that ran
+    if (v.coverage != null && isFinite(v.coverage))
+      tiles.push({ id: "coverage", label: T("覆盖率", "Coverage"),
+        text: num(Math.floor(Math.round(v.coverage * 1e6) / 1e4), 0), unit: "%",
+        hint: T("运行过的维度中得出判断的权重占比；未能判断的维度不计入综合分。",
+          "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score.") });
+    tiles.push({ id: "confidence", label: T("结论置信度", "Verdict confidence"), text: v.confidence ? label("CONFIDENCE", v.confidence) : "—" });
+    return K.html(tiles, { variant: "compact" });
   }
   // The risk caps the overall score (verdict.score_cap, report schema 1.6):
   // say so under the tiles, with the weighted mean and the findings that set it.
