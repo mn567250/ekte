@@ -49,13 +49,13 @@
     - definition:
       - code: <id>
     - term: ekte-versjon
-    - definition: 0.30.0
+    - definition: 0.35.0
     - term: axe-core-versjon
     - definition: 4.13.0
     - term: Tester
-    - definition: 1156 kjørt, 1156 bestått, 0 ikke bestått, 0 hoppet over
+    - definition: 1337 kjørt, 1337 bestått, 0 ikke bestått, 1 hoppet over
     - term: Språk
-    - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
+    - definition: English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文
     - term: Temaer
     - definition: Lyst, Mørkt
     - term: Sider
@@ -130,7 +130,7 @@
               - group:
                 - button "Ikke-tekstlig innhold" [expanded]
                 - paragraph: "Slik testes det: Bilder, ikoner, SVG-er og kontroller har et tekstalternativ. Om hvert alternativ er meningsfylt, vurderes av en person."
-                - paragraph: "Automatiserte tester: 30 kjørt, 30 bestått, 0 ikke bestått, 156 hoppet over"
+                - paragraph: "Automatiserte tester: 34 kjørt, 34 bestått, 0 ikke bestått, 176 hoppet over"
                 - paragraph:
                   - code: test_audit_surface_states
                   - code: test_wcag_rules_as_loaded

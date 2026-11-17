@@ -34,7 +34,7 @@ DBS = {"history.db": history.MIGRATIONS, "watches.db": watches.MIGRATIONS, "kb.d
 
 def test_a_fixture_exists_for_every_listed_release():
     names = {p.name for p in DIRS}
-    assert {"v0.30.0", "v0.33.0", "v0.33.1", "v0.34.0"} <= names
+    assert {"v0.30.0", "v0.33.0", "v0.33.1", "v0.34.0", "v0.35.0"} <= names
 
 
 @pytest.fixture(params=DIRS, ids=lambda p: p.name)
@@ -233,7 +233,8 @@ def test_monitor_runs_get_their_monitor_on_the_run_row(upgraded):
 
 def test_the_pages_of_150_work_on_upgraded_data(upgraded):
     """#161: from every release the history (up to schema 16, the monitor on
-    the run row) and watches (up to 5, the data version) migrations all run,
+    the run row) and watches (up to 5, the data version) migrations all run
+    (none are left for a release that already writes them),
     and History, Analytics and Monitors render and answer the shapes of #150:
     the change signal, the filtered and cached monitor list with its options,
     day ranges in the viewer's zone and watch=<id>."""
@@ -241,8 +242,10 @@ def test_the_pages_of_150_work_on_upgraded_data(upgraded):
     before = {n: _version(data / n) for n in ("history.db", "watches.db")}
     client = TestClient(create_app(), base_url="http://localhost")
     _open_all()
-    assert _version(data / "history.db") == dbmigrate.latest(history.MIGRATIONS) >= 16 > before["history.db"]
-    assert _version(data / "watches.db") == dbmigrate.latest(watches.MIGRATIONS) >= 5 > before["watches.db"]
+    # a release from before #150 is migrated; 0.35.0 and later already write
+    # these schemas, and opening them changes nothing
+    assert _version(data / "history.db") == dbmigrate.latest(history.MIGRATIONS) >= 16 >= before["history.db"]
+    assert _version(data / "watches.db") == dbmigrate.latest(watches.MIGRATIONS) >= 5 >= before["watches.db"]
     assert isinstance(watches.data_version(), int)
     for page in ("/history", "/analytics", "/watches"):
         r = client.get(page)
