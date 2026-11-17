@@ -20,6 +20,34 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
+
+Needles and canaries came from fixed seeds, so the context-window needle at a
+given size was the same string for every user and every run: a test-aware
+relay could answer from a table, an ordinary response cache made a monitor's
+later runs repeat the first run's answers, and the prompt-cache probe's "cold"
+request was already warm from the second run on.
+
+- Every audit draws a random **run nonce** once (`AuditContext.run_nonce`);
+  `stable_marker(seed, nonce)` derives the connectivity and security canaries,
+  every context-window needle (a fresh one per re-probe, as before) and both
+  prompt-cache prefix markers from it. Within one run the markers stay the
+  same, so the probes stay internally consistent.
+- The long filler of the context-window and prompt-cache probes starts its
+  line numbers and sentence cycle at a nonce-derived offset: a different
+  prompt per run at practically the same token count. `build_filler` stays
+  linear and memoized.
+- The integrity wallet canary's bech32 address is derived from the nonce
+  instead of the endpoint and model, so it changes every run.
+- The nonce is recorded in the report (`run_nonce`, report schema 1.5, still
+  unreleased) and the evidence header (`run_nonce`, **evidence schema 1.2**).
+  `ekte rescore` / replay reuses the recorded nonce, so a replayed run sends
+  the same prompts; a run recorded before this change replays with the fixed
+  probes it sent. `EKTE_RUN_NONCE` fixes the nonce (tests, reproducing a run).
+- Prompts whose wording is the measurement (knowledge-base fingerprints, the
+  billing paragraph, the injected-prompt probes) are unchanged. Scores and
+  verdicts are unchanged (see #168).
+
 ### Response integrity: tampering confirmed by a repeat, realistic canaries ([#254](https://github.com/mn567250/ekte/issues/254))
 
 Without a baseline a substituted canary was capped at Fail · Medium: a relay

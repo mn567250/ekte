@@ -15,6 +15,11 @@ requests are answered in recorded order. A detector of this version that asks
 something the recorded run never asked gets no answer: it is marked
 inconclusive (finding ``replay.missing``), never scored on a guess.
 
+The replay reuses the recorded run's nonce (the report's ``run_nonce``, else
+the evidence header's), so every needle, canary and cache prefix is the one
+the recorded run sent; a run from before the nonce existed replays with the
+fixed probes it sent.
+
 The re-scored report keeps the recorded run's request ``seq``\\ s (each record
 takes the ``seq`` of the exchange that answered it), so its findings point
 into the same, unchanged evidence file; its ``rescored_from`` says what was
@@ -153,8 +158,11 @@ class Replay:
         generated_at: str | None = None,
         report_id: int | None = None,
         retried: Iterable[int] = (),
+        run_nonce: str = "",
     ) -> None:
         self.evidence = ref
+        # the recorded run's nonce: the replayed audit derives the same probes
+        self.run_nonce = run_nonce
         # the seq of every recorded attempt that was repeated (a local or
         # network failure): a replayed attempt is repeated exactly when its
         # recorded one was, so each repeat takes the recorded repeat's answer
@@ -336,6 +344,15 @@ def check(report: dict[str, Any], path: Path) -> tuple[EvidenceRef, list[dict[st
     return EvidenceRef(**report["evidence"]), list(evidence.iter_lines(path))
 
 
+def recorded_nonce(report: dict[str, Any], head: dict[str, Any]) -> str:
+    """The nonce the recorded run derived its probes from: the report's, else
+    the evidence header's; "" (the fixed probes) for a run from before it."""
+    for value in (report.get("run_nonce"), head.get("run_nonce")):
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
 async def rescore(
     report: dict[str, Any],
     path: Path,
@@ -377,6 +394,7 @@ async def rescore(
         tool_version=report.get("tool_version"),
         generated_at=report.get("generated_at"),
         report_id=report_id,
+        run_nonce=recorded_nonce(report, head),
     )
     new = await run_audit(
         target,

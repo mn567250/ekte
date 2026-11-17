@@ -8,7 +8,9 @@ judge. Detectors must not mutate it.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import os
+import secrets
+from dataclasses import dataclass, field
 from typing import Any
 
 from ekte.clients import Client
@@ -18,6 +20,22 @@ from ekte.knowledge import KnowledgeBase, ResolvedProfile
 from ekte.knowledge.schema import PerformanceReference
 from ekte.models import TargetConfig
 from ekte.perf import RequestRecorder
+
+# Fixes the run nonce (tests, a reproduced run); unset, each run draws its own.
+RUN_NONCE_ENV = "EKTE_RUN_NONCE"
+
+
+def new_run_nonce() -> str:
+    """The nonce of a new run: ``EKTE_RUN_NONCE`` when set, else 16 random
+    hex digits.
+
+    Every needle, canary and cache prefix of a run is derived from it, so two
+    runs of the same target never send the same probe (a test-aware relay
+    cannot answer from a table, a relay's response cache cannot replay an
+    earlier run's answers) while one run stays internally consistent.
+    """
+    fixed = os.environ.get(RUN_NONCE_ENV, "").strip()
+    return fixed or secrets.token_hex(8)
 
 
 @dataclass
@@ -35,6 +53,10 @@ class AuditContext:
     # The previous saved report of the same target and claimed model (a report
     # dict, as history stores it), for checks that compare across runs.
     previous_report: dict[str, Any] | None = None
+    # The run's random value (see new_run_nonce), recorded in the report and the
+    # evidence header so a replay sends the same probes. "" reproduces the
+    # probes of runs from before it existed (fixed seeds).
+    run_nonce: str = field(default_factory=new_run_nonce)
 
     @property
     def has_judge(self) -> bool:

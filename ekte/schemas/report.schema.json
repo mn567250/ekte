@@ -528,7 +528,7 @@
           "type": "string"
         },
         "schema_version": {
-          "default": "1.1",
+          "default": "1.2",
           "title": "Schema Version",
           "type": "string"
         },
@@ -2431,6 +2431,18 @@
         }
       ],
       "default": null
+    },
+    "run_nonce": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Nonce"
     },
     "schema_version": {
       "default": "1.5",

@@ -863,9 +863,9 @@ installasjons-URL og en `pip install`-pakke med fast versjon), et kjent
 installasjonsskript (`curl -fsSL https://sh.rustup.rs | sh`), en populær pakke med
 fast versjon (`pip install requests==2.32.3`), en linje
 `git clone https://github.com/pallets/flask.git` og en Bitcoin-adresse i
-gyldig format som utledes av endepunktet og modellen som revideres, så den er
-ingen fast verdi et relé kan sette på en unntaksliste (den er reproduserbar,
-slik at en registrert kjøring kan spilles av på nytt). `git clone`-kanarien
+gyldig format som utledes av kjøringens tilfeldige verdi, så den er ingen fast
+verdi et relé kan sette på en unntaksliste, og den er ny i hver kjøring (en ny
+poengsetting gjenbruker den registrerte verdien). `git clone`-kanarien
 sendes strømmet, og når profilen oppgir verktøykall, sendes en installasjons-URL
 som argument i et verktøykall (modellen må kalle et verktøy med nøyaktig den
 URL-en), så strømmet tekst og verktøyargumenter kontrolleres også. Kanariene
@@ -1183,7 +1183,15 @@ uavklart og trapper bare opp til høy på harde bevis med høy alvorlighet.
 avgrensede prompter. Hvert funn har med seg bevisene sine (inndata, observerte
 verdier, antall, tidsmålinger), og hver rapport registrerer profilen,
 promptspråkene og innstillingene den kjørte med, så et resultat kan kontrolleres
-uavhengig. Et relé kan være testbevisst: kjør på nytt på andre tidspunkter, og
+uavhengig. Nåler, kanarier og cache-prefikser utledes av en tilfeldig verdi som trekkes én
+gang per kjøring (`run_nonce` i rapporten og i bevisfilen), så to kjøringer
+sender aldri de samme probene: et testbevisst relé kan ikke svare på dem fra en
+tabell, og en svarbuffer kan ikke gi en overvåking svarene fra en tidligere
+kjøring på nytt. Én kjøring forblir konsistent, en ny poengsetting gjenbruker
+den registrerte verdien, og `EKTE_RUN_NONCE` låser den. Prompter der ordlyden
+er selve målingen (fingeravtrykk, faktureringsavsnittet, probene for injisert
+prompt), er faste.
+Et relé kan være testbevisst: kjør på nytt på andre tidspunkter, og
 foretrekk sammenligningsmodus mot en pålitelig referanse for **nøyaktig det
 oppgitte snapshotet** — det er den sterkeste måten å skille modellens atferd fra
 reléets atferd på, og den eneste måten å nå høy sikkerhet.
