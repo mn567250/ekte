@@ -271,6 +271,7 @@ def lang_bundle(lang: str) -> dict[str, Any]:
 # Strings every one-language bundle carries for all languages (see lang_bundle).
 _EVERY_LANGUAGE = (
     "Overall health score {1}/100.",
+    "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.",
     "ekte reports black-box evidence of divergence and risk, not proof of fraud.",
 )
 

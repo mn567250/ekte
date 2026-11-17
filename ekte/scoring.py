@@ -557,7 +557,7 @@ def _summary(
         bits.append(f"Overall health score {score}/100.")
     if score_cap is not None:
         bits.append(
-            f"Score capped at {score_cap.cap:g} because the risk is "
+            f"Score capped at {score_cap.cap:g} because the risk level is "
             f"{score_cap.risk_level.value}; the weighted mean of the dimensions is {uncapped}."
         )
     if selected is not None:

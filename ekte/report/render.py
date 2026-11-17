@@ -377,6 +377,10 @@ def render_markdown(report: AuditReport) -> str:
         f"**Rating:** {rating}  ·  **Confidence:** {v.confidence}"
     )
     lines.append("")
+    cap_note = dimension_details.overall_cap_note(report)
+    if cap_note:
+        lines.append(f"_Score: {_md(cap_note)}_")
+        lines.append("")
 
     # Metadata line.
     meta = [
@@ -572,6 +576,9 @@ def render_html(report: AuditReport) -> str:
     out.append(f"<span>rating <strong>{_esc(rating)}</strong></span>")
     out.append(f"<span>confidence <strong>{_esc(v.confidence)}</strong></span>")
     out.append("</div>")
+    cap_note = dimension_details.overall_cap_note(report)
+    if cap_note:
+        out.append(f'<p class="meta score-cap">Score: {_esc(cap_note)}</p>')
     # Metadata.
     meta_bits = [
         f"mode <code>{_esc(report.mode)}</code>",
