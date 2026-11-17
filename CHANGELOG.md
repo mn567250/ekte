@@ -20,6 +20,40 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Billing: prompt-token slope over three sizes, and the baseline's counts ([#252](https://github.com/mn567250/ekte/issues/252))
+
+The billing check sent one ~150-token prompt and flagged prompt tokens only
+above 2.5x the estimate, so usage inflated by 1.5x, 2.0x or 2.4x read
+"consistent" with a score of 100, and a fixed +300-token overhead read as HIGH
+"usage inflation". Part of the audit review ([#246](https://github.com/mn567250/ekte/issues/246)).
+
+- The probe is sent at three prompt sizes (about 150, 600 and 2,400 tokens;
+  new fixed paragraphs `billing.more_paragraphs` in `ekte/prompts/en.json`)
+  and the reported prompt tokens are fitted against the estimate. New check
+  `billing.prompt-slope`: a slope up to 1.35 passes, 1.35 to 1.6 is Warning ·
+  Medium (cap 70), above 1.6 Fail · High (cap 55).
+- A fixed overhead with a normal slope is no longer inflation. New check
+  `billing.fixed-overhead`: Info below 30 tokens, Warning · Low (cap 90) from
+  30 tokens, pointing to `injected_prompt`.
+- Compare mode: with a baseline of the same model on the same protocol the
+  same three prompts go to the baseline and `prompt_tokens` are compared
+  directly. New check `billing.prompt-vs-baseline`: more than 3% or 5 tokens
+  above the baseline is Fail · High (cap 55); it replaces the slope verdict.
+- A model counts as a reasoning model when the knowledge base says so or the
+  response reports reasoning tokens, so an unprofiled reasoning model no
+  longer gets a completion-inflation warning.
+- When only one of the three calls returns usable counts, the former
+  single-request check (`billing.usage-inflation`, 2.5x and 50 tokens) stands
+  in, with the note `billing.prompt-slope-unmeasured`.
+- The check now makes 3 requests (6 in compare mode); `--dry-run` counts them.
+  The evidence's `ratio_prompt` / `ratio_completion` (the Analytics billing
+  ratios) are now taken over the three requests, and `slope`, `intercept` and
+  the per-size counts are added.
+- Billing scores change: relays that over-report prompt tokens by 35% or more
+  now lose points, which can lower the Billing & usage dimension and the
+  verdict. The report schema is unchanged; score comparability across versions
+  is tracked in [#168](https://github.com/mn567250/ekte/issues/168).
+
 ### Web UI: one page template ([#230](https://github.com/mn567250/ekte/issues/230))
 
 Every page had its own skeleton: text started at six x positions, cards were
