@@ -49,13 +49,13 @@
     - definition:
       - code: <id>
     - term: Version de ekte
-    - definition: 0.30.0
+    - definition: 0.35.0
     - term: Version d'axe-core
     - definition: 4.13.0
     - term: Tests
-    - definition: 1156 exécutés, 1156 réussis, 0 échoués, 0 ignorés
+    - definition: 1337 exécutés, 1337 réussis, 0 échoués, 1 ignorés
     - term: Langues
-    - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
+    - definition: English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文
     - term: Thèmes
     - definition: Clair, Sombre
     - term: Pages
@@ -130,7 +130,7 @@
               - group:
                 - button "Contenu non textuel" [expanded]
                 - paragraph: "Comment c'est testé : Les images, icônes, SVG et contrôles ont une alternative textuelle. La pertinence de chaque alternative est jugée par une personne."
-                - paragraph: "Tests automatisés : 30 exécutés, 30 réussis, 0 échoués, 156 ignorés"
+                - paragraph: "Tests automatisés : 34 exécutés, 34 réussis, 0 échoués, 176 ignorés"
                 - paragraph:
                   - code: test_audit_surface_states
                   - code: test_wcag_rules_as_loaded
