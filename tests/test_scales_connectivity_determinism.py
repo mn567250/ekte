@@ -58,7 +58,7 @@ async def _connectivity(models_ok: bool, chat: CompletionOutcome | None) -> Dete
         return _ok(next(w for w in spec.messages[0]["content"].split() if w.startswith("EKTE-")))
 
     ctx = SimpleNamespace(client=SimpleNamespace(list_models=list_models, complete=complete),
-                          target=SimpleNamespace(model="gpt-4o"))
+                          target=SimpleNamespace(model="gpt-4o"), run_nonce="0123456789abcdef")
     return await ConnectivityDetector().run(ctx)  # type: ignore[arg-type]
 
 

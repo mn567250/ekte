@@ -18,7 +18,7 @@ import ekte.detectors  # noqa: F401  -- populates the detector REGISTRY
 from ekte import __version__, prompts
 from ekte.clients import Client, detect_api, make_client
 from ekte.config import SURFACE_OPS, AuditOptions
-from ekte.context import AuditContext
+from ekte.context import AuditContext, new_run_nonce
 from ekte.detectors.base import not_run_reason, run_detector, select_detectors
 from ekte.detectors.performance import planned_probe_requests, probe_modes, stream_mode
 from ekte.errorclass import NETWORK, is_impaired, record_class
@@ -82,6 +82,7 @@ def _open_evidence(
     baseline: RedactedTarget | None,
     judge: RedactedTarget | None,
     secrets: list[str | None],
+    run_nonce: str | None = None,
 ) -> EvidenceWriter:
     """Start the run's evidence file (blocking: called off the loop)."""
     head = EvidenceHeader(
@@ -95,6 +96,7 @@ def _open_evidence(
         baseline=baseline,
         judge=judge,
         options=options.model_dump(mode="json"),
+        run_nonce=run_nonce or None,
     )
     return EvidenceWriter(path, head, t0=recorder.t0, secrets=secrets)
 
@@ -179,8 +181,13 @@ async def run_audit(
     on_event: Callable[[dict[str, Any]], None] | None = None,
     evidence: Path | None = None,
     replay: Replay | None = None,
+    run_nonce: str | None = None,
 ) -> AuditReport:
     """Run one audit.
+
+    ``run_nonce`` fixes the run's nonce (by default a replay's recorded one;
+    "" reproduces the fixed probes of runs from before it existed); None draws
+    a new one (``EKTE_RUN_NONCE`` when set, see :func:`ekte.context.new_run_nonce`).
 
     ``replay`` answers every request from a recorded run's evidence instead of
     the network (see :mod:`ekte.replay`): a re-score with this ekte version.
@@ -234,6 +241,9 @@ async def run_audit(
     )
     redacted_target = await asyncio.to_thread(_redact, target)
     redacted_baseline = await asyncio.to_thread(_redact, baseline) if baseline else None
+    if run_nonce is None and replay is not None:
+        run_nonce = replay.run_nonce  # the recorded run's probes
+    nonce = new_run_nonce() if run_nonce is None else run_nonce
     writer: EvidenceWriter | None = None
     if evidence is not None:
         jt = (judge_target or baseline) if options.judge else None
@@ -242,6 +252,7 @@ async def run_audit(
             target=redacted_target, baseline=redacted_baseline,
             judge=await asyncio.to_thread(_redact, jt) if jt is not None else None,
             secrets=run_secrets(target, baseline, judge_target if options.judge else None),
+            run_nonce=nonce,
         )
         recorder.evidence = writer
     if replay is not None:
@@ -251,7 +262,7 @@ async def run_audit(
         results, judge = await _run_detectors(
             target, options, baseline=baseline, judge_target=judge_target, mode=mode,
             kb=kb, profile=profile, recorder=recorder, writer=writer,
-            previous_report=previous_report, emit=_emit, replay=replay,
+            previous_report=previous_report, emit=_emit, replay=replay, run_nonce=nonce,
         )
     except BaseException:
         if writer is not None:
@@ -264,6 +275,7 @@ async def run_audit(
         redacted_target=redacted_target, redacted_baseline=redacted_baseline,
         evidence=replay.evidence if replay is not None else evidence_ref,
         rescored_from=replay.summary() if replay is not None else None,
+        run_nonce=nonce,
     )
 
 
@@ -281,6 +293,7 @@ async def _run_detectors(
     previous_report: dict[str, Any] | None,
     emit: Callable[[dict[str, Any]], None],
     replay: Replay | None = None,
+    run_nonce: str = "",
 ) -> tuple[list[DetectorResult], Judge | None]:
     """Open the clients and run the selected detectors one after another."""
 
@@ -334,6 +347,7 @@ async def _run_detectors(
             judge=judge,
             recorder=recorder,
             previous_report=previous_report,
+            run_nonce=run_nonce,
         )
 
         detectors = select_detectors(
@@ -455,6 +469,7 @@ def _assemble(
     redacted_baseline: RedactedTarget | None,
     evidence: Any,
     rescored_from: Any = None,
+    run_nonce: str = "",
 ) -> AuditReport:
     """The report of a finished run."""
     request_mode = "non_stream" if options.surface != "chat" else stream_mode(options)
@@ -537,4 +552,5 @@ def _assemble(
         knowledge=knowledge,
         evidence=evidence,
         rescored_from=rescored_from,
+        run_nonce=run_nonce or None,
     )

@@ -21,20 +21,37 @@ from ekte.utils.tokenize import estimate_tokens
 _FILLER_SENTENCES: list[str] = prompts.get("context_window.filler_sentences")
 
 
-def stable_marker(seed: str, prefix: str = "EKTE") -> str:
-    """A reproducible high-entropy marker derived from ``seed``.
+def stable_marker(seed: str, nonce: str, prefix: str = "EKTE") -> str:
+    """A high-entropy marker derived from ``seed`` and the run's ``nonce``
+    (``AuditContext.run_nonce``).
 
-    Used as a needle/canary that a model cannot have memorized.
+    Used as a needle/canary that a model cannot have memorized. The same seed
+    gives the same marker within a run and a different one in every other run,
+    so no relay can keep a table of ekte's markers. An empty ``nonce`` gives
+    the marker of runs from before the nonce existed (replay of old evidence).
     """
-    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:10].upper()
+    material = f"{nonce}|{seed}" if nonce else seed
+    digest = hashlib.sha256(material.encode("utf-8")).hexdigest()[:10].upper()
     return f"{prefix}-{digest}"
 
 
+def _filler_offsets(nonce: str) -> tuple[int, int]:
+    """Where a run's filler starts numbering its lines and cycling its sentences."""
+    if not nonce:
+        return 0, 0
+    digest = hashlib.sha256(f"ekte-filler|{nonce}".encode()).digest()
+    return int.from_bytes(digest[:4], "big") % 100_000, digest[4] % len(_FILLER_SENTENCES)
+
+
 @lru_cache(maxsize=4)
-def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
+def build_filler(target_tokens: int, tokenizer: str | None = None, nonce: str = "") -> str:
     """Build filler text of approximately ``target_tokens`` tokens.
 
     Lines are numbered so position is meaningful and the text resists dedup.
+    The run's ``nonce`` sets the first line number and the first sentence, so
+    every run sends a different long prompt of practically the same token
+    count (a five-digit number for a five-digit number); an empty nonce gives
+    the filler of runs from before the nonce existed.
 
     Linear in the output size: each line is counted once and a running total is
     kept, instead of re-joining and re-counting the whole text every 50 lines
@@ -52,11 +69,13 @@ def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
     """
     if target_tokens <= 0:
         return ""
+    base, first = _filler_offsets(nonce)
     parts: list[str] = []
     total = 0
     idx = 0
     while True:
-        line = f"[{idx:05d}] {_FILLER_SENTENCES[idx % len(_FILLER_SENTENCES)]}"
+        number = (base + idx) % 100_000
+        line = f"[{number:05d}] {_FILLER_SENTENCES[(first + idx) % len(_FILLER_SENTENCES)]}"
         parts.append(line)
         total += estimate_tokens(line if idx == 0 else "\n" + line, tokenizer)
         idx += 1
@@ -74,6 +93,7 @@ def build_haystack(
     depth: float,
     tokenizer: str | None = None,
     instruction: str = "",
+    nonce: str = "",
 ) -> str:
     """Embed ``needle`` at fractional ``depth`` (0.0=start, 1.0=end) in filler.
 
@@ -81,7 +101,7 @@ def build_haystack(
     followed by a retrieval instruction.
     """
     depth = max(0.0, min(1.0, depth))
-    filler = build_filler(total_tokens, tokenizer)
+    filler = build_filler(total_tokens, tokenizer, nonce)
     lines = filler.split("\n")
     needle_line = prompts.text("context_window.needle", needle=needle)
     insert_at = int(len(lines) * depth)

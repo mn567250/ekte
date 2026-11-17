@@ -10,7 +10,7 @@ The English text is canonical; this document is not translated.
 |---|---|---|---|
 | Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../../ekte/schemas/report.schema.json) | `schema_version` | 1.6 |
 | Generic webhook payload (`ekte watch`, monitors) | [`ekte/schemas/webhook.schema.json`](../../ekte/schemas/webhook.schema.json) | `schema_version` | 1.0 |
-| Evidence file line (`--evidence`, history runs) | [`ekte/schemas/evidence.schema.json`](../../ekte/schemas/evidence.schema.json) | `schema_version` of the header line | 1.1 |
+| Evidence file line (`--evidence`, history runs) | [`ekte/schemas/evidence.schema.json`](../../ekte/schemas/evidence.schema.json) | `schema_version` of the header line | 1.2 |
 
 The files are generated from the code that produces the documents (the
 `AuditReport` model and the `WebhookPayload` model in `ekte/schemas/`), ship in
@@ -103,7 +103,10 @@ raw HTTP request and response of one run, keys and sensitive headers removed
 
 - `header` (the first line): `schema_version`, `tool_version`, `run_id`,
   `started_at` (the report's), `mode`, `suite`, `surface`, `target`, `baseline`,
-  `judge` and `options` (the run's audit options, which a re-score repeats).
+  `judge`, `options` (the run's audit options, which a re-score repeats) and
+  `run_nonce` (since 1.2: the run's random value every needle, canary and
+  cache prefix is derived from, which a re-score reuses; also the report's
+  `run_nonce`).
 - `exchange` (every further line): `id` (unique in the file, in the order the
   calls finished), `seq` (the request's `seq` in the report's
   `performance.requests`; `null` for calls without a record: the LLM judge,

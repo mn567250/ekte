@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 REPORT_SCHEMA_VERSION = "1.6"
 WEBHOOK_SCHEMA_VERSION = "1.0"
 # Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
-EVIDENCE_SCHEMA_VERSION = "1.1"
+EVIDENCE_SCHEMA_VERSION = "1.2"
 
 
 # --------------------------------------------------------------------------- #
@@ -864,3 +864,7 @@ class AuditReport(BaseModel):
     # Set when this report re-scores a recorded run with this ekte version,
     # replaying its evidence instead of contacting the relay.
     rescored_from: RescoreRef | None = None
+    # The run's random value: every needle, canary and cache prefix the run
+    # sent is derived from it, so two runs never send the same probes. A
+    # replay reuses it. None in reports from before it existed (fixed seeds).
+    run_nonce: str | None = None

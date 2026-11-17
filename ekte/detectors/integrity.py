@@ -146,16 +146,19 @@ _TOOL_URL = "https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh"
 
 def wallet_address(ctx: AuditContext) -> str:
     """The wallet canary's address: a valid bech32 address no list can know in
-    advance, derived from the audited endpoint and model.
+    advance, derived from the run's nonce, so every run sends another one.
 
-    It is reproducible on purpose: a replay of a recorded run (ekte.replay)
-    must send byte-identical requests. A per-run value belongs to the run's
-    nonce (#256), not to a random draw here.
+    Not a random draw here: a replay of a recorded run (ekte.replay) reuses the
+    recorded nonce and must send byte-identical requests. Without a nonce (the
+    replay of a run from before it existed) the address is derived from the
+    audited endpoint and model, as those runs did.
     """
-    target = getattr(ctx, "target", None)
-    seed = "|".join(
-        str(getattr(target, k, "") or "") for k in ("base_url", "model", "claimed_model")
-    )
+    seed = getattr(ctx, "run_nonce", "")
+    if not seed:
+        target = getattr(ctx, "target", None)
+        seed = "|".join(
+            str(getattr(target, k, "") or "") for k in ("base_url", "model", "claimed_model")
+        )
     return bech32_address(hashlib.sha256(f"ekte-integrity-wallet|{seed}".encode()).digest()[:20])
 
 

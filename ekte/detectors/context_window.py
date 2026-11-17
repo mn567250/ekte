@@ -185,20 +185,23 @@ def _reported_prompt_tokens(outcome: CompletionOutcome) -> int | None:
     return int(value)
 
 
-def _build_haystack(size: int, *, needle: str, depth: float, tokenizer: str | None) -> str:
+def _build_haystack(
+    size: int, *, needle: str, depth: float, tokenizer: str | None, nonce: str = ""
+) -> str:
     """A full probe prompt (filler, the needle at fractional ``depth``, the
     question) whose heuristic count stays within ``_heuristic_size(size)``.
 
     Unlike ``helpers.build_haystack`` the budget is a ceiling: the shared filler
     grows in 50-line steps (hundreds of tokens past a small target), so it is
     trimmed back line by line, and the needle and question count against it.
+    ``nonce`` (the run's) varies the filler per run (``helpers.build_filler``).
     """
     needle_line = prompts.text("context_window.needle", needle=needle)
     question = prompts.text("context_window.question")
     budget = _heuristic_size(size, tokenizer) - estimate_tokens(needle_line + "\n" + question, tokenizer)
     lines: list[str] = []
     total = 0
-    for line in build_filler(max(1, budget), tokenizer).split("\n"):
+    for line in build_filler(max(1, budget), tokenizer, nonce).split("\n"):
         total += estimate_tokens(line if not lines else "\n" + line, tokenizer)
         if total > budget and lines:
             break
@@ -786,15 +789,17 @@ class ContextWindowDetector(Detector):
         attempt: int = 0,
     ) -> CompletionOutcome:
         # A re-probe (attempt > 0) gets a fresh needle, so an answer that merely
-        # repeats the previous probe's marker cannot pass it.
+        # repeats the previous probe's marker cannot pass it. The run's nonce
+        # makes every needle (and the filler) differ from any other run's.
         seed = f"ctxwin-{size}-{depth}" + (f"-{attempt}" if attempt else "")
-        needle = stable_marker(seed)
+        needle = stable_marker(seed, ctx.run_nonce)
         # Building a ~200k-token haystack is CPU work; run it off the event loop so
         # concurrent audits in `ekte serve` keep measuring honest latencies.
         # Built smaller by the heuristic's under-count so the REAL token count of
         # the prompt stays within ``size``.
         haystack = await asyncio.to_thread(
-            _build_haystack, size, needle=needle, depth=depth, tokenizer=tokenizer
+            _build_haystack, size, needle=needle, depth=depth, tokenizer=tokenizer,
+            nonce=ctx.run_nonce,
         )
         messages = [{"role": "user", "content": haystack}]
         # A model that wants max_completion_tokens gets it from the client (profile

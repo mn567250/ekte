@@ -193,8 +193,20 @@
           "title": "Run Id",
           "type": "string"
         },
+        "run_nonce": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Nonce"
+        },
         "schema_version": {
-          "default": "1.1",
+          "default": "1.2",
           "title": "Schema Version",
           "type": "string"
         },
@@ -532,5 +544,5 @@
     }
   ],
   "title": "ekte evidence file line",
-  "x-schema-version": "1.1"
+  "x-schema-version": "1.2"
 }
