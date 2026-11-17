@@ -192,6 +192,14 @@
   "Fingerprint skipped: {1}": "Fingeravtrykk hoppet over: {1}",
   "Response attribute {1}": "Svarattributt {1}",
   "Request attribute {1}": "Forespørselsattributt {1}",
-  "Not re-scored: the recorded run has no answer to some requests": "Ikke vurdert på nytt: den registrerte kjøringen har ikke svar på enkelte forespørsler"
+  "Not re-scored: the recorded run has no answer to some requests": "Ikke vurdert på nytt: den registrerte kjøringen har ikke svar på enkelte forespørsler",
+  "Knowledge cutoff not reported": "Kunnskapsgrense ikke oppgitt",
+  "Knowledge cutoff consistent": "Kunnskapsgrense stemmer",
+  "Knowledge cutoff differs from the claimed model's": "Kunnskapsgrensen avviker fra den oppgitte modellens",
+  "Knowledge cutoff earlier on the baseline too": "Kunnskapsgrensen er tidligere også hos referansen",
+  "Knowledge cutoff earlier than the claimed model's, baseline consistent": "Kunnskapsgrensen er tidligere enn den oppgitte modellens, referansen stemmer",
+  "Knowledge cutoff earlier than the claimed model's": "Kunnskapsgrensen er tidligere enn den oppgitte modellens",
+  "Specific model not verified": "Konkret modell ikke verifisert",
+  "Fingerprint diverged on the baseline too: {1}": "Fingeravtrykk avviker også hos referansen: {1}"
  }
 }

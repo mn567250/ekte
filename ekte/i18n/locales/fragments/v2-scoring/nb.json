@@ -163,6 +163,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score.",
   "The model named the color of the test image.": "Modellen nevnte fargen på testbildet.",
   "Vision is claimed but the model did not name the image's color.": "Syn er påstått, men modellen nevnte ikke fargen på bildet.",
-  "Vision is not claimed, so no image was sent.": "Syn er ikke påstått, så ikke noe bilde ble sendt."
+  "Vision is not claimed, so no image was sent.": "Syn er ikke påstått, så ikke noe bilde ble sendt.",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "Svaret avvek fra den native oppførselen mens referansens svar stemte: trekker probens vektandel av 100 poeng.",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "Svaret avvek, men det gjorde referansens også: et problem i kunnskapsbasen, ikke bevis mot reléet; ingen trekk.",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "Den oppgitte kunnskapsgrensen ligger innenfor 6 måneder fra den oppgitte modellens.",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder før den oppgitte modellens: trekker sin vektandel av 100 poeng som et fingeravtrykk.",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder tidligere mens referansens stemmer: trekker sin vektandel av 100 poeng.",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder tidligere, men referansens også: et problem i kunnskapsbasen, ikke bevis mot reléet; ingen trekk.",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "Den oppgitte kunnskapsgrensen avviker med mer enn 6 måneder, men ligger ikke mer enn 12 måneder tidligere: registrert, ikke vurdert.",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "Ikke noe svar i formatet CUTOFF=YYYY-MM å vurdere.",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "Ingen kontroll kunne skille den oppgitte modellen fra leverandørens andre modeller, og verken referanse eller dommer ble brukt: leverandøren stemmer, den konkrete modellen ble ikke verifisert."
  }
 }

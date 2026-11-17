@@ -3,6 +3,7 @@
   "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "HTTP en clair vers un hôte local ou du réseau privé ; la clé API ne traverse pas Internet.",
   "Use https:// if this endpoint is reachable from other machines.": "Utilisez https:// si ce point d'accès est joignable depuis d'autres machines.",
   "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.": "Le modèle annoncé ne correspond qu'approximativement à un profil de la base de connaissances, la confiance est donc plafonnée à faible — indiquez l'identifiant exact du modèle ou ajoutez un alias.",
-  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "Les constats de transport et de fiabilité (HTTP en clair, échecs ou lenteur sous charge) sont des avertissements : ils abaissent le score mais pas le risque de substitution."
+  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "Les constats de transport et de fiabilité (HTTP en clair, échecs ou lenteur sous charge) sont des avertissements : ils abaissent le score mais pas le risque de substitution.",
+  "The answers fit the claimed model's vendor, but no check could tell that model from the vendor's other models and neither a baseline nor a judge was used: the specific model was not verified.": "Les réponses correspondent au fournisseur du modèle annoncé, mais aucune vérification n'a pu distinguer ce modèle des autres modèles du fournisseur et ni référence ni juge n'a été utilisé : le modèle précis n'a pas été vérifié."
  }
 }

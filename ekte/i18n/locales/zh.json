@@ -201,7 +201,10 @@
   "Configured monitors": "已配置的监控",
   "Loading…": "加载中…",
   "Performance probe requests": "性能探测请求",
-  "Non-streaming": "非流式"
+  "Non-streaming": "非流式",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "请用 ekte compare 对照所声明模型的可信基准运行（或加上 --judge），以便与同厂商更便宜的模型区分。",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "中转站无需改动：真实模型同样不满足这一预期。请反馈该探针，以便修正知识库。",
+  "self-reported knowledge cutoff": "自报的知识截止日期"
  },
  "findings": {
   "connectivity.models": [
@@ -600,6 +603,14 @@
   "performance.reference": [
    "与参考值对比的吞吐",
    "目标吞吐 {target_tps_p50} tok/s，参考值 {reference_range} tok/s。"
+  ],
+  "model_identity.cutoff": [
+   "知识截止日期",
+   "将自报的知识截止日期与所声明模型的（{claimed_cutoff}）比较。"
+  ],
+  "model_identity.model_specific": [
+   "具体模型未经验证",
+   "回答与厂商（{vendor}）一致，但没有检查能把 {model} 与该厂商的其他模型区分开；具体模型未经验证。"
   ]
  }
 }

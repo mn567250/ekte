@@ -500,7 +500,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Algumas verificações não correspondem ao anunciado: {dims} — verifique",
   "No problems in the checked dimensions (model identity not verified)": "Nenhum problema nas dimensões verificadas (identidade do modelo não verificada)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Alguns problemas menores nas dimensões verificadas (identidade do modelo não verificada)",
-  "It does not deliver what it advertises": "Não entrega o que anuncia"
+  "It does not deliver what it advertises": "Não entrega o que anuncia",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Execute ekte compare contra uma referência de confiança do modelo declarado (ou adicione --judge) para o distinguir de modelos mais baratos do mesmo fornecedor.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Nada a mudar no relay: o modelo genuíno também falha esta expectativa. Comunique a sonda para que a base de conhecimento seja corrigida.",
+  "self-reported knowledge cutoff": "data de corte de conhecimento declarada"
  },
  "findings": {
   "connectivity.models": [
@@ -899,6 +902,14 @@
   "performance.reference": [
    "Débito em relação à referência",
    "Débito do alvo {target_tps_p50} tok/s, referência {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Data de corte de conhecimento",
+   "Comparação da data de corte declarada com a do modelo declarado ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Modelo concreto não verificado",
+   "As respostas são coerentes com o fornecedor ({vendor}), mas nenhuma verificação distingue {model} dos seus outros modelos; o modelo concreto não foi verificado."
   ]
  }
 }

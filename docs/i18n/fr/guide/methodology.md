@@ -179,7 +179,8 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
   comparaison utilise la référence comme juge.
 - **Mode comparaison** (`ekte compare`) donne aux sondes une référence de
   confiance : `model_identity` consigne l'auto-identification de la référence à
-  côté de celle de la cible, `protocol_request` renvoie les paramètres rejetés
+  côté de celle de la cible et envoie aussi chaque empreinte et la sonde de date
+  limite à la référence, `protocol_request` renvoie les paramètres rejetés
   à la référence, `integrity` porte à CRITIQUE une substitution que la référence
   ne fait pas, `quality_judge` montre les deux côtés au juge, et `performance`
   sonde les deux endpoints en alternance. La confiance ne peut être élevée
@@ -446,7 +447,14 @@ moins cher ou ouvert), ainsi que les signaux de
 
 ### `model_identity` — Identité du modèle et empreinte de déclassement
 
-**Fonctionnement.** Trois signaux indépendants :
+**Fonctionnement.** Ce qui s'exécute dépend du profil du modèle annoncé :
+l'auto-identification et le champ `model` renvoyé toujours, la sonde de date
+limite des connaissances quand le `knowledge_cutoff` du profil indique un mois,
+et les empreintes en code pur du profil, celles du modèle d'abord. Seules les
+empreintes propres au modèle le distinguent d'un modèle moins cher du même
+fournisseur (`gpt-4o` servi par `gpt-4o-mini`) ; les contrôles de marque et les
+empreintes communes au fournisseur valent pour tous ses modèles, et une date
+limite est souvent partagée.
 
 1. **Auto-identification** à `temperature=0`, comparée en mots entiers aux
    mots-clés d'identité du profil (la vraie marque) et à une liste de marques
@@ -479,7 +487,22 @@ moins cher ou ouvert), ainsi que les signaux de
    empreinte qui s'écarte
    retire sa part de poids sur 100 points (25 au plus) ; seule, elle reste
    FAIBLE, deux ou plus ajoutent un constat agrégé MOYEN.
-3. **Champ `model` renvoyé** par un appel simple, comparé au modèle annoncé
+   En mode comparaison, chaque sonde est aussi envoyée à la référence : un écart
+   que la référence ne partage pas est corroboré (MOYEN) ; un écart qu'elle
+   partage est un problème de la base de connaissances, pas une preuve contre le
+   relais, et il est consigné en Info sans déduction (preuve
+   `baseline_also_diverged`). Une marque concurrente reste ÉLEVÉE dans tous les cas.
+3. **Date limite des connaissances** (`model_identity.cutoff`), quand le
+   `knowledge_cutoff` du profil vaut `YYYY-MM` ou `YYYY-MM-DD` : on demande au
+   modèle sa date limite sous la forme `CUTOFF=YYYY-MM`. À 6 mois au plus de
+   celle du profil, elle est cohérente ; plus de 12 mois avant, comme répondrait
+   un modèle plus ancien du fournisseur, c'est un avertissement FAIBLE qui retire
+   des points comme une empreinte de poids 1 et compte pour le constat agrégé ;
+   tout autre écart est consigné en Info ; une réponse sans ce format est non
+   concluante. Une date limite déclarée par le modèle est une preuve faible : ce
+   contrôle n'est donc jamais ÉLEVÉ ; en mode comparaison, la référence le
+   corrobore ou l'écarte comme une empreinte.
+4. **Champ `model` renvoyé** par un appel simple, comparé au modèle annoncé
    et à l'id envoyé (un alias de déploiement peut différer de l'annonce). Les
    deux ids sont d'abord normalisés : minuscules, sans préfixe `provider/` ni
    `vendor.` (`openai/`, `models/`, `anthropic.`), sans `:tag`, `-v2:0` de
@@ -501,6 +524,13 @@ rejette ou vide chaque requête ne fournit aucune preuve d'identité, et l'écho
 du nom demandé ne prouve rien à lui seul. Des preuves partielles sont notées
 normalement.
 
+Quand aucune des empreintes propres au modèle n'a répondu et que ni référence ni
+juge n'a été utilisé, un constat Info (`model_identity.model_specific`, preuve
+`model_specific_checks: 0`) indique que les réponses correspondent au
+fournisseur mais que le modèle précis n'a pas été vérifié. Chaque résultat
+consigne `model_specific_checks`.
+Le résumé du verdict et le motif de la dimension identité du modèle le disent aussi.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `model_identity.self_id` | L'auto-description a nommé la marque authentique. | Réussi | Aucune déduction |
@@ -510,14 +540,23 @@ normalement.
 |  | Aucune réponse exploitable pour juger. | Non concluant | Aucune déduction |
 | `model_identity.fp` (Empreintes comportementales) | La réponse correspondait au comportement natif du modèle annoncé. | Réussi | Aucune déduction |
 |  | La réponse s'écartait du comportement natif : retire la part de poids de la sonde sur 100 points. | Avertissement · Faible | jusqu'à −25 pts |
+|  | La réponse s'est écartée du comportement natif alors que celle de la référence y correspondait : retire la part de poids de la sonde sur 100 points. | Avertissement · Moyenne | jusqu'à −25 pts |
+|  | La réponse s'est écartée, mais celle de la référence aussi : un problème de la base de connaissances, pas une preuve contre le relais ; aucune déduction. | Info | Aucune déduction |
 |  | La réponse a nommé une marque concurrente et non l'authentique : retire la part de poids de la sonde. | Échec · Élevée | jusqu'à −25 pts · plafond 20 |
 |  | Aucune réponse exploitable pour juger. | Non concluant | Aucune déduction |
 |  | La sonde demande plus de sortie que le plafond d'identité de 512 tokens ; non exécutée. | Info | Aucune déduction |
+| `model_identity.cutoff` | La date limite des connaissances annoncée est à 6 mois au plus de celle du modèle annoncé. | Réussi | Aucune déduction |
+|  | La date limite des connaissances annoncée précède de plus de 12 mois celle du modèle annoncé : retire sa part de poids sur 100 points comme une empreinte. | Avertissement · Faible | jusqu'à −25 pts |
+|  | La date limite des connaissances annoncée précède de plus de 12 mois alors que celle de la référence est cohérente : retire sa part de poids sur 100 points. | Avertissement · Moyenne | jusqu'à −25 pts |
+|  | La date limite des connaissances annoncée précède de plus de 12 mois, mais celle de la référence aussi : un problème de la base de connaissances, pas une preuve contre le relais ; aucune déduction. | Info | Aucune déduction |
+|  | La date limite des connaissances annoncée s'écarte de plus de 6 mois sans précéder de plus de 12 mois : consignée, non jugée. | Info | Aucune déduction |
+|  | Aucune réponse au format CUTOFF=YYYY-MM à juger. | Non concluant | Aucune déduction |
 | `model_identity.fp_aggregate` | Deux empreintes comportementales ou plus s'écartaient. | Avertissement · Moyenne | Aucune déduction |
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |
 |  | Le champ model renvoyé désigne un autre id qu'ekte ne sait pas identifier : consigné, non jugé. | Info | Aucune déduction |
 |  | La réponse n'avait pas de champ model exploitable. | Non concluant | Aucune déduction |
+| `model_identity.model_specific` | Aucune vérification n'a pu distinguer le modèle annoncé des autres modèles de son fournisseur et ni référence ni juge n'a été utilisé : le fournisseur est cohérent, le modèle précis n'a pas été vérifié. | Info | Aucune déduction |
 | `model_identity.no_evidence` | Ni l'auto-identification ni aucune empreinte n'ont donné de réponse exploitable et le champ model ne divergeait pas : non noté. | Non concluant | Aucune déduction |
 
 ### `quality_judge` — Évaluation de qualité / déclassement par un LLM juge

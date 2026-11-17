@@ -500,7 +500,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Noen kontroller stemmer ikke med det som annonseres: {dims} — kontroller",
   "No problems in the checked dimensions (model identity not verified)": "Ingen problemer i de kontrollerte dimensjonene (modellidentitet ikke verifisert)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Noen få små avvik i de kontrollerte dimensjonene (modellidentitet ikke verifisert)",
-  "It does not deliver what it advertises": "Den leverer ikke det som annonseres"
+  "It does not deliver what it advertises": "Den leverer ikke det som annonseres",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Kjør ekte compare mot en pålitelig referanse for den oppgitte modellen (eller legg til --judge) for å skille den fra billigere modeller fra samme leverandør.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Ingenting å endre på reléet: den ekte modellen bommer også på denne forventningen. Meld fra om proben så kunnskapsbasen kan rettes.",
+  "self-reported knowledge cutoff": "selvrapportert kunnskapsgrense"
  },
  "findings": {
   "connectivity.models": [
@@ -899,6 +902,14 @@
   "performance.reference": [
    "Gjennomstrømning sammenlignet med referansen",
    "Målets gjennomstrømning {target_tps_p50} tok/s, referanse {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Kunnskapsgrense",
+   "Sammenligning av den selvrapporterte kunnskapsgrensen med den oppgitte modellens ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Konkret modell ikke verifisert",
+   "Svarene stemmer med leverandøren ({vendor}), men ingen kontroll skiller {model} fra leverandørens andre modeller; den konkrete modellen ble ikke verifisert."
   ]
  }
 }
