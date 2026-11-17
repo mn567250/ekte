@@ -319,6 +319,8 @@
             - text: Is token usage inflated? Not run
             - button "Concurrency reliability"
             - text: Stable under load? Not run
+            - button "Response integrity"
+            - text: Is the response unaltered? Not run
             - button "Transport security"
             - text: Are keys handled safely? Not run
             - button "Performance"

@@ -319,6 +319,8 @@
             - text: token 有没有虚报？ 未运行
             - button "并发可靠"
             - text: 压力下稳不稳？ 未运行
+            - button "响应完整性"
+            - text: 响应是否原样未改？ 未运行
             - button "传输安全"
             - text: 密钥是否安全？ 未运行
             - button "性能表现"
