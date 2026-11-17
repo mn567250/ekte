@@ -35,9 +35,11 @@ from ekte.clients import detect_api
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
-from ekte.detectors.helpers import first_json_object
+from ekte.detectors.helpers import first_json_object, usage_field
 from ekte.detectors.scale import Scale, outcome
 from ekte.models import CompletionOutcome, DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.perf.recorder import usage_tokens
+from ekte.utils.tokenize import estimate_tokens
 
 _NO_RESPONSE = "No usable response to judge by."  # same sentence as protocol's scale
 _MODEL_LIMIT = "Rejected with a 4xx, and the baseline rejects it too: a limit of the model."
@@ -46,6 +48,13 @@ _REJECTED_UNCLAIMED = "Rejected with a 4xx; the capability is not claimed."
 # relay giving up on time, rate limits.
 _NOT_A_REJECTION = frozenset({401, 403, 408, 429})
 _PREVIEW = 200
+# A max-output answer cut off with finish_reason length counts as reaching the
+# cap only when at least this share of the requested tokens came back; below it
+# the relay clamped max_tokens (#253).
+TO_CAP_SHARE = 0.8
+# Reported completion tokens and the text estimate this many times apart (either
+# way) are noted in the evidence of a non-reasoning model's max-output finding.
+USAGE_MISMATCH_FACTOR = 3.0
 REJECTED_ADVICE = (
     "The relay refuses a request parameter the claimed model supports; ask the provider "
     "to forward it, or use an endpoint that serves the feature."
@@ -102,6 +111,11 @@ SCALE = Scale(
             label=_NO_RESPONSE),
     outcome("capability.max_output", "to_cap", 100.0, Status.PASS,
             label="Output continued up to the requested token cap."),
+    outcome("capability.max_output", "clamped", 0.0, Status.FAIL, Severity.MEDIUM,
+            label=(
+                "The output was cut off with finish_reason length well below the requested "
+                "limit: the relay limits output tokens."
+            )),
     outcome("capability.max_output", "plausible", 90.0, Status.PASS,
             label="Output stopped before the cap at a plausible length."),
     outcome("capability.max_output", "stopped_early", 70.0, Status.WARN, Severity.LOW,
@@ -450,13 +464,19 @@ class CapabilityDetector(Detector):
                 )
 
     async def _check_max_output(self, ctx, result, model) -> None:
-        """Flag gross under-delivery of output length against the claimed max.
+        """Flag a relay that clamps the output, or gross under-delivery of
+        output length against the claimed max.
 
-        Cost-bounded: we request at most 2048 tokens, so this only catches a model
-        that gives up far below the cap, not the full claimed ceiling.
+        Cost-bounded: we request at most ``--max-output-probe-tokens`` (2048 by
+        default), so this only catches a model or relay that stops far below
+        that, not the full claimed ceiling. An answer cut off with
+        ``finish_reason: length`` reaches the cap only when at least
+        :data:`TO_CAP_SHARE` of the requested tokens came back (reasoning tokens
+        count): a relay that clamps ``max_tokens`` also stops with ``length``.
         """
         declared = ctx.declared_max_output()
-        cap = min(declared or 2048, 2048)
+        probe_cap = max(1, ctx.options.max_output_probe_tokens)
+        cap = min(declared or probe_cap, probe_cap)
         spec = RequestSpec(
             messages=[
                 {
@@ -489,27 +509,54 @@ class CapabilityDetector(Detector):
         line_count = len(lines)
         char_count = len(content)
         finish = outcome.finish_reason
-        evidence = {
+        evidence: dict[str, Any] = {
             "declared_max_output": declared,
             "requested_max_tokens": cap,
             "finish_reason": finish,
             "line_count": line_count,
             "char_count": char_count,
-            "note": "probe capped at 2048 tokens; full declared ceiling not exercised",
+            "note": f"probe capped at {probe_cap} tokens; full declared ceiling not exercised",
         }
 
         if finish == "length":
-            # Hit the cap — expected, the model kept producing as asked.
-            result.findings.append(
-                SCALE.finding(
-                    "capability.max_output",
-                    "to_cap",
-                    calls=[outcome],
-                    title="Sustained output to the request cap",
-                    summary=f"Produced ~{line_count} lines and stopped at the {cap}-token cap (finish_reason=length).",
-                    evidence=evidence,
+            delivered, source = self._delivered_tokens(ctx, outcome, content, evidence)
+            evidence["delivered_tokens"] = delivered
+            evidence["delivered_source"] = source
+            evidence["to_cap_share"] = TO_CAP_SHARE
+            if delivered >= TO_CAP_SHARE * cap:
+                # Hit the cap — expected, the model kept producing as asked.
+                result.findings.append(
+                    SCALE.finding(
+                        "capability.max_output",
+                        "to_cap",
+                        calls=[outcome],
+                        title="Sustained output to the request cap",
+                        summary=(
+                            f"Produced ~{line_count} lines (~{delivered} tokens) and stopped at "
+                            f"the {cap}-token cap (finish_reason=length)."
+                        ),
+                        evidence=evidence,
+                    )
                 )
-            )
+            else:
+                result.findings.append(
+                    SCALE.finding(
+                        "capability.max_output",
+                        "clamped",
+                        calls=[outcome],
+                        title="Output clamped below the requested limit",
+                        summary=(
+                            f"Cut off (finish_reason=length) at ~{delivered} of the requested "
+                            f"{cap} tokens ({source}): the relay limits output tokens."
+                        ),
+                        evidence=evidence,
+                        recommendation=(
+                            "The relay caps max_tokens below what was requested; long answers "
+                            "will be truncated. Ask the provider to forward max_tokens, or use "
+                            "an endpoint that honors it."
+                        ),
+                    )
+                )
             return
 
         # Stopped early. Gauge how far below the cap by a rough token estimate.
@@ -557,6 +604,41 @@ class CapabilityDetector(Detector):
                     evidence=evidence,
                 )
             )
+
+    @staticmethod
+    def _delivered_tokens(
+        ctx: AuditContext, out: CompletionOutcome, content: str, evidence: dict[str, Any]
+    ) -> tuple[int, str]:
+        """Tokens an answer cut off by ``length`` delivered, and where the count
+        comes from: the reported completion tokens when present, else an
+        estimate from the text. For a reasoning model the reasoning tokens count
+        as delivered (they spend the same budget); a non-reasoning model whose
+        reported count and text estimate are more than
+        :data:`USAGE_MISMATCH_FACTOR` apart gets that noted in ``evidence``."""
+        reported = usage_field(out.usage, "completion_tokens", "output_tokens")
+        reasoning_tokens = usage_tokens(out.usage)["reasoning"] or 0
+        reasoning = bool(ctx.profile and ctx.profile.model.reasoning) or reasoning_tokens > 0
+        estimated = estimate_tokens(content)
+        evidence["reported_completion_tokens"] = reported
+        evidence["estimated_text_tokens"] = estimated
+        if reasoning:
+            evidence["reasoning_tokens"] = reasoning_tokens or None
+        if reported is not None:
+            delivered, source = reported, "reported completion tokens"
+            # completion_tokens normally includes the reasoning tokens; a relay
+            # that reports them apart must not look clamped for thinking.
+            if reasoning and reasoning_tokens + estimated > delivered:
+                delivered = reasoning_tokens + estimated
+                source = "reasoning tokens + text estimate"
+        elif reasoning and reasoning_tokens:
+            delivered, source = reasoning_tokens + estimated, "reasoning tokens + text estimate"
+        else:
+            delivered, source = estimated, "text estimate"
+        if not reasoning and reported is not None:
+            hi, lo = max(reported, estimated), max(1, min(reported, estimated))
+            if hi > USAGE_MISMATCH_FACTOR * lo:
+                evidence["usage_text_mismatch"] = round(hi / lo, 1)
+        return delivered, source
 
     # -- rejected probes --------------------------------------------------- #
     async def _rejection(

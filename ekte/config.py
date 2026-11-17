@@ -50,6 +50,9 @@ class AuditOptions(BaseModel):
     max_context_probe_tokens: int = 200_000
     context_probe_floor_tokens: int = 1_000
 
+    # Max-output probe: requests min(declared max output, this) tokens.
+    max_output_probe_tokens: int = 2048
+
     # Reliability probe.
     reliability_requests: int = 8
     reliability_concurrency: int = 3
@@ -274,6 +277,7 @@ run:
   reliability_requests: 8
   concurrency: 3
   max_context_probe_tokens: 200000 # cap for the real-context-window probe
+  max_output_probe_tokens: 2048    # cap for the max-output probe
   performance_requests: 100        # performance probe requests per endpoint (deep/full/custom; 0 disables)
   performance_max_tokens: 128      # output tokens per performance probe request
   performance_streaming: true      # probe mode on standard/deep/custom (full measures both)
