@@ -595,8 +595,15 @@ capacidades do perfil:
   o modelo a declara e apenas registada (informativo) se não. É omitida sem
   perfil.
 - **Saída máxima:** uma geração longa limitada a min(saída máxima declarada,
-  2048) tokens; atingir o limite ou um comprimento plausível é aprovado, parar
-  abaixo de um quarto é assinalado.
+  `--max-output-probe-tokens`) tokens, 2048 por omissão. Uma resposta cortada
+  com `finish_reason: length` só atinge o limite quando voltaram pelo menos
+  80 % dos tokens pedidos: os tokens de completion reportados, senão uma
+  estimativa a partir do texto; num modelo de raciocínio, os tokens de
+  raciocínio contam como entregues. Cortada abaixo disso, o relay limita a
+  saída, o que é uma falha. Um comprimento plausível é aprovado, parar abaixo
+  de um quarto é assinalado. Quando os tokens de completion reportados e a
+  estimativa do texto de um modelo sem raciocínio diferem mais de 3 vezes, a
+  evidência regista-o (a faturação avalia a contagem).
 
 Uma observação sem declaração a verificar — nenhuma chamada de ferramenta ou
 objeto JSON quando a função não é declarada, ou qualquer resultado do esquema
@@ -639,6 +646,7 @@ Um 4xx para uma função que ninguém declara é registado mas não contabilizad
 |  | Rejeitado com um 4xx; a capacidade não é declarada. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.max_output` | A saída continuou até ao limite de tokens pedido. | Aprovado | 100 pts |
+|  | A saída foi cortada com finish_reason length muito abaixo do limite pedido: o relay limita os tokens de saída. | Falha · Média | 0 pts |
 |  | A saída terminou antes do limite com um comprimento plausível. | Aprovado | 90 pts |
 |  | A saída terminou abaixo de um quarto do comprimento pedido. | Aviso · Baixa | 70 pts |
 |  | A saída terminou abaixo de um quarto do pedido apesar de um máximo declarado grande. | Aviso · Baixa | 60 pts |

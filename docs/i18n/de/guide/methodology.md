@@ -606,8 +606,16 @@ des Profils gemessen:
   wenn das Modell es angibt, und nur vermerkt (informativ), wenn nicht. Ohne
   Profil entfällt diese Prüfung.
 - **Maximale Ausgabe:** eine lange Generierung, begrenzt auf min(angegebene
-  maximale Ausgabe, 2048) Token; das Erreichen der Grenze oder eine plausible
-  Länge besteht, ein Abbruch unter einem Viertel davon wird markiert.
+  maximale Ausgabe, `--max-output-probe-tokens`) Token, standardmäßig 2048.
+  Eine mit `finish_reason: length` abgeschnittene Antwort erreicht die Grenze
+  nur, wenn mindestens 80 % der angefragten Token zurückkamen: die gemeldeten
+  Completion-Token, sonst eine Schätzung aus dem Text; bei einem
+  Reasoning-Modell zählen die Reasoning-Token als geliefert. Darunter
+  abgeschnitten, begrenzt das Relay die Ausgabe, was fehlschlägt. Eine
+  plausible Länge besteht, ein Abbruch unter einem Viertel davon wird
+  markiert. Liegen die gemeldeten Completion-Token und die Textschätzung eines
+  Modells ohne Reasoning mehr als das Dreifache auseinander, vermerkt der
+  Nachweis das (die Abrechnung bewertet die Zählung).
 
 Eine Beobachtung ohne zu prüfende Angabe — kein Tool-Aufruf oder JSON-Objekt,
 wenn die Funktion nicht angegeben ist, oder jedes Ergebnis zum strikten Schema,
@@ -651,6 +659,7 @@ angibt, wird vermerkt, aber nicht gewertet.
 |  | Mit 4xx abgelehnt; die Fähigkeit wird nicht angegeben. | Info | Nicht gewertet |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.max_output` | Die Ausgabe lief bis zur angefragten Token-Obergrenze. | Bestanden | 100 Pkt. |
+|  | Die Ausgabe wurde mit finish_reason length weit unter der angefragten Grenze abgeschnitten: Das Relay begrenzt die Ausgabe-Tokens. | Fehlgeschlagen · Mittel | 0 Pkt. |
 |  | Die Ausgabe endete vor der Obergrenze bei plausibler Länge. | Bestanden | 90 Pkt. |
 |  | Die Ausgabe endete unter einem Viertel der angefragten Länge. | Warnung · Niedrig | 70 Pkt. |
 |  | Die Ausgabe endete unter einem Viertel der Anfrage trotz großem angegebenem Maximum. | Warnung · Niedrig | 60 Pkt. |

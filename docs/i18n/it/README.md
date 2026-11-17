@@ -81,7 +81,7 @@ dell'interfaccia web e dei rapporti.
 |---|---|---|
 | **Identità del modello** | `model_identity` | Declassamento o sostituzione silenziosa del modello |
 | **Finestra di contesto** | `context_window` | Troncamento silenzioso del contesto e «lost in the middle» |
-| **Capacità dichiarate** | `capability` | Chiamate di strumenti, modalità JSON, output massimo o visione dichiarati ma non forniti |
+| **Capacità dichiarate** | `capability` | Chiamate di strumenti, modalità JSON, output massimo o visione dichiarati ma non forniti, o un output che il relay limita |
 | **Conformità del protocollo** | `protocol` | Parametri di richiesta e attributi di risposta scartati o ignorati |
 | **Fatturazione e consumo** | `billing` | Consumo di token gonfiato o assente |
 | **Connettività** | `connectivity` | Raggiungibilità dell'endpoint e l'elenco dei modelli pubblicizzato |
