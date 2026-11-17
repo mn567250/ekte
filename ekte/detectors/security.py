@@ -135,7 +135,7 @@ class SecurityDetector(Detector):
 
         # 2) + 3) One small chat call funds both the header-hygiene and key-echo
         # checks. Headers reaching us are already redacted by the client.
-        marker = stable_marker("security")
+        marker = stable_marker("security", ctx.run_nonce)
         spec = RequestSpec(
             messages=[
                 {"role": "user", "content": prompts.text("security.echo", marker=marker)}

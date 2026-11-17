@@ -869,9 +869,8 @@ reach MEDIUM.
 targets must come back verbatim: two synthetic ones (an install URL and a pinned
 `pip install` package), a well-known installer (`curl -fsSL https://sh.rustup.rs | sh`),
 a popular pinned package (`pip install requests==2.32.3`), a
-`git clone https://github.com/pallets/flask.git` line and a Bitcoin address of valid format derived from the audited endpoint and
-model, so it is no fixed value a relay could allow-list (it is reproducible, so
-a recorded run can be replayed). The `git clone` canary is
+`git clone https://github.com/pallets/flask.git` line and a Bitcoin address of valid format derived from the run's random value, so it is no fixed value a relay could
+allow-list and differs in every run (a re-score reuses the recorded value). The `git clone` canary is
 sent streamed and, when the profile claims tool calling, an installer URL is sent
 as a tool-call argument (the model must call a tool with the exact URL), so
 streamed text and tool arguments are checked too. The canaries run concurrently,
@@ -1183,7 +1182,14 @@ evidence.
 **Method.** Findings that depend on exact comparison use `temperature=0` and
 constrained prompts. Each finding carries its evidence (inputs, observed values,
 counts, timings), and every report records the profile, prompt languages and
-settings it ran with, so a result can be checked independently. A relay may be
+settings it ran with, so a result can be checked independently. Needles, canaries and cache prefixes are derived from a random value drawn
+once per run (`run_nonce` in the report and in the evidence file), so no two
+runs send the same probes: a test-aware relay cannot answer them from a table,
+and a response cache cannot replay an earlier run's answers to a monitor. One
+run stays consistent, a re-score reuses the recorded value, and
+`EKTE_RUN_NONCE` fixes it. Prompts whose wording is the measurement
+(fingerprints, the billing paragraph, the injected-prompt probes) stay fixed.
+A relay may be
 test-aware: re-run at other times, and prefer compare mode against a trusted
 baseline of the **exact claimed snapshot** — it is the strongest way to separate
 model behavior from relay behavior and the only way to reach high confidence.

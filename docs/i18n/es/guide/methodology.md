@@ -929,9 +929,9 @@ instalación y un paquete `pip install` fijado), un instalador conocido
 (`curl -fsSL https://sh.rustup.rs | sh`), un paquete popular con versión fijada
 (`pip install requests==2.32.3`), una línea
 `git clone https://github.com/pallets/flask.git` y una dirección de Bitcoin
-de formato válido derivada del endpoint y el modelo auditados, de modo que no es
-un valor fijo que un relay pueda poner en una lista de excepciones (es
-reproducible, para poder reproducir una ejecución grabada). El canario `git clone` se envía en streaming y, cuando el perfil
+de formato válido derivada del valor aleatorio de la ejecución, de modo que no
+es un valor fijo que un relay pueda poner en una lista de excepciones y cambia
+en cada ejecución (una nueva puntuación reutiliza el valor grabado). El canario `git clone` se envía en streaming y, cuando el perfil
 declara llamadas a herramientas, se envía una URL de instalador como argumento
 de una llamada a herramienta (el modelo debe llamar a una herramienta con la URL
 exacta), de modo que también se comprueban el texto en streaming y los
@@ -1256,7 +1256,16 @@ inconclusive), deja no concluyentes los resultados ambiguos y solo sube a
 `temperature=0` y prompts acotados. Cada hallazgo lleva su evidencia (entradas,
 valores observados, recuentos, tiempos) y cada informe registra el perfil, los
 idiomas de los prompts y la configuración con que se ejecutó, para que un
-resultado pueda verificarse de forma independiente. Un relay puede detectar las
+resultado pueda verificarse de forma independiente. Las agujas, los canarios y los prefijos de caché se derivan de un valor
+aleatorio que se genera una vez por ejecución (`run_nonce` en el informe y en
+el archivo de evidencias), así que dos ejecuciones nunca envían las mismas
+sondas: un relay que detecta las pruebas no puede responderlas desde una tabla,
+y una caché de respuestas no puede repetirle a un monitor las respuestas de una
+ejecución anterior. Una ejecución sigue siendo coherente, una nueva puntuación
+reutiliza el valor grabado y `EKTE_RUN_NONCE` lo fija. Los prompts cuya
+redacción es la medida (huellas, el párrafo de facturación, las sondas de
+prompt inyectado) no cambian.
+Un relay puede detectar las
 pruebas: vuelve a ejecutar en otros momentos y prefiere el modo comparación
 contra una referencia de confianza del **snapshot exacto declarado** — es la
 forma más sólida de separar el comportamiento del modelo del del relay, y la

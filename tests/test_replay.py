@@ -73,7 +73,7 @@ def test_a_question_the_recorded_run_never_asked_is_inconclusive(tmp_path, monke
     path = tmp_path / "e.jsonl.zst"
     before = _record(monkeypatch, path)
     lines = [x for x in evidence.exchanges(path) if x["detector"] != "billing"]
-    rp = replay.Replay(lines, ref=EvidenceRef(**before["evidence"]))
+    rp = replay.Replay(lines, ref=EvidenceRef(**before["evidence"]), run_nonce=before["run_nonce"])
     after = asyncio.run(run_audit(_target(), AuditOptions(suite="standard"), replay=rp))
     billing = next(d for d in after.detectors if d.id == "billing")
     assert billing.status == Status.INCONCLUSIVE and billing.score is None

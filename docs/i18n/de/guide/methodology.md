@@ -938,10 +938,10 @@ die es ein manipulierender Proxy abgesehen hat, müssen wörtlich zurückkommen:
 zwei synthetische (eine Installations-URL und ein festgelegtes
 `pip install`-Paket), ein bekannter Installer (`curl -fsSL https://sh.rustup.rs | sh`),
 ein verbreitetes Paket mit fester Version (`pip install requests==2.32.3`), eine
-Zeile `git clone https://github.com/pallets/flask.git` und eine aus Endpunkt und Modell
-abgeleitete Bitcoin-Adresse in gültigem Format, also kein fester Wert, den ein
-Relay auf eine Ausnahmeliste setzen könnte (sie ist reproduzierbar, damit sich
-ein aufgezeichneter Lauf wiederholen lässt). Der `git clone`-Canary wird gestreamt gesendet und, wenn das Profil
+Zeile `git clone https://github.com/pallets/flask.git` und eine aus dem Zufallswert des Laufs abgeleitete Bitcoin-Adresse in gültigem
+Format, also kein fester Wert, den ein Relay auf eine Ausnahmeliste setzen
+könnte, und in jedem Lauf eine andere (eine Neubewertung verwendet den
+aufgezeichneten Wert wieder). Der `git clone`-Canary wird gestreamt gesendet und, wenn das Profil
 Tool-Aufrufe angibt, eine Installer-URL als Argument eines Tool-Aufrufs (das
 Modell muss ein Tool mit genau dieser URL aufrufen); so werden auch gestreamter
 Text und Tool-Argumente geprüft. Die Canaries laufen nebenläufig, höchstens drei
@@ -1264,7 +1264,16 @@ Schweregrad auf „hoch“.
 `temperature=0` und eng gefasste Prompts. Jeder Befund trägt seine Belege
 (Eingaben, beobachtete Werte, Zählungen, Zeiten), und jeder Bericht hält Profil,
 Prompt-Sprachen und Einstellungen fest, mit denen er lief, sodass sich ein
-Ergebnis unabhängig nachprüfen lässt. Ein Relay kann Tests erkennen: zu anderen
+Ergebnis unabhängig nachprüfen lässt. Nadeln, Canaries und Cache-Präfixe werden aus einem Zufallswert abgeleitet,
+der einmal pro Lauf gezogen wird (`run_nonce` im Bericht und in der
+Evidence-Datei), sodass keine zwei Läufe dieselben Prüfungen senden: Ein Relay,
+das Tests erkennt, kann sie nicht aus einer Tabelle beantworten, und ein
+Antwort-Cache kann einem Monitor nicht die Antworten eines früheren Laufs
+wiederholen. Ein Lauf bleibt in sich stimmig, eine Neubewertung verwendet den
+aufgezeichneten Wert wieder, und `EKTE_RUN_NONCE` legt ihn fest. Prompts, deren
+Wortlaut die Messung ist (Fingerabdrücke, der Abrechnungsabsatz, die Prüfungen
+auf eingeschleuste Prompts), bleiben unverändert.
+Ein Relay kann Tests erkennen: zu anderen
 Zeiten erneut ausführen und den Vergleichsmodus gegen eine vertrauenswürdige
 Referenz **genau des angegebenen Snapshots** bevorzugen — der stärkste Weg,
 Modellverhalten von Relay-Verhalten zu trennen, und der einzige zu hoher

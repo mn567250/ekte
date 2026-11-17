@@ -70,7 +70,7 @@ class ConnectivityDetector(Detector):
             )
 
         # 2) Basic chat completion with an exact canary (most important signal).
-        marker = stable_marker("connectivity")
+        marker = stable_marker("connectivity", ctx.run_nonce)
         spec = RequestSpec(
             messages=[
                 {"role": "user", "content": prompts.text("connectivity.echo", marker=marker)}

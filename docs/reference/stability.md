@@ -266,6 +266,7 @@ Public (all `EKTE_`-prefixed variables below):
 | `EKTE_CONTAINER` | Allow a non-loopback bind inside a container |
 | `EKTE_MAX_PARALLEL_AUDITS` | Concurrent audits in the web UI |
 | `EKTE_NO_EVIDENCE` | Keep no raw request/response pairs for runs saved to history |
+| `EKTE_RUN_NONCE` | Fix the per-run value needles, canaries and cache prefixes are derived from (tests, reproducing a run) |
 
 Also public: any variable you name yourself and pass as `--api-key env:NAME` or
 `api_key: env:NAME`. The `ZING_*` equivalents are deprecated (see

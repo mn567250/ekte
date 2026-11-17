@@ -932,9 +932,9 @@ installazione e un pacchetto `pip install` fissato), un installer noto
 (`curl -fsSL https://sh.rustup.rs | sh`), un pacchetto popolare con versione
 fissata (`pip install requests==2.32.3`), una riga
 `git clone https://github.com/pallets/flask.git` e un indirizzo Bitcoin
-di formato valido derivato dall'endpoint e dal modello verificati, quindi non un
-valore fisso che un relay possa mettere in una lista di eccezioni (è
-riproducibile, perché un'esecuzione registrata si possa rieseguire). Il
+di formato valido derivato dal valore casuale dell'esecuzione, quindi non un
+valore fisso che un relay possa mettere in una lista di eccezioni, e diverso a
+ogni esecuzione (una nuova valutazione riusa il valore registrato). Il
 canary `git clone` è inviato in streaming e, quando il profilo dichiara la
 chiamata di strumenti, un URL di installer è inviato come argomento di una
 chiamata a strumento (il modello deve chiamare uno strumento con l'URL esatto),
@@ -1257,7 +1257,15 @@ alta.
 `temperature=0` e prompt vincolati. Ogni rilevazione porta le proprie prove
 (input, valori osservati, conteggi, tempi) e ogni rapporto registra il profilo,
 le lingue dei prompt e le impostazioni con cui è stato eseguito, così che un
-risultato si possa verificare in modo indipendente. Un relay può accorgersi dei
+risultato si possa verificare in modo indipendente. Aghi, canary e prefissi di cache derivano da un valore casuale estratto una
+volta per esecuzione (`run_nonce` nel rapporto e nel file delle prove), quindi
+due esecuzioni non inviano mai le stesse sonde: un relay che riconosce i test
+non può rispondere da una tabella, e una cache delle risposte non può ripetere
+a un monitoraggio le risposte di un'esecuzione precedente. Un'esecuzione resta
+coerente, una nuova valutazione riusa il valore registrato e `EKTE_RUN_NONCE`
+lo fissa. I prompt la cui formulazione è la misura (impronte, il paragrafo di
+fatturazione, le sonde del prompt iniettato) restano fissi.
+Un relay può accorgersi dei
 test: riesegui in altri momenti e preferisci la modalità di confronto con un
 riferimento affidabile dello **snapshot esatto dichiarato** — è il modo più
 solido per separare il comportamento del modello da quello del relay, e l'unico

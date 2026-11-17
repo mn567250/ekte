@@ -936,9 +936,10 @@ d'installation et un paquet `pip install` épinglé), un installateur connu
 (`curl -fsSL https://sh.rustup.rs | sh`), un paquet populaire à version épinglée
 (`pip install requests==2.32.3`), une ligne
 `git clone https://github.com/pallets/flask.git` et une adresse Bitcoin de
-format valide dérivée du point d'accès et du modèle audités : ce n'est donc
-pas une valeur fixe qu'un relais pourrait mettre en liste blanche (elle est
-reproductible, pour qu'une exécution enregistrée puisse être rejouée). Le canari
+format valide dérivée de la valeur aléatoire de l'exécution : ce n'est donc
+pas une valeur fixe qu'un relais pourrait mettre en liste blanche, et elle
+change à chaque exécution (une nouvelle notation réutilise la valeur
+enregistrée). Le canari
 `git clone` est envoyé en streaming et, quand le profil annonce l'appel d'outils,
 une URL d'installateur est envoyée comme argument d'un appel d'outil (le modèle
 doit appeler un outil avec l'URL exacte) : le texte en streaming et les arguments
@@ -1267,7 +1268,16 @@ solides de gravité élevée.
 `temperature=0` et des prompts contraints. Chaque constat porte ses preuves
 (entrées, valeurs observées, comptes, temps), et chaque rapport consigne le
 profil, les langues des prompts et les réglages utilisés, pour qu'un résultat
-soit vérifiable de façon indépendante. Un relais peut détecter les tests :
+soit vérifiable de façon indépendante. Les aiguilles, les canaris et les préfixes de cache sont dérivés d'une valeur
+aléatoire tirée une fois par exécution (`run_nonce` dans le rapport et dans le
+fichier de preuves), si bien que deux exécutions n'envoient jamais les mêmes
+sondes : un relais qui détecte les tests ne peut pas y répondre depuis une
+table, et un cache de réponses ne peut pas resservir à une surveillance les
+réponses d'une exécution précédente. Une exécution reste cohérente, une
+nouvelle notation réutilise la valeur enregistrée et `EKTE_RUN_NONCE` la fixe.
+Les prompts dont la formulation est la mesure (empreintes, paragraphe de
+facturation, sondes de prompt injecté) restent fixes.
+Un relais peut détecter les tests :
 relancez à d'autres moments et préférez le mode comparaison contre une
 référence de confiance de **l'instantané exact annoncé** — c'est le meilleur
 moyen de séparer le comportement du modèle de celui du relais, et le seul
