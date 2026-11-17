@@ -665,6 +665,18 @@ class VerdictScoreCap(BaseModel):
     findings: list[str] = Field(default_factory=list)  # ids of the findings that set the risk
 
 
+class VerdictRatingLimit(BaseModel):
+    """Why the rating is lower than the overall score gives, or withheld:
+    too little of the audit was judged (``Verdict.coverage``), or a core
+    dimension ran but could not be judged (``COVERAGE_*`` in ekte/scoring.py)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str  # "low_coverage" | "core_not_judged"
+    limit: str | None = None  # the best rating allowed; None: no rating (withheld)
+    unlimited_rating: str | None = None  # the rating the overall score alone gives
+
+
 class Verdict(BaseModel):
     """The headline judgement a user reads first."""
 
@@ -687,6 +699,15 @@ class Verdict(BaseModel):
     # reports, ``score_cap`` also None when no cap applied).
     uncapped_score: float | None = None
     score_cap: VerdictScoreCap | None = None
+    # Coverage: the share (0..1) of the dimension weight that was judged, over
+    # the dimensions that ran (not selected / not in the suite / informational
+    # only do not count); ``not_judged`` lists the dimensions that ran but
+    # produced no usable result, and ``rating_limit`` says when coverage
+    # lowered or withheld ``rating`` (report schema 1.6; None / empty in older
+    # reports, ``coverage`` also None when no dimension ran).
+    coverage: float | None = None
+    not_judged: list[str] = Field(default_factory=list)
+    rating_limit: VerdictRatingLimit | None = None
 
 
 class RedactedTarget(BaseModel):

@@ -2236,6 +2236,18 @@
           "title": "Confidence",
           "type": "string"
         },
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage"
+        },
         "drivers": {
           "items": {
             "type": "string"
@@ -2253,6 +2265,13 @@
             "type": "string"
           },
           "title": "Key Findings",
+          "type": "array"
+        },
+        "not_judged": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Judged",
           "type": "array"
         },
         "overall_score": {
@@ -2278,6 +2297,17 @@
           ],
           "default": null,
           "title": "Rating"
+        },
+        "rating_limit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictRatingLimit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "risk_level": {
           "$ref": "#/$defs/RiskLevel",
@@ -2313,6 +2343,44 @@
         }
       },
       "title": "Verdict",
+      "type": "object"
+    },
+    "VerdictRatingLimit": {
+      "description": "Why the rating is lower than the overall score gives, or withheld:\ntoo little of the audit was judged (``Verdict.coverage``), or a core\ndimension ran but could not be judged (``COVERAGE_*`` in ekte/scoring.py).",
+      "properties": {
+        "limit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "unlimited_rating": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unlimited Rating"
+        }
+      },
+      "required": [
+        "reason"
+      ],
+      "title": "VerdictRatingLimit",
       "type": "object"
     },
     "VerdictScoreCap": {
