@@ -871,20 +871,38 @@ systemprompter. Bare begge sammen når MEDIUM.
 
 ### `integrity` — Svarintegritet / manipulering
 
-**Slik virker den.** Kanarier med kjent svar der verdiene er følsomme — en
-installasjons-URL og en `pip install`-pakke med fast versjon — må komme tilbake
-ordrett. Et eksakt ekko er bestått, et manglende ekko (omskrivning, avvisning) er
-uavklart, og bare en **utbytting av verdier** som bevarer strukturen, regnes som
-manipulering. I sammenligningsmodus er et bytte som den pålitelige referansen ikke
-gjør, CRITICAL. Bare en referanse som returnerer kanarien uendret, bekrefter: en
-referanse som feiler eller ikke returnerer noe brukbart, bekrefter ingenting, så
-byttet forblir MEDIUM (beviset `baseline_unavailable`). Et svar som kuttes ved
-utdatagrensen, er uavklart, ikke et bytte.
+**Slik virker den.** Kanarier med kjent svar som bærer verdiene en
+manipulerende proxy går etter, må komme tilbake ordrett: to syntetiske (en
+installasjons-URL og en `pip install`-pakke med fast versjon), et kjent
+installasjonsskript (`curl -fsSL https://sh.rustup.rs | sh`), en populær pakke med
+fast versjon (`pip install requests==2.32.3`), en linje
+`git clone https://github.com/pallets/flask.git` og en Bitcoin-adresse i
+gyldig format som utledes av endepunktet og modellen som revideres, så den er
+ingen fast verdi et relé kan sette på en unntaksliste (den er reproduserbar,
+slik at en registrert kjøring kan spilles av på nytt). `git clone`-kanarien
+sendes strømmet, og når profilen oppgir verktøykall, sendes en installasjons-URL
+som argument i et verktøykall (modellen må kalle et verktøy med nøyaktig den
+URL-en), så strømmet tekst og verktøyargumenter kontrolleres også. Kanariene
+kjøres samtidig, høyst tre om gangen, og detektoren sender høyst åtte
+forespørsler til målet. Et eksakt ekko er bestått, et manglende ekko
+(omskrivning, avvisning) er uavklart, og bare en **utbytting av verdier** som
+bevarer strukturen, regnes som manipulering; en endret lommebokadresse teller bare
+når den selv er en gyldig adresse, så et feilkopiert tegn er ikke et bytte.
+I sammenligningsmodus er et bytte som den pålitelige referansen ikke gjør,
+CRITICAL. Bare en referanse som returnerer kanarien uendret, bekrefter: en
+referanse som feiler eller ikke returnerer noe brukbart, bekrefter ingenting
+(beviset `baseline_unavailable`).
+Uten en brukbar referanse sendes den utbyttede kanarien én gang til, over samme
+kanal: byttes den ut igjen (med samme eller en annen verdi), er det HIGH, og
+risikoen er minst middels; kommer den uendret tilbake ved gjentakelsen, eller gir
+gjentakelsen ikke noe brukbart, forblir det MEDIUM (beviset `repeat_intact`).
+Et svar som kuttes ved utdatagrensen, er uavklart, ikke et bytte.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `integrity.verdict` (Svarintegritet) | Kanarier med kjent svar kom tilbake uendret. | Bestått | 100 poeng |
-|  | En kanariverdi ble byttet ut (ennå ikke bekreftet av en referanse). | Ikke bestått · Middels | 45 poeng |
+|  | En kanariverdi ble byttet ut én gang, uten bekreftelse fra verken en referanse eller en gjentakelse. | Ikke bestått · Middels | 45 poeng |
+|  | En kanariverdi ble byttet ut igjen da den samme kanarien ble sendt en gang til. | Ikke bestått · Høy | 20 poeng |
 |  | En kanariverdi ble byttet ut, mens den pålitelige referansen beholdt den uendret. | Ikke bestått · Kritisk | 10 poeng |
 |  | Ingen kanari ble gjentatt ordrett, så manipulering kunne ikke vurderes. | Uavklart | Telles ikke |
 
@@ -1154,7 +1172,7 @@ De 16 relétriksene fra undersøkelsen fordeler seg slik på ekte.
 | 13 | `prompt.injected-system-prompt` | middels | `injected_prompt`, `billing` | fast overhead i inndatatokens (to størrelser) + lekkasjeprobe |
 | 14 | `throttle.rate-limit-quality` | middels | `reliability`, `performance` | suksessrate (429 for seg), haleforsinkelse, stabilitet under last; prober over tid står på veikartet |
 | 15 | `capability.json-tool-fakery` | middels | `capability`, `protocol_request` | verktøy, JSON-modus, strengt skjema, parametere; én probe hver, ikke rater |
-| 16 | `integrity.response-tampering` | kritisk | `integrity` | kanarier med kjent URL/pakke; CRITICAL når en referanse bekrefter |
+| 16 | `integrity.response-tampering` | kritisk | `integrity` | kanarier med kjent svar (syntetiske og kjente installasjons-URL-er, pakker med fast versjon, en `git clone`-linje, en lommebokadresse utledet per endepunkt) i vanlig og strømmet utdata og i verktøyargumenter; HIGH når en gjentakelse bytter ut igjen, CRITICAL når en referanse bekrefter |
 
 ---
 

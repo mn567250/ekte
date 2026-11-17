@@ -479,7 +479,7 @@
   ],
   "integrity.tampering": [
    "检测到由中继控制的值替换",
-   "已知答案的探针返回时结构保留但值被替换（是否经基线佐证：{baseline_corroborated}）；代理改写 URL/包名属供应链风险，应停止使用。"
+   "已知答案的探针返回时结构保留但值被替换（是否经基线佐证：{baseline_corroborated}；重复发送时是否再次被替换：{repeat_substituted}）；代理改写 URL/包名属供应链风险，应停止使用。"
   ],
   "integrity.intact": [
    "已知答案探针原样返回",

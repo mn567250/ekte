@@ -208,7 +208,10 @@ def test_classify_leak_answer(answer, kind):
 # response tampering / integrity
 # --------------------------------------------------------------------------- #
 class IntegrityMock:
-    """mode: 'verbatim' echoes canaries; 'tamper' substitutes values; 'refuse' ignores."""
+    """mode: 'verbatim' echoes canaries; 'tamper' substitutes the two synthetic
+    canaries' values (every time); 'refuse' ignores. Streamed requests get SSE."""
+
+    _TAMPER = (("downloads.ekte.test", "evil.example.com"), ("ekte==0.1.0", "ekte==9.9.9"))
 
     def __init__(self, mode="verbatim"):
         self.mode = mode
@@ -218,28 +221,32 @@ class IntegrityMock:
         return httpx.MockTransport(self._handler)
 
     def _reply(self, user: str) -> str:
-        if "ekte_url=" in user.lower():
-            if self.mode == "tamper":
-                return "EKTE_URL=https://evil.example.com/x.sh"
-            if self.mode == "refuse":
-                return "I can't output raw URLs."
-            return "EKTE_URL=https://downloads.ekte.test/safe/setup.sh"
-        if "pip install" in user.lower():
-            if self.mode == "tamper":
-                return "pip install ekte==9.9.9"
-            if self.mode == "refuse":
-                return "Sure, you can install it."
-            return "pip install ekte==0.1.0"
-        return "ok"
+        if "nothing else:" not in user:
+            return "ok"
+        if self.mode == "refuse":
+            return "I can't output that line, but you can find it in the docs."
+        line = user.split("nothing else:", 1)[1].strip()
+        if self.mode == "tamper":
+            for old, new in self._TAMPER:
+                line = line.replace(old, new)
+        return line
 
     def _handler(self, request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content.decode())
         user = " ".join(m.get("content", "") for m in body["messages"])
+        text = self._reply(user)
+        if body.get("stream"):
+            events = [
+                {"choices": [{"index": 0, "delta": {"content": text}, "finish_reason": None}]},
+                {"choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]},
+            ]
+            sse = "".join(f"data: {json.dumps(e)}\n\n" for e in events) + "data: [DONE]\n\n"
+            return httpx.Response(200, content=sse.encode(), headers={"content-type": "text/event-stream"})
         return httpx.Response(
             200,
             json={
                 "model": "gpt-4o",
-                "choices": [{"index": 0, "message": {"role": "assistant", "content": self._reply(user)}, "finish_reason": "stop"}],
+                "choices": [{"index": 0, "message": {"role": "assistant", "content": text}, "finish_reason": "stop"}],
             },
         )
 
@@ -250,12 +257,13 @@ async def test_integrity_intact():
     assert result.status == Status.PASS
 
 
-async def test_integrity_tampering_without_baseline_is_medium():
+async def test_integrity_tampering_without_baseline_is_confirmed_by_a_repeat():
     ctx = await _ctx(IntegrityMock("tamper"))
     result = await IntegrityDetector().run(ctx)
     assert result.status == Status.FAIL
     finding = next(f for f in result.findings if f.id == "integrity.tampering")
-    assert finding.severity == Severity.MEDIUM  # single-sided -> not critical
+    # single-sided -> not critical; substituted again on the repeat -> HIGH
+    assert (finding.outcome, finding.severity) == ("tampering_repeated", Severity.HIGH)
 
 
 async def test_integrity_tampering_with_clean_baseline_is_critical():
@@ -276,11 +284,12 @@ class _DownMock:
 
 
 async def test_integrity_tampering_with_errored_baseline_is_not_corroborated():
-    # A baseline that errors confirms nothing: the substitution stays MEDIUM.
+    # A baseline that errors confirms nothing: it is no usable baseline, so the
+    # canary is repeated instead, and the relay substitutes it again.
     ctx = await _ctx(IntegrityMock("tamper"), baseline_mock=_DownMock())
     result = await IntegrityDetector().run(ctx)
     finding = next(f for f in result.findings if f.id == "integrity.tampering")
-    assert (finding.outcome, finding.severity) == ("tampering", Severity.MEDIUM)
+    assert (finding.outcome, finding.severity) == ("tampering_repeated", Severity.HIGH)
     assert finding.evidence["baseline_corroborated"] is False
     assert finding.evidence["baseline_unavailable"] is True
     assert "no usable answer" in finding.summary

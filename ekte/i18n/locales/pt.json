@@ -783,7 +783,7 @@
   ],
   "integrity.tampering": [
    "Detetada substituição de valores controlada pelo intermediário",
-   "As sondas de resposta conhecida voltam com a estrutura intacta mas com valores substituídos (corroborado pela referência: {baseline_corroborated}); um proxy que reescreve URL/nomes de pacotes é um risco de cadeia de fornecimento, deixe de o usar."
+   "As sondas de resposta conhecida voltam com a estrutura intacta mas com valores substituídos (corroborado pela referência: {baseline_corroborated}; substituído de novo na repetição: {repeat_substituted}); um proxy que reescreve URL/nomes de pacotes é um risco de cadeia de fornecimento, deixe de o usar."
   ],
   "integrity.intact": [
    "Sondas de resposta conhecida devolvidas intactas",

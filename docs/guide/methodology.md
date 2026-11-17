@@ -849,20 +849,35 @@ reach MEDIUM.
 
 ### `integrity` — Response integrity / tampering
 
-**How it works.** Known-answer canaries whose values are sensitive — an install
-URL and a pinned `pip install` package — must come back verbatim. An exact echo
-passes, a non-echo (paraphrase, refusal) is inconclusive, and only a
-structure-preserving **value substitution** counts as tampering. In compare mode
-a substitution the trusted baseline does not make is CRITICAL.
+**How it works.** Known-answer canaries carrying the values a tampering proxy
+targets must come back verbatim: two synthetic ones (an install URL and a pinned
+`pip install` package), a well-known installer (`curl -fsSL https://sh.rustup.rs | sh`),
+a popular pinned package (`pip install requests==2.32.3`), a
+`git clone https://github.com/pallets/flask.git` line and a Bitcoin address of valid format derived from the audited endpoint and
+model, so it is no fixed value a relay could allow-list (it is reproducible, so
+a recorded run can be replayed). The `git clone` canary is
+sent streamed and, when the profile claims tool calling, an installer URL is sent
+as a tool-call argument (the model must call a tool with the exact URL), so
+streamed text and tool arguments are checked too. The canaries run concurrently,
+at most three at a time, and the detector sends at most eight requests to the
+target. An exact echo passes, a non-echo (paraphrase, refusal) is inconclusive,
+and only a structure-preserving **value substitution** counts as tampering; a
+changed wallet address counts only when it is itself a valid address, so a
+miscopied character is not a substitution.
+In compare mode a substitution the trusted baseline does not make is CRITICAL.
 Only a baseline that returns the canary intact corroborates: a baseline that
-errors or returns nothing usable confirms nothing, so the substitution stays
-MEDIUM (evidence `baseline_unavailable`).
+errors or returns nothing usable confirms nothing (evidence `baseline_unavailable`).
+Without a usable baseline the substituted canary is sent once more, on the same
+channel: substituted again (with the same or another value) is HIGH, which makes
+the risk at least medium; intact on the repeat, or no usable repeat, stays MEDIUM
+(evidence `repeat_intact`).
 An answer cut off at the output limit is inconclusive, not a substitution.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `integrity.verdict` (Response integrity) | Known-answer canaries came back intact. | Pass | 100 pts |
-|  | A canary value was substituted (not yet confirmed by a baseline). | Fail · Medium | 45 pts |
+|  | A canary value was substituted once, confirmed neither by a baseline nor by a repeat. | Fail · Medium | 45 pts |
+|  | A canary value was substituted again when the same canary was sent a second time. | Fail · High | 20 pts |
 |  | A canary value was substituted while the trusted baseline kept it intact. | Fail · Critical | 10 pts |
 |  | No canary was echoed verbatim, so tampering could not be assessed. | Inconclusive | Not counted |
 
@@ -1127,7 +1142,7 @@ The 16 relay tricks from the research map onto ekte as follows.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | fixed input-token overhead (two sizes) + leak probe |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | success rate (429 separate), tail latency, load stability; longitudinal probing is roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | tools, JSON mode, strict schema, parameters; one probe each, not rates |
-| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer URL/package canaries; CRITICAL when a baseline corroborates |
+| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer canaries (synthetic and well-known install URLs, pinned packages, a `git clone` line, a wallet address derived per endpoint) in plain, streamed and tool-argument output; HIGH when a repeat substitutes again, CRITICAL when a baseline corroborates |
 
 ---
 

@@ -913,21 +913,40 @@ prompts système. Seuls les deux ensemble atteignent MOYENNE.
 
 ### `integrity` — Intégrité des réponses / falsification
 
-**Fonctionnement.** Des canaris à réponse connue dont les valeurs sont
-sensibles — une URL d'installation et un paquet `pip install` épinglé — doivent
-revenir mot pour mot. Un écho exact réussit, l'absence d'écho (paraphrase,
-refus) est non concluante, et seule une **substitution de valeur** qui préserve
-la structure compte comme falsification. En mode comparaison, une substitution
-que la référence de confiance ne fait pas est CRITIQUE.
-Seule une référence qui renvoie le canari intact corrobore : une référence en
-erreur ou sans réponse exploitable ne confirme rien, et la substitution reste
-MOYENNE (preuve `baseline_unavailable`).
+**Fonctionnement.** Des canaris à réponse connue portant les valeurs que vise
+un proxy falsificateur doivent revenir mot pour mot : deux synthétiques (une URL
+d'installation et un paquet `pip install` épinglé), un installateur connu
+(`curl -fsSL https://sh.rustup.rs | sh`), un paquet populaire à version épinglée
+(`pip install requests==2.32.3`), une ligne
+`git clone https://github.com/pallets/flask.git` et une adresse Bitcoin de
+format valide dérivée du point d'accès et du modèle audités : ce n'est donc
+pas une valeur fixe qu'un relais pourrait mettre en liste blanche (elle est
+reproductible, pour qu'une exécution enregistrée puisse être rejouée). Le canari
+`git clone` est envoyé en streaming et, quand le profil annonce l'appel d'outils,
+une URL d'installateur est envoyée comme argument d'un appel d'outil (le modèle
+doit appeler un outil avec l'URL exacte) : le texte en streaming et les arguments
+d'outils sont donc vérifiés aussi. Les canaris s'exécutent en parallèle, trois au
+plus à la fois, et le détecteur envoie au plus huit requêtes à la cible. Un écho
+exact réussit, l'absence d'écho (paraphrase, refus) est non concluante, et seule
+une **substitution de valeur** qui préserve la structure compte comme
+falsification ; une adresse de portefeuille modifiée ne compte que si elle est
+elle-même une adresse valide, si bien qu'un caractère mal recopié n'est pas une
+substitution.
+En mode comparaison, une substitution que la référence de confiance ne fait pas
+est CRITIQUE. Seule une référence qui renvoie le canari intact corrobore : une
+référence en erreur ou sans réponse exploitable ne confirme rien (preuve
+`baseline_unavailable`).
+Sans référence exploitable, le canari substitué est envoyé une fois de plus, sur
+le même canal : substitué de nouveau (avec la même valeur ou une autre), il est
+ÉLEVÉ, et le risque est au moins moyen ; intact à la répétition, ou sans
+répétition exploitable, il reste MOYEN (preuve `repeat_intact`).
 Une réponse coupée à la limite de sortie est non concluante, pas une substitution.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `integrity.verdict` (Intégrité des réponses) | Les canaris à réponse connue sont revenus intacts. | Réussi | 100 pts |
-|  | Une valeur canari a été substituée (pas encore confirmé par une référence). | Échec · Moyenne | 45 pts |
+|  | Une valeur canari a été substituée une fois, sans confirmation ni par une référence ni par une répétition. | Échec · Moyenne | 45 pts |
+|  | Une valeur canari a de nouveau été substituée lorsque le même canari a été envoyé une seconde fois. | Échec · Élevée | 20 pts |
 |  | Une valeur canari a été substituée alors que la référence de confiance l'a gardée intacte. | Échec · Critique | 10 pts |
 |  | Aucun canari n'a été répété tel quel, la falsification n'a donc pas pu être évaluée. | Non concluant | Non compté |
 
@@ -1203,7 +1222,7 @@ Les 16 astuces de relais issues de la recherche se répartissent ainsi dans ekte
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | surcoût fixe de tokens d'entrée (deux tailles) + sonde de fuite |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | taux de succès (429 à part), latence de queue, stabilité sous charge ; la mesure dans la durée est sur la feuille de route |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | outils, mode JSON, schéma strict, paramètres ; une sonde chacun, pas des taux |
-| 16 | `integrity.response-tampering` | critical | `integrity` | canaris URL/paquet à réponse connue ; CRITIQUE quand une référence corrobore |
+| 16 | `integrity.response-tampering` | critical | `integrity` | canaris à réponse connue (URL d'installation synthétiques et connues, paquets à version épinglée, une ligne `git clone`, une adresse de portefeuille dérivée par point d'accès) en sortie normale, en streaming et en arguments d'outils ; ÉLEVÉE quand une répétition substitue de nouveau, CRITIQUE quand une référence corrobore |
 
 ---
 
