@@ -20,6 +20,27 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Capability: probes the relay rejects count as undelivered ([#248](https://github.com/mn567250/ekte/issues/248))
+
+A relay that answered the tools, JSON-mode and strict-schema probes with HTTP
+400 for a model claiming all three scored 100 on the max-output check alone:
+every rejected probe was "no usable response" and not counted.
+
+- A 4xx (not 401, 403, 408 or 429) to a probe for a claimed feature is the new
+  outcome `rejected` of `capability.tools`, `capability.json_mode` and
+  `capability.json_schema`: Fail · Medium, 0 points, like `not_delivered`. Its
+  summary quotes the status code and the relay's error message.
+- It counts only when the relay answers the same request without the feature
+  parameter: one plain control request, sent only while no other probe has
+  come back. A relay that rejects that too stays `failed` (Inconclusive).
+- With a baseline on the same protocol, a probe the baseline rejects too is
+  `model_limit` (Info, not counted); a 4xx for a feature the profile does not
+  claim, or with no profile, is `rejected_unclaimed` (Info, not counted).
+- 5xx, timeouts, 401/403/408/429 and failures on ekte's side or the network
+  path stay `failed`, as before. The capability score of such a relay drops
+  from 100 to 25 (three zeros and the max-output pass); the verdict can change
+  with it ([#168](https://github.com/mn567250/ekte/issues/168)).
+
 ### Model identity: the echoed `model` field is compared through the knowledge base ([#250](https://github.com/mn567250/ekte/issues/250))
 
 The echoed `model` field was compared with the requested id by tier words and

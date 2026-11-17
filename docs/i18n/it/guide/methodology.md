@@ -610,22 +610,41 @@ dello schema rigoroso quando il profilo dice che il modello non ha schemi
 rigorosi — viene annotata ma non conteggiata: un modello non perde mai punti per
 ciò che nessuno dichiara.
 
+Una sonda a cui il relay risponde con un 4xx (esclusi 401, 403, 408 e 429)
+benché il profilo dichiari la funzione è una capacità rifiutata: conta come una
+non fornita, e il suo riepilogo riporta il codice di stato e il messaggio di
+errore. Conta solo se il relay risponde alla stessa richiesta senza il parametro
+della funzione (una richiesta in più, inviata solo finché nessun'altra sonda è
+tornata) e un riferimento configurato sullo stesso protocollo non rifiuta anche
+la sonda; altrimenti vale come nessuna risposta utilizzabile, o come un limite
+del modello. Un 4xx per una funzione che nessuno dichiara viene annotato ma non
+conteggiato.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `capability.tools` | È tornata una chiamata a strumento per una richiesta esplicita di strumento. | Superato | 100 pt |
 |  | Le chiamate a strumenti sono dichiarate ma non è tornata alcuna chiamata. | Fallito · Media | 0 pt |
 |  | Non è tornata alcuna chiamata a strumento, e la capacità non è dichiarata. | Info | Non conteggiato |
+|  | La chiamata di strumenti è dichiarata ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.tools.encoding` | Gli argomenti dello strumento sono arrivati come oggetto, non come la stringa JSON di OpenAI. | Avviso · Bassa | Non conteggiato |
 | `capability.json_mode` | La modalità JSON ha restituito un oggetto analizzabile con il valore richiesto. | Superato | 100 pt |
 |  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | La modalità JSON è dichiarata ma non è tornato un oggetto valido con il valore. | Fallito · Media | 0 pt |
+|  | La modalità JSON è dichiarata ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.json_schema` | Lo schema rigoroso è dichiarato e la risposta lo rispettava. | Superato | 100 pt |
 |  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | Non conteggiato |
 |  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | Non conteggiato |
 |  | Lo schema rigoroso è dichiarato ma la risposta non lo rispettava. | Avviso · Bassa | 40 pt |
+|  | Lo schema rigoroso è dichiarato ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.max_output` | L'output è proseguito fino al limite di token richiesto. | Superato | 100 pt |
 |  | L'output si è fermato prima del limite con una lunghezza plausibile. | Superato | 90 pt |
