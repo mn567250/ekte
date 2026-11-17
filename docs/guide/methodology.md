@@ -562,7 +562,7 @@ baseline that errored or left probes unanswered.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
-| `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 95 pts |
+| `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 100 pts |
 |  | The judge found the answers unlike the claimed model (low, medium or no stated confidence). | Warning · Medium | 50 pts |
 |  | The judge is confident the answers are unlike the claimed model (no usable baseline). | Warning · Medium | 25 pts |
 |  | The judge is confident, and a trusted baseline corroborated the difference. | Fail · High | 25 pts |

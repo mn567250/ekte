@@ -598,7 +598,7 @@ responder.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
-| `quality_judge.verdict` (Veredicto del juez LLM) | El juez encontró las respuestas coherentes con el modelo declarado. | Correcto | 95 pts |
+| `quality_judge.verdict` (Veredicto del juez LLM) | El juez encontró las respuestas coherentes con el modelo declarado. | Correcto | 100 pts |
 |  | El juez encontró las respuestas distintas del modelo declarado (confianza baja, media o no indicada). | Advertencia · Media | 50 pts |
 |  | El juez está seguro de que las respuestas difieren del modelo declarado (sin referencia utilizable). | Advertencia · Media | 25 pts |
 |  | El juez está seguro y una referencia de confianza corroboró la diferencia. | Fallo · Alta | 25 pts |

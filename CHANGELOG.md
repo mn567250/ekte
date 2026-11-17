@@ -20,6 +20,13 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Small detector consistency fixes ([#262](https://github.com/mn567250/ekte/issues/262))
+
+- **LLM judge:** a `consistent` verdict now scores 100 points instead of 95,
+  so enabling `--judge` no longer lowers a perfect model-identity dimension
+  (100 + 95 averaged to 97.5). Scores of judged runs change; see
+  [#168](https://github.com/mn567250/ekte/issues/168).
+
 ### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
 
 Needles and canaries came from fixed seeds, so the context-window needle at a

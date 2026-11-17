@@ -463,6 +463,20 @@ async def test_judge_high_confidence_with_working_baseline_is_high():
     assert f.evidence["baseline_corroborated"] is True
 
 
+async def test_judge_consistent_verdict_scores_full_points():
+    """A consistent judge must not lower a perfect model-identity dimension (#262)."""
+    o = JUDGE_SCALE.get("quality_judge.verdict", "consistent")
+    assert (o.score, o.status) == (100.0, Status.PASS)
+    target = TargetConfig(base_url="https://r.test/v1", model="m")
+    ctx = AuditContext(
+        target=target, client=_AnswerStub("an answer"), options=AuditOptions(suite="deep"),
+        kb=None, profile=None, judge=_JudgeStub({"verdict": "consistent", "confidence": "high"}),  # type: ignore[arg-type]
+    )
+    result = await QualityJudgeDetector().run(ctx)
+    _check(result, JUDGE_SCALE)
+    assert (result.score, result.status) == (100.0, Status.PASS)
+
+
 async def test_judge_is_told_the_claimed_model():
     result, judge = await _run_judge("high", claimed="claimed-id")
     system, user = judge.calls[0]

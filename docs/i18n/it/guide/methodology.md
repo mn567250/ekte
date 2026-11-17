@@ -602,7 +602,7 @@ lasciato sonde senza risposta.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
-| `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 95 pt |
+| `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 100 pt |
 |  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa, media o non indicata). | Avviso · Media | 50 pt |
 |  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessun riferimento utilizzabile). | Avviso · Media | 25 pt |
 |  | Il giudice è sicuro e un riferimento affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |

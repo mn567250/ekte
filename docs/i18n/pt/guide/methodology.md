@@ -594,7 +594,7 @@ MÉDIA, tal como uma referência que falhou ou deixou sondas sem resposta.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
-| `quality_judge.verdict` (Veredito do juiz LLM) | O juiz considerou as respostas compatíveis com o modelo declarado. | Aprovado | 95 pts |
+| `quality_judge.verdict` (Veredito do juiz LLM) | O juiz considerou as respostas compatíveis com o modelo declarado. | Aprovado | 100 pts |
 |  | O juiz considerou as respostas diferentes do modelo declarado (confiança baixa, média ou não indicada). | Aviso · Média | 50 pts |
 |  | O juiz tem a certeza de que as respostas diferem do modelo declarado (sem referência utilizável). | Aviso · Média | 25 pts |
 |  | O juiz tem a certeza e uma referência de confiança corroborou a diferença. | Falha · Alta | 25 pts |

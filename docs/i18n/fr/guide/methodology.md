@@ -604,7 +604,7 @@ des sondes sans réponse.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
-| `quality_judge.verdict` (Verdict du juge LLM) | Le juge a trouvé les réponses cohérentes avec le modèle annoncé. | Réussi | 95 pts |
+| `quality_judge.verdict` (Verdict du juge LLM) | Le juge a trouvé les réponses cohérentes avec le modèle annoncé. | Réussi | 100 pts |
 |  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible, moyenne ou non indiquée). | Avertissement · Moyenne | 50 pts |
 |  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence exploitable). | Avertissement · Moyenne | 25 pts |
 |  | Le juge est confiant et une référence de confiance a confirmé la différence. | Échec · Élevée | 25 pts |

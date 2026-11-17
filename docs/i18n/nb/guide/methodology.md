@@ -573,7 +573,7 @@ ubesvart.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
-| `quality_judge.verdict` (LLM-dommerens konklusjon) | Dommeren fant svarene i samsvar med den oppgitte modellen. | Bestått | 95 poeng |
+| `quality_judge.verdict` (LLM-dommerens konklusjon) | Dommeren fant svarene i samsvar med den oppgitte modellen. | Bestått | 100 poeng |
 |  | Dommeren fant svarene ulike den oppgitte modellen (lav, middels eller ingen oppgitt sikkerhet). | Advarsel · Middels | 50 poeng |
 |  | Dommeren er sikker på at svarene er ulike den oppgitte modellen (ingen brukbar referanse). | Advarsel · Middels | 25 poeng |
 |  | Dommeren er sikker, og en pålitelig referanse bekreftet forskjellen. | Ikke bestått · Høy | 25 poeng |

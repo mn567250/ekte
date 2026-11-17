@@ -607,7 +607,7 @@ Proben unbeantwortet ließ.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
-| `quality_judge.verdict` (Urteil des LLM-Judge) | Der Richter fand die Antworten passend zum angegebenen Modell. | Bestanden | 95 Pkt. |
+| `quality_judge.verdict` (Urteil des LLM-Judge) | Der Richter fand die Antworten passend zum angegebenen Modell. | Bestanden | 100 Pkt. |
 |  | Der Richter fand die Antworten dem angegebenen Modell unähnlich (niedrige, mittlere oder keine angegebene Sicherheit). | Warnung · Mittel | 50 Pkt. |
 |  | Der Richter ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine verwertbare Referenz). | Warnung · Mittel | 25 Pkt. |
 |  | Der Richter ist sicher, und eine vertrauenswürdige Referenz bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 25 Pkt. |
