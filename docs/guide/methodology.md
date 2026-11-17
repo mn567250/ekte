@@ -570,22 +570,40 @@ feature is not claimed, or any strict-schema result when the profile says the
 model lacks strict schemas — is noted but not counted, so a model is never
 marked down for what nobody claimed.
 
+A probe the relay answers with a 4xx (other than 401, 403, 408 and 429)
+although the profile claims the feature is a refused capability: it scores like
+an undelivered one, and its summary quotes the status code and error message. It
+counts only if the relay answers the same request without the feature parameter
+(one extra request, sent only while no other probe has come back) and a
+configured baseline on the same protocol does not reject the probe too;
+otherwise it is no usable response, or a limit of the model. A 4xx for a
+feature nobody claims is noted but not counted.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `capability.tools` | A tool call came back for an explicit tool-use request. | Pass | 100 pts |
 |  | Tool calling is claimed but no tool call came back. | Fail · Medium | 0 pts |
 |  | No tool call came back, and tool calling is not claimed. | Info | Not counted |
+|  | Tool calling is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.tools.encoding` | Tool arguments arrived as an object, not the JSON string OpenAI returns. | Warning · Low | Not counted |
 | `capability.json_mode` | JSON mode returned a parseable object with the requested value. | Pass | 100 pts |
 |  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | Not counted |
 |  | No parseable JSON object came back; JSON mode is not claimed. | Info | Not counted |
 |  | JSON mode is claimed but no valid object with the value came back. | Fail · Medium | 0 pts |
+|  | JSON mode is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.json_schema` | The strict schema is claimed and the response conformed. | Pass | 100 pts |
 |  | The strict schema was not enforced, consistent with the claim. | Info | Not counted |
 |  | The response conformed although the claimed model lacks strict schemas. | Info | Not counted |
 |  | The strict schema is claimed but the response did not conform. | Warning · Low | 40 pts |
+|  | The strict schema is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
 |  | Output stopped before the cap at a plausible length. | Pass | 90 pts |
