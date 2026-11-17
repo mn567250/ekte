@@ -27,9 +27,13 @@ from ekte.models import (
 from ekte.report import render_html, render_markdown
 from ekte.scoring import (
     ADVISORY_CHECKS,
+    COVERAGE_LIMITED_BELOW,
+    COVERAGE_RATING_LIMIT,
+    COVERAGE_UNRATED_BELOW,
     RISK_SCORE_CAPS,
     build_dimensions,
     build_verdict,
+    coverage_pct,
     overall_score,
     rating,
 )
@@ -624,3 +628,188 @@ def test_reports_without_caps_validate_and_render():
     assert report.verdict.score_cap is None
     assert "Capped" not in render_markdown(report)
     assert not re.search(r"score-cap", render_html(report))
+
+
+# --------------------------------------------------------------------------- #
+# Coverage limits the rating (#249): a dimension that ran but could not be
+# judged drops out of the weighted mean, so the rating says how much was
+# judged: below 50% of the weight of the dimensions that ran there is no
+# rating, below 80% (or with a core dimension not judged) it is at most B.
+# --------------------------------------------------------------------------- #
+def _unjudged(det: str, status: Status = Status.INCONCLUSIVE) -> DetectorResult:
+    return DetectorResult(id=det, name=det, dimension=REGISTRY[det].dimension, score=None,
+                          status=status)
+
+
+def test_an_unjudged_context_window_no_longer_rates_a():
+    detectors = _clean()
+    detectors["context_window"] = _unjudged("context_window")
+    _, v = _judge(list(detectors.values()))
+    assert v.overall_score == 100.0 and v.risk_level == RiskLevel.CLEAN
+    assert v.coverage == 0.81 and v.not_judged == ["context_window"]
+    assert v.rating == COVERAGE_RATING_LIMIT == "B"
+    assert v.rating_limit is not None
+    assert (v.rating_limit.reason, v.rating_limit.limit, v.rating_limit.unlimited_rating) == (
+        "core_not_judged", "B", "A")
+    assert ("Coverage 81%: Context window ran but could not be judged. Rating limited to B "
+            "because a core dimension could not be judged.") in v.summary
+
+
+def test_only_identity_and_security_judged_is_not_rated():
+    detectors = {
+        i: d if d.dimension in (Dimension.MODEL_IDENTITY, Dimension.SECURITY) else _unjudged(i)
+        for i, d in _clean().items()
+    }
+    _, v = _judge(list(detectors.values()))
+    assert v.overall_score == 100.0
+    assert v.coverage == 0.25 and v.rating is None
+    assert v.rating_limit is not None
+    assert (v.rating_limit.reason, v.rating_limit.limit) == ("low_coverage", None)
+    assert "context_window" in v.not_judged and "model_identity" not in v.not_judged
+    assert "Not rated: too little was judged (coverage below 50%)." in v.summary
+
+
+def test_low_coverage_limits_the_rating_to_b():
+    # protocol, streaming, reliability, integrity, security, performance: 32 of 100
+    peripheral = (Dimension.PROTOCOL, Dimension.STREAMING, Dimension.RELIABILITY,
+                  Dimension.INTEGRITY, Dimension.SECURITY, Dimension.PERFORMANCE)
+    detectors = {i: _unjudged(i) if d.dimension in peripheral else d for i, d in _clean().items()}
+    _, v = _judge(list(detectors.values()))
+    assert v.coverage == 0.68 and v.rating == "B"
+    assert v.rating_limit is not None and v.rating_limit.reason == "low_coverage"
+    assert "Rating limited to B because coverage is below 80%." in v.summary
+
+
+def test_a_crashed_dimension_is_not_judged_and_info_only_does_not_count():
+    detectors = _clean()
+    detectors["streaming"] = _unjudged("streaming", Status.ERROR)
+    _, v = _judge(list(detectors.values()))
+    assert v.not_judged == ["streaming"] and v.coverage == 0.94
+    assert v.rating == "A" and v.rating_limit is None  # 94%, no core dimension missing
+    # a dimension whose detectors only reported information (nothing claimed) does not count
+    detectors = _clean()
+    detectors["context_window"] = _unjudged("context_window", Status.INFO)
+    _, v = _judge(list(detectors.values()))
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating == "A"
+
+
+def test_full_coverage_keeps_the_rating():
+    _, v = _judge(list(_clean().values()))
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating_limit is None
+    assert v.rating == "A" and "Coverage" not in v.summary
+
+
+def test_custom_run_of_two_scored_dimensions_keeps_coverage_and_rating():
+    detectors = [_clean()["billing"], _clean()["streaming"]]
+    selected = ["billing", "streaming"]
+    dims = build_dimensions(detectors, None, selected=selected)
+    v = build_verdict(detectors, dims, profile_matched=True, used_judge=False,
+                      used_baseline=True, selected=selected)
+    assert v.coverage == 1.0 and v.rating == "A" and v.rating_limit is None
+
+
+def test_dimensions_not_in_the_suite_do_not_reduce_coverage():
+    # a smoke run: connectivity and security only
+    detectors = [_clean()["connectivity"], _clean()["security"]]
+    _, v = _judge(detectors)
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating == "A"
+    # nothing ran: no coverage
+    _, v = _judge([])
+    assert v.coverage is None and v.rating is None and v.rating_limit is None
+
+
+def test_no_rating_limit_when_the_rating_is_already_lower():
+    detectors = _clean()
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.CRITICAL, 10.0)
+    detectors["context_window"] = _unjudged("context_window")
+    _, v = _judge(list(detectors.values()))
+    assert v.rating == "F" and v.rating_limit is None and v.not_judged == ["context_window"]
+
+
+def test_coverage_thresholds_and_percentages():
+    assert (COVERAGE_UNRATED_BELOW, COVERAGE_LIMITED_BELOW) == (0.5, 0.8)
+    assert coverage_pct(0.29) == 29 and coverage_pct(0.7999) == 79 and coverage_pct(1.0) == 100
+
+
+@pytest.mark.parametrize("surface", ["embedding", "rerank"])
+def test_an_unjudged_identity_limits_other_surfaces(surface):
+    ids = [i for i, d in REGISTRY.items() if d.surface == surface]
+    detectors = [
+        _unjudged(i) if REGISTRY[i].dimension == Dimension.MODEL_IDENTITY
+        else DetectorResult(id=i, name=i, dimension=REGISTRY[i].dimension, score=100.0,
+                            status=Status.PASS)
+        for i in ids
+    ]
+    _, v = _judge(detectors, surface)
+    assert "model_identity" in v.not_judged and v.rating not in ("A", None)
+
+
+def _unjudged_report(only: tuple[Dimension, ...] | None = None) -> AuditReport:
+    if only is None:
+        detectors = _clean()
+        detectors["context_window"] = _unjudged("context_window")
+    else:
+        detectors = {i: d if d.dimension in only else _unjudged(i) for i, d in _clean().items()}
+    return _report(list(detectors.values()))
+
+
+def test_reports_show_coverage_and_the_rating_limit():
+    from ekte.report import compact_dict
+
+    report = _unjudged_report()
+    md = render_markdown(report)
+    assert "**Coverage:** 81%  ·  **Rating:** B" in md
+    assert ("_Coverage 81%: not judged (ran without a usable result): Context window; rating at "
+            "most B (a core dimension could not be judged; the score alone gives A)._") in md
+    page = render_html(report)
+    assert "<span>coverage <strong>81%</strong></span>" in page
+    assert 'class="meta coverage">Coverage 81%: not judged' in page
+    c = compact_dict(report)["verdict"]
+    assert (c["coverage"], c["not_judged"], c["rating"]) == (0.81, ["context_window"], "B")
+    assert c["rating_limit"] == {"reason": "core_not_judged", "limit": "B", "unlimited_rating": "A"}
+    # not rated
+    report = _unjudged_report((Dimension.MODEL_IDENTITY, Dimension.SECURITY))
+    md = render_markdown(report)
+    assert "**Coverage:** 25%  ·  **Rating:** not rated: too little was judged" in md
+    assert "no rating (coverage below 50%; the score alone gives A)" in md
+    assert "rating <strong>not rated: too little was judged</strong>" in render_html(report)
+
+
+def test_pdf_shows_coverage():
+    pytest.importorskip("reportlab")
+    from reportlab.platypus import Paragraph
+
+    from ekte.report.pdf import _header
+
+    text = " ".join(fl.getPlainText() for fl in _header(_unjudged_report((
+        Dimension.MODEL_IDENTITY, Dimension.SECURITY))) if isinstance(fl, Paragraph))
+    assert "coverage 25%" in text and "rating not rated: too little was judged" in text
+    assert "Coverage 25%: not judged" in text
+
+
+def test_reports_without_coverage_validate_and_render():
+    # a report written before coverage existed
+    report = AuditReport.model_validate(json.loads(_report(list(_clean().values())).model_dump_json(
+        exclude={"verdict": {"coverage", "not_judged", "rating_limit"}})))
+    assert report.verdict.coverage is None
+    assert "**Coverage:** —" in render_markdown(report)
+    assert 'class="meta coverage"' not in render_html(report)
+
+
+def test_a_smoke_run_against_an_honest_relay_has_full_coverage(monkeypatch):
+    import asyncio
+
+    from ekte.clients import make_client as real
+    from ekte.config import AuditOptions
+    from ekte.models import TargetConfig
+    from ekte.runner import run_audit
+    from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
+
+    server = MockServer()
+    monkeypatch.setattr(
+        "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport))
+    target = TargetConfig(name="t", kind="target", base_url=BASE_URL, model=DEFAULT_MODEL)
+    report = asyncio.run(run_audit(target, AuditOptions(suite="smoke")))
+    v = report.verdict
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating_limit is None
+    assert v.rating == rating(v.overall_score)
