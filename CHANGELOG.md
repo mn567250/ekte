@@ -20,6 +20,35 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Scoring: coverage limits the rating ([#249](https://github.com/mn567250/ekte/issues/249))
+
+A dimension that ran but could not be judged (its detectors inconclusive or
+crashed, no score) dropped out of the overall score and the weights were
+renormalized, so a relay whose context-window probe timed out above 20K tokens
+scored 100.0 and rated **A**, and a run where only model identity and security
+answered also rated **A**.
+
+- **Coverage:** the verdict now records `coverage`, the share of the weight of
+  the dimensions that ran that produced a score, and `not_judged`, the
+  dimensions that ran but could not be judged. Dimensions not in the suite or
+  not selected, and dimensions whose detectors only reported information, do
+  not count, so smoke and `custom` runs keep coverage 1.0.
+- **Rating limit** (`COVERAGE_*` in `ekte/scoring.py`): below 50% coverage
+  there is no rating ("not rated: too little was judged"); below 80%, or when
+  a core dimension (model identity, context window, capability, billing) ran
+  but could not be judged, the rating is at most **B**. The score itself is
+  unchanged. The summary names the dimensions that were not judged and the
+  limit.
+- `--fail-under` also fails (exit 1) a run whose rating was withheld for low
+  coverage.
+- The CLI summary, the Markdown, HTML and PDF reports, the `--compact` verdict
+  and the web UI (a coverage tile next to the score) show the coverage and the
+  limit.
+- **Report schema 1.6** (see #168): new optional fields `Verdict.coverage`,
+  `Verdict.not_judged` and `Verdict.rating_limit` (reason, best rating
+  allowed or none, rating the score alone gives). Ratings of new runs with
+  unjudged dimensions can be lower than those of older runs, or absent.
+
 ### Scoring: the risk caps the overall score and rating ([#247](https://github.com/mn567250/ekte/issues/247))
 
 The overall score diluted a failed detector twice (by the mean of its
