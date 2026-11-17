@@ -769,7 +769,7 @@
   ],
   "integrity.tampering": [
    "Utbytting av verdier styrt av reléet oppdaget",
-   "Prober med kjent svar kom tilbake med intakt struktur, men utbyttede verdier (bekreftet av referanse: {baseline_corroborated}); en proxy som skriver om URL-er/pakkenavn, er en forsyningskjederisiko — slutt å bruke den."
+   "Prober med kjent svar kom tilbake med intakt struktur, men utbyttede verdier (bekreftet av referanse: {baseline_corroborated}; byttet ut igjen ved gjentakelse: {repeat_substituted}); en proxy som skriver om URL-er/pakkenavn, er en forsyningskjederisiko — slutt å bruke den."
   ],
   "integrity.intact": [
    "Prober med kjent svar kom tilbake uendret",
