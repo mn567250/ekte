@@ -245,6 +245,31 @@
       { id: "confidence", label: T("结论置信度", "Verdict confidence"), text: v.confidence ? label("CONFIDENCE", v.confidence) : "—" },
     ], { variant: "compact" });
   }
+  // The risk caps the overall score (verdict.score_cap, report schema 1.6):
+  // say so under the tiles, with the weighted mean and the findings that set it.
+  function scoreCapNote(v, r) {
+    var c = v.score_cap;
+    if (!c) return "";
+    var byId = {};
+    (r.detectors || []).forEach(function (det) {
+      (det.findings || []).forEach(function (f) {
+        if (!byId[f.id]) byId[f.id] = f;
+      });
+    });
+    var list = (c.findings || []).map(function (fid) {
+      return byId[fid] ? loc(byId[fid]).title : fid;
+    }).join(", ");
+    return '<p class="how zr-cap">' + esc(Tf(
+      "综合分上限为 {cap}，因为风险为「{risk}」（各维度加权平均分为 {mean}）。决定风险的发现：{list}。",
+      "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.",
+      {
+        cap: num(c.cap, 0),
+        risk: label("RISK_LEVEL", riskStep(c.risk_level).key),
+        mean: v.uncapped_score == null ? "—" : num(v.uncapped_score, 1),
+        list: list || "—",
+      }
+    )) + "</p>";
+  }
   // The headline names what drove the risk (verdict.drivers, scoring order):
   // the claimed-model sentences only when model identity is among them, and a
   // scoped sentence when model identity was not verified. Reports from before
@@ -288,17 +313,22 @@
   // went through EKTE_I18N.exportReport and came back via history/import).
   var SCORE_EN = "Overall health score {1}/100.";
   var DISC_EN = "ekte reports black-box evidence of divergence and risk, not proof of fraud.";
+  // the risk cap sentence (issue 247): the card shows the cap under the score tiles
+  var CAP_EN = "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.";
   function summaryRest(s) {
     s = String(s || "");
-    var forms = [[SCORE_EN, DISC_EN]];
+    var forms = [[SCORE_EN, DISC_EN, CAP_EN]];
     var strings = (window.EKTE_LOCALES && window.EKTE_LOCALES.strings) || {};
     Object.keys(strings).forEach(function (code) {
       var d = strings[code] || {};
-      forms.push([d[SCORE_EN], d[DISC_EN]]);
+      forms.push([d[SCORE_EN], d[DISC_EN], d[CAP_EN]]);
     });
     forms.forEach(function (f) {
       if (f[0]) s = s.replace(new RegExp("\\s*" + reEsc(f[0]).replace("\\{1\\}", "[\\d.,]+"), "g"), " ");
       if (f[1]) s = s.split(f[1]).join(" ");
+      if (f[2])
+        s = s.replace(new RegExp("\\s*" + reEsc(f[2]).replace("\\{1\\}", "[\\d.,]+")
+          .replace("\\{3\\}", "[\\d.,]+").replace("\\{2\\}", "[^;；.。]+?"), "g"), " ");
     });
     return s.replace(/\s{2,}/g, " ").trim();
   }
@@ -455,6 +485,28 @@
           return dname(x.id);
         }).join(", "),
       });
+    // a detector with a HIGH/CRITICAL finding caps the dimension (report schema 1.6)
+    var title = function (fid) {
+      var f = null;
+      members.forEach(function (det) {
+        (det.findings || []).forEach(function (x) {
+          if (!f && x.id === fid) f = x;
+        });
+      });
+      return f ? loc(f).title : fid;
+    };
+    var cap = b && b.score_cap;
+    if (cap)
+      how += " " + Tf(
+        "平均分 {mean}，上限为 {cap}（{det} 的得分），原因是其严重程度为高或严重的发现：{list}。维度得分不高于带有此类发现的最低检测器得分。",
+        "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.",
+        {
+          mean: num(cap.uncapped_score, 1),
+          cap: num(cap.cap, 1),
+          det: dname(cap.detector),
+          list: (cap.findings || []).map(title).join(", "),
+        }
+      );
     var o = b && b.status_override;
     var why = o
       ? Tf(
@@ -464,15 +516,7 @@
             from: label("STATUS", o.from_status),
             to: label("STATUS", o.to_status),
             sev: label("SEVERITY", o.severity),
-            list: o.findings.map(function (fid) {
-              var f = null;
-              members.forEach(function (det) {
-                (det.findings || []).forEach(function (x) {
-                  if (!f && x.id === fid) f = x;
-                });
-              });
-              return f ? loc(f).title : fid;
-            }).join(", "),
+            list: o.findings.map(title).join(", "),
           }
         )
       : b
@@ -930,6 +974,7 @@
       '<h2 id="' + hid + '">' + esc(head(v)) + "</h2>" +
       (rest ? '<p class="sum">' + esc(rest) + "</p>" : "") +
       '<div class="vscores">' + scoreTiles(v, sc, scoreTxt) + "</div>" +
+      scoreCapNote(v, r) +
       "</div></div>" +
       '<dl class="meta-strip">' + meta.join("") + "</dl>" +
       '<section class="sect"><h3>' + esc(T("逐项体检", "Per-dimension checks")) +

@@ -55,11 +55,18 @@ listent les sujets sous leur vérification.
 ekte note onze dimensions. Le score d'une dimension est la **moyenne à poids
 égal des scores de ses détecteurs** : un détecteur riche en vérifications ne
 pèse pas plus qu'un détecteur qui en a peu, et un détecteur sans score
-numérique est laissé de côté. Son statut est le pire statut conclu par ses
+numérique est laissé de côté. Un détecteur porteur d'un constat de gravité
+ÉLEVÉE/CRITIQUE **plafonne** la dimension à son propre score, afin que des
+détecteurs voisins réussis ne noient pas un échec dans la moyenne : un
+détecteur d'altération à 10 à côté de trois détecteurs d'intégrité sans défaut
+donne 10 à l'intégrité des réponses, et non 77,5 (le plus bas de ces détecteurs
+l'emporte). Les avis de transport (voir [Verdict de risque](#verdict-de-risque))
+et la dimension connectivité ne plafonnent rien. Son statut est le pire statut conclu par ses
 détecteurs, sauf qu'un constat de gravité ÉLEVÉE/CRITIQUE impose **Échec** et
 qu'un constat de gravité MOYENNE fait passer **Réussi** à **Avertissement**,
 quel que soit le score. Chaque rapport consigne ce calcul par dimension
-(`DimensionScore.breakdown` : le score de chaque détecteur, s'il a compté, et
+(`DimensionScore.breakdown` : le score de chaque détecteur, s'il a compté, le
+plafond du score avec le détecteur et les constats qui l'ont causé, et
 tout changement de statut avec les constats qui l'ont causé) et l'affiche sous
 **Dimension details** (Markdown/HTML/PDF) et dans les lignes dépliables des
 **Contrôles par dimension** de l'interface web. Un détecteur qui plante est
@@ -70,8 +77,16 @@ rapporté avec le statut **Erreur** et n'interrompt jamais l'audit.
 Le **score de santé global** est la moyenne pondérée des dimensions qui ont
 produit un score (`DIMENSION_WEIGHTS` dans `ekte/scoring.py`). Une dimension
 qui ne s'est pas exécutée (absente de la suite ou non choisie dans une
-exécution `custom`) sort du calcul et les poids restants sont renormalisés. La
-note est A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) ou F.
+exécution `custom`) sort du calcul et les poids restants sont renormalisés. Le
+[niveau de risque](#verdict-de-risque) **plafonne** ensuite le score
+(`RISK_SCORE_CAPS` dans `ekte/scoring.py`) : au plus **49** pour `high` et
+**69** pour `medium` ; `low`, `clean` et `inconclusive` le laissent tel quel. La
+note découle du score plafonné et vaut A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60)
+ou F : un risque élevé donne donc toujours F et un risque moyen au mieux D, et
+`--fail-under` porte sur le score plafonné. Quand le plafond s'applique, le
+résumé l'indique, `verdict.uncapped_score` conserve la moyenne pondérée et
+`verdict.score_cap` consigne le niveau de risque, le plafond et les constats
+qui ont fixé le risque ; les rapports l'affichent à côté du score.
 
 | Dimension | Id | Poids | Rôle |
 |---|---|---|---|

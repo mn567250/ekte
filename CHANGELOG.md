@@ -20,6 +20,35 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Scoring: the risk caps the overall score and rating ([#247](https://github.com/mn567250/ekte/issues/247))
+
+The overall score diluted a failed detector twice (by the mean of its
+dimension, then by the dimension weight) and was computed apart from the risk
+verdict: a tampering relay scored 98.2 and rated **A** with risk `high`, and
+`ekte check --fail-under 80` passed it.
+
+- **Dimension cap:** a dimension scores no higher than its lowest detector with
+  a HIGH or CRITICAL finding (a tampering detector at 10 next to clean siblings
+  makes response integrity 10, not 77.5). Transport advisories
+  (`security.tls`, `reliability.success_rate`, `reliability.latency`) and the
+  connectivity dimension cap nothing; plain HTTP still lowers only its
+  dimension.
+- **Overall cap:** the risk level caps the overall score
+  (`RISK_SCORE_CAPS` in `ekte/scoring.py`): at most 49 for `high` and 69 for
+  `medium`; `low`, `clean` and `inconclusive` are uncapped. The rating follows
+  from the capped score, so a high risk always rates F and a medium risk at
+  best D, and `--fail-under` gates on the capped score. The summary says when
+  the cap applied. Applies to the chat, embedding and rerank surfaces.
+- The Markdown, HTML and PDF reports and the web UI (verdict card and
+  **Dimension details**) show both caps and the findings behind them.
+- **Report schema 1.6** (see #168): new optional fields
+  `DimensionBreakdown.score_cap` (capping detector, findings, cap, uncapped
+  mean), `Verdict.uncapped_score` (the weighted mean before the cap) and
+  `Verdict.score_cap` (risk level, cap, findings that set the risk). Scores
+  and ratings of new runs of a relay with HIGH/CRITICAL findings are lower
+  than those of older runs; reports written before keep their recorded
+  scores.
+
 ### Response integrity: tampering confirmed by a repeat, realistic canaries ([#254](https://github.com/mn567250/ekte/issues/254))
 
 Without a baseline a substituted canary was capped at Fail · Medium: a relay

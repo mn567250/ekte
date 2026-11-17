@@ -54,11 +54,18 @@ kontrollen sin.
 
 ekte gir score i elleve dimensjoner. En dimensjons score er **gjennomsnittet med lik
 vekt av detektorenes scorer**: en detektor med mange kontroller veier ikke mer
-enn en med få, og en detektor uten numerisk score utelates. Statusen er den
+enn en med få, og en detektor uten numerisk score utelates. En detektor med et
+HIGH/CRITICAL-funn **begrenser** dimensjonen til sin egen score, slik at
+beståtte naboer ikke jevner ut en feil i gjennomsnittet: en
+manipulasjonsdetektor på 10 ved siden av tre rene integritetsdetektorer gir
+svarintegritet 10, ikke 77,5 (den laveste slike detektoren gjelder).
+Transportråd (se [Risikokonklusjon](#risikokonklusjon)) og
+tilkoblingsdimensjonen begrenser ingenting. Statusen er den
 verste statusen detektorene konkluderte med, bortsett fra at et
 HIGH/CRITICAL-funn tvinger fram **Ikke bestått** og et MEDIUM-funn hever
 **Bestått** til **Advarsel**, uansett score. Hver rapport registrerer dette per
-dimensjon (`DimensionScore.breakdown`: hver detektors score, om den ble telt, og
+dimensjon (`DimensionScore.breakdown`: hver detektors score, om den ble telt,
+begrensningen av scoren med detektoren og funnene som forårsaket den, og
 eventuell overstyring av status med funnene som forårsaket den) og viser det
 under **Dimension details** (Markdown/HTML/PDF) og i radene som kan foldes ut i
 **Kontroller per dimensjon** i nettgrensesnittet. En detektor som krasjer,
@@ -69,8 +76,15 @@ rapporteres med status **Feil** og avbryter aldri revisjonen.
 Den **samlede helsescoren** er det vektede gjennomsnittet over dimensjonene som
 ga en score (`DIMENSION_WEIGHTS` i `ekte/scoring.py`). En dimensjon som ikke
 kjørte (ikke i testsettet, eller ikke valgt i en `custom`-kjøring), faller ut,
-og de gjenværende vektene normaliseres på nytt. Karakteren er A (≥ 90),
-B (≥ 80), C (≥ 70), D (≥ 60) eller F.
+og de gjenværende vektene normaliseres på nytt. [Risikonivået](#risikokonklusjon)
+**begrenser** deretter scoren (`RISK_SCORE_CAPS` i `ekte/scoring.py`): høyst
+**49** ved `high` og **69** ved `medium`; `low`, `clean` og `inconclusive` lar
+den stå. Karakteren følger av den begrensede scoren og er A (≥ 90),
+B (≥ 80), C (≥ 70), D (≥ 60) eller F, så høy risiko gir alltid F og middels
+risiko høyst D, og `--fail-under` vurderer den begrensede scoren. Når
+begrensningen slår inn, sier sammendraget det, `verdict.uncapped_score` beholder
+det vektede gjennomsnittet og `verdict.score_cap` registrerer risikonivået,
+grensen og funnene som avgjorde risikoen; rapportene viser det ved scoren.
 
 | Dimensjon | ID | Vekt | Rolle |
 |---|---|---|---|

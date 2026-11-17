@@ -218,6 +218,17 @@
           "title": "Method",
           "type": "string"
         },
+        "score_cap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DimensionScoreCap"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "status_override": {
           "anyOf": [
             {
@@ -315,6 +326,37 @@
         "dimension"
       ],
       "title": "DimensionScore",
+      "type": "object"
+    },
+    "DimensionScoreCap": {
+      "description": "Why a dimension scores below the mean of its detectors: a detector with\na HIGH/CRITICAL (non-advisory) finding caps the dimension at its score.",
+      "properties": {
+        "cap": {
+          "title": "Cap",
+          "type": "number"
+        },
+        "detector": {
+          "title": "Detector",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "uncapped_score": {
+          "title": "Uncapped Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "detector",
+        "cap",
+        "uncapped_score"
+      ],
+      "title": "DimensionScoreCap",
       "type": "object"
     },
     "EndpointPerformance": {
@@ -2241,13 +2283,61 @@
           "$ref": "#/$defs/RiskLevel",
           "default": "inconclusive"
         },
+        "score_cap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictScoreCap"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "summary": {
           "default": "",
           "title": "Summary",
           "type": "string"
+        },
+        "uncapped_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uncapped Score"
         }
       },
       "title": "Verdict",
+      "type": "object"
+    },
+    "VerdictScoreCap": {
+      "description": "Why the overall score is below the weighted mean of the dimensions:\nthe risk level caps it (``RISK_SCORE_CAPS`` in ekte/scoring.py).",
+      "properties": {
+        "cap": {
+          "title": "Cap",
+          "type": "number"
+        },
+        "findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel"
+        }
+      },
+      "required": [
+        "risk_level",
+        "cap"
+      ],
+      "title": "VerdictScoreCap",
       "type": "object"
     }
   },
@@ -2433,8 +2523,8 @@
       "default": null
     },
     "schema_version": {
-      "default": "1.5",
-      "description": "Version of this schema (MAJOR.MINOR), independent of the ekte version; this schema describes version 1.5. Documents without the field were written before schemas were versioned and match version 1.0.",
+      "default": "1.6",
+      "description": "Version of this schema (MAJOR.MINOR), independent of the ekte version; this schema describes version 1.6. Documents without the field were written before schemas were versioned and match version 1.0.",
       "pattern": "^[0-9]+\\.[0-9]+$",
       "type": "string"
     },
@@ -2498,5 +2588,5 @@
   ],
   "title": "ekte audit report",
   "type": "object",
-  "x-schema-version": "1.5"
+  "x-schema-version": "1.6"
 }

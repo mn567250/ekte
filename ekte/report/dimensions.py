@@ -4,7 +4,8 @@ For every dimension that ran, this explains how its score and status came about
 and lists every check behind it, passed and failed alike:
 
 * the score — the equal-weight mean of the dimension's detector scores, with
-  each detector's score and whether it was counted;
+  each detector's score and whether it was counted, and the cap when a
+  detector with a HIGH/CRITICAL finding scored below that mean;
 * the status — the worst status the detectors concluded, and, when a finding's
   severity overrode it, which findings did;
 * per detector — each check's outcome and the points it scored. A detector that
@@ -115,6 +116,8 @@ def score_explanation(d: DimensionScore, members: list[DetectorResult]) -> str:
         parts = [(c.detector, c.score, c.counted) for c in d.breakdown.detectors]
     else:  # reports from before the breakdown existed
         parts = [(det.id, det.score, det.score is not None) for det in members]
+    cap = d.breakdown.score_cap if d.breakdown is not None else None
+    mean = cap.uncapped_score if cap is not None else d.score
     counted = [(i, s) for i, s, ok in parts if ok]
     skipped = [i for i, _, ok in parts if not ok]
     if not counted:
@@ -124,10 +127,30 @@ def score_explanation(d: DimensionScore, members: list[DetectorResult]) -> str:
         line = f"Score of one detector: {names.get(i, i)} {_num(s)}."
     else:
         terms = ", ".join(f"{names.get(i, i)} {_num(s)}" for i, s in counted)
-        line = f"Mean of {len(counted)} detectors, equal weight: {terms} → {_num(d.score)}."
+        line = f"Mean of {len(counted)} detectors, equal weight: {terms} → {_num(mean)}."
     if skipped:
         line += " Not counted (no numeric score): " + ", ".join(names.get(i, i) for i in skipped) + "."
+    if cap is not None:
+        line += (
+            f" Capped at {_num(cap.cap)}, the score of {names.get(cap.detector, cap.detector)}, "
+            f"by its HIGH/CRITICAL finding{'s' if len(cap.findings) != 1 else ''} "
+            f"({', '.join(cap.findings)}): a dimension scores no higher than its lowest "
+            "detector with such a finding."
+        )
     return line
+
+
+def overall_cap_note(report: AuditReport) -> str:
+    """One line when the risk capped the overall score, else ""."""
+    v = report.verdict
+    c = v.score_cap
+    if c is None:
+        return ""
+    return (
+        f"Capped at {_num(c.cap)} by the {c.risk_level.value} risk "
+        f"(weighted mean of the dimensions {_num(v.uncapped_score)}); "
+        f"set by: {', '.join(c.findings) or '—'}."
+    )
 
 
 def status_explanation(d: DimensionScore) -> str:
