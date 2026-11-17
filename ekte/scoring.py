@@ -15,6 +15,7 @@ from ekte.models import (
     DimensionBreakdown,
     DimensionContribution,
     DimensionScore,
+    DimensionScoreCap,
     Finding,
     ReliabilitySummary,
     RiskLevel,
@@ -22,6 +23,7 @@ from ekte.models import (
     Status,
     StatusOverride,
     Verdict,
+    VerdictScoreCap,
 )
 
 # Weights sum to 100. The substitution/truncation-revealing dimensions dominate.
@@ -131,6 +133,22 @@ ADVISORY_CHECKS = frozenset({
     "reliability.latency",
 })
 
+# The highest overall score each risk level allows (#247): a relay with strong
+# evidence that it does not deliver what it advertises must not read as a
+# healthy "A". Low, clean and inconclusive risks leave the score as it is; the
+# rating follows from the capped score, so high risk is at best F and medium at
+# best D. The uncapped weighted mean stays in ``Verdict.uncapped_score``.
+RISK_SCORE_CAPS: dict[RiskLevel, float] = {
+    RiskLevel.HIGH: 49.0,
+    RiskLevel.MEDIUM: 69.0,
+}
+
+# Findings of these severities cap their dimension's score at the score of
+# their detector (advisory checks and the transport dimensions excepted, as
+# on the risk ladder), so one failed detector is not averaged away by its
+# passing siblings.
+_CAPPING_SEVERITIES = (Severity.HIGH, Severity.CRITICAL)
+
 # Knowledge-base matches too loose to vouch for the profile the audit judged
 # against: the verdict confidence is capped at "low".
 _WEAK_MATCHES = frozenset({"fuzzy"})
@@ -205,10 +223,14 @@ def build_dimensions(
     """Score every dimension of ``surface``. ``selected`` (a custom suite's
     dimensions) marks the rest as not selected rather than not run."""
     dimensions: list[DimensionScore] = []
+    infra_dims = _dims_for(_SURFACE_INFRA_DIMENSIONS, surface)
     for dim, weight in weights_for(surface).items():
         members = [d for d in detectors if d.dimension == dim]
         scored = [d.score for d in members if d.score is not None]
         score = round(sum(scored) / len(scored), 1) if scored else None
+        score_cap = None if dim in infra_dims else _dimension_cap(members, score)
+        if score_cap is not None:
+            score = score_cap.cap
 
         # Status reflects what the detectors themselves concluded — we do NOT
         # re-derive FAIL purely from a soft score, which would over-escalate.
@@ -240,6 +262,7 @@ def build_dimensions(
             ],
             detector_status=detector_status,
             status_override=override,
+            score_cap=score_cap,
         )
 
         if selected is not None and dim.value not in selected:
@@ -265,6 +288,31 @@ def build_dimensions(
             )
         )
     return dimensions
+
+
+def _dimension_cap(
+    members: list[DetectorResult], score: float | None
+) -> DimensionScoreCap | None:
+    """The cap on a dimension whose mean ``score`` is above the score of a
+    detector with a HIGH/CRITICAL non-advisory finding (the lowest such
+    detector caps it); None when no such detector scores below the mean."""
+    if score is None:
+        return None
+    capping = []
+    for det in members:
+        ids = [
+            f.id for f in det.findings
+            if f.severity in _CAPPING_SEVERITIES and not is_advisory(f)
+        ]
+        if det.score is not None and ids:
+            capping.append((det.score, det, list(dict.fromkeys(ids))))
+    if not capping:
+        return None
+    cap, det, ids = min(capping, key=lambda c: c[0])
+    cap = round(cap, 1)
+    if cap >= score:
+        return None
+    return DimensionScoreCap(detector=det.id, findings=ids, cap=cap, uncapped_score=score)
 
 
 def overall_score(dimensions: list[DimensionScore]) -> float | None:
@@ -313,7 +361,7 @@ def build_verdict(
     profile (``exact``/``alias``/``fuzzy``…); a fuzzy match caps the
     confidence at "low". ``surface`` picks the profile / core / infra
     dimension sets."""
-    score = overall_score(dimensions)
+    uncapped = overall_score(dimensions)
     pairs = _all_findings(detectors)
     weak_match = profile_matched and match_confidence in _WEAK_MATCHES
 
@@ -376,6 +424,16 @@ def build_verdict(
         causes = []
     drivers = _in_order({d.dimension for d, _ in causes})
 
+    # --- the risk caps the score (#247) ------------------------------------ #
+    score = uncapped
+    score_cap = None
+    limit = RISK_SCORE_CAPS.get(risk)
+    if uncapped is not None and limit is not None and uncapped > limit:
+        score = limit
+        score_cap = VerdictScoreCap(
+            risk_level=risk, cap=limit, findings=list(dict.fromkeys(f.id for _, f in causes))
+        )
+
     # --- confidence -------------------------------------------------------- #
     core_attempted = attempted & core_dims
     core_checked = checked & core_dims
@@ -404,6 +462,8 @@ def build_verdict(
         selected=selected,
         weak_match=weak_match and profile_used,
         advisories=bool(advisories),
+        score_cap=score_cap,
+        uncapped=uncapped,
     )
     # Substitution findings first; transport/reliability advisories after them.
     key = _titles([f for _, f in critical + high + medium] + advisories)[:6]
@@ -418,6 +478,8 @@ def build_verdict(
         key_findings=key,
         drivers=[d.value for d in drivers],
         checked=[d.value for d in _in_order(checked)],
+        uncapped_score=uncapped,
+        score_cap=score_cap,
     )
 
 
@@ -487,10 +549,17 @@ def _summary(
     selected: list[str] | None = None,
     weak_match: bool = False,
     advisories: bool = False,
+    score_cap: VerdictScoreCap | None = None,
+    uncapped: float | None = None,
 ) -> str:
     bits: list[str] = []
     if score is not None:
         bits.append(f"Overall health score {score}/100.")
+    if score_cap is not None:
+        bits.append(
+            f"Score capped at {score_cap.cap:g} because the risk is "
+            f"{score_cap.risk_level.value}; the weighted mean of the dimensions is {uncapped}."
+        )
     if selected is not None:
         bits.append(f"Custom run: {scored} of {len(selected)} selected dimensions scored.")
         if Dimension.MODEL_IDENTITY.value not in selected:
