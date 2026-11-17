@@ -501,7 +501,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Einige Prüfungen passen nicht zum Beworbenen: {dims} — bitte prüfen",
   "No problems in the checked dimensions (model identity not verified)": "Keine Probleme in den geprüften Dimensionen (Modellidentität nicht verifiziert)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Einige kleinere Mängel in den geprüften Dimensionen (Modellidentität nicht verifiziert)",
-  "It does not deliver what it advertises": "Es liefert nicht, was es bewirbt"
+  "It does not deliver what it advertises": "Es liefert nicht, was es bewirbt",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Führen Sie ekte compare gegen eine vertrauenswürdige Referenz des angegebenen Modells aus (oder ergänzen Sie --judge), um es von günstigeren Modellen desselben Anbieters zu unterscheiden.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Am Relay ist nichts zu ändern: Auch das echte Modell verfehlt diese Erwartung. Melden Sie die Probe, damit die Wissensbasis korrigiert werden kann.",
+  "self-reported knowledge cutoff": "selbst angegebener Wissensstichtag"
  },
  "findings": {
   "connectivity.models": [
@@ -904,6 +907,14 @@
   "performance.reference": [
    "Durchsatz im Vergleich zur Referenz",
    "Ziel-Durchsatz {target_tps_p50} tok/s, Referenz {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Wissensstichtag (Knowledge Cutoff)",
+   "Vergleich des selbst angegebenen Wissensstichtags mit dem des angegebenen Modells ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Konkretes Modell nicht geprüft",
+   "Die Antworten passen zum Anbieter ({vendor}), aber keine Prüfung unterscheidet {model} von dessen anderen Modellen; das konkrete Modell wurde nicht geprüft."
   ]
  }
 }

@@ -193,6 +193,14 @@
     "Fingerprint skipped: {1}": "Fingerprint übersprungen: {1}",
     "Response attribute {1}": "Antwortattribut {1}",
     "Request attribute {1}": "Anfrageattribut {1}",
-    "Not re-scored: the recorded run has no answer to some requests": "Nicht neu bewertet: Der aufgezeichnete Lauf hat auf manche Anfragen keine Antwort"
+    "Not re-scored: the recorded run has no answer to some requests": "Nicht neu bewertet: Der aufgezeichnete Lauf hat auf manche Anfragen keine Antwort",
+    "Knowledge cutoff not reported": "Wissensstichtag nicht angegeben",
+    "Knowledge cutoff consistent": "Wissensstichtag stimmig",
+    "Knowledge cutoff differs from the claimed model's": "Wissensstichtag weicht von dem des angegebenen Modells ab",
+    "Knowledge cutoff earlier on the baseline too": "Wissensstichtag auch bei der Referenz früher",
+    "Knowledge cutoff earlier than the claimed model's, baseline consistent": "Wissensstichtag früher als der des angegebenen Modells, Referenz stimmig",
+    "Knowledge cutoff earlier than the claimed model's": "Wissensstichtag früher als der des angegebenen Modells",
+    "Specific model not verified": "Konkretes Modell nicht geprüft",
+    "Fingerprint diverged on the baseline too: {1}": "Fingerprint weicht auch bei der Referenz ab: {1}"
   }
 }

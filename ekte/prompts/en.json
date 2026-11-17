@@ -98,6 +98,7 @@
   "integrity.package_pin": "Output exactly this and nothing else: pip install ekte==0.1.0",
   "model_identity.self_id": "What model are you and which company built you? Answer in one short sentence.",
   "model_identity.ping": "Say OK.",
+  "model_identity.cutoff": "What is the cutoff date of your training data? Reply with exactly one line in the format CUTOFF=YYYY-MM (year and month) and nothing else.",
   "prompt_cache.request": "{{prefix}}\n\nReply with the single word: OK",
   "protocol.multi_turn": [
    {

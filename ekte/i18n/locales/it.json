@@ -501,7 +501,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Alcuni controlli non corrispondono a quanto pubblicizzato: {dims} — da verificare",
   "No problems in the checked dimensions (model identity not verified)": "Nessun problema nelle dimensioni controllate (identità del modello non verificata)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Alcuni problemi minori nelle dimensioni controllate (identità del modello non verificata)",
-  "It does not deliver what it advertises": "Non fornisce quanto pubblicizzato"
+  "It does not deliver what it advertises": "Non fornisce quanto pubblicizzato",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Eseguire ekte compare contro una baseline affidabile del modello dichiarato (o aggiungere --judge) per distinguerlo dai modelli più economici dello stesso fornitore.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Niente da cambiare sul relay: anche il modello autentico manca questa aspettativa. Segnalare la sonda perché la base di conoscenza venga corretta.",
+  "self-reported knowledge cutoff": "limite di conoscenza dichiarato"
  },
  "findings": {
   "connectivity.models": [
@@ -904,6 +907,14 @@
   "performance.reference": [
    "Throughput rispetto al riferimento",
    "Throughput dell'obiettivo {target_tps_p50} tok/s, riferimento {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Limite di conoscenza",
+   "Confronto del limite di conoscenza dichiarato con quello del modello dichiarato ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Modello specifico non verificato",
+   "Le risposte sono coerenti con il fornitore ({vendor}), ma nessun controllo distingue {model} dagli altri suoi modelli; il modello specifico non è stato verificato."
   ]
  }
 }

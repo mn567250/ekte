@@ -179,7 +179,8 @@ modelo diz que a identidade do modelo não foi verificada.
   comparação usa a referência como juiz.
 - **Modo de comparação** (`ekte compare`) dá às sondas uma referência de
   confiança: `model_identity` regista a autoidentificação da referência ao lado
-  da do alvo, `protocol_request` reenvia à referência os parâmetros rejeitados,
+  da do alvo e envia também cada impressão e a sonda da data de corte à
+  referência, `protocol_request` reenvia à referência os parâmetros rejeitados,
   `integrity` eleva a CRÍTICA uma substituição que a referência não faz,
   `quality_judge` mostra os dois lados ao juiz e `performance` sonda os dois
   endpoints alternadamente. A confiança só pode ser alta com uma referência.
@@ -450,7 +451,14 @@ quando alteram o comportamento.
 
 ### `model_identity` — Identidade do modelo e impressão digital de degradação
 
-**Como funciona.** Três sinais independentes:
+**Como funciona.** O que corre depende do perfil do modelo declarado: a
+autoidentificação e o campo `model` devolvido sempre, a sonda da data de corte
+quando o `knowledge_cutoff` do perfil indica um mês, e as impressões de código
+puro do perfil, primeiro as do próprio modelo. Só as impressões próprias do
+modelo o distinguem de um modelo mais barato do mesmo fornecedor (`gpt-4o`
+servido por `gpt-4o-mini`); as verificações de marca e as impressões comuns ao
+fornecedor valem para todos os seus modelos, e a data de corte é muitas vezes
+partilhada.
 
 1. **Autoidentificação** a `temperature=0`, comparada por palavras inteiras com
    as palavras-chave de identidade do perfil (a marca genuína) e com uma lista
@@ -483,7 +491,22 @@ quando alteram o comportamento.
    impressão que se desvia
    desconta a sua parte do peso sobre 100 pontos (25 no máximo); sozinha fica
    BAIXA, duas ou mais acrescentam uma constatação agregada MÉDIA.
-3. **Campo `model` devolvido** por uma chamada simples, comparado com o modelo
+   No modo de comparação cada sonda é também enviada à referência: um desvio que
+   a referência não partilha fica corroborado (MÉDIA); um que a referência
+   partilha é um problema da base de conhecimento, não uma prova contra o relay,
+   e fica registado como Info sem dedução (evidência `baseline_also_diverged`).
+   Uma marca rival continua ALTA em qualquer caso.
+3. **Data de corte do conhecimento** (`model_identity.cutoff`), quando o
+   `knowledge_cutoff` do perfil é `YYYY-MM` ou `YYYY-MM-DD`: pergunta-se ao
+   modelo a sua data de corte no formato `CUTOFF=YYYY-MM`. A 6 meses ou menos da
+   do perfil é coerente; mais de 12 meses antes, como responderia um modelo mais
+   antigo do fornecedor, é um aviso BAIXA que desconta como uma impressão de
+   peso 1 e conta para a constatação agregada; qualquer outra diferença fica
+   registada como Info; uma resposta sem esse formato é inconclusiva. Uma data de
+   corte declarada pelo próprio modelo é evidência fraca, por isso esta
+   verificação nunca é ALTA; no modo de comparação a referência corrobora-a ou
+   afasta-a como a uma impressão.
+4. **Campo `model` devolvido** por uma chamada simples, comparado com o modelo
    declarado e com o id enviado (um alias de implementação pode diferir do
    declarado). Ambos os ids são primeiro normalizados: minúsculas, sem
    prefixo `provider/` ou `vendor.` (`openai/`, `models/`, `anthropic.`), sem
@@ -506,6 +529,13 @@ rejeita ou esvazia cada pedido não fornece evidência de identidade, e o
 eco do nome solicitado sozinho não prova nada. Evidência parcial pontua
 normalmente.
 
+Quando nenhuma das impressões próprias do modelo respondeu e não foi usada
+referência nem juiz, uma constatação Info (`model_identity.model_specific`,
+evidência `model_specific_checks: 0`) indica que as respostas condizem com o
+fornecedor mas que o modelo concreto não foi verificado. Cada resultado regista
+`model_specific_checks`.
+O resumo do veredicto e o motivo da dimensão de identidade do modelo também o dizem.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `model_identity.self_id` | A autodescrição nomeou a marca genuína. | Aprovado | Sem dedução |
@@ -515,14 +545,23 @@ normalmente.
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo | Sem dedução |
 | `model_identity.fp` (Impressões comportamentais) | A resposta correspondeu ao comportamento nativo do modelo declarado. | Aprovado | Sem dedução |
 |  | A resposta divergiu do comportamento nativo: desconta a parcela de peso da sonda em 100 pontos. | Aviso · Baixa | até −25 pts |
+|  | A resposta divergiu do comportamento nativo enquanto a da referência correspondia: desconta a parte do peso da sonda sobre 100 pontos. | Aviso · Média | até −25 pts |
+|  | A resposta divergiu, mas a da referência também: um problema da base de conhecimento, não uma prova contra o relay; sem desconto. | Info | Sem dedução |
 |  | A resposta nomeou uma marca rival e não a genuína: desconta a parcela de peso da sonda. | Falha · Alta | até −25 pts · teto 20 |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo | Sem dedução |
 |  | A sonda precisa de mais saída do que o limite de identidade de 512 tokens; não executada. | Info | Sem dedução |
+| `model_identity.cutoff` | A data de corte de conhecimento declarada está a 6 meses ou menos da do modelo declarado. | Aprovado | Sem dedução |
+|  | A data de corte de conhecimento declarada é mais de 12 meses anterior à do modelo declarado: desconta a sua parte do peso sobre 100 pontos como uma impressão digital. | Aviso · Baixa | até −25 pts |
+|  | A data de corte de conhecimento declarada é mais de 12 meses anterior enquanto a da referência é coerente: desconta a sua parte do peso sobre 100 pontos. | Aviso · Média | até −25 pts |
+|  | A data de corte de conhecimento declarada é mais de 12 meses anterior, mas a da referência também: um problema da base de conhecimento, não uma prova contra o relay; sem desconto. | Info | Sem dedução |
+|  | A data de corte de conhecimento declarada difere em mais de 6 meses, mas não é mais de 12 meses anterior: registada, não avaliada. | Info | Sem dedução |
+|  | Nenhuma resposta no formato CUTOFF=YYYY-MM para avaliar. | Inconclusivo | Sem dedução |
 | `model_identity.fp_aggregate` | Duas ou mais impressões comportamentais divergiram. | Aviso · Média | Sem dedução |
 | `model_identity.model_field` | O campo model devolvido correspondeu ao modelo solicitado. | Aprovado | Sem dedução |
 |  | O campo model devolvido indica um modelo diferente ou menor. | Aviso · Média | Sem dedução |
 |  | O campo model devolvido indica outro id que o ekte não consegue identificar: registado, não avaliado. | Info | Sem dedução |
 |  | A resposta não tinha um campo model utilizável. | Inconclusivo | Sem dedução |
+| `model_identity.model_specific` | Nenhuma verificação conseguiu distinguir o modelo declarado de outros modelos do seu fornecedor e não foi usada referência nem juiz: o fornecedor é coerente, o modelo concreto não foi verificado. | Info | Sem dedução |
 | `model_identity.no_evidence` | Nem a autoidentificação nem nenhuma impressão digital deram uma resposta utilizável e o campo model não divergiu: sem pontuação. | Inconclusivo | Sem dedução |
 
 ### `quality_judge` — Avaliação de qualidade / degradação por um LLM juiz

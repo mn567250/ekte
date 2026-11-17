@@ -164,6 +164,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "Der Stream war erfolgreich, lieferte aber keinen Inhalt zur Beurteilung; nicht bewertet.",
   "The model named the color of the test image.": "Das Modell nannte die Farbe des Testbilds.",
   "Vision is claimed but the model did not name the image's color.": "Vision wird angegeben, aber das Modell nannte die Farbe des Bildes nicht.",
-  "Vision is not claimed, so no image was sent.": "Vision wird nicht angegeben, daher wurde kein Bild gesendet."
+  "Vision is not claimed, so no image was sent.": "Vision wird nicht angegeben, daher wurde kein Bild gesendet.",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "Die Antwort wich vom nativen Verhalten ab, die der Referenz entsprach ihm: zieht den Gewichtsanteil der Probe an 100 Punkten ab.",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "Die Antwort wich ab, die der Referenz aber auch: ein Problem der Wissensbasis, kein Beleg gegen das Relay; kein Abzug.",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "Der angegebene Wissensstichtag liegt höchstens 6 Monate neben dem des angegebenen Modells.",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "Der angegebene Wissensstichtag liegt mehr als 12 Monate vor dem des angegebenen Modells: zieht wie ein Fingerprint seinen Gewichtsanteil an 100 Punkten ab.",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "Der angegebene Wissensstichtag liegt mehr als 12 Monate früher, der der Referenz stimmt: zieht seinen Gewichtsanteil an 100 Punkten ab.",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "Der angegebene Wissensstichtag liegt mehr als 12 Monate früher, der der Referenz aber auch: ein Problem der Wissensbasis, kein Beleg gegen das Relay; kein Abzug.",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "Der angegebene Wissensstichtag weicht um mehr als 6 Monate ab, liegt aber nicht mehr als 12 Monate früher: festgehalten, nicht beurteilt.",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "Keine Antwort im Format CUTOFF=YYYY-MM zum Beurteilen.",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "Keine Prüfung konnte das angegebene Modell von anderen Modellen seines Anbieters unterscheiden, und weder Referenz noch Richter wurden genutzt: der Anbieter stimmt, das konkrete Modell wurde nicht geprüft."
  }
 }

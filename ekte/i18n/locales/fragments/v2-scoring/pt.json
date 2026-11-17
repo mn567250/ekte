@@ -164,6 +164,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "O stream teve sucesso, mas não entregou conteúdo para avaliar; sem pontuação.",
   "The model named the color of the test image.": "O modelo nomeou a cor da imagem de teste.",
   "Vision is claimed but the model did not name the image's color.": "A visão é declarada, mas o modelo não nomeou a cor da imagem.",
-  "Vision is not claimed, so no image was sent.": "A visão não é declarada, por isso nenhuma imagem foi enviada."
+  "Vision is not claimed, so no image was sent.": "A visão não é declarada, por isso nenhuma imagem foi enviada.",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "A resposta divergiu do comportamento nativo enquanto a da referência correspondia: desconta a parte do peso da sonda sobre 100 pontos.",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "A resposta divergiu, mas a da referência também: um problema da base de conhecimento, não uma prova contra o relay; sem desconto.",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "A data de corte de conhecimento declarada está a 6 meses ou menos da do modelo declarado.",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "A data de corte de conhecimento declarada é mais de 12 meses anterior à do modelo declarado: desconta a sua parte do peso sobre 100 pontos como uma impressão digital.",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "A data de corte de conhecimento declarada é mais de 12 meses anterior enquanto a da referência é coerente: desconta a sua parte do peso sobre 100 pontos.",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "A data de corte de conhecimento declarada é mais de 12 meses anterior, mas a da referência também: um problema da base de conhecimento, não uma prova contra o relay; sem desconto.",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "A data de corte de conhecimento declarada difere em mais de 6 meses, mas não é mais de 12 meses anterior: registada, não avaliada.",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "Nenhuma resposta no formato CUTOFF=YYYY-MM para avaliar.",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "Nenhuma verificação conseguiu distinguir o modelo declarado de outros modelos do seu fornecedor e não foi usada referência nem juiz: o fornecedor é coerente, o modelo concreto não foi verificado."
  }
 }
