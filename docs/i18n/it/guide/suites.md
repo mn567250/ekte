@@ -28,7 +28,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--dimension/-D` è ripetibile o separato da virgole e implica `--suite custom`;
 in un file di configurazione usa `run.dimensions: [protocol, performance]`. Le
 dimensioni sono `connectivity`, `protocol`, `context_window`, `model_identity`,
-`capability`, `streaming`, `billing`, `reliability`, `security` e
+`capability`, `streaming`, `billing`, `reliability`, `integrity`, `security` e
 `performance`. Nell'interfaccia web il pulsante di suite `custom` apre la stessa
 scelta (**Dimensioni da eseguire**) nella pagina di verifica e nei
 monitor.

@@ -28,7 +28,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--dimension/-D` is repeatable or comma-separated and implies `--suite custom`;
 in a config file use `run.dimensions: [protocol, performance]`. The dimensions
 are `connectivity`, `protocol`, `context_window`, `model_identity`, `capability`,
-`streaming`, `billing`, `reliability`, `security` and `performance`. In the web
+`streaming`, `billing`, `reliability`, `integrity`, `security` and `performance`. In the web
 UI, the `custom` suite button opens the same choice (**Dimensions to run**) on
 the audit page and the monitors.
 

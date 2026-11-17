@@ -73,7 +73,7 @@ agentes LLM: [Início rápido](guide/quickstart.md). A interface web:
 
 ## O que é verificado
 
-O ekte pontua dez dimensões. As quatro **dimensões núcleo** — identidade do
+O ekte pontua onze dimensões. As quatro **dimensões núcleo** — identidade do
 modelo, janela de contexto, capacidades declaradas e faturação e utilização —
 revelam mais diretamente um «gato por lebre». Os nomes são os da interface web e
 dos relatórios.
@@ -82,13 +82,14 @@ dos relatórios.
 |---|---|---|
 | **Identidade do modelo** | `model_identity` | Despromoção ou substituição silenciosa do modelo |
 | **Janela de contexto** | `context_window` | Truncagem silenciosa do contexto e «lost in the middle» |
-| **Capacidades declaradas** | `capability` | Chamadas de ferramentas, modo JSON, saída máxima ou visão declarados mas não entregues |
+| **Capacidades declaradas** | `capability` | Chamadas de ferramentas, modo JSON, saída máxima ou visão declarados mas não entregues, ou uma saída que o relay limita |
 | **Conformidade do protocolo** | `protocol` | Parâmetros do pedido e atributos da resposta descartados ou ignorados |
 | **Faturação e utilização** | `billing` | Utilização de tokens inflacionada ou ausente |
 | **Conectividade** | `connectivity` | Acessibilidade do endpoint e a lista de modelos anunciada |
 | **Autenticidade do streaming** | `streaming` | Streaming falso (buffer e depois partição) |
 | **Fiabilidade em concorrência** | `reliability` | Falhas e abrandamentos sob carga concorrente |
-| **Segurança do transporte** | `security` | HTTP simples, eco de segredos, prompts de sistema injetados, adulteração |
+| **Integridade das respostas** | `integrity` | Respostas adulteradas, prompts de sistema injetados, respostas servidas de uma cache |
+| **Segurança do transporte** | `security` | HTTP simples, chave de API devolvida, cabeçalhos que revelam o upstream |
 | **Desempenho** | `performance` | Quão constantes são a latência, o tempo até ao primeiro token e o débito |
 
 Como funciona cada verificação e como se chega ao veredito:

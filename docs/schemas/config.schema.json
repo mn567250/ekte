@@ -169,6 +169,7 @@
               "streaming",
               "billing",
               "reliability",
+              "integrity",
               "security",
               "performance"
             ]
@@ -214,6 +215,12 @@
           "description": "Cap for the context-window probe",
           "minimum": 0,
           "default": 200000
+        },
+        "max_output_probe_tokens": {
+          "type": "integer",
+          "description": "Cap for the max-output probe",
+          "minimum": 1,
+          "default": 2048
         },
         "performance_requests": {
           "type": "integer",

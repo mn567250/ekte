@@ -171,6 +171,7 @@
     "Strict JSON schema honored": "JSON Schema estricto respetado",
     "Strict JSON schema not enforced (consistent with claim)": "JSON Schema estricto no aplicado (coherente con lo declarado)",
     "Sustained output to the request cap": "Salida sostenida hasta el tope solicitado",
+    "Output clamped below the requested limit": "Salida recortada por debajo del límite solicitado",
     "Throughput versus the reference": "Rendimiento frente a la referencia",
     "Time to first token consistency": "Constancia del tiempo hasta el primer token",
     "Tool calling delivered": "Llamada a herramientas cumplida",

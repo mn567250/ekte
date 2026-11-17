@@ -24,7 +24,7 @@ SCHEMA_ID = "https://raw.githubusercontent.com/mn567250/ekte/main/docs/schemas/c
 
 SUITES = ("smoke", "standard", "deep", "full", "custom")
 DIMENSIONS = ("connectivity", "protocol", "context_window", "model_identity", "capability",
-              "streaming", "billing", "reliability", "security", "performance")
+              "streaming", "billing", "reliability", "integrity", "security", "performance")
 APIS = ("auto", "openai", "anthropic", "responses")
 FORMATS = ("json", "md", "html", "pdf", "all")
 
@@ -66,6 +66,7 @@ SCHEMA: dict[str, Any] = {
         "reliability_requests": Key("int", "Reliability probe requests", 8, minimum=0),
         "concurrency": Key("int", "Reliability probe concurrency", 3, minimum=1),
         "max_context_probe_tokens": Key("int", "Cap for the context-window probe", 200000, minimum=0),
+        "max_output_probe_tokens": Key("int", "Cap for the max-output probe", 2048, minimum=1),
         "performance_requests": Key("int", "Performance probe requests per endpoint (0 disables)", 100, minimum=0),
         "performance_max_tokens": Key("int", "Output tokens per performance request", 128, minimum=1),
         "performance_streaming": Key("bool", "Probe with streaming requests", True),

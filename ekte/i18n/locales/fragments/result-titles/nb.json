@@ -171,6 +171,7 @@
   "Strict JSON schema honored": "Strengt JSON-skjema respektert",
   "Strict JSON schema not enforced (consistent with claim)": "Strengt JSON-skjema håndheves ikke (i samsvar med påstanden)",
   "Sustained output to the request cap": "Vedvarende utdata opp til forespørselens tak",
+  "Output clamped below the requested limit": "Utdata begrenset under den forespurte grensen",
   "Throughput versus the reference": "Gjennomstrømning sammenlignet med referansen",
   "Time to first token consistency": "Jevnhet i tid til første token",
   "Tool calling delivered": "Verktøykall levert",

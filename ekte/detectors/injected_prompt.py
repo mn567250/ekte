@@ -53,7 +53,7 @@ SCALE = Scale(
 class InjectedPromptDetector(Detector):
     id = "injected_prompt"
     name = "Injected system-prompt detection"
-    dimension = Dimension.SECURITY
+    dimension = Dimension.INTEGRITY
     min_suite = "deep"
     cost_hint = 3
 

@@ -301,7 +301,7 @@
             - term: Version
             - definition:
               - code: ekte v<version>
-            - heading "Prüfungen je Dimension 1 von 10 Dimensionen ausgeführt" [level=3]
+            - heading "Prüfungen je Dimension 1 von 11 Dimensionen ausgeführt" [level=3]
             - button "Protokollkonformität"
             - text: Ist die API spezifikationskonform?
             - meter "Protokollkonformität Ist die API spezifikationskonform?"
@@ -319,6 +319,8 @@
             - text: Ist der Token-Verbrauch aufgebläht? Nicht ausgeführt
             - button "Zuverlässigkeit unter Parallellast"
             - text: Stabil unter Last? Nicht ausgeführt
+            - button "Antwortintegrität"
+            - text: Ist die Antwort unverändert? Nicht ausgeführt
             - button "Transportsicherheit"
             - text: Werden Schlüssel sicher behandelt? Nicht ausgeführt
             - button "Leistung"

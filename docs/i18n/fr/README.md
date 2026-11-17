@@ -73,7 +73,7 @@ web : [Interface web](guide/web-ui.md).
 
 ## Ce qui est vérifié
 
-ekte note dix dimensions. Les quatre **dimensions cœur** — identité du modèle,
+ekte note onze dimensions. Les quatre **dimensions cœur** — identité du modèle,
 fenêtre de contexte, capacités annoncées et facturation & consommation — révèlent
 le plus directement une tromperie sur la marchandise. Les noms sont ceux de
 l'interface web et des rapports.
@@ -82,13 +82,14 @@ l'interface web et des rapports.
 |---|---|---|
 | **Identité du modèle** | `model_identity` | Déclassement ou substitution silencieuse du modèle |
 | **Fenêtre de contexte** | `context_window` | Troncature silencieuse du contexte et « lost in the middle » |
-| **Capacités annoncées** | `capability` | Appel d'outils, mode JSON, sortie maximale ou vision annoncés mais non fournis |
+| **Capacités annoncées** | `capability` | Appel d'outils, mode JSON, sortie maximale ou vision annoncés mais non fournis, ou une sortie que le relais bride |
 | **Conformité du protocole** | `protocol` | Paramètres de requête et attributs de réponse supprimés ou ignorés |
 | **Facturation et consommation** | `billing` | Consommation de tokens gonflée ou absente |
 | **Connectivité** | `connectivity` | Joignabilité de l'endpoint et la liste de modèles annoncée |
 | **Authenticité du streaming** | `streaming` | Faux streaming (mise en tampon puis découpage) |
 | **Fiabilité en concurrence** | `reliability` | Échecs et ralentissements sous charge concurrente |
-| **Sécurité du transport** | `security` | HTTP en clair, écho de secrets, prompts système injectés, falsification |
+| **Intégrité des réponses** | `integrity` | Réponses falsifiées, prompts système injectés, réponses servies depuis un cache |
+| **Sécurité du transport** | `security` | HTTP en clair, clé API renvoyée, en-têtes qui révèlent l'amont |
 | **Performance** | `performance` | La régularité de la latence, du temps jusqu'au premier token et du débit |
 
 Le fonctionnement de chaque vérification et la façon dont le verdict est

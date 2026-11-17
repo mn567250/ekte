@@ -143,6 +143,7 @@ from ekte.config import (
     AuditOptions,
     ConfigError,
     build_target,
+    stored_dimensions,
     validate_api,
     validate_dimensions,
     validate_suite,
@@ -1832,7 +1833,8 @@ def create_app() -> FastAPI:
         api = tgt.get("api") if tgt.get("api_auto") is False and tgt.get("api") else "auto"
         try:
             suite = validate_suite(str(report.get("suite") or "standard"))
-            dimensions = validate_dimensions(suite, report.get("dimensions_selected"))
+            dimensions = validate_dimensions(
+                suite, stored_dimensions(report.get("surface"), report.get("dimensions_selected")))
             build_target(
                 kind="target",
                 name=tgt.get("name") or "watch",

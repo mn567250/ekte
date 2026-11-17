@@ -75,7 +75,7 @@ LLM-Agenten: [Schnellstart](guide/quickstart.md). Die Weboberfläche:
 
 ## Was geprüft wird
 
-ekte bewertet zehn Dimensionen. Die vier **Kerndimensionen** — Modellidentität,
+ekte bewertet elf Dimensionen. Die vier **Kerndimensionen** — Modellidentität,
 Kontextfenster, angegebene Fähigkeiten und Abrechnung & Verbrauch — decken einen
 Etikettenschwindel am direktesten auf. Die Namen sind die der
 Weboberfläche und der Berichte.
@@ -84,13 +84,14 @@ Weboberfläche und der Berichte.
 |---|---|---|
 | **Modellidentität** | `model_identity` | Stillschweigende Herabstufung oder Austausch des Modells |
 | **Kontextfenster** | `context_window` | Stillschweigende Kontextkürzung und „Lost in the Middle“ |
-| **Angegebene Fähigkeiten** | `capability` | Tool-Calling, JSON-Modus, maximale Ausgabe oder Vision, die nicht geliefert werden |
+| **Angegebene Fähigkeiten** | `capability` | Tool-Calling, JSON-Modus, maximale Ausgabe oder Vision, die nicht geliefert werden, oder eine vom Relay gekappte Ausgabe |
 | **Protokollkonformität** | `protocol` | Anfrageparameter und Antwortattribute, die verworfen oder ignoriert werden |
 | **Abrechnung & Verbrauch** | `billing` | Aufgeblähter oder fehlender Token-Verbrauch |
 | **Konnektivität** | `connectivity` | Erreichbarkeit des Endpunkts und die beworbene Modellliste |
 | **Echtheit des Streamings** | `streaming` | Vorgetäuschtes Streaming (erst puffern, dann zerstückeln) |
 | **Zuverlässigkeit unter Parallellast** | `reliability` | Fehler und Verlangsamung unter paralleler Last |
-| **Transportsicherheit** | `security` | Unverschlüsseltes HTTP, Echo von Geheimnissen, eingeschleuste System-Prompts, Manipulation |
+| **Antwortintegrität** | `integrity` | Manipulierte Antworten, eingeschleuste System-Prompts, Antworten aus einem Cache |
+| **Transportsicherheit** | `security` | Unverschlüsseltes HTTP, zurückgegebener API-Schlüssel, Header, die den Upstream verraten |
 | **Leistung** | `performance` | Wie gleichmäßig Latenz, Zeit bis zum ersten Token und Durchsatz sind |
 
 Wie jede Prüfung funktioniert und wie das Urteil zustande kommt:

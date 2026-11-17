@@ -11,7 +11,7 @@ rerank surface has its own detectors, scored on the same dimensions:
   previous saved run of the same target and claimed model; a different ranking
   means a silent model swap (MODEL_IDENTITY);
 * ``rerank.determinism`` — the same query twice gives the same ranking and
-  scores (RELIABILITY).
+  scores (INTEGRITY).
 """
 
 from __future__ import annotations

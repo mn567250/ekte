@@ -83,7 +83,7 @@ Audit one relay endpoint and write a report.
 | `--declared-provider` | str |  | Provider hint for KB lookup (openai, anthropic, deepseek, ...). |
 | `--header`, `-H` | str (repeatable) |  | Extra header 'Name: value' (repeatable). |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--judge`, `--no-judge` | flag |  | Enable code+LLM hybrid judging. |
 | `--judge-base-url` | str |  | Trusted judge endpoint base URL. |
 | `--judge-api-key` | str |  | Judge API key (env:VAR ok). |
@@ -97,6 +97,7 @@ Audit one relay endpoint and write a report.
 | `--reliability-requests` | int |  | Reliability probe request count (0 disables). |
 | `--concurrency` | int |  | Reliability probe concurrency. |
 | `--max-context-tokens` | int |  | Cap for the real-context-window probe. |
+| `--max-output-probe-tokens` | int |  | Cap for the max-output probe (default 2048). |
 | `--performance-requests` | int |  | Performance probe requests per endpoint (deep/full/custom; 0 disables). |
 | `--performance-max-tokens` | int |  | Output tokens per performance probe request. |
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
@@ -129,7 +130,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--baseline-name` | str |  | Baseline display name. |
 | `--baseline-api` | str |  | Baseline wire protocol: auto \| openai \| anthropic. |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--judge`, `--no-judge` | flag |  | Enable code+LLM hybrid judging. |
 | `--judge-model` | str |  | Judge model id (defaults to baseline). |
 | `--out-dir` | path |  | Report output directory. |
@@ -137,6 +138,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--timeout` | float |  | Base HTTP timeout (seconds); grows with prompt and output size. |
 | `--max-request-time` | float |  | Hard cap for one request (seconds, default 900). |
 | `--max-context-tokens` | int |  | Cap for the context-window probe. |
+| `--max-output-probe-tokens` | int |  | Cap for the max-output probe (default 2048). |
 | `--performance-requests` | int |  | Performance probe requests per endpoint (0 disables; standard suite uses 5). |
 | `--performance-max-tokens` | int |  | Output tokens per performance probe request. |
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
@@ -367,7 +369,7 @@ Continuously re-audit a relay on a schedule and alert webhooks on risk.
 | `--declared-provider` | str |  | Provider hint for KB lookup. |
 | `--header`, `-H` | str (repeatable) |  | Extra header 'Name: value' (repeatable). |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--interval` | int | `3600` | Seconds between re-audit cycles. |
 | `--once` | flag |  | Run a single cycle and exit (no loop). |
 | `--webhook` | str (repeatable) |  | Alert webhook URL (repeatable). |

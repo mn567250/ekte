@@ -301,7 +301,7 @@
             - term: Versione
             - definition:
               - code: ekte v<version>
-            - heading "Controlli per dimensione 1 di 10 dimensioni eseguite" [level=3]
+            - heading "Controlli per dimensione 1 di 11 dimensioni eseguite" [level=3]
             - button "Conformità del protocollo"
             - text: L'API rispetta la specifica?
             - meter "Conformità del protocollo L'API rispetta la specifica?"
@@ -319,6 +319,8 @@
             - text: Il consumo di token è gonfiato? Non eseguito
             - button "Affidabilità in concorrenza"
             - text: Stabile sotto carico? Non eseguito
+            - button "Integrità delle risposte"
+            - text: La risposta è inalterata? Non eseguito
             - button "Sicurezza del trasporto"
             - text: Le chiavi sono gestite in sicurezza? Non eseguito
             - button "Prestazioni"

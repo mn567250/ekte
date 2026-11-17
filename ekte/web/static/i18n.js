@@ -71,6 +71,7 @@
     streaming: ["流式真实", "是真流式还是缓冲后伪装"],
     billing: ["计费用量", "token 用量有没有虚报"],
     reliability: ["并发可靠", "压力下的成功率与延迟"],
+    integrity: ["响应完整性", "响应是否被篡改、注入或缓存"],
     security: ["传输安全", "传输加密与密钥处理"],
     performance: ["性能表现", "延迟、首字与吞吐是否稳定"],
   };
@@ -104,6 +105,7 @@
       streaming: ["Streaming authenticity", "Real streaming, or buffered and faked?"],
       billing: ["Billing & usage", "Is token usage over-reported?"],
       reliability: ["Concurrency reliability", "Success rate and latency under load"],
+      integrity: ["Response integrity", "Is the response tampered with, injected into or cached?"],
       security: ["Transport security", "Transport encryption and key handling"],
       performance: ["Performance", "Are latency, time to first token and throughput consistent?"],
     },
@@ -233,6 +235,11 @@
     "capability.json_mode": [["pass", "JSON mode honored; parsed keys: {parsed_keys|list}."]].concat(CAPABILITY_REJECTED),
     "capability.tools": [["pass", "Tool call delivered ({tool_name}); arguments returned as {arguments_type}."]].concat(CAPABILITY_REJECTED),
     "capability.json_schema": CAPABILITY_REJECTED,
+    // the relay clamped max_tokens: delivered_tokens is only in the evidence of
+    // an answer cut off by length, and only clamped fails.
+    "capability.max_output": [
+      ["fail", "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens."],
+    ],
     "connectivity.models": [["warn", "/v1/models is not available (HTTP {status_code})."]],
     "reliability.success_rate": [
       ["inconclusive", "At concurrency {concurrency}, all {requests} requests were rate-limited ({rate_limited} × HTTP 429)."],

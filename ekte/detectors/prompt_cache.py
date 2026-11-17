@@ -51,7 +51,7 @@ SCALE = Scale(
 class PromptCacheDetector(Detector):
     id = "prompt_cache"
     name = "Prompt prefix-cache (timing)"
-    dimension = Dimension.SECURITY
+    dimension = Dimension.INTEGRITY
     min_suite = "deep"
     cost_hint = 3
 
@@ -124,7 +124,7 @@ class PromptCacheDetector(Detector):
                 )
             )
         result.status = Status.INFO
-        result.score = None  # informational — does not move the security score
+        result.score = None  # informational — does not move the integrity score
         return result
 
     async def _timed(self, ctx: AuditContext, prefix: str) -> float | None:
