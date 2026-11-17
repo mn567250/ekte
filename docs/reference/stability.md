@@ -218,7 +218,7 @@ pins each code.
 | Code | Meaning | When |
 |---|---|---|
 | 0 | success | The command succeeded; any gate passed. |
-| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
+| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under` (or no rating was given because too little was judged), `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
 | 2 | usage or configuration error | Invalid option, value or configuration file, or a missing extra or master key. In `--json` and `--compact` mode an `{"error": {...}}` object is printed on stdout. |
 | 3 | endpoint failure | `ekte models` could not list the models: the endpoint is unreachable or answered with an error. (Before 0.32 it exited 1.) |
 | 4 | internal error | An unexpected error in ekte itself; the traceback is on stderr. (Before 0.32 an unexpected crash exited 1.) |

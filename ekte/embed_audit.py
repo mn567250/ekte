@@ -93,7 +93,8 @@ def _verdict(
 def tool_verdict(report: AuditReport, report_id: int | None = None) -> dict[str, Any]:
     """The Tools page's small verdict dict for a non-chat report: ``risk_level``,
     ``score``, the flattened ``findings`` and the redacted ``target``, plus
-    ``rating``, ``headline``, ``surface``, ``suite`` and the saved ``report_id``."""
+    ``rating``, ``coverage``, ``headline``, ``surface``, ``suite`` and the saved
+    ``report_id``."""
     findings = [
         {
             "id": f.id,
@@ -111,6 +112,7 @@ def tool_verdict(report: AuditReport, report_id: int | None = None) -> dict[str,
         "risk_level": report.verdict.risk_level.value,
         "score": report.verdict.overall_score,
         "rating": report.verdict.rating,
+        "coverage": report.verdict.coverage,
         "headline": report.verdict.headline,
         "surface": report.surface,
         "suite": report.suite,

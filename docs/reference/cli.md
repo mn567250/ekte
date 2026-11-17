@@ -15,7 +15,9 @@ is out of date. The English text is canonical.
   progress and warnings go to stderr. Where the result is a report it follows the
   [report schema](schemas.md). `--compact` (audit commands) prints the lean verdict.
 - `--format` always means the report file format (`json|md|html|pdf|all`).
-- `--fail-on-risk` and `--fail-under` gate the exit code (1).
+- `--fail-on-risk` and `--fail-under` gate the exit code (1). `--fail-under` also
+  fails a run that got no rating because too little was judged (coverage below
+  50%, see [Overall score, rating and weights](../guide/methodology.md#overall-score-rating-and-weights)).
 - A renamed option keeps working with a deprecation warning on stderr that names
   the replacement and the removal version (see
   [Deprecated options](#deprecated-options)).
@@ -30,7 +32,7 @@ Every command follows this table.
 | Code | Meaning | When |
 |---|---|---|
 | 0 | success | The command succeeded; any gate passed. |
-| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
+| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under` (or no rating was given because too little was judged), `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
 | 2 | usage or configuration error | Invalid option, value or configuration file, or a missing extra or master key. In `--json` and `--compact` mode an `{"error": {...}}` object is printed on stdout. |
 | 3 | endpoint failure | `ekte models` could not list the models: the endpoint is unreachable or answered with an error. |
 | 4 | internal error | An unexpected error in ekte itself; the traceback is on stderr. Please report it. |
@@ -103,7 +105,7 @@ Audit one relay endpoint and write a report.
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
 | `--kb-dir` | path (repeatable) |  | Extra knowledge-base directory (repeatable). |
 | `--no-user-kb` | flag |  | Ignore the knowledge-base entries you added in the web UI (kb.db); packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1. |
-| `--fail-under` | float |  | Exit 1 if overall score < this. |
+| `--fail-under` | float |  | Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%). |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 | `--json` | flag |  | Print the full JSON report to stdout instead of writing files. |
 | `--compact` | flag |  | Print a lean agent/LLM-facing JSON verdict to stdout (much smaller than --json). |
@@ -144,7 +146,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
 | `--kb-dir` | path (repeatable) |  | Extra knowledge-base directory (repeatable). |
 | `--no-user-kb` | flag |  | Ignore the knowledge-base entries you added in the web UI (kb.db); packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1. |
-| `--fail-under` | float |  | Exit 1 if overall score < this. |
+| `--fail-under` | float |  | Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%). |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this. |
 | `--json` | flag |  | Print the full JSON report to stdout. |
 | `--compact` | flag |  | Print a lean agent/LLM-facing JSON verdict to stdout. |

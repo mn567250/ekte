@@ -11,7 +11,7 @@ stdout instead.
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -25,6 +25,12 @@ findings with recommendations, the per-dimension scores and **Dimension
 details**, every detector's findings with evidence, the performance section, the
 knowledge-base profile used and the probe languages. Relay-controlled text is
 redacted and escaped before it is written.
+
+Next to the score every report shows the **coverage**: the share of the weight
+of the dimensions that ran that could be judged. A dimension that ran but could
+not be judged is named in the verdict summary, and low coverage limits the
+rating or withholds it (“not rated: too little was judged”); see
+[Overall score, rating and weights](methodology.md#overall-score-rating-and-weights).
 
 ## Evidence files
 

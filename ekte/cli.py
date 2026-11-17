@@ -87,7 +87,8 @@ EXIT_CODES: dict[int, tuple[str, str]] = {
     EXIT_OK: ("success", "The command succeeded; any gate passed."),
     EXIT_GATE: (
         "gate or check failed",
-        "The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, "
+        "The risk is at or above `--fail-on-risk`, the score is below `--fail-under` "
+        "(or no rating was given because too little was judged), "
         "`kb-import` rejected the file, or `config migrate --check` found an outdated file.",
     ),
     EXIT_USAGE: (
@@ -191,11 +192,17 @@ def _print_evidence(report: AuditReport, path: Path | None) -> None:
 
 
 def _print_summary(report: AuditReport, written: list[Path]) -> None:
+    from ekte.report import dimensions as dims
     from ekte.report.performance import fmt_num
 
     v = report.verdict
     style, label = _RISK_STYLE.get(v.risk_level, ("white", v.risk_level.value))
-    score = "n/a" if v.overall_score is None else f"{v.overall_score}/100 (rating {v.rating})"
+    score = (
+        "n/a" if v.overall_score is None
+        else f"{v.overall_score}/100 (rating {dims.rating_text(report)})"
+    )
+    if v.coverage is not None:
+        score += f"  ·  coverage {dims.coverage_text(report)}"
     head = f"[{style}]{label}[/]  —  {v.headline}"
     body = (
         f"Target : {report.target.name}  ·  model [bold]{report.target.model}[/]"
@@ -301,6 +308,9 @@ def _print_summary(report: AuditReport, written: list[Path]) -> None:
 def _exit_code(report: AuditReport, fail_under: float | None, fail_on_risk: str | None) -> int:
     v = report.verdict
     if fail_under is not None and v.overall_score is not None and v.overall_score < fail_under:
+        return 1
+    # A rating withheld because too little was judged (#249) fails the score gate.
+    if fail_under is not None and v.rating_limit is not None and v.rating_limit.limit is None:
         return 1
     if fail_on_risk:
         try:
@@ -631,7 +641,7 @@ def check_command(
     performance_streaming: Annotated[bool | None, typer.Option("--performance-streaming/--performance-non-streaming", help="Probe with streaming or non-streaming requests (standard/deep/custom; full measures both).")] = None,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     no_user_kb: Annotated[bool, typer.Option("--no-user-kb", help=_NO_USER_KB_HELP)] = False,
-    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this.")] = None,
+    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%).")] = None,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the full JSON report to stdout instead of writing files.")] = False,
     compact: Annotated[bool, typer.Option("--compact", help="Print a lean agent/LLM-facing JSON verdict to stdout (much smaller than --json).")] = False,
@@ -708,7 +718,7 @@ def compare_command(
     performance_streaming: Annotated[bool | None, typer.Option("--performance-streaming/--performance-non-streaming", help="Probe with streaming or non-streaming requests (standard/deep/custom; full measures both).")] = None,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     no_user_kb: Annotated[bool, typer.Option("--no-user-kb", help=_NO_USER_KB_HELP)] = False,
-    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this.")] = None,
+    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%).")] = None,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this.")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the full JSON report to stdout.")] = False,
     compact: Annotated[bool, typer.Option("--compact", help="Print a lean agent/LLM-facing JSON verdict to stdout.")] = False,
