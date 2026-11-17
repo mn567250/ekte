@@ -496,9 +496,20 @@ quando alteram o comportamento.
    impressão que se desvia
    desconta a sua parte do peso sobre 100 pontos (25 no máximo); sozinha fica
    BAIXA, duas ou mais acrescentam uma constatação agregada MÉDIA.
-3. **Campo `model` devolvido** por uma chamada simples: sufixos de snapshot e
-   aliases são tolerados; uma palavra de gama inferior (`mini`, `flash`,
-   `lite`, `8b`, …) ou uma família diferente é assinalada.
+3. **Campo `model` devolvido** por uma chamada simples, comparado com o modelo
+   declarado e com o id enviado (um alias de implementação pode diferir do
+   declarado). Ambos os ids são primeiro normalizados: minúsculas, sem
+   prefixo `provider/` ou `vendor.` (`openai/`, `models/`, `anthropic.`), sem
+   `:tag`, `-v2:0` do Bedrock ou data de snapshot. Depois decide a base de
+   conhecimento: um id que resolve para o perfil do modelo declarado é
+   coerente (exato, alias ou snapshot), um que resolve para outro perfil
+   diverge, e as evidências nomeiam ambos os perfis. Um id que a base de
+   conhecimento não consegue identificar é assinalado quando traz uma palavra
+   de gama inferior que o pedido não tem (`mini`, `flash`, `lite`, `8b`, …,
+   apenas como palavra inteira, por isso `mini` não é encontrado em
+   `gemini`), nomeia outra família ou traz outro número de versão (`gpt-4o` →
+   `gpt-3.5-turbo`); um id diferente que nada disto explica é registado como
+   desconhecido, sem dedução.
 
 Sem perfil na base de conhecimento, o detetor é inconclusivo.
 Também é inconclusivo e sem pontuação (`model_identity.no_evidence`)
@@ -523,6 +534,7 @@ normalmente.
 | `model_identity.fp_aggregate` | Duas ou mais impressões comportamentais divergiram. | Aviso · Média | Sem dedução |
 | `model_identity.model_field` | O campo model devolvido correspondeu ao modelo solicitado. | Aprovado | Sem dedução |
 |  | O campo model devolvido indica um modelo diferente ou menor. | Aviso · Média | Sem dedução |
+|  | O campo model devolvido indica outro id que o ekte não consegue identificar: registado, não avaliado. | Info | Sem dedução |
 |  | A resposta não tinha um campo model utilizável. | Inconclusivo | Sem dedução |
 | `model_identity.no_evidence` | Nem a autoidentificação nem nenhuma impressão digital deram uma resposta utilizável e o campo model não divergiu: sem pontuação. | Inconclusivo | Sem dedução |
 

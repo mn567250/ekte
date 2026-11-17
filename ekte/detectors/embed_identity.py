@@ -9,6 +9,7 @@ from ekte.detectors import advice
 from ekte.detectors.base import register
 from ekte.detectors.embedding import EmbeddingDetector, embed
 from ekte.detectors.scale import Scale, outcome
+from ekte.knowledge.model_ids import compare_echoed_model
 from ekte.models import DetectorResult, Dimension, Severity, Status
 
 SCALE = Scale(
@@ -24,24 +25,26 @@ SCALE = Scale(
             label="The relay echoes the requested model."),
     outcome("embed.model_field", "differs", 50.0, Status.WARN, Severity.MEDIUM,
             label="The relay echoes a different model than the one requested."),
+    outcome("embed.model_field", "unknown", None, Status.INFO,
+            label="The relay echoes a different model id that ekte cannot place: recorded, not judged."),
     outcome("embed.model_field", "missing", None, Status.INFO,
             label="The relay echoes no model field."),
 )
 
-
-def _model_key(name: str | None) -> str:
-    """A model id without provider prefix or case, for a loose comparison."""
-    return (name or "").strip().lower().rsplit("/", 1)[-1]
+# compare_echoed_model's verdict -> the embedding/rerank scale outcome.
+ECHO_OUTCOMES = {"consistent": "matches", "diverges": "differs", "unknown": "unknown"}
 
 
-def echoes_model(returned: str | None, *requested: str | None) -> bool:
-    """Whether the echoed model names the requested one (a dated or prefixed
-    variant of the same id counts)."""
-    got = _model_key(returned)
-    return any(
-        want and (got == want or got.startswith(want) or want.startswith(got))
-        for want in map(_model_key, requested)
+def echoed_model_outcome(ctx: AuditContext, echoed: str | None) -> tuple[str, dict]:
+    """The ``*.model_field`` outcome key for the echoed model id, with the
+    comparison's evidence. Compared as the chat identity detector does:
+    knowledge base first, see ekte.knowledge.model_ids."""
+    if not echoed:
+        return "missing", {}
+    cmp = compare_echoed_model(
+        ctx.kb, echoed, ctx.target.claimed, ctx.target.model, claimed_profile=ctx.profile
     )
+    return ECHO_OUTCOMES[cmp.verdict], cmp.evidence()
 
 
 @register
@@ -105,11 +108,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
             )
 
         echoed = res.model_returned
-        key = (
-            "missing" if not echoed
-            else "matches" if echoes_model(echoed, ctx.target.model, ctx.target.claimed)
-            else "differs"
-        )
+        key, comparison = echoed_model_outcome(ctx, echoed)
         result.findings.append(
             SCALE.finding(
                 "embed.model_field", key,
@@ -121,6 +120,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
                     "model_returned": echoed,
                     "model_requested": ctx.target.model,
                     "claimed_model": ctx.target.claimed_model,
+                    **comparison,
                 },
             )
         )

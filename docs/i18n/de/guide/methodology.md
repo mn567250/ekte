@@ -507,9 +507,20 @@ billigeren oder offenen Backend) sowie Signale von
    Ein abweichender Fingerprint zieht seinen Gewichtsanteil an 100 Punkten ab
    (höchstens 25); einer allein bleibt NIEDRIG, zwei oder mehr ergeben einen
    zusammenfassenden Befund MITTEL.
-3. **Zurückgegebenes `model`-Feld** eines einfachen Aufrufs: Snapshot-Suffixe
-   und Aliasse werden toleriert; ein Wort einer kleineren Stufe (`mini`,
-   `flash`, `lite`, `8b`, …) oder eine andere Modellfamilie wird markiert.
+3. **Zurückgegebenes `model`-Feld** eines einfachen Aufrufs, verglichen mit
+   dem angegebenen Modell und mit der gesendeten ID (ein Deployment-Alias kann
+   von der Angabe abweichen). Beide IDs werden zuerst normalisiert:
+   Kleinschreibung, ohne Präfix `provider/` oder `vendor.` (`openai/`,
+   `models/`, `anthropic.`), ohne `:tag`, Bedrock-`-v2:0` oder
+   Snapshot-Datum. Dann entscheidet die Wissensbasis: Eine ID, die zum Profil
+   des angegebenen Modells aufgelöst wird, ist stimmig (exakt, Alias oder
+   Snapshot), eine, die zu einem anderen Profil aufgelöst wird, weicht ab, und
+   die Belege nennen beide Profile. Eine ID, die die Wissensbasis nicht
+   zuordnen kann, wird markiert, wenn sie ein Wort einer kleineren Stufe trägt,
+   das der Anfrage fehlt (`mini`, `flash`, `lite`, `8b`, …, nur als ganzes
+   Wort, `mini` steckt also nicht in `gemini`), eine andere Familie nennt oder
+   eine andere Versionsnummer trägt (`gpt-4o` → `gpt-3.5-turbo`); eine andere
+   ID, die nichts davon erklärt, wird als unbekannt festgehalten, ohne Abzug.
 
 Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 Ebenfalls nicht eindeutig und ohne Punktzahl (`model_identity.no_evidence`)
@@ -534,6 +545,7 @@ nichts. Teilweise Belege werden normal bewertet.
 | `model_identity.fp_aggregate` | Zwei oder mehr Verhaltens-Fingerprints wichen ab. | Warnung · Mittel | Kein Abzug |
 | `model_identity.model_field` | Das zurückgegebene model-Feld entsprach dem angefragten Modell. | Bestanden | Kein Abzug |
 |  | Das zurückgegebene model-Feld nennt ein anderes oder kleineres Modell. | Warnung · Mittel | Kein Abzug |
+|  | Das zurückgegebene model-Feld nennt eine andere ID, die ekte nicht zuordnen kann: festgehalten, nicht beurteilt. | Info | Kein Abzug |
 |  | Die Antwort enthielt kein verwertbares model-Feld. | Nicht eindeutig | Kein Abzug |
 | `model_identity.no_evidence` | Weder Selbstidentifikation noch ein Fingerprint lieferte eine verwertbare Antwort, und das model-Feld wich nicht ab: nicht bewertet. | Nicht eindeutig | Kein Abzug |
 

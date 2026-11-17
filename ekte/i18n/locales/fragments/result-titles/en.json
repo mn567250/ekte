@@ -48,6 +48,7 @@
     "Echoed model field": "Echoed model field",
     "Echoed model field consistent": "Echoed model field consistent",
     "Echoed model field differs from requested": "Echoed model field differs from requested",
+    "Echoed model field not recognized": "Echoed model field not recognized",
     "Embedding endpoint reachable": "Embedding endpoint reachable",
     "Embedding endpoint unreachable": "Embedding endpoint unreachable",
     "Embedding response malformed": "Embedding response malformed",

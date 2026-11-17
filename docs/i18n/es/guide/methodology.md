@@ -499,9 +499,20 @@ cuando cambian el comportamiento.
    desvía resta
    su parte de peso sobre 100 puntos (25 como mucho); sola se queda en BAJA,
    dos o más añaden un hallazgo agregado MEDIO.
-3. **Campo `model` devuelto** por una llamada simple: se toleran sufijos de
-   snapshot y alias; se señala una palabra de gama inferior (`mini`, `flash`,
-   `lite`, `8b`, …) o una familia distinta.
+3. **Campo `model` devuelto** por una llamada simple, comparado con el modelo
+   declarado y con el id enviado (un alias de despliegue puede diferir de lo
+   declarado). Ambos ids se normalizan primero: minúsculas, sin prefijo
+   `provider/` ni `vendor.` (`openai/`, `models/`, `anthropic.`), sin `:tag`,
+   `-v2:0` de Bedrock ni fecha de snapshot. Después decide la base de
+   conocimiento: un id que se resuelve al perfil del modelo declarado es
+   coherente (exacto, alias o snapshot), uno que se resuelve a otro perfil
+   diverge, y la evidencia nombra ambos perfiles. Un id que la base de
+   conocimiento no puede identificar se señala si lleva una palabra de gama
+   inferior que la solicitud no tiene (`mini`, `flash`, `lite`, `8b`, …, solo
+   como palabra completa, así `mini` no se encuentra en `gemini`), nombra otra
+   familia o lleva otro número de versión (`gpt-4o` → `gpt-3.5-turbo`); un id
+   distinto que nada de esto explica se registra como desconocido, sin
+   deducción.
 
 Sin perfil en la base de conocimiento, el detector es no concluyente.
 También es no concluyente y sin puntuación (`model_identity.no_evidence`)
@@ -526,6 +537,7 @@ con normalidad.
 | `model_identity.fp_aggregate` | Dos o más huellas de comportamiento se desviaron. | Advertencia · Media | Sin deducción |
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |
+|  | El campo model devuelto nombra otro id que ekte no puede identificar: se registra, no se juzga. | Info | Sin deducción |
 |  | La respuesta no tenía un campo model utilizable. | No concluyente | Sin deducción |
 | `model_identity.no_evidence` | Ni la autoidentificación ni ninguna huella devolvieron una respuesta utilizable y el campo model no divergió: sin puntuar. | No concluyente | Sin deducción |
 

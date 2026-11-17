@@ -502,9 +502,20 @@ quando cambiano il comportamento.
    Un'impronta che si discosta
    toglie la sua quota di peso su 100 punti (al più 25); da sola resta BASSA,
    due o più aggiungono una rilevazione aggregata MEDIA.
-3. **Campo `model` restituito** da una chiamata semplice: suffissi di snapshot e
-   alias sono tollerati; una parola di fascia inferiore (`mini`, `flash`,
-   `lite`, `8b`, …) o una famiglia diversa viene segnalata.
+3. **Campo `model` restituito** da una chiamata semplice, confrontato con il
+   modello dichiarato e con l'id inviato (un alias di deployment può differire
+   dalla dichiarazione). Entrambi gli id vengono prima normalizzati: minuscole,
+   senza prefisso `provider/` o `vendor.` (`openai/`, `models/`,
+   `anthropic.`), senza `:tag`, `-v2:0` di Bedrock o data di snapshot. Poi
+   decide la base di conoscenza: un id che si risolve nel profilo del modello
+   dichiarato è coerente (esatto, alias o snapshot), uno che si risolve in un
+   altro profilo diverge, e le evidenze nominano entrambi i profili. Un id che
+   la base di conoscenza non sa identificare viene segnalato se porta una
+   parola di fascia inferiore assente dalla richiesta (`mini`, `flash`,
+   `lite`, `8b`, …, solo come parola intera, quindi `mini` non viene trovato
+   in `gemini`), nomina un'altra famiglia o porta un altro numero di versione
+   (`gpt-4o` → `gpt-3.5-turbo`); un id diverso che nulla di questo spiega
+   viene registrato come sconosciuto, senza detrazione.
 
 Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 È inoltre non conclusivo e senza punteggio (`model_identity.no_evidence`)
@@ -529,6 +540,7 @@ normalmente.
 | `model_identity.fp_aggregate` | Due o più impronte comportamentali si sono discostate. | Avviso · Media | Nessuna detrazione |
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |
+|  | Il campo model restituito indica un altro id che ekte non sa identificare: registrato, non giudicato. | Info | Nessuna detrazione |
 |  | La risposta non aveva un campo model utilizzabile. | Non conclusivo | Nessuna detrazione |
 | `model_identity.no_evidence` | Né l'autoidentificazione né alcuna impronta hanno dato una risposta utilizzabile e il campo model non divergeva: non valutato. | Non conclusivo | Nessuna detrazione |
 

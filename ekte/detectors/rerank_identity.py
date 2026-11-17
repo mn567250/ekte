@@ -5,7 +5,7 @@ from __future__ import annotations
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import register
-from ekte.detectors.embed_identity import echoes_model
+from ekte.detectors.embed_identity import echoed_model_outcome
 from ekte.detectors.rerank import RerankDetector, known_answer_probe
 from ekte.detectors.scale import Scale, outcome
 from ekte.models import DetectorResult, Dimension, Severity, Status
@@ -15,6 +15,8 @@ SCALE = Scale(
             label="The relay echoes the requested model."),
     outcome("rerank.model_field", "differs", 50.0, Status.WARN, Severity.MEDIUM,
             label="The relay echoes a different model than the one requested."),
+    outcome("rerank.model_field", "unknown", None, Status.INFO,
+            label="The relay echoes a different model id that ekte cannot place: recorded, not judged."),
     outcome("rerank.model_field", "missing", None, Status.INFO,
             label="The relay echoes no model field."),
     outcome("rerank.model_field", "no_response", None, Status.INCONCLUSIVE,
@@ -47,11 +49,7 @@ class RerankIdentityDetector(RerankDetector):
             return result
 
         echoed = res.model_returned
-        key = (
-            "missing" if not echoed
-            else "matches" if echoes_model(echoed, ctx.target.model, ctx.target.claimed)
-            else "differs"
-        )
+        key, comparison = echoed_model_outcome(ctx, echoed)
         result.findings.append(
             SCALE.finding(
                 "rerank.model_field", key,
@@ -63,6 +61,7 @@ class RerankIdentityDetector(RerankDetector):
                     "model_returned": echoed,
                     "model_requested": ctx.target.model,
                     "claimed_model": ctx.target.claimed_model,
+                    **comparison,
                 },
             )
         )

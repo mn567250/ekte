@@ -70,6 +70,7 @@
   "A response naming a different vendor strongly suggests model substitution.": "回复中提到其他厂商，强烈暗示模型被替换。",
   "Run `ekte compare` against a trusted baseline to disambiguate.": "用 `ekte compare` 对照可信基线以消除歧义。",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "响应中出现更低档位或不同系列的模型 id，暗示请求被路由到替身。",
+  "Ask the relay what the echoed id names, or add it to the knowledge base as an alias.": "请向中转站确认回显的 id 指的是哪个模型，或将其作为别名加入知识库。",
   "Lower --concurrency or --reliability-requests and re-run.": "调低 --concurrency 或 --reliability-requests 后重跑。",
   "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "检查 ekte 到中转站的网络路径（代理、DNS、防火墙）后重跑。",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "检查中转站在并发压力下的连接池与上游稳定性（HTTP 429 限流不计入此成功率）。",

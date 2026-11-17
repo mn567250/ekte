@@ -326,6 +326,7 @@
   "A response naming a different vendor strongly suggests model substitution.": "A response naming a different vendor strongly suggests model substitution.",
   "Run `ekte compare` against a trusted baseline to disambiguate.": "Run `ekte compare` against a trusted baseline to disambiguate.",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "A smaller-tier or different-family model id in the response suggests routing to a substitute.",
+  "Ask the relay what the echoed id names, or add it to the knowledge base as an alias.": "Ask the relay what the echoed id names, or add it to the knowledge base as an alias.",
   "Lower --concurrency or --reliability-requests and re-run.": "Lower --concurrency or --reliability-requests and re-run.",
   "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).",
