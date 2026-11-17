@@ -70,7 +70,7 @@ More examples, config files and use from scripts or LLM agents:
 
 ## What it checks
 
-ekte scores ten dimensions. The four **core dimensions** — model identity,
+ekte scores eleven dimensions. The four **core dimensions** — model identity,
 context window, capability claims and billing & usage — most directly reveal a
 bait-and-switch. The names are the ones the web UI and reports use.
 
@@ -84,7 +84,8 @@ bait-and-switch. The names are the ones the web UI and reports use.
 | **Connectivity** | `connectivity` | Endpoint reachability and the advertised model list |
 | **Streaming authenticity** | `streaming` | Fake streaming (buffer-then-chunk) |
 | **Concurrency reliability** | `reliability` | Failures and slowdowns under concurrent load |
-| **Transport security** | `security` | Plain HTTP, secret echo, injected system prompts, tampering |
+| **Response integrity** | `integrity` | Tampered responses, injected system prompts, responses served from a cache |
+| **Transport security** | `security` | Plain HTTP, an echoed API key, headers that reveal the upstream |
 | **Performance** | `performance` | How consistent latency, time to first token and throughput are |
 
 How every check works and how the verdict is reached:
