@@ -9,6 +9,7 @@
   "No vector was returned to measure.": "Nessun vettore restituito da misurare.",
   "The relay echoes the requested model.": "Il relay restituisce il modello richiesto.",
   "The relay echoes a different model than the one requested.": "Il relay restituisce un modello diverso da quello richiesto.",
+  "The relay echoes a different model id that ekte cannot place: recorded, not judged.": "Il relay restituisce un altro id di modello che ekte non sa identificare: registrato, non giudicato.",
   "The relay echoes no model field.": "Il relay non restituisce alcun campo model.",
   "The pinned input's vector matches the previous run.": "Il vettore dell'input fisso corrisponde all'esecuzione precedente.",
   "The pinned input's vector moved since the previous run (cosine 0.95 to 0.995).": "Il vettore dell'input fisso si è spostato dall'esecuzione precedente (coseno da 0,95 a 0,995).",

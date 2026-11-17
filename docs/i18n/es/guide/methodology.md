@@ -475,9 +475,20 @@ cuando cambian el comportamiento.
    desvía resta
    su parte de peso sobre 100 puntos (25 como mucho); sola se queda en BAJA,
    dos o más añaden un hallazgo agregado MEDIO.
-3. **Campo `model` devuelto** por una llamada simple: se toleran sufijos de
-   snapshot y alias; se señala una palabra de gama inferior (`mini`, `flash`,
-   `lite`, `8b`, …) o una familia distinta.
+3. **Campo `model` devuelto** por una llamada simple, comparado con el modelo
+   declarado y con el id enviado (un alias de despliegue puede diferir de lo
+   declarado). Ambos ids se normalizan primero: minúsculas, sin prefijo
+   `provider/` ni `vendor.` (`openai/`, `models/`, `anthropic.`), sin `:tag`,
+   `-v2:0` de Bedrock ni fecha de snapshot. Después decide la base de
+   conocimiento: un id que se resuelve al perfil del modelo declarado es
+   coherente (exacto, alias o snapshot), uno que se resuelve a otro perfil
+   diverge, y la evidencia nombra ambos perfiles. Un id que la base de
+   conocimiento no puede identificar se señala si lleva una palabra de gama
+   inferior que la solicitud no tiene (`mini`, `flash`, `lite`, `8b`, …, solo
+   como palabra completa, así `mini` no se encuentra en `gemini`), nombra otra
+   familia o lleva otro número de versión (`gpt-4o` → `gpt-3.5-turbo`); un id
+   distinto que nada de esto explica se registra como desconocido, sin
+   deducción.
 
 Sin perfil en la base de conocimiento, el detector es no concluyente.
 También es no concluyente y sin puntuación (`model_identity.no_evidence`)
@@ -502,6 +513,7 @@ con normalidad.
 | `model_identity.fp_aggregate` | Dos o más huellas de comportamiento se desviaron. | Advertencia · Media | Sin deducción |
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |
+|  | El campo model devuelto nombra otro id que ekte no puede identificar: se registra, no se juzga. | Info | Sin deducción |
 |  | La respuesta no tenía un campo model utilizable. | No concluyente | Sin deducción |
 | `model_identity.no_evidence` | Ni la autoidentificación ni ninguna huella devolvieron una respuesta utilizable y el campo model no divergió: sin puntuar. | No concluyente | Sin deducción |
 
@@ -571,22 +583,40 @@ u objeto JSON cuando la función no se declara, o cualquier resultado del esquem
 estricto cuando el perfil dice que el modelo no tiene esquemas estrictos— se
 anota pero no computa: un modelo nunca pierde puntos por algo que nadie declara.
 
+Una sonda que el relay responde con un 4xx (salvo 401, 403, 408 y 429) aunque
+el perfil declara la función es una capacidad rechazada: computa como una no
+entregada, y su resumen cita el código de estado y el mensaje de error. Solo
+computa si el relay responde a la misma petición sin el parámetro de la función
+(una petición extra, enviada solo mientras ninguna otra sonda ha vuelto) y una
+referencia configurada con el mismo protocolo no rechaza también la sonda; si
+no, cuenta como sin respuesta útil o como un límite del modelo. Un 4xx para una
+función que nadie declara se anota pero no computa.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `capability.tools` | Volvió una llamada a herramienta ante una petición explícita de herramienta. | Correcto | 100 pts |
 |  | Se declara la llamada a herramientas pero no volvió ninguna llamada. | Fallo · Media | 0 pts |
 |  | No volvió ninguna llamada a herramienta, y no se declara esa capacidad. | Info | No computa |
+|  | Se declara la llamada a herramientas pero el relay rechazó la sonda con un 4xx. | Fallo · Media | 0 pts |
+|  | Rechazado con un 4xx, y la referencia también lo rechaza: un límite del modelo. | Info | No computa |
+|  | Rechazado con un 4xx; la capacidad no se declara. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.tools.encoding` | Los argumentos de la herramienta llegaron como objeto, no como la cadena JSON de OpenAI. | Advertencia · Baja | No computa |
 | `capability.json_mode` | El modo JSON devolvió un objeto analizable con el valor pedido. | Correcto | 100 pts |
 |  | Volvió un objeto JSON con un valor incorrecto; el modo JSON no se declara. | Info | No computa |
 |  | No volvió ningún objeto JSON analizable; el modo JSON no se declara. | Info | No computa |
 |  | Se declara el modo JSON pero no volvió un objeto válido con el valor. | Fallo · Media | 0 pts |
+|  | Se declara el modo JSON pero el relay rechazó la sonda con un 4xx. | Fallo · Media | 0 pts |
+|  | Rechazado con un 4xx, y la referencia también lo rechaza: un límite del modelo. | Info | No computa |
+|  | Rechazado con un 4xx; la capacidad no se declara. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.json_schema` | Se declara el esquema estricto y la respuesta lo cumplió. | Correcto | 100 pts |
 |  | El esquema estricto no se aplicó, de acuerdo con lo declarado. | Info | No computa |
 |  | La respuesta lo cumplió aunque el modelo declarado no tiene esquemas estrictos. | Info | No computa |
 |  | Se declara el esquema estricto pero la respuesta no lo cumplió. | Advertencia · Baja | 40 pts |
+|  | Se declara el esquema estricto pero el relay rechazó la sonda con un 4xx. | Fallo · Media | 0 pts |
+|  | Rechazado con un 4xx, y la referencia también lo rechaza: un límite del modelo. | Info | No computa |
+|  | Rechazado con un 4xx; la capacidad no se declara. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.max_output` | La salida continuó hasta el tope de tokens solicitado. | Correcto | 100 pts |
 |  | La salida terminó antes del tope con una longitud plausible. | Correcto | 90 pts |

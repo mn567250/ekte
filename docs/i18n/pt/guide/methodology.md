@@ -472,9 +472,20 @@ quando alteram o comportamento.
    impressão que se desvia
    desconta a sua parte do peso sobre 100 pontos (25 no máximo); sozinha fica
    BAIXA, duas ou mais acrescentam uma constatação agregada MÉDIA.
-3. **Campo `model` devolvido** por uma chamada simples: sufixos de snapshot e
-   aliases são tolerados; uma palavra de gama inferior (`mini`, `flash`,
-   `lite`, `8b`, …) ou uma família diferente é assinalada.
+3. **Campo `model` devolvido** por uma chamada simples, comparado com o modelo
+   declarado e com o id enviado (um alias de implementação pode diferir do
+   declarado). Ambos os ids são primeiro normalizados: minúsculas, sem
+   prefixo `provider/` ou `vendor.` (`openai/`, `models/`, `anthropic.`), sem
+   `:tag`, `-v2:0` do Bedrock ou data de snapshot. Depois decide a base de
+   conhecimento: um id que resolve para o perfil do modelo declarado é
+   coerente (exato, alias ou snapshot), um que resolve para outro perfil
+   diverge, e as evidências nomeiam ambos os perfis. Um id que a base de
+   conhecimento não consegue identificar é assinalado quando traz uma palavra
+   de gama inferior que o pedido não tem (`mini`, `flash`, `lite`, `8b`, …,
+   apenas como palavra inteira, por isso `mini` não é encontrado em
+   `gemini`), nomeia outra família ou traz outro número de versão (`gpt-4o` →
+   `gpt-3.5-turbo`); um id diferente que nada disto explica é registado como
+   desconhecido, sem dedução.
 
 Sem perfil na base de conhecimento, o detetor é inconclusivo.
 Também é inconclusivo e sem pontuação (`model_identity.no_evidence`)
@@ -499,6 +510,7 @@ normalmente.
 | `model_identity.fp_aggregate` | Duas ou mais impressões comportamentais divergiram. | Aviso · Média | Sem dedução |
 | `model_identity.model_field` | O campo model devolvido correspondeu ao modelo solicitado. | Aprovado | Sem dedução |
 |  | O campo model devolvido indica um modelo diferente ou menor. | Aviso · Média | Sem dedução |
+|  | O campo model devolvido indica outro id que o ekte não consegue identificar: registado, não avaliado. | Info | Sem dedução |
 |  | A resposta não tinha um campo model utilizável. | Inconclusivo | Sem dedução |
 | `model_identity.no_evidence` | Nem a autoidentificação nem nenhuma impressão digital deram uma resposta utilizável e o campo model não divergiu: sem pontuação. | Inconclusivo | Sem dedução |
 
@@ -567,22 +579,40 @@ objeto JSON quando a função não é declarada, ou qualquer resultado do esquem
 estrito quando o perfil diz que o modelo não tem esquemas estritos — é registada
 mas não contabilizada: um modelo nunca perde pontos pelo que ninguém declara.
 
+Uma sonda a que o relay responde com um 4xx (exceto 401, 403, 408 e 429)
+embora o perfil declare a função é uma capacidade recusada: conta como uma não
+cumprida, e o seu resumo cita o código de estado e a mensagem de erro. Só é
+contabilizada se o relay responder ao mesmo pedido sem o parâmetro da função (um
+pedido extra, enviado apenas enquanto nenhuma outra sonda tiver voltado) e uma
+referência configurada no mesmo protocolo não rejeitar também a sonda; caso
+contrário, vale como nenhuma resposta utilizável, ou como um limite do modelo.
+Um 4xx para uma função que ninguém declara é registado mas não contabilizado.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `capability.tools` | Voltou uma chamada de ferramenta para um pedido explícito de ferramenta. | Aprovado | 100 pts |
 |  | A chamada de ferramentas é declarada, mas nenhuma chamada voltou. | Falha · Média | 0 pts |
 |  | Nenhuma chamada de ferramenta voltou, e essa capacidade não é declarada. | Info | Não contabilizado |
+|  | A chamada de ferramentas é declarada, mas o relay rejeitou a sonda com um 4xx. | Falha · Média | 0 pts |
+|  | Rejeitado com um 4xx, e a referência também o rejeita: um limite do modelo. | Info | Não contabilizado |
+|  | Rejeitado com um 4xx; a capacidade não é declarada. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.tools.encoding` | Os argumentos da ferramenta chegaram como objeto, não como a string JSON da OpenAI. | Aviso · Baixa | Não contabilizado |
 | `capability.json_mode` | O modo JSON devolveu um objeto analisável com o valor pedido. | Aprovado | 100 pts |
 |  | Voltou um objeto JSON com o valor errado; o modo JSON não é declarado. | Info | Não contabilizado |
 |  | Não voltou nenhum objeto JSON analisável; o modo JSON não é declarado. | Info | Não contabilizado |
 |  | O modo JSON é declarado, mas não voltou um objeto válido com o valor. | Falha · Média | 0 pts |
+|  | O modo JSON é declarado, mas o relay rejeitou a sonda com um 4xx. | Falha · Média | 0 pts |
+|  | Rejeitado com um 4xx, e a referência também o rejeita: um limite do modelo. | Info | Não contabilizado |
+|  | Rejeitado com um 4xx; a capacidade não é declarada. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.json_schema` | O esquema estrito é declarado e a resposta foi conforme. | Aprovado | 100 pts |
 |  | O esquema estrito não foi aplicado, de acordo com o declarado. | Info | Não contabilizado |
 |  | A resposta foi conforme embora o modelo declarado não tenha esquemas estritos. | Info | Não contabilizado |
 |  | O esquema estrito é declarado, mas a resposta não foi conforme. | Aviso · Baixa | 40 pts |
+|  | O esquema estrito é declarado, mas o relay rejeitou a sonda com um 4xx. | Falha · Média | 0 pts |
+|  | Rejeitado com um 4xx, e a referência também o rejeita: um limite do modelo. | Info | Não contabilizado |
+|  | Rejeitado com um 4xx; a capacidade não é declarada. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.max_output` | A saída continuou até ao limite de tokens pedido. | Aprovado | 100 pts |
 |  | A saída terminou antes do limite com um comprimento plausível. | Aprovado | 90 pts |

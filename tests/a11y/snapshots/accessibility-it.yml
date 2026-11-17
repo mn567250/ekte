@@ -49,13 +49,13 @@
     - definition:
       - code: <id>
     - term: Versione di ekte
-    - definition: 0.30.0
+    - definition: 0.35.0
     - term: Versione di axe-core
     - definition: 4.13.0
     - term: Test
-    - definition: 1156 eseguiti, 1156 superati, 0 falliti, 0 saltati
+    - definition: 1337 eseguiti, 1337 superati, 0 falliti, 1 saltati
     - term: Lingue
-    - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
+    - definition: English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文
     - term: Temi
     - definition: Chiaro, Scuro
     - term: Pagine
@@ -130,7 +130,7 @@
               - group:
                 - button "Contenuti non testuali" [expanded]
                 - paragraph: "Come viene verificato: Immagini, icone, SVG e controlli hanno un'alternativa testuale. Se ogni alternativa è significativa lo giudica una persona."
-                - paragraph: "Test automatici: 30 eseguiti, 30 superati, 0 falliti, 156 saltati"
+                - paragraph: "Test automatici: 34 eseguiti, 34 superati, 0 falliti, 176 saltati"
                 - paragraph:
                   - code: test_audit_surface_states
                   - code: test_wcag_rules_as_loaded

@@ -447,9 +447,19 @@ when they change behavior.
    listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
    one alone stays LOW, two or more add a MEDIUM aggregate.
-3. **Echoed `model` field** of a plain call: snapshot suffixes and aliases are
-   tolerated; a smaller-tier word (`mini`, `flash`, `lite`, `8b`, …) or a
-   different family is flagged.
+3. **Echoed `model` field** of a plain call, compared with the claimed model
+   and with the id sent (a deployment alias may differ from the claim). Both
+   ids are normalized first: lower case, no `provider/` or `vendor.` prefix
+   (`openai/`, `models/`, `anthropic.`), no `:tag`, Bedrock `-v2:0` or
+   snapshot-date suffix. Then the knowledge base decides: an id that resolves
+   to the claimed model's profile is consistent (exact, alias or snapshot),
+   one that resolves to another profile diverges, and the evidence names both
+   profiles. An id the knowledge base cannot place is flagged when it carries
+   a smaller-tier word the request lacks (`mini`, `flash`, `lite`, `8b`, …,
+   whole words only, so `mini` is not found in `gemini`), names a different
+   family, or carries a different version number (`gpt-4o` → `gpt-3.5-turbo`);
+   a different id that none of these explains is recorded as unknown, with no
+   deduction.
 
 Without a knowledge-base profile the detector is inconclusive.
 It is also inconclusive and unscored (`model_identity.no_evidence`) when
@@ -473,6 +483,7 @@ requested name proves nothing on its own. Partial evidence scores normally.
 | `model_identity.fp_aggregate` | Two or more behavioral fingerprints diverged. | Warning · Medium | No deduction |
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |
+|  | The echoed model field names a different id that ekte cannot place: recorded, not judged. | Info | No deduction |
 |  | The response had no usable model field. | Inconclusive | No deduction |
 | `model_identity.no_evidence` | No self-identification or fingerprint answer was usable and the model field did not diverge: not scored. | Inconclusive | No deduction |
 
@@ -538,22 +549,40 @@ feature is not claimed, or any strict-schema result when the profile says the
 model lacks strict schemas — is noted but not counted, so a model is never
 marked down for what nobody claimed.
 
+A probe the relay answers with a 4xx (other than 401, 403, 408 and 429)
+although the profile claims the feature is a refused capability: it scores like
+an undelivered one, and its summary quotes the status code and error message. It
+counts only if the relay answers the same request without the feature parameter
+(one extra request, sent only while no other probe has come back) and a
+configured baseline on the same protocol does not reject the probe too;
+otherwise it is no usable response, or a limit of the model. A 4xx for a
+feature nobody claims is noted but not counted.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `capability.tools` | A tool call came back for an explicit tool-use request. | Pass | 100 pts |
 |  | Tool calling is claimed but no tool call came back. | Fail · Medium | 0 pts |
 |  | No tool call came back, and tool calling is not claimed. | Info | Not counted |
+|  | Tool calling is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.tools.encoding` | Tool arguments arrived as an object, not the JSON string OpenAI returns. | Warning · Low | Not counted |
 | `capability.json_mode` | JSON mode returned a parseable object with the requested value. | Pass | 100 pts |
 |  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | Not counted |
 |  | No parseable JSON object came back; JSON mode is not claimed. | Info | Not counted |
 |  | JSON mode is claimed but no valid object with the value came back. | Fail · Medium | 0 pts |
+|  | JSON mode is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.json_schema` | The strict schema is claimed and the response conformed. | Pass | 100 pts |
 |  | The strict schema was not enforced, consistent with the claim. | Info | Not counted |
 |  | The response conformed although the claimed model lacks strict schemas. | Info | Not counted |
 |  | The strict schema is claimed but the response did not conform. | Warning · Low | 40 pts |
+|  | The strict schema is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
 |  | Output stopped before the cap at a plausible length. | Pass | 90 pts |

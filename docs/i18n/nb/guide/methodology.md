@@ -453,9 +453,19 @@ de endrer atferden.
    oppføres som Info, og en annen probe tar plassen. Et avvikende fingeravtrykk
    trekker fra sin vektandel av 100 poeng (høyst 25); ett alene forblir LOW, to
    eller flere legger til et samlet MEDIUM-funn.
-3. **Gjengitt `model`-felt** fra et vanlig kall: snapshot-suffikser og aliaser
-   tåles; et ord for et mindre nivå (`mini`, `flash`, `lite`, `8b`, …) eller en
-   annen familie flagges.
+3. **Gjengitt `model`-felt** fra et vanlig kall, sammenlignet med den oppgitte
+   modellen og med ID-en som ble sendt (et deployment-alias kan avvike fra det
+   oppgitte). Begge ID-ene normaliseres først: små bokstaver, uten prefiks
+   `provider/` eller `vendor.` (`openai/`, `models/`, `anthropic.`), uten
+   `:tag`, Bedrock-`-v2:0` eller snapshot-dato. Deretter avgjør
+   kunnskapsbasen: en ID som slås opp til den oppgitte modellens profil er
+   konsistent (eksakt, alias eller snapshot), en som slås opp til en annen
+   profil avviker, og bevisene nevner begge profilene. En ID kunnskapsbasen
+   ikke kan plassere flagges når den har et ord for et mindre nivå som
+   forespørselen mangler (`mini`, `flash`, `lite`, `8b`, …, bare som hele ord,
+   så `mini` finnes ikke i `gemini`), nevner en annen familie eller har et
+   annet versjonsnummer (`gpt-4o` → `gpt-3.5-turbo`); en annen ID som ingen av
+   disse forklarer, registreres som ukjent, uten fradrag.
 
 Uten en profil i kunnskapsbasen er detektoren uavklart. Den er også uavklart og
 uten score (`model_identity.no_evidence`) når verken selvidentifikasjonen eller
@@ -479,6 +489,7 @@ Delvise bevis gir score som vanlig.
 | `model_identity.fp_aggregate` | To eller flere atferdsfingeravtrykk avvek. | Advarsel · Middels | Ingen fradrag |
 | `model_identity.model_field` | Det gjengitte model-feltet stemte med den forespurte modellen. | Bestått | Ingen fradrag |
 |  | Det gjengitte model-feltet nevner en annen eller mindre modell. | Advarsel · Middels | Ingen fradrag |
+|  | Det gjengitte model-feltet nevner en annen ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Ingen fradrag |
 |  | Svaret hadde ikke noe brukbart model-felt. | Uavklart | Ingen fradrag |
 | `model_identity.no_evidence` | Ingen selvidentifikasjon eller fingeravtrykkssvar var brukbart, og model-feltet avvek ikke: gir ikke score. | Uavklart | Ingen fradrag |
 
@@ -546,22 +557,40 @@ JSON-objekt når funksjonen ikke påstås, eller et hvilket som helst resultat f
 strengt skjema når profilen sier at modellen mangler strenge skjemaer — noteres,
 men telles ikke, så en modell aldri trekkes ned for noe ingen har påstått.
 
+En probe som reléet besvarer med en 4xx (unntatt 401, 403, 408 og 429) selv om
+profilen påstår funksjonen, er en avvist egenskap: den telles som en som ikke
+leveres, og sammendraget gjengir statuskoden og feilmeldingen. Den telles bare
+hvis reléet besvarer den samme forespørselen uten funksjonsparameteren (én ekstra
+forespørsel, sendt bare så lenge ingen annen probe har kommet tilbake) og en
+konfigurert referanse med samme protokoll ikke også avviser proben; ellers
+regnes den som ikke noe brukbart svar, eller som en begrensning i modellen. En
+4xx for en funksjon ingen påstår, noteres, men telles ikke.
+
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `capability.tools` | Et verktøykall kom tilbake for en uttrykkelig forespørsel om verktøybruk. | Bestått | 100 poeng |
 |  | Verktøykall er påstått, men ikke noe verktøykall kom tilbake. | Ikke bestått · Middels | 0 poeng |
 |  | Ikke noe verktøykall kom tilbake, og verktøykall er ikke påstått. | Info | Telles ikke |
+|  | Verktøykall er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.tools.encoding` | Verktøyargumentene kom som et objekt, ikke som JSON-strengen OpenAI returnerer. | Advarsel · Lav | Telles ikke |
 | `capability.json_mode` | JSON-modus returnerte et objekt som kan tolkes, med den forespurte verdien. | Bestått | 100 poeng |
 |  | Et JSON-objekt kom tilbake med feil verdi; JSON-modus er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe JSON-objekt som kan tolkes, kom tilbake; JSON-modus er ikke påstått. | Info | Telles ikke |
 |  | JSON-modus er påstått, men ikke noe gyldig objekt med verdien kom tilbake. | Ikke bestått · Middels | 0 poeng |
+|  | JSON-modus er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.json_schema` | Det strenge skjemaet er påstått, og svaret fulgte det. | Bestått | 100 poeng |
 |  | Det strenge skjemaet ble ikke håndhevet, i samsvar med påstanden. | Info | Telles ikke |
 |  | Svaret fulgte skjemaet selv om den oppgitte modellen mangler strenge skjemaer. | Info | Telles ikke |
 |  | Det strenge skjemaet er påstått, men svaret fulgte det ikke. | Advarsel · Lav | 40 poeng |
+|  | Det strenge skjemaet er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.max_output` | Utdataen fortsatte opp til det forespurte tokentaket. | Bestått | 100 poeng |
 |  | Utdataen stoppet før taket ved en troverdig lengde. | Bestått | 90 poeng |

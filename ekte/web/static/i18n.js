@@ -220,12 +220,21 @@
   // that id; GENERIC covers the request-failure branches that only carry
   // status_code / error_type. The English template is the lookup key into
   // EKTE_LOCALES (strings.<lang>, including "zh"), like every other UI string.
+  // A capability probe the relay rejected with a 4xx: relay_error is only in
+  // the evidence of such a finding (baseline_status_code only when the
+  // baseline rejected it too), so these never shadow the ids' own templates.
+  var CAPABILITY_REJECTED = [
+    ["info", "The relay rejected the probe with HTTP {status_code} ({relay_error}), and the baseline rejects it too (HTTP {baseline_status_code}): a limit of the model; not counted."],
+    ["info", "The relay rejected the probe with HTTP {status_code} ({relay_error}); the capability is not claimed, so this is not counted."],
+    ["fail", "The capability is claimed, but the relay rejected the probe with HTTP {status_code}: {relay_error}"],
+  ];
   var ALT = {
     "billing.partial-usage": [
       [null, "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified."],
     ],
-    "capability.json_mode": [["pass", "JSON mode honored; parsed keys: {parsed_keys|list}."]],
-    "capability.tools": [["pass", "Tool call delivered ({tool_name}); arguments returned as {arguments_type}."]],
+    "capability.json_mode": [["pass", "JSON mode honored; parsed keys: {parsed_keys|list}."]].concat(CAPABILITY_REJECTED),
+    "capability.tools": [["pass", "Tool call delivered ({tool_name}); arguments returned as {arguments_type}."]].concat(CAPABILITY_REJECTED),
+    "capability.json_schema": CAPABILITY_REJECTED,
     "connectivity.models": [["warn", "/v1/models is not available (HTTP {status_code})."]],
     "reliability.success_rate": [
       ["inconclusive", "At concurrency {concurrency}, all {requests} requests were rate-limited ({rate_limited} × HTTP 429)."],

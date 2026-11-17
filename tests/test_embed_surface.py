@@ -14,7 +14,7 @@ import pytest
 from ekte.config import AuditOptions
 from ekte.detectors.base import select_detectors
 from ekte.detectors.embed_drift import drift_sample, previous_drift
-from ekte.detectors.embed_identity import echoes_model
+from ekte.knowledge.model_ids import compare_echoed_model
 from ekte.models import Dimension, RiskLevel, Status, TargetConfig
 from ekte.runner import run_audit
 
@@ -149,10 +149,23 @@ async def test_collapsed_vectors_and_echoed_model(serve):
     assert _finding(report, "embed.model_field").outcome == "differs"
 
 
-def test_echoed_model_matching():
-    assert echoes_model("text-embedding-3-large-2024", "text-embedding-3-large")
-    assert echoes_model("openai/Text-Embedding-3-Large", "text-embedding-3-large")
-    assert not echoes_model("bge-m3", "text-embedding-3-large", None)
+def test_echoed_model_matching(knowledge_base):
+    def verdict(returned, *wanted):
+        return compare_echoed_model(knowledge_base, returned, *wanted).verdict
+
+    assert verdict("text-embedding-3-large-2024", "text-embedding-3-large") == "consistent"
+    assert verdict("openai/Text-Embedding-3-Large", "text-embedding-3-large") == "consistent"
+    assert verdict("bge-m3", "text-embedding-3-large", None) == "diverges"
+    # a smaller sibling the knowledge base knows is a different model
+    assert verdict("text-embedding-3-small", "text-embedding-3-large") == "diverges"
+
+
+async def test_unplaceable_echoed_model_is_info(serve):
+    # Same family and version, an id neither the KB nor the heuristic can place.
+    serve(EmbedServer(served="text-embedding-3-custom"))
+    report = await run_audit(_target(), _opts(suite="smoke"))
+    field = _finding(report, "embed.model_field")
+    assert (field.outcome, field.status, field.score) == ("unknown", Status.INFO, None)
 
 
 async def test_vector_drift_against_the_previous_run(serve):
