@@ -842,8 +842,10 @@ un proxy falsificateur doivent revenir mot pour mot : deux synthétiques (une U
 d'installation et un paquet `pip install` épinglé), un installateur connu
 (`curl -fsSL https://sh.rustup.rs | sh`), un paquet populaire à version épinglée
 (`pip install requests==2.32.3`), une ligne
-`git clone https://github.com/pallets/flask.git` et une adresse Bitcoin générée à
-l'exécution, qui ne peut donc pas être mise en liste blanche. Le canari
+`git clone https://github.com/pallets/flask.git` et une adresse Bitcoin de
+format valide dérivée du point d'accès et du modèle audités : ce n'est donc
+pas une valeur fixe qu'un relais pourrait mettre en liste blanche (elle est
+reproductible, pour qu'une exécution enregistrée puisse être rejouée). Le canari
 `git clone` est envoyé en streaming et, quand le profil annonce l'appel d'outils,
 une URL d'installateur est envoyée comme argument d'un appel d'outil (le modèle
 doit appeler un outil avec l'URL exacte) : le texte en streaming et les arguments
@@ -1144,7 +1146,7 @@ Les 16 astuces de relais issues de la recherche se répartissent ainsi dans ekte
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | surcoût fixe de tokens d'entrée (deux tailles) + sonde de fuite |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | taux de succès (429 à part), latence de queue, stabilité sous charge ; la mesure dans la durée est sur la feuille de route |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | outils, mode JSON, schéma strict, paramètres ; une sonde chacun, pas des taux |
-| 16 | `integrity.response-tampering` | critical | `integrity` | canaris à réponse connue (URL d'installation synthétiques et connues, paquets à version épinglée, une ligne `git clone`, une adresse de portefeuille générée à l'exécution) en sortie normale, en streaming et en arguments d'outils ; ÉLEVÉE quand une répétition substitue de nouveau, CRITIQUE quand une référence corrobore |
+| 16 | `integrity.response-tampering` | critical | `integrity` | canaris à réponse connue (URL d'installation synthétiques et connues, paquets à version épinglée, une ligne `git clone`, une adresse de portefeuille dérivée par point d'accès) en sortie normale, en streaming et en arguments d'outils ; ÉLEVÉE quand une répétition substitue de nouveau, CRITIQUE quand une référence corrobore |
 
 ---
 

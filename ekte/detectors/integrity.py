@@ -6,8 +6,8 @@ everything else intact. Such rewriting in the wild is targeted: it looks for
 well-known install URLs, popular package names and wallet addresses. ekte sends
 known-answer canaries ("output exactly this line") carrying exactly such values
 — two synthetic ones, a well-known installer URL, a popular pinned package, a
-``git clone`` line and a cryptocurrency address generated at run time (so it
-cannot be allow-listed) — and checks whether the structure comes back with the
+``git clone`` line and a valid-format cryptocurrency address derived from the
+audited endpoint and model (no fixed value a relay could allow-list) — and checks whether the structure comes back with the
 value SUBSTITUTED. One canary is sent streamed and, when the profile claims tool
 calling, one as a tool-call argument, so the other channels a proxy can rewrite
 are covered too.
@@ -27,9 +27,9 @@ is confirmed before it counts as more than MEDIUM:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
-import secrets
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -144,9 +144,23 @@ class _Canary:
 _TOOL_URL = "https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh"
 
 
-def _canaries(*, tools: bool, address: str | None = None) -> list[_Canary]:
-    """The canaries of one run; the wallet address is new every run."""
-    address = address or bech32_address(secrets.token_bytes(20))
+def wallet_address(ctx: AuditContext) -> str:
+    """The wallet canary's address: a valid bech32 address no list can know in
+    advance, derived from the audited endpoint and model.
+
+    It is reproducible on purpose: a replay of a recorded run (ekte.replay)
+    must send byte-identical requests. A per-run value belongs to the run's
+    nonce (#256), not to a random draw here.
+    """
+    target = getattr(ctx, "target", None)
+    seed = "|".join(
+        str(getattr(target, k, "") or "") for k in ("base_url", "model", "claimed_model")
+    )
+    return bech32_address(hashlib.sha256(f"ekte-integrity-wallet|{seed}".encode()).digest()[:20])
+
+
+def _canaries(*, tools: bool, address: str) -> list[_Canary]:
+    """The canaries of one run."""
     canaries = [
         _Canary(
             id="install_url",
@@ -256,7 +270,8 @@ class IntegrityDetector(Detector):
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
         model = ctx.profile.model if ctx.profile else None
-        canaries = _canaries(tools=bool(model and model.supports_tools))
+        canaries = _canaries(tools=bool(model and model.supports_tools),
+                             address=wallet_address(ctx))
         sem = asyncio.Semaphore(_CONCURRENCY)
         calls = 0
 

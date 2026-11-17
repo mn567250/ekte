@@ -847,9 +847,10 @@ die es ein manipulierender Proxy abgesehen hat, müssen wörtlich zurückkommen:
 zwei synthetische (eine Installations-URL und ein festgelegtes
 `pip install`-Paket), ein bekannter Installer (`curl -fsSL https://sh.rustup.rs | sh`),
 ein verbreitetes Paket mit fester Version (`pip install requests==2.32.3`), eine
-Zeile `git clone https://github.com/pallets/flask.git` und eine zur Laufzeit
-erzeugte Bitcoin-Adresse, die sich daher nicht auf eine Ausnahmeliste setzen
-lässt. Der `git clone`-Canary wird gestreamt gesendet und, wenn das Profil
+Zeile `git clone https://github.com/pallets/flask.git` und eine aus Endpunkt und Modell
+abgeleitete Bitcoin-Adresse in gültigem Format, also kein fester Wert, den ein
+Relay auf eine Ausnahmeliste setzen könnte (sie ist reproduzierbar, damit sich
+ein aufgezeichneter Lauf wiederholen lässt). Der `git clone`-Canary wird gestreamt gesendet und, wenn das Profil
 Tool-Aufrufe angibt, eine Installer-URL als Argument eines Tool-Aufrufs (das
 Modell muss ein Tool mit genau dieser URL aufrufen); so werden auch gestreamter
 Text und Tool-Argumente geprüft. Die Canaries laufen nebenläufig, höchstens drei
@@ -1144,7 +1145,7 @@ Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf ekte.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | fester Mehraufwand an Eingabe-Token (zwei Größen) + Leck-Test |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | Erfolgsquote (429 gesondert), Tail-Latenz, Stabilität unter Last; Langzeitmessung ist Roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | Tools, JSON-Modus, striktes Schema, Parameter; je ein Test, keine Quoten |
-| 16 | `integrity.response-tampering` | critical | `integrity` | Canaries mit bekannter Antwort (synthetische und bekannte Installations-URLs, Pakete mit fester Version, eine `git clone`-Zeile, eine zur Laufzeit erzeugte Wallet-Adresse) in normaler, gestreamter Ausgabe und in Tool-Argumenten; HOCH, wenn eine Wiederholung erneut ersetzt, KRITISCH, wenn eine Referenz es bestätigt |
+| 16 | `integrity.response-tampering` | critical | `integrity` | Canaries mit bekannter Antwort (synthetische und bekannte Installations-URLs, Pakete mit fester Version, eine `git clone`-Zeile, eine pro Endpunkt abgeleitete Wallet-Adresse) in normaler, gestreamter Ausgabe und in Tool-Argumenten; HOCH, wenn eine Wiederholung erneut ersetzt, KRITISCH, wenn eine Referenz es bestätigt |
 
 ---
 

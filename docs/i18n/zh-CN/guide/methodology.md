@@ -638,7 +638,7 @@ TTFT 指第一个可见内容 token。推理模型（知识库标注为推理模
 （一个安装 URL 和一个锁定版本的 `pip install` 包）、一个知名安装命令
 （`curl -fsSL https://sh.rustup.rs | sh`）、一个锁定版本的热门包
 （`pip install requests==2.32.3`）、一行 `git clone https://github.com/pallets/flask.git`，
-以及一个运行时生成的比特币地址（因此无法被列入放行名单）。`git clone` 标记以流式方式发送；
+以及一个由被审计端点和模型推导出的合法格式比特币地址（不是中继可以列入放行名单的固定值；它可复现，以便重放已录制的运行）。`git clone` 标记以流式方式发送；
 当画像声明支持工具调用时，还会把一个安装 URL 作为工具调用参数发送（模型必须用这个确切的
 URL 调用工具），从而也检查流式文本和工具参数。标记值并发发送，同时最多三个，检测器最多向
 目标发送八个请求。精确回显即通过；没有回显（改写、拒答）为不确定；只有结构保留而
@@ -869,7 +869,7 @@ token/秒、稳定性、错误以及负载下的稳定性。**随文档数量的
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | 固定输入 token 开销（两个长度）+ 泄漏探测 |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | 成功率（429 单独计）、尾部延迟、负载稳定性；跨时段探测在路线图上 |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | 工具、JSON 模式、严格 schema、请求参数；各探测一次，不是比率 |
-| 16 | `integrity.response-tampering` | critical | `integrity` | 已知答案的标记值（合成的与知名的安装 URL、锁定版本的包、一行 `git clone`、运行时生成的钱包地址），覆盖普通输出、流式输出和工具参数；重复发送再次被替换时为“高”，基线佐证时为“严重” |
+| 16 | `integrity.response-tampering` | critical | `integrity` | 已知答案的标记值（合成的与知名的安装 URL、锁定版本的包、一行 `git clone`、按端点推导的钱包地址），覆盖普通输出、流式输出和工具参数；重复发送再次被替换时为“高”，基线佐证时为“严重” |
 
 ---
 

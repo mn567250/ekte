@@ -239,16 +239,21 @@ async def test_a_swapped_wallet_address_is_a_substitution():
     assert attacker in finding.evidence["substitutions"][0]
 
 
-async def test_the_wallet_address_is_new_every_run():
-    first, second = StubRelay(), StubRelay()
-    await _run(first)
-    await _run(second)
+async def test_the_wallet_address_differs_per_endpoint_and_is_reproducible():
+    def target(url):
+        return SimpleNamespace(base_url=url, model="gpt-4o", claimed_model=None)
 
-    def address(relay):
+    async def address(url):
+        relay = StubRelay()
+        ctx = _ctx(relay)
+        ctx.target = target(url)
+        await IntegrityDetector().run(ctx)
         return next(_line(s) for s in relay.specs if "PAY_TO=" in s.messages[-1]["content"])
 
-    assert address(first) != address(second)
-    assert is_bech32_address(address(first)[len("PAY_TO="):])
+    first = await address("https://a.example/v1")
+    assert first == await address("https://a.example/v1")  # a replay sends the same request
+    assert first != await address("https://b.example/v1")
+    assert is_bech32_address(first[len("PAY_TO="):])
 
 
 def test_bech32_matches_the_bip173_test_vector():

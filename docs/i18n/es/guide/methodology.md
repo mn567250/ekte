@@ -838,8 +838,9 @@ instalación y un paquete `pip install` fijado), un instalador conocido
 (`curl -fsSL https://sh.rustup.rs | sh`), un paquete popular con versión fijada
 (`pip install requests==2.32.3`), una línea
 `git clone https://github.com/pallets/flask.git` y una dirección de Bitcoin
-generada en tiempo de ejecución, para que no pueda ponerse en una lista de
-excepciones. El canario `git clone` se envía en streaming y, cuando el perfil
+de formato válido derivada del endpoint y el modelo auditados, de modo que no es
+un valor fijo que un relay pueda poner en una lista de excepciones (es
+reproducible, para poder reproducir una ejecución grabada). El canario `git clone` se envía en streaming y, cuando el perfil
 declara llamadas a herramientas, se envía una URL de instalador como argumento
 de una llamada a herramienta (el modelo debe llamar a una herramienta con la URL
 exacta), de modo que también se comprueban el texto en streaming y los
@@ -1137,7 +1138,7 @@ Los 16 trucos de relay de la investigación se reparten así en ekte.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | sobrecarga fija de tokens de entrada (dos tamaños) + sonda de filtración |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | tasa de éxito (429 aparte), latencia de cola, estabilidad bajo carga; la medición a lo largo del tiempo está en la hoja de ruta |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | herramientas, modo JSON, esquema estricto, parámetros; una sonda cada uno, no tasas |
-| 16 | `integrity.response-tampering` | critical | `integrity` | canarios de respuesta conocida (URL de instalación sintéticas y conocidas, paquetes con versión fijada, una línea `git clone`, una dirección de cartera generada en tiempo de ejecución) en salida normal, en streaming y en argumentos de herramientas; ALTA cuando una repetición vuelve a sustituir, CRÍTICA cuando una referencia lo corrobora |
+| 16 | `integrity.response-tampering` | critical | `integrity` | canarios de respuesta conocida (URL de instalación sintéticas y conocidas, paquetes con versión fijada, una línea `git clone`, una dirección de cartera derivada por endpoint) en salida normal, en streaming y en argumentos de herramientas; ALTA cuando una repetición vuelve a sustituir, CRÍTICA cuando una referencia lo corrobora |
 
 ---
 

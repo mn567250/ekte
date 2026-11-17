@@ -786,8 +786,9 @@ together reach MEDIUM.
 targets must come back verbatim: two synthetic ones (an install URL and a pinned
 `pip install` package), a well-known installer (`curl -fsSL https://sh.rustup.rs | sh`),
 a popular pinned package (`pip install requests==2.32.3`), a
-`git clone https://github.com/pallets/flask.git` line and a Bitcoin address
-generated at run time, so it cannot be allow-listed. The `git clone` canary is
+`git clone https://github.com/pallets/flask.git` line and a Bitcoin address of valid format derived from the audited endpoint and
+model, so it is no fixed value a relay could allow-list (it is reproducible, so
+a recorded run can be replayed). The `git clone` canary is
 sent streamed and, when the profile claims tool calling, an installer URL is sent
 as a tool-call argument (the model must call a tool with the exact URL), so
 streamed text and tool arguments are checked too. The canaries run concurrently,
@@ -1074,7 +1075,7 @@ The 16 relay tricks from the research map onto ekte as follows.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | fixed input-token overhead (two sizes) + leak probe |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | success rate (429 separate), tail latency, load stability; longitudinal probing is roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | tools, JSON mode, strict schema, parameters; one probe each, not rates |
-| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer canaries (synthetic and well-known install URLs, pinned packages, a `git clone` line, a run-time wallet address) in plain, streamed and tool-argument output; HIGH when a repeat substitutes again, CRITICAL when a baseline corroborates |
+| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer canaries (synthetic and well-known install URLs, pinned packages, a `git clone` line, a wallet address derived per endpoint) in plain, streamed and tool-argument output; HIGH when a repeat substitutes again, CRITICAL when a baseline corroborates |
 
 ---
 

@@ -40,8 +40,8 @@ tampering never touches, and only non-streamed text was checked.
 - **Realistic canaries** (new texts in `ekte/prompts/en.json`): a well-known
   installer (`curl -fsSL https://sh.rustup.rs | sh`), a popular pinned package
   (`pip install requests==2.32.3`), a `git clone https://github.com/pallets/flask.git`
-  line and a Bitcoin address generated at run time, so it cannot be
-  allow-listed; a changed address counts only when it is itself a valid
+  line and a valid-format Bitcoin address derived from the audited endpoint and
+  model, so it is no fixed value a relay could allow-list; a changed address counts only when it is itself a valid
   bech32 address, so a miscopied character is not tampering. The two existing
   canaries stay.
 - **Other channels:** the `git clone` canary is sent streamed and, when the
