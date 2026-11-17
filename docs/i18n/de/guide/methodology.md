@@ -390,16 +390,19 @@ ihn zurückgeben.
 
 - **Geprüftes Fenster.** Die Probe reicht bis `upper` = angegebenes Fenster,
   begrenzt durch `--max-context-tokens` (Standard 200K). Jedes Urteil wird an
-  `upper` gemessen, nie an dem Teil eines größeren angegebenen Fensters
-  oberhalb der Obergrenze.
+  der obersten Stufe (90 % von `upper`, siehe unten) gemessen, nie an dem Teil
+  eines größeren angegebenen Fensters oberhalb der Obergrenze.
 - **Größen sind echte Token.** Die eingebaute Token-Schätzung von ekte zählt
   diesen Fülltext gegenüber echten Tokenizern etwa 12 % (o200k) bis 15 %
   (cl100k) zu niedrig; daher wird jeder Prompt laut Schätzung mit Größe ÷ 1,2
   gebaut (Nadel und Frage eingerechnet): eine Stufe der Größe N bleibt innerhalb
-  von N echten Token. Größen in den Belegen (`size`, `effective_window`,
-  `top_rung`) sind diese Budgets an echten Token; die Leiterzeilen enthalten
-  zusätzlich die Schätzung, mit der ein Prompt gebaut wurde
-  (`heuristic_tokens`).
+  von N echten Token. Eine Tokenizer-Familie mit offline gemessenem Faktor
+  nutzt ihren eigenen Faktor (`real_per_heuristic` in den Belegen); bisher ist
+  keiner gemessen, also nutzt jede Familie 1,2. Größen in den Belegen (`size`,
+  `effective_window`, `top_rung`) sind diese Budgets an echten Token; die
+  Leiterzeilen enthalten zusätzlich die Schätzung, mit der ein Prompt gebaut
+  wurde (`heuristic_tokens`), und die vom Endpunkt dafür gemeldeten
+  Prompt-Token (`prompt_tokens`).
 
 1. Eine Leiter von höchstens sieben Größen, die von einer **obersten Stufe bei
    90 % von `upper`** halbiert wird (keine Stufe erreicht das volle Fenster,
@@ -431,20 +434,27 @@ ihn zurückgeben.
    eindeutig, nicht bewertet), nie als Kürzung oder `no_recall`. Nur eine
    Antwort ohne Nadel ist ein Fehlschlag.
 
-Das gemessene Fenster (größte erinnerte Größe) wird mit `upper` verglichen:
-Erinnerung auf der obersten Stufe ist stimmig (oder, wenn das angegebene
-Fenster die Obergrenze übersteigt, **bis zur Obergrenze bestätigt**: das Fenster
-darüber wurde nicht geprüft); darunter zieht das Urteil den nicht erinnerten
-Anteil der obersten Stufe ab — eine Warnung ab der Hälfte von `upper`, ein
-Fehlschlag darunter. Ohne angegebenes Fenster wird die Messung berichtet, aber
-nicht bewertet.
+Das gemessene Fenster (größte erinnerte Größe) wird mit der obersten Stufe
+verglichen: Erinnerung auf der obersten Stufe ist stimmig (oder, wenn das
+angegebene Fenster die Obergrenze übersteigt, **bis zur Obergrenze bestätigt**:
+das Fenster darüber wurde nicht geprüft); darunter zieht das Urteil den nicht
+erinnerten Anteil der obersten Stufe ab (`top_rung_share`) — eine Warnung ab
+der Hälfte der obersten Stufe, ein Fehlschlag darunter. Urteil und Abzug haben
+dieselbe Bezugsgröße, eine Warnung zieht also nie mehr als 50 Punkte ab. Wenn
+nur die oberste Stufe versagte und der Endpunkt für die größte erinnerte Größe
+mehr als 5 % mehr Prompt-Token meldete als ihr Budget, hat die Probe
+**überschossen** (der Tokenizer des Endpunkts zählt den Fülltext dichter, als
+der Faktor zulässt): das Fenster darüber gilt als nicht geprüft (Info), nie als
+zu kurz oder als Ablehnung unterhalb der Angabe. Ohne angegebenes Fenster wird
+die Messung berichtet, aber nicht bewertet.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `context_window.window` (Effektives Kontextfenster) | Erinnerung hielt auf der obersten Stufe (90 % des geprüften Fensters): kein Abzug. | Bestanden | Kein Abzug |
 |  | Erinnerung bis zur Probe-Obergrenze bestätigt; das angegebene Fenster darüber wurde nicht geprüft. | Bestanden | Kein Abzug |
-|  | Erinnerung hielt bis 50–90 % des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Warnung · Mittel | bis zu −50 Pkt. |
-|  | Erinnerung versagte unterhalb der Hälfte des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Fehlgeschlagen · Hoch | bis zu −100 Pkt. |
+|  | Nur die oberste Stufe versagte, und der Endpunkt zählte den größten erinnerten Prompt mehr als 5 % über seinem Budget: Die Probe hat überschossen, das Fenster darüber wurde nicht geprüft. | Info | Kein Abzug |
+|  | Erinnerung hielt ab der Hälfte der obersten Stufe, aber nicht auf ihr; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Warnung · Mittel | bis zu −50 Pkt. |
+|  | Erinnerung versagte unterhalb der Hälfte der obersten Stufe; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Fehlgeschlagen · Hoch | bis zu −100 Pkt. |
 |  | Nicht einmal die kleinste Probengröße erinnerte die Nadel. | Fehlgeschlagen · Hoch | −100 Pkt. |
 | `context_window.lost_in_middle` | Anfang und Ende wurden erinnert, die Mitte zweimal nicht. | Warnung · Mittel | −15 Pkt. |
 | `context_window.rejected_below_claim` | Ein Prompt weit unter dem angegebenen Fenster wurde als zu lang abgelehnt. | Fehlgeschlagen · Hoch | Kein Abzug |

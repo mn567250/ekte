@@ -363,13 +363,18 @@ marker is embedded in non-repetitive filler, and the model must return it.
 
 - **Probed window.** The probe runs up to `upper` = the declared window, capped
   by `--max-context-tokens` (default 200K). Every verdict is judged against
-  `upper`, never against the part of a larger declared window above the cap.
+  the top rung (90% of `upper`, below), never against the part of a larger
+  declared window above the cap.
 - **Sizes are real tokens.** ekte's built-in token estimate under-counts this
   filler by about 12% (o200k) to 15% (cl100k) against real tokenizers, so each
   prompt is built at size ÷ 1.2 by the estimate (needle and question included):
-  a size-N rung stays within N real tokens. Sizes in the evidence (`size`,
-  `effective_window`, `top_rung`) are these real-token budgets; the ladder rows
-  also carry the estimate a prompt was built at (`heuristic_tokens`).
+  a size-N rung stays within N real tokens. A tokenizer family with a factor
+  measured offline would use its own factor (`real_per_heuristic` in the
+  evidence); none is measured yet, so every family uses 1.2. Sizes in the
+  evidence (`size`, `effective_window`, `top_rung`) are these real-token
+  budgets; the ladder rows also carry the estimate a prompt was built at
+  (`heuristic_tokens`) and the prompt tokens the endpoint reported for it
+  (`prompt_tokens`).
 
 1. A ladder of at most seven sizes, halving down from a **top rung at 90% of
    `upper`** (so no rung reaches the full window, leaving room for the answer
@@ -398,19 +403,26 @@ marker is embedded in non-repetitive filler, and the model must return it.
    size is reported as unverified (inconclusive, not scored), never as
    truncation or `no_recall`. Only an answer without the needle is a miss.
 
-The measured window (largest recalled size) is compared with `upper`: recall
-at the top rung is consistent (or, when the declared window exceeds the cap,
-**verified to the cap**: the window above it was not exercised); below it, the
-verdict deducts the share of the top rung that did not recall — a WARN from
-half of `upper` up, a FAIL below half. Without a declared window the
+The measured window (largest recalled size) is compared with the top rung:
+recall at the top rung is consistent (or, when the declared window exceeds the
+cap, **verified to the cap**: the window above it was not exercised); below it,
+the verdict deducts the share of the top rung that did not recall
+(`top_rung_share`) — a WARN from half of the top rung up, a FAIL below half.
+The verdict and the deduction use the same reference, so a WARN never deducts
+more than 50 points. When only the top rung failed and the endpoint reported
+more than 5% more prompt tokens for the largest recalled size than its budget,
+the probe **overshot** (the endpoint's tokenizer counts the filler denser than
+the factor allows): the window above it is reported as not exercised (Info),
+never as short or as a rejection below the claim. Without a declared window the
 measurement is reported but not scored.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `context_window.window` (Effective context window) | Recall held at the top rung (90% of the probed window): no deduction. | Pass | No deduction |
 |  | Recall verified up to the probe cap; the declared window above it was not exercised. | Pass | No deduction |
-|  | Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
-|  | Recall failed below half of the probed window; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
+|  | Only the top rung failed and the endpoint counted the largest recalled prompt more than 5% above its budget: the probe overshot, the window above it was not exercised. | Info | No deduction |
+|  | Recall held at half of the top rung or above, but not at the top rung; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
+|  | Recall failed below half of the top rung; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
 |  | Not even the smallest probe size recalled the needle. | Fail · High | −100 pts |
 | `context_window.lost_in_middle` | The start and end were recalled but the middle was not, twice. | Warning · Medium | −15 pts |
 | `context_window.rejected_below_claim` | A prompt well below the declared window was rejected as too long. | Fail · High | No deduction |

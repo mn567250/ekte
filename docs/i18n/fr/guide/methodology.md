@@ -388,15 +388,20 @@ répétitif, et le modèle doit le restituer.
 
 - **Fenêtre sondée.** La sonde va jusqu'à `upper` = la fenêtre annoncée,
   plafonnée par `--max-context-tokens` (200K par défaut). Chaque verdict est
-  jugé par rapport à `upper`, jamais par rapport à la part d'une fenêtre
-  annoncée plus grande située au-delà du plafond.
+  jugé par rapport à l'échelon supérieur (90 % de `upper`, ci-dessous), jamais
+  par rapport à la part d'une fenêtre annoncée plus grande située au-delà du
+  plafond.
 - **Les tailles sont des tokens réels.** L'estimation de tokens intégrée à ekte
   sous-compte ce remplissage d'environ 12 % (o200k) à 15 % (cl100k) par rapport
-  aux vrais tokenizers ; chaque prompt est donc construit à taille ÷ 1,2 selon
-  l'estimation (aiguille et question comprises) : un échelon de taille N tient
-  dans N tokens réels. Les tailles des preuves (`size`, `effective_window`,
-  `top_rung`) sont ces budgets de tokens réels ; les lignes de l'échelle portent
-  aussi l'estimation à laquelle un prompt a été construit (`heuristic_tokens`).
+  aux vrais tokenizers ; chaque prompt est donc construit à taille ÷ 1,2 selon
+  l'estimation (aiguille et question comprises) : un échelon de taille N tient
+  dans N tokens réels. Une famille de tokenizers dotée d'un facteur mesuré hors
+  ligne utiliserait son propre facteur (`real_per_heuristic` dans les preuves) ;
+  aucun n'est encore mesuré, toutes les familles utilisent donc 1,2. Les tailles
+  des preuves (`size`, `effective_window`, `top_rung`) sont ces budgets de
+  tokens réels ; les lignes de l'échelle portent aussi l'estimation à laquelle
+  un prompt a été construit (`heuristic_tokens`) et les tokens de prompt que le
+  point d'accès a déclarés pour lui (`prompt_tokens`).
 
 1. Une échelle de sept tailles au plus, divisée par deux à partir d'un
    **échelon supérieur à 90 % de `upper`** (aucun échelon n'atteint la fenêtre
@@ -428,19 +433,28 @@ répétitif, et le modèle doit le restituer.
    jamais comme une troncature ni `no_recall`. Seule une réponse sans
    l'aiguille est un échec.
 
-La fenêtre mesurée (la plus grande taille rappelée) est comparée à `upper` : un
-rappel à l'échelon supérieur est cohérent (ou, si la fenêtre annoncée dépasse le
-plafond, **vérifié jusqu'au plafond** : la fenêtre au-delà n'a pas été testée) ;
-en dessous, le verdict déduit la part de l'échelon supérieur non retrouvée — un
-avertissement à partir de la moitié de `upper`, un échec en dessous. Sans
-fenêtre annoncée, la mesure est rapportée mais non notée.
+La fenêtre mesurée (la plus grande taille rappelée) est comparée à l'échelon
+supérieur : un rappel à l'échelon supérieur est cohérent (ou, si la fenêtre
+annoncée dépasse le plafond, **vérifié jusqu'au plafond** : la fenêtre au-delà
+n'a pas été testée) ; en dessous, le verdict déduit la part de l'échelon
+supérieur non retrouvée (`top_rung_share`) — un avertissement à partir de la
+moitié de l'échelon supérieur, un échec en dessous. Le verdict et la déduction
+ont la même référence : un avertissement ne déduit donc jamais plus de 50
+points. Si seul l'échelon supérieur a échoué et que le point d'accès a déclaré
+pour la plus grande taille rappelée plus de 5 % de tokens de prompt de plus que
+son budget, la sonde **a dépassé** (le tokenizer du point d'accès compte le
+remplissage plus densément que le facteur ne le prévoit) : la fenêtre au-delà
+est rapportée comme non testée (Info), jamais comme trop courte ni comme un
+refus sous l'annonce. Sans fenêtre annoncée, la mesure est rapportée mais non
+notée.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `context_window.window` (Fenêtre de contexte effective) | Le rappel a tenu au palier supérieur (90 % de la fenêtre sondée) : aucune déduction. | Réussi | Aucune déduction |
 |  | Rappel vérifié jusqu'au plafond de la sonde ; la fenêtre déclarée au-delà n'a pas été testée. | Réussi | Aucune déduction |
-|  | Le rappel a tenu jusqu'à 50-90 % de la fenêtre sondée ; déduit la part du palier supérieur non retrouvée. | Avertissement · Moyenne | jusqu'à −50 pts |
-|  | Le rappel a échoué sous la moitié de la fenêtre sondée ; déduit la part du palier supérieur non retrouvée. | Échec · Élevée | jusqu'à −100 pts |
+|  | Seul le palier supérieur a échoué et le point d'accès a compté le plus grand prompt retrouvé plus de 5 % au-dessus de son budget : la sonde a dépassé, la fenêtre au-delà n'a pas été testée. | Info | Aucune déduction |
+|  | Le rappel a tenu à partir de la moitié du palier supérieur, mais pas au palier supérieur ; déduit la part du palier supérieur non retrouvée. | Avertissement · Moyenne | jusqu'à −50 pts |
+|  | Le rappel a échoué sous la moitié du palier supérieur ; déduit la part du palier supérieur non retrouvée. | Échec · Élevée | jusqu'à −100 pts |
 |  | Même la plus petite taille de sonde n'a pas retrouvé l'aiguille. | Échec · Élevée | −100 pts |
 | `context_window.lost_in_middle` | Le début et la fin ont été retrouvés, mais pas le milieu, à deux reprises. | Avertissement · Moyenne | −15 pts |
 | `context_window.rejected_below_claim` | Un prompt bien en dessous de la fenêtre annoncée a été rejeté comme trop long. | Échec · Élevée | Aucune déduction |

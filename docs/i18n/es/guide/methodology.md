@@ -383,16 +383,19 @@ debe devolverlo.
 
 - **Ventana sondeada.** La sonda llega hasta `upper` = la ventana declarada,
   limitada por `--max-context-tokens` (200K por defecto). Cada veredicto se
-  juzga frente a `upper`, nunca frente a la parte de una ventana declarada
-  mayor que quede por encima del tope.
+  juzga frente al peldaño superior (el 90 % de `upper`, abajo), nunca frente a
+  la parte de una ventana declarada mayor que quede por encima del tope.
 - **Los tamaños son tokens reales.** La estimación de tokens integrada en ekte
   cuenta este relleno entre un 12 % (o200k) y un 15 % (cl100k) por debajo de
   los tokenizadores reales, así que cada prompt se construye a tamaño ÷ 1,2
   según la estimación (aguja y pregunta incluidas): un peldaño de tamaño N cabe
-  en N tokens reales. Los tamaños de la evidencia (`size`, `effective_window`,
-  `top_rung`) son esos presupuestos de tokens reales; las filas de la escalera
-  incluyen además la estimación con que se construyó cada prompt
-  (`heuristic_tokens`).
+  en N tokens reales. Una familia de tokenizadores con un factor medido sin
+  conexión usaría su propio factor (`real_per_heuristic` en la evidencia); aún
+  no se ha medido ninguno, así que todas usan 1,2. Los tamaños de la evidencia
+  (`size`, `effective_window`, `top_rung`) son esos presupuestos de tokens
+  reales; las filas de la escalera incluyen además la estimación con que se
+  construyó cada prompt (`heuristic_tokens`) y los tokens de prompt que el
+  endpoint informó para él (`prompt_tokens`).
 
 1. Una escalera de siete tamaños como mucho, que se divide a la mitad desde un
    **peldaño superior al 90 % de `upper`** (ningún peldaño alcanza la ventana
@@ -424,19 +427,27 @@ debe devolverlo.
    como truncamiento ni `no_recall`. Solo una respuesta sin la aguja es un
    fallo.
 
-La ventana medida (el mayor tamaño recordado) se compara con `upper`: recordar
-en el peldaño superior es coherente (o, si la ventana declarada supera el tope,
-**verificado hasta el tope**: la ventana por encima no se probó); por debajo,
-el veredicto descuenta la parte del peldaño superior que no se recordó — una
-advertencia desde la mitad de `upper`, un fallo por debajo. Sin ventana
-declarada, la medida se informa pero no se puntúa.
+La ventana medida (el mayor tamaño recordado) se compara con el peldaño
+superior: recordar en el peldaño superior es coherente (o, si la ventana
+declarada supera el tope, **verificado hasta el tope**: la ventana por encima no
+se probó); por debajo, el veredicto descuenta la parte del peldaño superior que
+no se recordó (`top_rung_share`) — una advertencia desde la mitad del peldaño
+superior, un fallo por debajo. El veredicto y la deducción usan la misma
+referencia, así que una advertencia nunca descuenta más de 50 puntos. Si solo
+falló el peldaño superior y el endpoint informó para el mayor tamaño recordado
+más de un 5 % más tokens de prompt que su presupuesto, la sonda **se excedió**
+(el tokenizador del endpoint cuenta el relleno más denso de lo que permite el
+factor): la ventana por encima se informa como no probada (Info), nunca como
+corta ni como rechazo por debajo de lo declarado. Sin ventana declarada, la
+medida se informa pero no se puntúa.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `context_window.window` (Ventana de contexto efectiva) | El recuerdo se mantuvo en el peldaño superior (90 % de la ventana sondeada): sin deducción. | Correcto | Sin deducción |
 |  | Recuerdo verificado hasta el tope de la sonda; la ventana declarada por encima no se probó. | Correcto | Sin deducción |
-|  | El recuerdo se mantuvo hasta el 50-90 % de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Advertencia · Media | hasta −50 pts |
-|  | El recuerdo falló por debajo de la mitad de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Fallo · Alta | hasta −100 pts |
+|  | Solo falló el peldaño superior y el endpoint contó el mayor prompt recordado más de un 5 % por encima de su presupuesto: la sonda se excedió, la ventana por encima no se probó. | Info | Sin deducción |
+|  | El recuerdo se mantuvo desde la mitad del peldaño superior, pero no en el peldaño superior; descuenta la parte del peldaño superior que no se recordó. | Advertencia · Media | hasta −50 pts |
+|  | El recuerdo falló por debajo de la mitad del peldaño superior; descuenta la parte del peldaño superior que no se recordó. | Fallo · Alta | hasta −100 pts |
 |  | Ni siquiera el tamaño de sonda más pequeño recordó la aguja. | Fallo · Alta | −100 pts |
 | `context_window.lost_in_middle` | Se recordaron el principio y el final, pero la parte central no, dos veces. | Advertencia · Media | −15 pts |
 | `context_window.rejected_below_claim` | Un prompt muy por debajo de la ventana declarada fue rechazado por demasiado largo. | Fallo · Alta | Sin deducción |

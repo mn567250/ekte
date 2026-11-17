@@ -386,16 +386,20 @@ il modello deve restituirlo.
 
 - **Finestra sondata.** La sonda arriva fino a `upper` = la finestra
   dichiarata, limitata da `--max-context-tokens` (200K predefinito). Ogni
-  verdetto è giudicato rispetto a `upper`, mai rispetto alla parte di una
-  finestra dichiarata più grande che sta oltre il limite.
+  verdetto è giudicato rispetto al gradino più alto (il 90% di `upper`, sotto),
+  mai rispetto alla parte di una finestra dichiarata più grande che sta oltre il
+  limite.
 - **Le dimensioni sono token reali.** La stima dei token integrata in ekte
   sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
   rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
   ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
-  resta entro N token reali. Le dimensioni nelle prove (`size`,
-  `effective_window`, `top_rung`) sono questi budget di token reali; le righe
-  della scala riportano anche la stima con cui è stato costruito un prompt
-  (`heuristic_tokens`).
+  resta entro N token reali. Una famiglia di tokenizer con un fattore misurato
+  offline userebbe il proprio fattore (`real_per_heuristic` nelle prove);
+  nessuno è ancora misurato, quindi ogni famiglia usa 1,2. Le dimensioni nelle
+  prove (`size`, `effective_window`, `top_rung`) sono questi budget di token
+  reali; le righe della scala riportano anche la stima con cui è stato
+  costruito un prompt (`heuristic_tokens`) e i token di prompt che l'endpoint
+  ha dichiarato per esso (`prompt_tokens`).
 
 1. Una scala di al più sette dimensioni, dimezzata a partire da un **gradino
    più alto al 90% di `upper`** (nessun gradino raggiunge la finestra intera,
@@ -428,18 +432,26 @@ il modello deve restituirlo.
    l'ago è un fallimento.
 
 La finestra misurata (la dimensione richiamata più grande) viene confrontata con
-`upper`: un richiamo al gradino più alto è coerente (oppure, se la finestra
-dichiarata supera il limite, **verificata fino al limite**: la finestra oltre
-non è stata provata); sotto, il verdetto detrae la quota del gradino più alto
-non richiamata — un avviso dalla metà di `upper` in su, un fallimento sotto.
-Senza finestra dichiarata la misura viene riportata ma non valutata.
+il gradino più alto: un richiamo al gradino più alto è coerente (oppure, se la
+finestra dichiarata supera il limite, **verificata fino al limite**: la finestra
+oltre non è stata provata); sotto, il verdetto detrae la quota del gradino più
+alto non richiamata (`top_rung_share`) — un avviso dalla metà del gradino più
+alto in su, un fallimento sotto. Verdetto e detrazione hanno lo stesso
+riferimento, quindi un avviso non detrae mai più di 50 punti. Se è fallito solo
+il gradino più alto e l'endpoint ha dichiarato per la dimensione richiamata più
+grande oltre il 5% di token di prompt in più del suo budget, la sonda **ha
+sforato** (il tokenizer dell'endpoint conta il riempimento più denso di quanto
+il fattore preveda): la finestra oltre viene riportata come non provata (Info),
+mai come corta né come rifiuto sotto la dichiarazione. Senza finestra
+dichiarata la misura viene riportata ma non valutata.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `context_window.window` (Finestra di contesto effettiva) | Il richiamo ha tenuto al gradino più alto (90% della finestra sondata): nessuna detrazione. | Superato | Nessuna detrazione |
 |  | Richiamo verificato fino al limite della sonda; la finestra dichiarata oltre non è stata provata. | Superato | Nessuna detrazione |
-|  | Il richiamo ha tenuto fino al 50-90% della finestra sondata; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
-|  | Il richiamo è fallito sotto la metà della finestra sondata; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
+|  | Solo il gradino più alto è fallito e l'endpoint ha contato il prompt più grande richiamato oltre il 5% sopra il suo budget: la sonda ha sforato, la finestra oltre non è stata provata. | Info | Nessuna detrazione |
+|  | Il richiamo ha tenuto da metà del gradino più alto in su, ma non al gradino più alto; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
+|  | Il richiamo è fallito sotto la metà del gradino più alto; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
 |  | Nemmeno la dimensione di sonda più piccola ha richiamato l'ago. | Fallito · Alta | −100 pt |
 | `context_window.lost_in_middle` | L'inizio e la fine sono stati richiamati, ma la parte centrale no, per due volte. | Avviso · Media | −15 pt |
 | `context_window.rejected_below_claim` | Un prompt ben al di sotto della finestra dichiarata è stato rifiutato come troppo lungo. | Fallito · Alta | Nessuna detrazione |
