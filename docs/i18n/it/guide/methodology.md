@@ -52,7 +52,7 @@ elencano i soggetti sotto il loro controllo.
 
 ### Punteggio e stato di una dimensione
 
-ekte assegna un punteggio a dieci dimensioni. Il punteggio di una dimensione è
+ekte assegna un punteggio a undici dimensioni. Il punteggio di una dimensione è
 la **media a pari peso dei punteggi dei suoi rilevatori**: un rilevatore con
 molti controlli non pesa più di uno con pochi, e un rilevatore senza punteggio
 numerico resta escluso. Il suo stato è il peggiore stato concluso dai suoi
@@ -79,13 +79,14 @@ rinormalizzati. Il voto è A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) o F.
 | Identità del modello | `model_identity` | 21 | centrale |
 | Finestra di contesto | `context_window` | 19 | centrale |
 | Capacità dichiarate | `capability` | 13 | centrale |
-| Conformità del protocollo | `protocol` | 8 |  |
 | Fatturazione e consumo | `billing` | 8 | centrale |
 | Connettività | `connectivity` | 7 |  |
+| Conformità del protocollo | `protocol` | 6 |  |
 | Autenticità dello streaming | `streaming` | 6 |  |
 | Affidabilità in concorrenza | `reliability` | 6 |  |
-| Sicurezza del trasporto | `security` | 6 |  |
-| Prestazioni | `performance` | 6 |  |
+| Integrità delle risposte | `integrity` | 6 |  |
+| Sicurezza del trasporto | `security` | 4 |  |
+| Prestazioni | `performance` | 4 |  |
 
 Il verdetto si basa sulle dimensioni che sono state **eseguite**: un'esecuzione
 `custom` controlla solo la propria selezione. Contano due gruppi di dimensioni:
@@ -108,8 +109,7 @@ risponda un altro modello. Sono esclusi anche gli **avvisi di trasporto** (`ADVI
 sotto carico dicono come si raggiunge il relay, non quale modello serve.
 Abbassano comunque punteggio e stato della loro dimensione, compaiono dopo le
 rilevazioni di sostituzione tra quelle principali e il riepilogo li indica come
-avvisi (da gravità Media in su). La manomissione delle risposte (integrità) e una chiave API restituita
-continuano ad alzare il rischio.
+avvisi (da gravità Media in su). Una chiave API restituita continua ad alzare il rischio, così come le rilevazioni della dimensione Integrità delle risposte (manomissione, prompt di sistema iniettato, cache delle risposte): non è una dimensione centrale, quindi è la sola gravità a determinare il rischio.
 
 | Rischio | Etichetta nell'interfaccia | Quando |
 |---|---|---|
@@ -145,10 +145,9 @@ sull'identità del modello dice che l'identità del modello non è stata verific
 | Rilevatore | Id | Dimensione | Dalla suite |
 |---|---|---|---|
 | Connettività e completamento di base | `connectivity` | Connettività | `smoke` |
-| Conformità alla compatibilità OpenAI | `protocol` | Conformità del protocollo | `standard` |
+| Conformità al protocollo di comunicazione | `protocol` | Conformità del protocollo | `standard` |
 | Supporto degli attributi di richiesta | `protocol_request` | Conformità del protocollo | `standard` |
 | Disponibilità degli attributi di risposta | `protocol_response` | Conformità del protocollo | `standard` |
-| Determinismo e correttezza della cache | `determinism` | Conformità del protocollo | `deep` |
 | Finestra di contesto reale e troncamento | `context_window` | Finestra di contesto | `deep` |
 | Identità del modello e impronta di declassamento | `model_identity` | Identità del modello | `standard` |
 | Valutazione di qualità / declassamento da parte di un LLM giudice | `quality_judge` | Identità del modello | `deep` (solo con `--judge`) |
@@ -158,9 +157,10 @@ sull'identità del modello dice che l'identità del modello non è stata verific
 | Verifica della fatturazione dei token | `billing` | Fatturazione e consumo | `standard` |
 | Affidabilità e latenza in concorrenza | `reliability` | Affidabilità in concorrenza | `standard` |
 | Segnali di trasporto e gestione dei segreti | `security` | Sicurezza del trasporto | `smoke` |
-| Rilevamento di prompt di sistema iniettato | `injected_prompt` | Sicurezza del trasporto | `deep` |
-| Integrità delle risposte / manomissione | `integrity` | Sicurezza del trasporto | `deep` |
-| Cache del prefisso del prompt (tempi) | `prompt_cache` | Sicurezza del trasporto | `deep` |
+| Determinismo e correttezza della cache | `determinism` | Integrità delle risposte | `deep` |
+| Rilevamento di prompt di sistema iniettato | `injected_prompt` | Integrità delle risposte | `deep` |
+| Integrità delle risposte / manomissione | `integrity` | Integrità delle risposte | `deep` |
+| Cache del prefisso del prompt (tempi) | `prompt_cache` | Integrità delle risposte | `deep` |
 | Sonda delle prestazioni | `performance` | Prestazioni | `deep` (in `standard` solo con un riferimento, 5 richieste) |
 
 - **smoke** esegue connettività e sicurezza; **standard** aggiunge i rilevatori
@@ -261,10 +261,9 @@ risposto. Le sue rilevazioni non alzano mai il verdetto di rischio.
 
 **Rileva.** Relay il cui middleware rompe il contratto del protocollo (turni
 persi, sequenze di stop ignorate, errori malformati, campi di risposta mancanti
-o a zero, parametri di richiesta rimossi) e, tramite il determinismo,
-`cache.ignore-temperature`. Copre in parte `capability.json-tool-fakery`.
+o a zero, parametri di richiesta rimossi). Copre in parte `capability.json-tool-fakery`.
 
-### `protocol` — Conformità alla compatibilità OpenAI
+### `protocol` — Conformità al protocollo di comunicazione
 
 **Come funziona.** Tre sonde: una conversazione a più turni che deve ricordare
 un colore da un turno precedente; una sequenza `stop` che deve troncare
@@ -342,29 +341,6 @@ lo rifiuta. Strumenti e modalità JSON restano a `capability`, `stop` a
 |  | Rifiutato con un 4xx, mentre il riferimento lo accetta. | Fallito · Media | 15 pt |
 |  | Rifiutato, ma il modello stesso non lo supporta; non conteggiato. | Info | Non conteggiato |
 |  | Errore del server o nessuna risposta; non conteggiato. | Non conclusivo · Bassa | Non conteggiato |
-
-### `determinism` — Determinismo e correttezza della cache
-
-**Come funziona.** Quattro prompt creativi identici a `temperature=1.0` (senza
-seed): un modello autentico varia; un output identico byte per byte in tutti i
-campioni indica una cache delle risposte che ignora il campionamento. Il
-verdetto è soppresso per i modelli di ragionamento, che ignorano legittimamente
-la temperatura. Due domande fattuali identiche a `temperature=0` sono solo
-informative.
-
-Per concludere che c'è una cache, almeno tre dei quattro campioni devono essere
-utilizzabili (e tutti quelli utilizzabili identici); con meno, la verifica non è
-conclusiva.
-
-| Controllo | Esito | Stato | Effetto |
-|---|---|---|---|
-| `determinism.temp1_variability` | I campioni ripetuti con temperature=1.0 erano diversi, come in un vero campionamento. | Superato | 100 pt |
-|  | I campioni erano identici, ma i modelli di ragionamento ignorano legittimamente temperature. | Info | 100 pt |
-|  | Tutti i campioni utilizzabili (almeno 3) a temperature=1.0 erano identici byte per byte, il che suggerisce una cache delle risposte. | Avviso · Media | 55 pt |
-|  | Meno di 3 campioni utilizzabili a temperature=1.0 su cui basare un giudizio. | Non conclusivo · Bassa | Non conteggiato |
-| `determinism.temp0_stability` | Risposte identiche con temperature=0 (previsto); solo informativo, non conteggiato. | Info | Non conteggiato |
-|  | Le risposte differivano con temperature=0; solo informativo, non conteggiato. | Info | Non conteggiato |
-|  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 
 **Avvertenze.** I gateway possono aggiungere campi specifici del fornitore;
 vengono segnalati solo campi obbligatori mancanti o non validi. La traduzione
@@ -770,36 +746,9 @@ trapelati) sono nella roadmap.
 
 ---
 
-## `security` — Sicurezza del trasporto
+## `integrity` — Integrità delle risposte
 
-**Rileva.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-indizi di `privacy.prompt-logging-leakage` (cache per prefisso) e l'igiene di
-base di trasporto e segreti.
-
-### `security` — Segnali di trasporto e gestione dei segreti
-
-**Come funziona.** Verifica che l'endpoint usi HTTPS, che la chiave API non
-compaia mai letteralmente in una risposta e quali intestazioni di risposta
-rivelino un upstream o un proxy (`server`, `via`, `x-powered-by`,
-`x-upstream-*`, `x-litellm-*`, …; informativo). Ricorda anche il limite: il
-logging dei prompt e le chiavi upstream condivise non sono dimostrabili
-dall'esterno. L'HTTP in chiaro verso questa macchina o una rete privata (`localhost`,
-`127.x`, `192.168.x`, `*.local`, … — un modello self-hosted) è solo un Avviso
-senza tetto, perché la chiave non attraversa Internet; verso ogni altro host
-resta Fallito · Alta. In entrambi i casi `security.tls` è un avviso di trasporto
-e non alza mai il verdetto di rischio.
-
-| Controllo | Esito | Stato | Effetto |
-|---|---|---|---|
-| `security.tls` | L'endpoint usa HTTPS. | Superato | Nessuna detrazione |
-|  | L'endpoint non usa HTTPS; la chiave API viaggia in chiaro. | Fallito · Alta | tetto 40 |
-|  | HTTP in chiaro verso un host locale o di rete privata; la chiave API non attraversa Internet. | Avviso · Bassa | Nessuna detrazione |
-| `security.key_echo` | La chiave API non compare nella risposta. | Superato | Nessuna detrazione |
-|  | La chiave API compare alla lettera nella risposta. | Fallito · Alta | tetto 30 |
-| `security.headers` | Nessun header di risposta rivela l'upstream (solo informativo). | Superato | Nessuna detrazione |
-|  | Gli header di risposta rivelano l'upstream o il proxy (solo informativo). | Info · Bassa | Nessuna detrazione |
-|  | Nessun header di risposta da ispezionare. | Non conclusivo | Nessuna detrazione |
-| `security.note` | Il logging dei prompt e le chiavi upstream condivise non sono dimostrabili dall'esterno. | Info | Nessuna detrazione |
+**Rileva.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` e indizi di `privacy.prompt-logging-leakage` (cache per prefisso): se la risposta è quella del modello, inalterata e generata al momento. Sulle superfici di embedding e rerank la dimensione contiene il controllo di determinismo. Non è una dimensione centrale: le sue rilevazioni determinano il rischio solo con la loro gravità.
 
 ### `injected_prompt` — Rilevamento di prompt di sistema iniettato
 
@@ -839,6 +788,29 @@ Una risposta troncata al limite di output è non conclusiva, non una sostituzion
 |  | Un valore canary è stato sostituito mentre il riferimento affidabile lo ha mantenuto intatto. | Fallito · Critica | 10 pt |
 |  | Nessun canary è stato ripetuto alla lettera, quindi la manomissione non è valutabile. | Non conclusivo | Non conteggiato |
 
+### `determinism` — Determinismo e correttezza della cache
+
+**Come funziona.** Quattro prompt creativi identici a `temperature=1.0` (senza
+seed): un modello autentico varia; un output identico byte per byte in tutti i
+campioni indica una cache delle risposte che ignora il campionamento. Il
+verdetto è soppresso per i modelli di ragionamento, che ignorano legittimamente
+la temperatura. Due domande fattuali identiche a `temperature=0` sono solo
+informative.
+
+Per concludere che c'è una cache, almeno tre dei quattro campioni devono essere
+utilizzabili (e tutti quelli utilizzabili identici); con meno, la verifica non è
+conclusiva.
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `determinism.temp1_variability` | I campioni ripetuti con temperature=1.0 erano diversi, come in un vero campionamento. | Superato | 100 pt |
+|  | I campioni erano identici, ma i modelli di ragionamento ignorano legittimamente temperature. | Info | 100 pt |
+|  | Tutti i campioni utilizzabili (almeno 3) a temperature=1.0 erano identici byte per byte, il che suggerisce una cache delle risposte. | Avviso · Media | 55 pt |
+|  | Meno di 3 campioni utilizzabili a temperature=1.0 su cui basare un giudizio. | Non conclusivo · Bassa | Non conteggiato |
+| `determinism.temp0_stability` | Risposte identiche con temperature=0 (previsto); solo informativo, non conteggiato. | Info | Non conteggiato |
+|  | Le risposte differivano con temperature=0; solo informativo, non conteggiato. | Info | Non conteggiato |
+|  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
+
 ### `prompt_cache` — Cache del prefisso del prompt (tempi)
 
 **Come funziona.** Un prefisso univoco di circa 1.200 token viene inviato due
@@ -861,6 +833,37 @@ client o dopo un riscaldamento) può sfuggire a un numero finito di sonde. Il
 logging black-box è **indimostrabile** dal client, e ekte non può mostrare una
 cache condivisa *tra utenti* con una sola chiave: l'assenza di un segnale
 temporale non prova che i prompt non vengano registrati.
+
+---
+
+## `security` — Sicurezza del trasporto
+
+**Rileva.** L'igiene di base di trasporto e segreti: HTTP in chiaro, una chiave API restituita nella risposta e intestazioni di risposta che rivelano l'upstream.
+
+### `security` — Segnali di trasporto e gestione dei segreti
+
+**Come funziona.** Verifica che l'endpoint usi HTTPS, che la chiave API non
+compaia mai letteralmente in una risposta e quali intestazioni di risposta
+rivelino un upstream o un proxy (`server`, `via`, `x-powered-by`,
+`x-upstream-*`, `x-litellm-*`, …; informativo). Ricorda anche il limite: il
+logging dei prompt e le chiavi upstream condivise non sono dimostrabili
+dall'esterno. L'HTTP in chiaro verso questa macchina o una rete privata (`localhost`,
+`127.x`, `192.168.x`, `*.local`, … — un modello self-hosted) è solo un Avviso
+senza tetto, perché la chiave non attraversa Internet; verso ogni altro host
+resta Fallito · Alta. In entrambi i casi `security.tls` è un avviso di trasporto
+e non alza mai il verdetto di rischio.
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `security.tls` | L'endpoint usa HTTPS. | Superato | Nessuna detrazione |
+|  | L'endpoint non usa HTTPS; la chiave API viaggia in chiaro. | Fallito · Alta | tetto 40 |
+|  | HTTP in chiaro verso un host locale o di rete privata; la chiave API non attraversa Internet. | Avviso · Bassa | Nessuna detrazione |
+| `security.key_echo` | La chiave API non compare nella risposta. | Superato | Nessuna detrazione |
+|  | La chiave API compare alla lettera nella risposta. | Fallito · Alta | tetto 30 |
+| `security.headers` | Nessun header di risposta rivela l'upstream (solo informativo). | Superato | Nessuna detrazione |
+|  | Gli header di risposta rivelano l'upstream o il proxy (solo informativo). | Info · Bassa | Nessuna detrazione |
+|  | Nessun header di risposta da ispezionare. | Non conclusivo | Nessuna detrazione |
+| `security.note` | Il logging dei prompt e le chiavi upstream condivise non sono dimostrabili dall'esterno. | Info | Nessuna detrazione |
 
 ---
 
@@ -964,7 +967,7 @@ il rischio ALTO, come un modello sostituito nella chat.
 | Dimensione del vettore | `embed.dimension` | Identità del modello | lunghezza restituita contro la dimensione nativa del modello dichiarato (base di conoscenza, o `claimed_dimensions`) |
 | Modello restituito | `embed.model_field` | Identità del modello | il campo `model` della risposta nomina il modello dichiarato |
 | Deriva dei vettori | `embed.drift` | Identità del modello | il vettore dell'input fisso della sonda contro l'esecuzione salvata precedente |
-| Determinismo | `embed.determinism` | Affidabilità in concorrenza | lo stesso input due volte dà coseno ≥ 0,9999 |
+| Determinismo | `embed.determinism` | Integrità delle risposte | lo stesso input due volte dà coseno ≥ 0,9999 |
 | Distinzione | `embed.distinctness` | Capacità dichiarate | input non correlati danno coseno inferiore a 0,98 |
 | Sonda delle prestazioni | `performance.embed` | Prestazioni | latenza, avvio a freddo, throughput, scalabilità a lotti |
 
@@ -996,8 +999,7 @@ conoscenza; la velocità grezza conta solo rispetto a un riferimento.
 
 Una verifica di rerank (`surface` `rerank`) invia solo richieste `POST /rerank` ed
 è valutata sulla scala comune 0–100 e voto A–F con pesi propri: identità del
-modello 30, capacità dichiarate 30, prestazioni 20, affidabilità in concorrenza
-10, connettività 10. Una classifica a risposta nota sbagliata (capacità
+modello 30, capacità dichiarate 30, prestazioni 20, integrità delle risposte 10, connettività 10. Una classifica a risposta nota sbagliata (capacità
 dichiarate, ALTA) o un modello sostituito (identità del modello, ALTA) rende il
 rischio ALTO.
 
@@ -1007,7 +1009,7 @@ rischio ALTO.
 | Risposta nota | `rerank.known_answer` | Capacità dichiarate | una sonda con un documento chiaramente pertinente lo mette primo |
 | Modello restituito | `rerank.identity` | Identità del modello | il campo `model` della risposta nomina il modello dichiarato |
 | Deriva della classifica | `rerank.drift` | Identità del modello | classifica e punteggi della sonda fissa contro l'esecuzione salvata precedente |
-| Determinismo | `rerank.determinism` | Affidabilità in concorrenza | la stessa query due volte dà la stessa classifica e gli stessi punteggi |
+| Determinismo | `rerank.determinism` | Integrità delle risposte | la stessa query due volte dà la stessa classifica e gli stessi punteggi |
 | Sonda delle prestazioni | `performance.rerank` | Prestazioni | latenza, avvio a freddo, documenti/s, scalabilità con il numero di documenti |
 
 **Deriva della classifica.** Ogni esecuzione conserva la classifica e i punteggi

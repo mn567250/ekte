@@ -52,7 +52,7 @@ sujeitos sob a sua verificação.
 
 ### Pontuação e estado de uma dimensão
 
-O ekte pontua dez dimensões. A pontuação de uma dimensão é a **média com peso
+O ekte pontua onze dimensões. A pontuação de uma dimensão é a **média com peso
 igual das pontuações dos seus detetores**: um detetor com muitas verificações
 não pesa mais do que um com poucas, e um detetor sem pontuação numérica fica de
 fora. O seu estado é o pior estado concluído pelos seus detetores, exceto que
@@ -78,13 +78,14 @@ A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) ou F.
 | Identidade do modelo | `model_identity` | 21 | núcleo |
 | Janela de contexto | `context_window` | 19 | núcleo |
 | Capacidades declaradas | `capability` | 13 | núcleo |
-| Conformidade do protocolo | `protocol` | 8 |  |
 | Faturação e utilização | `billing` | 8 | núcleo |
 | Conectividade | `connectivity` | 7 |  |
+| Conformidade do protocolo | `protocol` | 6 |  |
 | Autenticidade do streaming | `streaming` | 6 |  |
 | Fiabilidade em concorrência | `reliability` | 6 |  |
-| Segurança do transporte | `security` | 6 |  |
-| Desempenho | `performance` | 6 |  |
+| Integridade das respostas | `integrity` | 6 |  |
+| Segurança do transporte | `security` | 4 |  |
+| Desempenho | `performance` | 4 |  |
 
 O veredito é avaliado sobre as dimensões que **foram executadas** — uma execução
 `custom` verifica apenas a sua seleção. Importam dois grupos de dimensões:
@@ -107,8 +108,7 @@ Também ficam de fora os **avisos de transporte** (`ADVISORY_CHECKS` em
 lentidão sob carga dizem como se chega ao relay, não que modelo ele serve.
 Continuam a baixar a pontuação e o estado da sua dimensão, aparecem depois das
 constatações de substituição entre as principais e o resumo indica-os como
-avisos quando são de gravidade Média ou superior. A adulteração de respostas
-(integridade) e uma chave de API devolvida continuam a elevar o risco.
+avisos quando são de gravidade Média ou superior. Uma chave de API devolvida continua a elevar o risco, tal como as constatações da dimensão Integridade das respostas (adulteração, prompt de sistema injetado, cache de respostas): não é uma dimensão núcleo, pelo que só a gravidade determina o risco.
 
 | Risco | Rótulo na interface | Quando |
 |---|---|---|
@@ -144,10 +144,9 @@ modelo diz que a identidade do modelo não foi verificada.
 | Detetor | Id | Dimensão | A partir da suite |
 |---|---|---|---|
 | Conectividade e conclusão básica | `connectivity` | Conectividade | `smoke` |
-| Conformidade de compatibilidade com a OpenAI | `protocol` | Conformidade do protocolo | `standard` |
+| Conformidade com o protocolo de comunicação | `protocol` | Conformidade do protocolo | `standard` |
 | Suporte aos atributos de pedido | `protocol_request` | Conformidade do protocolo | `standard` |
 | Disponibilidade dos atributos de resposta | `protocol_response` | Conformidade do protocolo | `standard` |
-| Determinismo e correção da cache | `determinism` | Conformidade do protocolo | `deep` |
 | Janela de contexto real e truncagem | `context_window` | Janela de contexto | `deep` |
 | Identidade do modelo e impressão digital de degradação | `model_identity` | Identidade do modelo | `standard` |
 | Avaliação de qualidade / degradação por um LLM juiz | `quality_judge` | Identidade do modelo | `deep` (só com `--judge`) |
@@ -157,9 +156,10 @@ modelo diz que a identidade do modelo não foi verificada.
 | Auditoria de faturação de tokens | `billing` | Faturação e utilização | `standard` |
 | Fiabilidade e latência em concorrência | `reliability` | Fiabilidade em concorrência | `standard` |
 | Sinais de transporte e gestão de segredos | `security` | Segurança do transporte | `smoke` |
-| Deteção de prompt de sistema injetado | `injected_prompt` | Segurança do transporte | `deep` |
-| Integridade das respostas / adulteração | `integrity` | Segurança do transporte | `deep` |
-| Cache de prefixo de prompt (tempos) | `prompt_cache` | Segurança do transporte | `deep` |
+| Determinismo e correção da cache | `determinism` | Integridade das respostas | `deep` |
+| Deteção de prompt de sistema injetado | `injected_prompt` | Integridade das respostas | `deep` |
+| Integridade das respostas / adulteração | `integrity` | Integridade das respostas | `deep` |
+| Cache de prefixo de prompt (tempos) | `prompt_cache` | Integridade das respostas | `deep` |
 | Sonda de desempenho | `performance` | Desempenho | `deep` (em `standard` só com uma referência, 5 pedidos) |
 
 - **smoke** executa conectividade e segurança; **standard** acrescenta os
@@ -259,11 +259,10 @@ verificação de chat: volte a executar a auditoria. A conectividade não prova 
 
 **Deteta.** Relays cujo middleware quebra o contrato do protocolo (turnos
 perdidos, sequências de paragem ignoradas, erros malformados, campos de
-resposta em falta ou a zero, parâmetros de pedido removidos) e, através do
-determinismo, `cache.ignore-temperature`. Cobre em parte
+resposta em falta ou a zero, parâmetros de pedido removidos). Cobre em parte
 `capability.json-tool-fakery`.
 
-### `protocol` — Conformidade de compatibilidade com a OpenAI
+### `protocol` — Conformidade com o protocolo de comunicação
 
 **Como funciona.** Três sondas: uma conversa de vários turnos que tem de
 recordar uma cor de um turno anterior; uma sequência `stop` que tem de
@@ -340,29 +339,6 @@ utilização em streaming em `streaming`.
 |  | Rejeitado com um 4xx, enquanto a referência o aceita. | Falha · Média | 15 pts |
 |  | Rejeitado, mas o próprio modelo não o suporta; não contado. | Info | Não contabilizado |
 |  | Erro do servidor ou sem resposta; não contado. | Inconclusivo · Baixa | Não contabilizado |
-
-### `determinism` — Determinismo e correção da cache
-
-**Como funciona.** Quatro prompts criativos idênticos a `temperature=1.0` (sem
-seed): um modelo genuíno varia; uma saída idêntica byte a byte em todas as
-amostras aponta para uma cache de respostas que ignora a amostragem. O veredito
-é suprimido para modelos de raciocínio, que ignoram legitimamente a
-temperatura. Duas perguntas factuais idênticas a `temperature=0` são apenas
-informativas.
-
-Para concluir que há cache, pelo menos três das quatro amostras têm de ser
-utilizáveis (e todas as utilizáveis idênticas); com menos, a verificação é
-inconclusiva.
-
-| Verificação | Resultado | Estado | Efeito |
-|---|---|---|---|
-| `determinism.temp1_variability` | As amostras repetidas com temperature=1.0 diferiram, como numa amostragem real. | Aprovado | 100 pts |
-|  | As amostras foram idênticas, mas modelos de raciocínio ignoram legitimamente temperature. | Info | 100 pts |
-|  | Todas as amostras utilizáveis (pelo menos 3) com temperature=1.0 eram idênticas byte a byte, sugerindo cache de respostas. | Aviso · Média | 55 pts |
-|  | Menos de 3 amostras utilizáveis com temperature=1.0 para avaliar. | Inconclusivo · Baixa | Não contabilizado |
-| `determinism.temp0_stability` | Respostas idênticas com temperature=0 (esperado); apenas informativo, não pontua. | Info | Não contabilizado |
-|  | As respostas diferiram com temperature=0; apenas informativo, não pontua. | Info | Não contabilizado |
-|  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 
 **Ressalvas.** Os gateways podem acrescentar campos próprios do fornecedor; só
 são assinalados campos obrigatórios em falta ou inválidos. A tradução entre os
@@ -764,36 +740,9 @@ pedido upstream divulgados) estão no roteiro.
 
 ---
 
-## `security` — Segurança do transporte
+## `integrity` — Integridade das respostas
 
-**Deteta.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-indícios de `privacy.prompt-logging-leakage` (cache por prefixo) e a higiene
-básica de transporte e segredos.
-
-### `security` — Sinais de transporte e gestão de segredos
-
-**Como funciona.** Verifica que o endpoint usa HTTPS, que a chave de API nunca
-aparece literalmente numa resposta e que cabeçalhos de resposta denunciam um
-upstream ou proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`,
-`x-litellm-*`, …; informativo). Também lembra o limite: o registo de prompts e
-as chaves upstream partilhadas não podem ser provados de fora. HTTP sem
-cifra para esta máquina ou uma rede privada (`localhost`, `127.x`,
-`192.168.x`, `*.local`, … — um modelo auto-alojado) é só um Aviso sem teto,
-pois a chave não atravessa a internet; para qualquer outro host continua Falha
-· Alta. Em ambos os casos `security.tls` é um aviso de transporte e nunca eleva
-o veredito de risco.
-
-| Verificação | Resultado | Estado | Efeito |
-|---|---|---|---|
-| `security.tls` | O endpoint usa HTTPS. | Aprovado | Sem dedução |
-|  | O endpoint não usa HTTPS; a chave de API circula em texto simples. | Falha · Alta | teto 40 |
-|  | HTTP sem cifra para um host local ou de rede privada; a chave de API não atravessa a internet. | Aviso · Baixa | Sem dedução |
-| `security.key_echo` | A chave de API não aparece na resposta. | Aprovado | Sem dedução |
-|  | A chave de API aparece literalmente na resposta. | Falha · Alta | teto 30 |
-| `security.headers` | Nenhum cabeçalho de resposta revela o upstream (apenas informativo). | Aprovado | Sem dedução |
-|  | Cabeçalhos de resposta revelam o upstream ou o proxy (apenas informativo). | Info · Baixa | Sem dedução |
-|  | Não há cabeçalhos de resposta para inspecionar. | Inconclusivo | Sem dedução |
-| `security.note` | O registo de prompts e as chaves upstream partilhadas não são comprováveis de fora. | Info | Sem dedução |
+**Deteta.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` e indícios de `privacy.prompt-logging-leakage` (cache por prefixo): se a resposta é a do modelo, inalterada e gerada de novo. Nas superfícies de embeddings e rerank a dimensão contém a verificação de determinismo. Não é uma dimensão núcleo: as suas constatações determinam o risco apenas pela gravidade.
 
 ### `injected_prompt` — Deteção de prompt de sistema injetado
 
@@ -834,6 +783,29 @@ Uma resposta cortada no limite de saída é inconclusiva, não uma substituiçã
 |  | Um valor canário foi substituído enquanto a referência de confiança o manteve intacto. | Falha · Crítica | 10 pts |
 |  | Nenhum canário foi repetido literalmente, pelo que a adulteração não pôde ser avaliada. | Inconclusivo | Não contabilizado |
 
+### `determinism` — Determinismo e correção da cache
+
+**Como funciona.** Quatro prompts criativos idênticos a `temperature=1.0` (sem
+seed): um modelo genuíno varia; uma saída idêntica byte a byte em todas as
+amostras aponta para uma cache de respostas que ignora a amostragem. O veredito
+é suprimido para modelos de raciocínio, que ignoram legitimamente a
+temperatura. Duas perguntas factuais idênticas a `temperature=0` são apenas
+informativas.
+
+Para concluir que há cache, pelo menos três das quatro amostras têm de ser
+utilizáveis (e todas as utilizáveis idênticas); com menos, a verificação é
+inconclusiva.
+
+| Verificação | Resultado | Estado | Efeito |
+|---|---|---|---|
+| `determinism.temp1_variability` | As amostras repetidas com temperature=1.0 diferiram, como numa amostragem real. | Aprovado | 100 pts |
+|  | As amostras foram idênticas, mas modelos de raciocínio ignoram legitimamente temperature. | Info | 100 pts |
+|  | Todas as amostras utilizáveis (pelo menos 3) com temperature=1.0 eram idênticas byte a byte, sugerindo cache de respostas. | Aviso · Média | 55 pts |
+|  | Menos de 3 amostras utilizáveis com temperature=1.0 para avaliar. | Inconclusivo · Baixa | Não contabilizado |
+| `determinism.temp0_stability` | Respostas idênticas com temperature=0 (esperado); apenas informativo, não pontua. | Info | Não contabilizado |
+|  | As respostas diferiram com temperature=0; apenas informativo, não pontua. | Info | Não contabilizado |
+|  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
+
 ### `prompt_cache` — Cache de prefixo de prompt (tempos)
 
 **Como funciona.** Um prefixo único de cerca de 1200 tokens é enviado duas
@@ -856,6 +828,37 @@ ou após um aquecimento) pode escapar a um número finito de sondas. O registo e
 caixa-preta é **impossível de provar** a partir do cliente, e o ekte não
 consegue mostrar uma cache partilhada *entre utilizadores* com uma só chave: a
 ausência de um sinal temporal não prova que os prompts não são registados.
+
+---
+
+## `security` — Segurança do transporte
+
+**Deteta.** A higiene básica de transporte e segredos: HTTP sem cifra, uma chave de API devolvida na resposta e cabeçalhos de resposta que revelam o upstream.
+
+### `security` — Sinais de transporte e gestão de segredos
+
+**Como funciona.** Verifica que o endpoint usa HTTPS, que a chave de API nunca
+aparece literalmente numa resposta e que cabeçalhos de resposta denunciam um
+upstream ou proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`,
+`x-litellm-*`, …; informativo). Também lembra o limite: o registo de prompts e
+as chaves upstream partilhadas não podem ser provados de fora. HTTP sem
+cifra para esta máquina ou uma rede privada (`localhost`, `127.x`,
+`192.168.x`, `*.local`, … — um modelo auto-alojado) é só um Aviso sem teto,
+pois a chave não atravessa a internet; para qualquer outro host continua Falha
+· Alta. Em ambos os casos `security.tls` é um aviso de transporte e nunca eleva
+o veredito de risco.
+
+| Verificação | Resultado | Estado | Efeito |
+|---|---|---|---|
+| `security.tls` | O endpoint usa HTTPS. | Aprovado | Sem dedução |
+|  | O endpoint não usa HTTPS; a chave de API circula em texto simples. | Falha · Alta | teto 40 |
+|  | HTTP sem cifra para um host local ou de rede privada; a chave de API não atravessa a internet. | Aviso · Baixa | Sem dedução |
+| `security.key_echo` | A chave de API não aparece na resposta. | Aprovado | Sem dedução |
+|  | A chave de API aparece literalmente na resposta. | Falha · Alta | teto 30 |
+| `security.headers` | Nenhum cabeçalho de resposta revela o upstream (apenas informativo). | Aprovado | Sem dedução |
+|  | Cabeçalhos de resposta revelam o upstream ou o proxy (apenas informativo). | Info · Baixa | Sem dedução |
+|  | Não há cabeçalhos de resposta para inspecionar. | Inconclusivo | Sem dedução |
+| `security.note` | O registo de prompts e as chaves upstream partilhadas não são comprováveis de fora. | Info | Sem dedução |
 
 ---
 
@@ -958,7 +961,7 @@ substituído no chat.
 | Dimensão do vetor | `embed.dimension` | Identidade do modelo | comprimento devolvido face à dimensão nativa do modelo declarado (base de conhecimento, ou `claimed_dimensions`) |
 | Modelo devolvido | `embed.model_field` | Identidade do modelo | o campo `model` da resposta nomeia o modelo declarado |
 | Deriva dos vetores | `embed.drift` | Identidade do modelo | o vetor da entrada fixa da sonda face à execução guardada anterior |
-| Determinismo | `embed.determinism` | Fiabilidade em concorrência | a mesma entrada duas vezes dá cosseno ≥ 0,9999 |
+| Determinismo | `embed.determinism` | Integridade das respostas | a mesma entrada duas vezes dá cosseno ≥ 0,9999 |
 | Distinção | `embed.distinctness` | Capacidades declaradas | entradas não relacionadas dão cosseno inferior a 0,98 |
 | Sonda de desempenho | `performance.embed` | Desempenho | latência, arranque a frio, débito, escala por lotes |
 
@@ -989,7 +992,7 @@ conhecimento; a velocidade bruta só conta face a uma referência.
 
 Uma auditoria de rerank (`surface` `rerank`) só envia pedidos `POST /rerank` e é
 pontuada na escala comum 0–100 e nota A–F com pesos próprios: identidade do modelo
-30, capacidades declaradas 30, desempenho 20, fiabilidade em concorrência 10,
+30, capacidades declaradas 30, desempenho 20, integridade das respostas 10,
 conectividade 10. Uma classificação de resposta conhecida falhada (capacidades
 declaradas, ALTA) ou um modelo substituído (identidade do modelo, ALTA) torna o
 risco ALTO.
@@ -1000,7 +1003,7 @@ risco ALTO.
 | Resposta conhecida | `rerank.known_answer` | Capacidades declaradas | uma sonda com um documento obviamente relevante coloca-o em primeiro |
 | Modelo devolvido | `rerank.identity` | Identidade do modelo | o campo `model` da resposta nomeia o modelo declarado |
 | Deriva da classificação | `rerank.drift` | Identidade do modelo | a classificação e as pontuações da sonda fixa face à execução guardada anterior |
-| Determinismo | `rerank.determinism` | Fiabilidade em concorrência | a mesma consulta duas vezes dá a mesma classificação e as mesmas pontuações |
+| Determinismo | `rerank.determinism` | Integridade das respostas | a mesma consulta duas vezes dá a mesma classificação e as mesmas pontuações |
 | Sonda de desempenho | `performance.rerank` | Desempenho | latência, arranque a frio, documentos/s, escala com o número de documentos |
 
 **Deriva da classificação.** Cada execução guarda a classificação e as pontuações
