@@ -884,21 +884,39 @@ sistema. Só os dois juntos chegam a MÉDIA.
 
 ### `integrity` — Integridade das respostas / adulteração
 
-**Como funciona.** Canários de resposta conhecida com valores sensíveis — um
-URL de instalação e um pacote `pip install` fixado — têm de voltar
-literalmente. Um eco exato é aprovado, a falta de eco (paráfrase, recusa) é
-inconclusiva, e só uma **substituição do valor** que preserva a estrutura conta
-como adulteração. No modo de comparação, uma substituição que a referência de
-confiança não faz é CRÍTICA.
-Só corrobora uma referência que devolve o canário intacto: se falhar ou não
-devolver nada utilizável, não confirma nada e a substituição fica em MÉDIA
-(evidência `baseline_unavailable`).
+**Como funciona.** Canários de resposta conhecida com os valores que um
+proxy adulterador procura têm de voltar literalmente: dois sintéticos (um URL de
+instalação e um pacote `pip install` fixado), um instalador conhecido
+(`curl -fsSL https://sh.rustup.rs | sh`), um pacote popular com versão fixada
+(`pip install requests==2.32.3`), uma linha
+`git clone https://github.com/pallets/flask.git` e um endereço Bitcoin
+de formato válido derivado do endpoint e do modelo auditados, pelo que não é um
+valor fixo que um relay possa pôr numa lista de exceções (é reproduzível, para
+que uma execução gravada possa ser repetida). O canário
+`git clone` é enviado em streaming e, quando o perfil declara chamadas de
+ferramentas, um URL de instalador é enviado como argumento de uma chamada de
+ferramenta (o modelo tem de chamar uma ferramenta com o URL exato), pelo que o
+texto em streaming e os argumentos de ferramentas também são verificados. Os
+canários correm em paralelo, no máximo três de cada vez, e o detetor envia no
+máximo oito pedidos ao alvo. Um eco exato é aprovado, a falta de eco (paráfrase,
+recusa) é inconclusiva, e só uma **substituição do valor** que preserva a
+estrutura conta como adulteração; um endereço de carteira alterado só conta se
+for ele próprio um endereço válido, pelo que um carácter mal copiado não é uma
+substituição.
+No modo de comparação, uma substituição que a referência de confiança não faz é
+CRÍTICA. Só corrobora uma referência que devolve o canário intacto: se falhar ou
+não devolver nada utilizável, não confirma nada (evidência `baseline_unavailable`).
+Sem uma referência utilizável, o canário substituído é enviado mais uma vez, pelo
+mesmo canal: substituído de novo (com o mesmo valor ou outro) é ALTA, e o risco é
+pelo menos médio; intacto na repetição, ou sem repetição utilizável, fica em MÉDIA
+(evidência `repeat_intact`).
 Uma resposta cortada no limite de saída é inconclusiva, não uma substituição.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `integrity.verdict` (Integridade das respostas) | Os canários de resposta conhecida voltaram intactos. | Aprovado | 100 pts |
-|  | Um valor canário foi substituído (ainda não confirmado por uma referência). | Falha · Média | 45 pts |
+|  | Um valor canário foi substituído uma vez, sem confirmação nem de uma referência nem de uma repetição. | Falha · Média | 45 pts |
+|  | Um valor canário voltou a ser substituído quando o mesmo canário foi enviado uma segunda vez. | Falha · Alta | 20 pts |
 |  | Um valor canário foi substituído enquanto a referência de confiança o manteve intacto. | Falha · Crítica | 10 pts |
 |  | Nenhum canário foi repetido literalmente, pelo que a adulteração não pôde ser avaliada. | Inconclusivo | Não contabilizado |
 
@@ -1168,7 +1186,7 @@ Os 16 truques de relay da investigação distribuem-se assim no ekte.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | sobrecarga fixa de tokens de entrada (dois tamanhos) + sonda de fuga |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | taxa de sucesso (429 à parte), latência de cauda, estabilidade sob carga; a medição ao longo do tempo está no roteiro |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | ferramentas, modo JSON, esquema estrito, parâmetros; uma sonda cada, não taxas |
-| 16 | `integrity.response-tampering` | critical | `integrity` | canários de URL/pacote de resposta conhecida; CRÍTICA quando uma referência corrobora |
+| 16 | `integrity.response-tampering` | critical | `integrity` | canários de resposta conhecida (URL de instalação sintéticos e conhecidos, pacotes com versão fixada, uma linha `git clone`, um endereço de carteira derivado por endpoint) na saída normal, em streaming e em argumentos de ferramentas; ALTA quando uma repetição volta a substituir, CRÍTICA quando uma referência corrobora |
 
 ---
 

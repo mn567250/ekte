@@ -782,7 +782,7 @@
   ],
   "integrity.tampering": [
    "Rilevata sostituzione di valori controllata dall'intermediario",
-   "Le sonde a risposta nota tornano con la struttura intatta ma con valori sostituiti (confermato dal riferimento: {baseline_corroborated}); un proxy che riscrive URL/nomi di pacchetti è un rischio per la supply chain, smetti di usarlo."
+   "Le sonde a risposta nota tornano con la struttura intatta ma con valori sostituiti (confermato dal riferimento: {baseline_corroborated}; sostituito di nuovo alla ripetizione: {repeat_substituted}); un proxy che riscrive URL/nomi di pacchetti è un rischio per la supply chain, smetti di usarlo."
   ],
   "integrity.intact": [
    "Sonde a risposta nota restituite intatte",

@@ -899,21 +899,39 @@ beides zusammen erreicht MITTEL.
 
 ### `integrity` — Antwortintegrität / Manipulation
 
-**Vorgehen.** Canaries mit bekannter Antwort, deren Werte heikel sind — eine
-Installations-URL und ein festgelegtes `pip install`-Paket — müssen wörtlich
-zurückkommen. Ein exaktes Echo besteht, kein Echo (Umschreibung, Verweigerung)
-ist nicht eindeutig, und nur ein **Austausch des Werts** bei erhaltener Struktur
-gilt als Manipulation. Im Vergleichsmodus ist ein Austausch, den die
-vertrauenswürdige Referenz nicht zeigt, KRITISCH.
-Nur eine Referenz, die den Canary unverändert zurückgibt, bestätigt: Liefert sie
-einen Fehler oder nichts Verwertbares, bestätigt sie nichts, und der Austausch
-bleibt MITTEL (Beleg `baseline_unavailable`).
+**Vorgehen.** Canaries mit bekannter Antwort, die genau die Werte tragen, auf
+die es ein manipulierender Proxy abgesehen hat, müssen wörtlich zurückkommen:
+zwei synthetische (eine Installations-URL und ein festgelegtes
+`pip install`-Paket), ein bekannter Installer (`curl -fsSL https://sh.rustup.rs | sh`),
+ein verbreitetes Paket mit fester Version (`pip install requests==2.32.3`), eine
+Zeile `git clone https://github.com/pallets/flask.git` und eine aus Endpunkt und Modell
+abgeleitete Bitcoin-Adresse in gültigem Format, also kein fester Wert, den ein
+Relay auf eine Ausnahmeliste setzen könnte (sie ist reproduzierbar, damit sich
+ein aufgezeichneter Lauf wiederholen lässt). Der `git clone`-Canary wird gestreamt gesendet und, wenn das Profil
+Tool-Aufrufe angibt, eine Installer-URL als Argument eines Tool-Aufrufs (das
+Modell muss ein Tool mit genau dieser URL aufrufen); so werden auch gestreamter
+Text und Tool-Argumente geprüft. Die Canaries laufen nebenläufig, höchstens drei
+gleichzeitig, und der Detektor sendet höchstens acht Anfragen an das Ziel. Ein
+exaktes Echo besteht, kein Echo (Umschreibung, Verweigerung) ist nicht
+eindeutig, und nur ein **Austausch des Werts** bei erhaltener Struktur gilt als
+Manipulation; eine geänderte Wallet-Adresse zählt nur, wenn sie selbst eine
+gültige Adresse ist, ein falsch abgeschriebenes Zeichen also nicht.
+Im Vergleichsmodus ist ein Austausch, den die vertrauenswürdige Referenz nicht
+zeigt, KRITISCH. Nur eine Referenz, die den Canary unverändert zurückgibt,
+bestätigt: Liefert sie einen Fehler oder nichts Verwertbares, bestätigt sie
+nichts (Beleg `baseline_unavailable`).
+Ohne verwertbare Referenz wird der ersetzte Canary noch einmal über denselben
+Kanal gesendet: Wird er erneut ersetzt (mit demselben oder einem anderen Wert),
+ist das HOCH, und das Risiko ist mindestens mittel; kommt er bei der
+Wiederholung unverändert oder gar nicht verwertbar zurück, bleibt es MITTEL
+(Beleg `repeat_intact`).
 Eine am Ausgabelimit abgeschnittene Antwort ist nicht eindeutig, kein Austausch.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `integrity.verdict` (Antwortintegrität) | Die Canaries mit bekannter Antwort kamen unverändert zurück. | Bestanden | 100 Pkt. |
-|  | Ein Canary-Wert wurde ersetzt (noch nicht durch eine Referenz bestätigt). | Fehlgeschlagen · Mittel | 45 Pkt. |
+|  | Ein Canary-Wert wurde einmal ersetzt, weder durch eine Referenz noch durch eine Wiederholung bestätigt. | Fehlgeschlagen · Mittel | 45 Pkt. |
+|  | Ein Canary-Wert wurde erneut ersetzt, als derselbe Canary ein zweites Mal gesendet wurde. | Fehlgeschlagen · Hoch | 20 Pkt. |
 |  | Ein Canary-Wert wurde ersetzt, während die vertrauenswürdige Referenz ihn unverändert ließ. | Fehlgeschlagen · Kritisch | 10 Pkt. |
 |  | Kein Canary wurde wörtlich zurückgegeben, daher ließ sich Manipulation nicht beurteilen. | Nicht eindeutig | Nicht gewertet |
 
@@ -1184,7 +1202,7 @@ Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf ekte.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | fester Mehraufwand an Eingabe-Token (zwei Größen) + Leck-Test |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | Erfolgsquote (429 gesondert), Tail-Latenz, Stabilität unter Last; Langzeitmessung ist Roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | Tools, JSON-Modus, striktes Schema, Parameter; je ein Test, keine Quoten |
-| 16 | `integrity.response-tampering` | critical | `integrity` | Canaries mit bekannter URL/bekanntem Paket; KRITISCH, wenn eine Referenz es bestätigt |
+| 16 | `integrity.response-tampering` | critical | `integrity` | Canaries mit bekannter Antwort (synthetische und bekannte Installations-URLs, Pakete mit fester Version, eine `git clone`-Zeile, eine pro Endpunkt abgeleitete Wallet-Adresse) in normaler, gestreamter Ausgabe und in Tool-Argumenten; HOCH, wenn eine Wiederholung erneut ersetzt, KRITISCH, wenn eine Referenz es bestätigt |
 
 ---
 

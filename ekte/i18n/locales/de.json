@@ -782,7 +782,7 @@
   ],
   "integrity.tampering": [
    "Vom Relay gesteuerte Wertersetzung erkannt",
-   "Sonden mit bekannter Antwort kamen mit intakter Struktur, aber ersetzten Werten zurück (durch Referenz bestätigt: {baseline_corroborated}); ein Proxy, der URLs/Paketnamen umschreibt, ist ein Lieferkettenrisiko — nicht mehr verwenden."
+   "Sonden mit bekannter Antwort kamen mit intakter Struktur, aber ersetzten Werten zurück (durch Referenz bestätigt: {baseline_corroborated}; bei Wiederholung erneut ersetzt: {repeat_substituted}); ein Proxy, der URLs/Paketnamen umschreibt, ist ein Lieferkettenrisiko — nicht mehr verwenden."
   ],
   "integrity.intact": [
    "Sonden mit bekannter Antwort unverändert zurückgegeben",

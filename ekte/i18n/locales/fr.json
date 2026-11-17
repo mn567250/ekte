@@ -782,7 +782,7 @@
   ],
   "integrity.tampering": [
    "Substitution de valeurs contrôlée par le relais détectée",
-   "Les sondes à réponse connue reviennent avec la structure intacte mais des valeurs remplacées (corroboré par la référence : {baseline_corroborated}) ; un proxy qui réécrit URL/noms de paquets est un risque de chaîne d'approvisionnement, cessez de l'utiliser."
+   "Les sondes à réponse connue reviennent avec la structure intacte mais des valeurs remplacées (corroboré par la référence : {baseline_corroborated} ; substitué de nouveau à la répétition : {repeat_substituted}) ; un proxy qui réécrit URL/noms de paquets est un risque de chaîne d'approvisionnement, cessez de l'utiliser."
   ],
   "integrity.intact": [
    "Sondes à réponse connue renvoyées intactes",
