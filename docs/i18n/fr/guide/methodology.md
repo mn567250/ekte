@@ -553,6 +553,7 @@ juge n'a été utilisé, un constat Info (`model_identity.model_specific`, preuv
 `model_specific_checks: 0`) indique que les réponses correspondent au
 fournisseur mais que le modèle précis n'a pas été vérifié. Chaque résultat
 consigne `model_specific_checks`.
+Le résumé du verdict et le motif de la dimension identité du modèle le disent aussi.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|

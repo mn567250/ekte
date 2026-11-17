@@ -553,6 +553,7 @@ usati né riferimento né giudice, una rilevazione Info
 (`model_identity.model_specific`, prova `model_specific_checks: 0`) indica che
 le risposte sono coerenti con il fornitore ma che il modello specifico non è
 stato verificato. Ogni risultato registra `model_specific_checks`.
+Lo dicono anche il riepilogo del verdetto e la motivazione della dimensione identità del modello.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|

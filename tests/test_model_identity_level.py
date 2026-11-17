@@ -255,3 +255,37 @@ async def test_separation_provenance_is_recorded_in_the_evidence():
     result = await _run(_profile(own=[probe]), _Relay())
     f = _finding(result, "model_identity.fp.arith")
     assert f.evidence["separates_from"] == ["acme-1-mini"] and f.evidence["verified"] == "2026-05-01"
+
+
+# --------------------------------------------------------------------------- #
+# D. the verdict and the identity dimension say so (ekte/scoring.py)
+# --------------------------------------------------------------------------- #
+def _verdict(result, *, used_baseline=False, used_judge=False):
+    from ekte.models import Dimension
+    from ekte.scoring import build_dimensions, build_verdict
+
+    dims = build_dimensions([result], None)
+    verdict = build_verdict([result], dims, profile_matched=True, used_judge=used_judge,
+                            used_baseline=used_baseline)
+    reason = next(d.reason for d in dims if d.dimension == Dimension.MODEL_IDENTITY)
+    return verdict, reason
+
+
+async def test_verdict_and_reason_say_the_specific_model_was_not_verified():
+    from ekte.scoring import VENDOR_ONLY_NOTE
+
+    verdict, reason = _verdict(await _run(_profile(shared=[_fp()]), _Relay()))
+    assert VENDOR_ONLY_NOTE in verdict.summary
+    assert reason == VENDOR_ONLY_NOTE  # instead of "All checks passed."
+    # A warning keeps its title and gains the note.
+    verdict, reason = _verdict(await _run(_profile(), _Relay(cutoff="CUTOFF=2022-01")))
+    assert reason.startswith("Knowledge cutoff earlier") and reason.endswith(VENDOR_ONLY_NOTE)
+
+
+async def test_verdict_has_no_vendor_only_note_with_model_specific_checks_or_a_baseline():
+    from ekte.scoring import VENDOR_ONLY_NOTE
+
+    verdict, reason = _verdict(await _run(_profile(own=[_fp()]), _Relay()))
+    assert VENDOR_ONLY_NOTE not in verdict.summary and VENDOR_ONLY_NOTE not in reason
+    verdict, reason = _verdict(await _run(_profile(shared=[_fp()]), _Relay(), _Relay()), used_baseline=True)
+    assert VENDOR_ONLY_NOTE not in verdict.summary and VENDOR_ONLY_NOTE not in reason

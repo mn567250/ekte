@@ -513,6 +513,7 @@ When none of the model's own fingerprints answered and neither a baseline
 nor a judge was used, an Info finding (`model_identity.model_specific`, evidence
 `model_specific_checks: 0`) says that the answers fit the vendor but the
 specific model was not verified. Every result records `model_specific_checks`.
+The verdict summary and the model identity dimension's reason say so as well.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|

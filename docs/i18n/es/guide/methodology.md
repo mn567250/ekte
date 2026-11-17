@@ -550,6 +550,7 @@ referencia ni juez, un hallazgo Info (`model_identity.model_specific`,
 evidencia `model_specific_checks: 0`) indica que las respuestas encajan con el
 proveedor pero que el modelo concreto no se verificó. Cada resultado registra
 `model_specific_checks`.
+El resumen del veredicto y el motivo de la dimensión de identidad del modelo también lo indican.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|

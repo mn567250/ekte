@@ -3,6 +3,7 @@
   "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "HTTP sem cifragem para um host local ou de rede privada; a chave de API não atravessa a internet.",
   "Use https:// if this endpoint is reachable from other machines.": "Use https:// se este endpoint for acessível a partir de outras máquinas.",
   "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.": "O modelo declarado só correspondeu de forma aproximada a um perfil da base de conhecimento, por isso a confiança fica limitada a baixa — indique o id exato do modelo ou adicione um alias.",
-  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "As constatações de transporte e fiabilidade (HTTP sem cifragem, falhas ou lentidão sob carga) são avisos: reduzem a pontuação, mas não o risco de substituição."
+  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "As constatações de transporte e fiabilidade (HTTP sem cifragem, falhas ou lentidão sob carga) são avisos: reduzem a pontuação, mas não o risco de substituição.",
+  "The answers fit the claimed model's vendor, but no check could tell that model from the vendor's other models and neither a baseline nor a judge was used: the specific model was not verified.": "As respostas condizem com o fornecedor do modelo declarado, mas nenhuma verificação conseguiu distinguir esse modelo dos outros modelos do fornecedor e não foi usada referência nem juiz: o modelo concreto não foi verificado."
  }
 }

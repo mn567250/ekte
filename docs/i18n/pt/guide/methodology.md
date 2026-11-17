@@ -547,6 +547,7 @@ referência nem juiz, uma constatação Info (`model_identity.model_specific`,
 evidência `model_specific_checks: 0`) indica que as respostas condizem com o
 fornecedor mas que o modelo concreto não foi verificado. Cada resultado regista
 `model_specific_checks`.
+O resumo do veredicto e o motivo da dimensão de identidade do modelo também o dizem.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|

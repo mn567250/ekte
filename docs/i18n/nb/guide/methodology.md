@@ -523,6 +523,7 @@ dommer ble brukt, sier et Info-funn (`model_identity.model_specific`, bevis
 `model_specific_checks: 0`) at svarene passer leverandøren, men at den konkrete
 modellen ikke ble verifisert. Hvert resultat registrerer
 `model_specific_checks`.
+Sammendraget av dommen og begrunnelsen for dimensjonen modellidentitet sier det også.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|

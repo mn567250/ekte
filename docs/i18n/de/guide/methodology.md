@@ -558,6 +558,7 @@ Referenz noch Richter genutzt wurden, hält ein Info-Befund
 (`model_identity.model_specific`, Beleg `model_specific_checks: 0`) fest, dass
 die Antworten zum Anbieter passen, das konkrete Modell aber nicht geprüft wurde.
 Jedes Ergebnis enthält `model_specific_checks`.
+Die Zusammenfassung des Urteils und die Begründung der Dimension Modellidentität sagen es ebenfalls.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|

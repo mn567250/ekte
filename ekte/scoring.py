@@ -162,6 +162,26 @@ def _all_findings(detectors: list[DetectorResult]) -> list[tuple[DetectorResult,
     return [(d, f) for d in detectors for f in d.findings]
 
 
+# The verdict summary and the model-identity dimension reason say so when the
+# identity checks only showed the vendor (issue #251): model_identity ran no
+# model-specific check (evidence ``model_specific_checks: 0``) and, without a
+# baseline or judge, reported ``model_identity.model_specific``.
+VENDOR_ONLY_NOTE = (
+    "The answers fit the claimed model's vendor, but no check could tell that model from "
+    "the vendor's other models and neither a baseline nor a judge was used: the specific "
+    "model was not verified."
+)
+
+
+def _vendor_only(detectors: list[DetectorResult]) -> bool:
+    return any(
+        d.id == "model_identity"
+        and d.evidence.get("model_specific_checks") == 0
+        and any(f.id == "model_identity.model_specific" for f in d.findings)
+        for d in detectors
+    )
+
+
 def is_advisory(finding: Finding) -> bool:
     """True for a transport/advisory finding (see ``ADVISORY_CHECKS``)."""
     return (finding.check or finding.id) in ADVISORY_CHECKS
@@ -250,6 +270,11 @@ def build_dimensions(
                 f for det in members for f in det.findings
                 if f.status in (Status.FAIL, Status.WARN)
             ]))[:200] or "All checks passed."
+            if dim == Dimension.MODEL_IDENTITY and _vendor_only(members):
+                reason = (
+                    VENDOR_ONLY_NOTE if reason == "All checks passed."
+                    else f"{reason}; {VENDOR_ONLY_NOTE}"
+                )
         dimensions.append(
             DimensionScore(
                 dimension=dim,
@@ -400,6 +425,7 @@ def build_verdict(
         selected=selected,
         weak_match=weak_match and profile_used,
         advisories=bool(advisories),
+        vendor_only=_vendor_only(detectors) and not used_baseline and not used_judge,
     )
     # Substitution findings first; transport/reliability advisories after them.
     key = _titles([f for _, f in critical + high + medium] + advisories)[:6]
@@ -482,6 +508,7 @@ def _summary(
     selected: list[str] | None = None,
     weak_match: bool = False,
     advisories: bool = False,
+    vendor_only: bool = False,
 ) -> str:
     bits: list[str] = []
     if score is not None:
@@ -514,6 +541,8 @@ def _summary(
             "The claimed model only fuzzily matched a knowledge-base profile, so "
             "confidence is capped at low — pass the exact model id or add a KB alias."
         )
+    if vendor_only:
+        bits.append(VENDOR_ONLY_NOTE)
     if advisories:
         bits.append(
             "Transport and reliability findings (plain HTTP, failures or slowness under "

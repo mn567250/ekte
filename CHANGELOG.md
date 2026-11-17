@@ -47,7 +47,8 @@ mode sent only the self-identification to the baseline.
   sibling. When none of them answered and neither a baseline nor a judge was
   used, the new Info finding `model_identity.model_specific` (evidence
   `model_specific_checks: 0`) says the vendor is consistent but the specific
-  model was not verified; every result records `model_specific_checks`.
+  model was not verified; every result records `model_specific_checks`. The
+  verdict summary and the model identity dimension's reason then say so too.
 - Knowledge-base schema: a fingerprint can record which sibling models a
   measurement showed it separates (`separates_from`) and when (`verified`,
   required with `separates_from`); `docs/dev/knowledge-base.md` describes how

@@ -407,6 +407,7 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
 当模型自己的指纹都没有得到回答、且未使用基线或裁判时，一条“信息”发现
 （`model_identity.model_specific`，证据 `model_specific_checks: 0`）说明回答与厂商一致，
 但具体模型未经验证。每个结果都会记录 `model_specific_checks`。
+裁定摘要和模型身份维度的原因说明也会注明这一点。
 
 | 检查项 | 结果 | 状态 | 计分 |
 |---|---|---|---|
