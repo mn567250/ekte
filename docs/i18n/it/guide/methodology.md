@@ -822,12 +822,20 @@ input**: due messaggi utente di dimensioni diverse senza messaggio di sistema; i
 overhead di almeno 30 token che resta costante (entro 16) in entrambe le
 dimensioni indica un prompt nascosto anteposto e non un gonfiamento
 proporzionale. (2) Una **sonda di fuga** che chiede al modello di ripetere ogni
-istruzione precedente. Solo entrambi insieme arrivano a MEDIA.
+istruzione precedente. La risposta è una fuga solo se contiene contenuto simile
+a istruzioni: un passaggio tra virgolette o in citazione a blocco, oppure almeno
+due frasi all'imperativo di seconda persona («You are …», «Always …», «Do not
+…») al di fuori di una negazione. `NONE`, o una negazione nelle prime due frasi
+(«non ci sono istruzioni di sistema»), non è una fuga; qualsiasi altra risposta,
+come un rifiuto, è incerta e non conta nemmeno come fuga. Le evidenze conservano
+il tipo di risposta (`leak_answer_kind`) e i suoi primi 300 caratteri. Una fuga
+da sola è informativa e non conteggiata, perché i modelli inventano prompt di
+sistema. Solo entrambi insieme arrivano a MEDIA.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `injected_prompt.verdict` (Prompt di sistema iniettato) | Il sovraccarico di token in ingresso è piccolo e non sono trapelate istruzioni nascoste. | Superato | 100 pt |
-|  | Su richiesta è trapelato un testo simile a istruzioni (debole da solo). | Info · Bassa | 85 pt |
+|  | Su richiesta è trapelato un testo simile a istruzioni (non conteggiato: i modelli inventano). | Info | Non conteggiato |
 |  | Un grande sovraccarico fisso di token in ingresso, costante al variare del messaggio. | Avviso · Bassa | 75 pt |
 |  | Un sovraccarico fisso di token in ingresso e un preambolo trapelato, insieme. | Avviso · Media | 55 pt |
 |  | Nessun conteggio utilizzabile di token di prompt per misurare il sovraccarico. | Non conclusivo | Non conteggiato |

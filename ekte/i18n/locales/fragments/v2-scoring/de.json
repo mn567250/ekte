@@ -114,7 +114,7 @@
   "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.": "Eine Probe wurde vor der obersten Stufe mit einem Fehler beantwortet (abgelehnter Parameter, HTTP- oder Serverfehler): kein Beleg für Kürzung.",
   "Effective context window": "Effektives Kontextfenster",
   "Input-token overhead is small and no hidden instructions leaked.": "Der Input-Token-Overhead ist klein und keine versteckten Anweisungen wurden preisgegeben.",
-  "Instruction-like text leaked when asked (weak on its own).": "Auf Nachfrage kam anweisungsartiger Text zurück (allein schwach).",
+  "Instruction-like text leaked when asked (not counted: models confabulate).": "Auf Nachfrage kam anweisungsartiger Text zurück (nicht gewertet: Modelle erfinden so etwas).",
   "A large fixed input-token overhead, constant across message sizes.": "Ein großer fester Input-Token-Overhead, gleich über alle Nachrichtengrößen.",
   "A fixed input-token overhead and a leaked preamble together.": "Ein fester Input-Token-Overhead und ein preisgegebener Vorspann zusammen.",
   "No usable prompt token counts to measure the overhead.": "Keine verwertbaren Prompt-Token-Zahlen, um den Overhead zu messen.",

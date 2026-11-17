@@ -824,13 +824,21 @@ système ; les `prompt_tokens` rapportés moins l'estimation indépendante doiv
 rester faibles. Un surcoût d'au moins 30 tokens qui reste constant (à 16 près)
 sur les deux tailles indique un prompt caché ajouté en tête plutôt qu'un
 gonflement proportionnel. (2) Une **sonde de fuite** qui demande au modèle de
-répéter toute instruction précédente. Seuls les deux ensemble atteignent
-MOYENNE.
+répéter toute instruction précédente. La réponse n'est une fuite que si elle
+contient un contenu de type instruction : un passage entre guillemets ou en
+citation de bloc, ou au moins deux phrases à l'impératif de la deuxième personne
+(« You are … », « Always … », « Do not … ») hors d'une dénégation. `NONE`, ou
+une dénégation dans les deux premières phrases (« il n'y a aucune instruction
+système »), n'est pas une fuite ; toute autre réponse, comme un refus, est
+incertaine et ne compte pas non plus comme fuite. Les éléments de preuve gardent
+le type de réponse (`leak_answer_kind`) et ses 300 premiers caractères. Une
+fuite seule est informative et non comptée, car les modèles inventent des
+prompts système. Seuls les deux ensemble atteignent MOYENNE.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `injected_prompt.verdict` (Prompt système injecté) | Le surcoût de tokens d'entrée est faible et aucune instruction cachée n'a fuité. | Réussi | 100 pts |
-|  | Un texte de type instruction a fuité sur demande (faible à lui seul). | Info · Faible | 85 pts |
+|  | Un texte de type instruction a fuité sur demande (non compté : les modèles en inventent). | Info | Non compté |
 |  | Un important surcoût fixe de tokens d'entrée, constant selon la taille du message. | Avertissement · Faible | 75 pts |
 |  | Un surcoût fixe de tokens d'entrée et un préambule divulgué, ensemble. | Avertissement · Moyenne | 55 pts |
 |  | Aucun décompte de tokens de prompt exploitable pour mesurer le surcoût. | Non concluant | Non compté |

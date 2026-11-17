@@ -787,12 +787,20 @@ rapporterte `prompt_tokens` minus det uavhengige anslaget må holde seg lite. En
 overhead på minst 30 tokens som holder seg konstant (innenfor 16) på tvers av
 begge størrelsene, leses som en skjult prompt foran heller enn proporsjonal
 oppblåsing. (2) En **lekkasjeprobe** som ber modellen gjenta eventuelle
-foregående instruksjoner. Bare begge sammen når MEDIUM.
+foregående instruksjoner. Svaret er en lekkasje bare hvis det inneholder
+instruksjonsaktig innhold: et sitert avsnitt eller blokksitat, eller minst to
+setninger i imperativ andre person («You are …», «Always …», «Do not …») utenfor
+en benektelse. `NONE`, eller en benektelse i de to første setningene («det
+finnes ingen systeminstruksjoner»), er ingen lekkasje; alt annet, for eksempel
+en avvisning, er uklart og teller heller ikke som lekkasje. Bevisene tar vare på
+svartypen (`leak_answer_kind`) og de første 300 tegnene i svaret. En lekkasje
+alene er bare informasjon og telles ikke, fordi modeller dikter opp
+systemprompter. Bare begge sammen når MEDIUM.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `injected_prompt.verdict` (Injisert systemprompt) | Overheaden i inndatatokens er liten, og ingen skjulte instruksjoner lekket. | Bestått | 100 poeng |
-|  | Instruksjonsaktig tekst lekket når det ble spurt (svakt alene). | Info · Lav | 85 poeng |
+|  | Instruksjonsaktig tekst lekket når det ble spurt (telles ikke: modeller dikter opp slikt). | Info | Telles ikke |
 |  | En stor fast overhead i inndatatokens, konstant på tvers av meldingsstørrelser. | Advarsel · Lav | 75 poeng |
 |  | En fast overhead i inndatatokens og en lekket innledning sammen. | Advarsel · Middels | 55 poeng |
 |  | Ingen brukbare tellinger av prompttokens til å måle overheaden. | Uavklart | Telles ikke |

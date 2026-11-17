@@ -114,7 +114,7 @@
   "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.": "En probe fikk en feil som svar (en avvist parameter, en HTTP- eller serverfeil) før øverste trinn: ikke bevis på avkorting.",
   "Effective context window": "Effektivt kontekstvindu",
   "Input-token overhead is small and no hidden instructions leaked.": "Overheaden i inndatatokens er liten, og ingen skjulte instruksjoner lekket.",
-  "Instruction-like text leaked when asked (weak on its own).": "Instruksjonsaktig tekst lekket når det ble spurt (svakt alene).",
+  "Instruction-like text leaked when asked (not counted: models confabulate).": "Instruksjonsaktig tekst lekket når det ble spurt (telles ikke: modeller dikter opp slikt).",
   "A large fixed input-token overhead, constant across message sizes.": "En stor fast overhead i inndatatokens, konstant på tvers av meldingsstørrelser.",
   "A fixed input-token overhead and a leaked preamble together.": "En fast overhead i inndatatokens og en lekket innledning sammen.",
   "No usable prompt token counts to measure the overhead.": "Ingen brukbare tellinger av prompttokens til å måle overheaden.",

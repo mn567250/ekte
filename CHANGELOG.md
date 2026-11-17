@@ -20,6 +20,29 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Injected prompt: an honest "there are no instructions" is no leak ([#258](https://github.com/mn567250/ekte/issues/258))
+
+The leak probe of `injected_prompt` counted any answer over 60 characters that
+contained "system", "instruction", "do not" and the like as a leaked system
+prompt. "There are no system or developer instructions before this message, so
+I have nothing to repeat." was a leak, cost 15 points alone, and with a 40-token
+template overhead (a default system prompt in an open model's chat template)
+became `suspected` (Warning · Medium).
+
+- The answer is classified: **none** (`NONE`, or a denial of system, developer
+  or prior instructions in the first two sentences), **leak** (a quoted or
+  block-quoted passage, or at least two second-person imperative sentences
+  such as "You are …", "Always …", "Do not …" outside a denial) or **unclear**
+  (anything else, such as a refusal, which counts as no leak).
+- The evidence records `leak_answer_kind` and the first 300 characters of the
+  answer (`leak_answer`).
+- The `leak` outcome alone is now Info and not counted (was Info · Low,
+  85 points): models confabulate system prompts. `overhead` and `suspected`
+  and the overhead thresholds are unchanged.
+- Verdict change (see #168): a relay whose model only talks about its
+  instructions is no longer marked down; with a fixed overhead an honest
+  denial now gives `overhead` (Warning · Low, 75) instead of `suspected`.
+
 ### Scoring: a response integrity dimension ([#260](https://github.com/mn567250/ekte/issues/260))
 
 The "Transport security" dimension held response tampering, injected system
