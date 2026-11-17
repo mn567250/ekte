@@ -163,6 +163,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "The stream succeeded but delivered no content to judge by; not scored.",
   "The model named the color of the test image.": "The model named the color of the test image.",
   "Vision is claimed but the model did not name the image's color.": "Vision is claimed but the model did not name the image's color.",
-  "Vision is not claimed, so no image was sent.": "Vision is not claimed, so no image was sent."
+  "Vision is not claimed, so no image was sent.": "Vision is not claimed, so no image was sent.",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "The reported knowledge cutoff is within 6 months of the claimed model's.",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "No answer in the CUTOFF=YYYY-MM format to judge by.",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified."
  }
 }

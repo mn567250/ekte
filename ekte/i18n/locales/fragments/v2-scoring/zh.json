@@ -144,6 +144,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "流式请求成功，但没有返回可供判断的内容；不计分。",
   "The model named the color of the test image.": "模型说出了测试图片的颜色。",
   "Vision is claimed but the model did not name the image's color.": "声称支持视觉，但模型没有说出图片的颜色。",
-  "Vision is not claimed, so no image was sent.": "未声称支持视觉，因此没有发送图片。"
+  "Vision is not claimed, so no image was sent.": "未声称支持视觉，因此没有发送图片。",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "回答偏离原生行为，而基准的回答符合：按该探针的权重占比从 100 分中扣分。",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "回答偏离，但基准的回答同样偏离：属于知识库问题，并非中转站的证据；不扣分。",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "自报的知识截止日期与所声明模型的相差不超过 6 个月。",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "自报的知识截止日期比所声明模型的早 12 个月以上：与行为指纹一样按其权重占比从 100 分中扣分。",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "自报的知识截止日期早 12 个月以上，而基准的一致：按其权重占比从 100 分中扣分。",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "自报的知识截止日期早 12 个月以上，但基准的同样如此：属于知识库问题，并非中转站的证据；不扣分。",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "自报的知识截止日期相差超过 6 个月，但并未早 12 个月以上：仅记录，不评判。",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "没有 CUTOFF=YYYY-MM 格式的回答可供评判。",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "没有任何检查能把所声明模型与同厂商的其他模型区分开，且未使用基准或评审模型：厂商一致，但具体模型未经验证。"
  }
 }

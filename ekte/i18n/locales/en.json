@@ -500,7 +500,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Some checks do not match what is advertised: {dims} — verify",
   "No problems in the checked dimensions (model identity not verified)": "No problems in the checked dimensions (model identity not verified)",
   "A few minor issues in the checked dimensions (model identity not verified)": "A few minor issues in the checked dimensions (model identity not verified)",
-  "It does not deliver what it advertises": "It does not deliver what it advertises"
+  "It does not deliver what it advertises": "It does not deliver what it advertises",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.",
+  "self-reported knowledge cutoff": "self-reported knowledge cutoff"
  },
  "findings": {}
 }

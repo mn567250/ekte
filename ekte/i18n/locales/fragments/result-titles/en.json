@@ -192,6 +192,14 @@
     "Fingerprint skipped: {1}": "Fingerprint skipped: {1}",
     "Response attribute {1}": "Response attribute {1}",
     "Request attribute {1}": "Request attribute {1}",
-    "Not re-scored: the recorded run has no answer to some requests": "Not re-scored: the recorded run has no answer to some requests"
+    "Not re-scored: the recorded run has no answer to some requests": "Not re-scored: the recorded run has no answer to some requests",
+    "Knowledge cutoff not reported": "Knowledge cutoff not reported",
+    "Knowledge cutoff consistent": "Knowledge cutoff consistent",
+    "Knowledge cutoff differs from the claimed model's": "Knowledge cutoff differs from the claimed model's",
+    "Knowledge cutoff earlier on the baseline too": "Knowledge cutoff earlier on the baseline too",
+    "Knowledge cutoff earlier than the claimed model's, baseline consistent": "Knowledge cutoff earlier than the claimed model's, baseline consistent",
+    "Knowledge cutoff earlier than the claimed model's": "Knowledge cutoff earlier than the claimed model's",
+    "Specific model not verified": "Specific model not verified",
+    "Fingerprint diverged on the baseline too: {1}": "Fingerprint diverged on the baseline too: {1}"
   }
 }
