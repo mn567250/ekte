@@ -20,6 +20,30 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Capability: the max-output check catches a relay that clamps the output ([#253](https://github.com/mn567250/ekte/issues/253))
+
+A relay that clamped `max_tokens` to 100 returned ten lines, stopped with
+`finish_reason: length` and passed the max-output check with 100 points: any
+answer cut off by length counted as reaching the requested cap.
+
+- An answer cut off by length now reaches the cap (`to_cap`) only when at least
+  80 % of the requested tokens came back: the reported completion tokens, else
+  an estimate from the text. A reasoning model's reasoning tokens (profile or
+  reported reasoning tokens) count as delivered, so a model that spends the
+  whole budget thinking still passes; without any usage its hidden reasoning
+  cannot be counted and it is not called clamped.
+- Below that it is the new outcome `clamped` of `capability.max_output`:
+  Fail · Medium, 0 points. The evidence gives the requested cap, the delivered
+  tokens and where the count comes from, and notes when a non-reasoning
+  model's reported completion tokens and the text estimate are more than 3x
+  apart (billing judges the count).
+- New option `--max-output-probe-tokens` (config `run.max_output_probe_tokens`,
+  default 2048): the probe requests min(declared max output, this), so a
+  higher value catches a relay that caps a long-output model at, say, 4K.
+- The capability score and the verdict of a clamping relay drop (#168): its
+  max-output check now fails instead of passing. The report schema is
+  unchanged.
+
 ### Capability: probes the relay rejects count as undelivered ([#248](https://github.com/mn567250/ekte/issues/248))
 
 A relay that answered the tools, JSON-mode and strict-schema probes with HTTP

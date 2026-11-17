@@ -15,7 +15,14 @@ from ekte.config import AuditOptions
 from ekte.context import AuditContext
 from ekte.detectors.capability import SCALE, TO_CAP_SHARE, CapabilityDetector
 from ekte.detectors.scale import Scale
-from ekte.models import CompletionOutcome, DetectorResult, RequestSpec, Severity, Status, TargetConfig
+from ekte.models import (
+    CompletionOutcome,
+    DetectorResult,
+    RequestSpec,
+    Severity,
+    Status,
+    TargetConfig,
+)
 
 
 def _numbers(n: int) -> str:
