@@ -502,9 +502,20 @@ quando cambiano il comportamento.
    Un'impronta che si discosta
    toglie la sua quota di peso su 100 punti (al più 25); da sola resta BASSA,
    due o più aggiungono una rilevazione aggregata MEDIA.
-3. **Campo `model` restituito** da una chiamata semplice: suffissi di snapshot e
-   alias sono tollerati; una parola di fascia inferiore (`mini`, `flash`,
-   `lite`, `8b`, …) o una famiglia diversa viene segnalata.
+3. **Campo `model` restituito** da una chiamata semplice, confrontato con il
+   modello dichiarato e con l'id inviato (un alias di deployment può differire
+   dalla dichiarazione). Entrambi gli id vengono prima normalizzati: minuscole,
+   senza prefisso `provider/` o `vendor.` (`openai/`, `models/`,
+   `anthropic.`), senza `:tag`, `-v2:0` di Bedrock o data di snapshot. Poi
+   decide la base di conoscenza: un id che si risolve nel profilo del modello
+   dichiarato è coerente (esatto, alias o snapshot), uno che si risolve in un
+   altro profilo diverge, e le evidenze nominano entrambi i profili. Un id che
+   la base di conoscenza non sa identificare viene segnalato se porta una
+   parola di fascia inferiore assente dalla richiesta (`mini`, `flash`,
+   `lite`, `8b`, …, solo come parola intera, quindi `mini` non viene trovato
+   in `gemini`), nomina un'altra famiglia o porta un altro numero di versione
+   (`gpt-4o` → `gpt-3.5-turbo`); un id diverso che nulla di questo spiega
+   viene registrato come sconosciuto, senza detrazione.
 
 Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 È inoltre non conclusivo e senza punteggio (`model_identity.no_evidence`)
@@ -529,6 +540,7 @@ normalmente.
 | `model_identity.fp_aggregate` | Due o più impronte comportamentali si sono discostate. | Avviso · Media | Nessuna detrazione |
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |
+|  | Il campo model restituito indica un altro id che ekte non sa identificare: registrato, non giudicato. | Info | Nessuna detrazione |
 |  | La risposta non aveva un campo model utilizzabile. | Non conclusivo | Nessuna detrazione |
 | `model_identity.no_evidence` | Né l'autoidentificazione né alcuna impronta hanno dato una risposta utilizzabile e il campo model non divergeva: non valutato. | Non conclusivo | Nessuna detrazione |
 
@@ -598,22 +610,41 @@ dello schema rigoroso quando il profilo dice che il modello non ha schemi
 rigorosi — viene annotata ma non conteggiata: un modello non perde mai punti per
 ciò che nessuno dichiara.
 
+Una sonda a cui il relay risponde con un 4xx (esclusi 401, 403, 408 e 429)
+benché il profilo dichiari la funzione è una capacità rifiutata: conta come una
+non fornita, e il suo riepilogo riporta il codice di stato e il messaggio di
+errore. Conta solo se il relay risponde alla stessa richiesta senza il parametro
+della funzione (una richiesta in più, inviata solo finché nessun'altra sonda è
+tornata) e un riferimento configurato sullo stesso protocollo non rifiuta anche
+la sonda; altrimenti vale come nessuna risposta utilizzabile, o come un limite
+del modello. Un 4xx per una funzione che nessuno dichiara viene annotato ma non
+conteggiato.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `capability.tools` | È tornata una chiamata a strumento per una richiesta esplicita di strumento. | Superato | 100 pt |
 |  | Le chiamate a strumenti sono dichiarate ma non è tornata alcuna chiamata. | Fallito · Media | 0 pt |
 |  | Non è tornata alcuna chiamata a strumento, e la capacità non è dichiarata. | Info | Non conteggiato |
+|  | La chiamata di strumenti è dichiarata ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.tools.encoding` | Gli argomenti dello strumento sono arrivati come oggetto, non come la stringa JSON di OpenAI. | Avviso · Bassa | Non conteggiato |
 | `capability.json_mode` | La modalità JSON ha restituito un oggetto analizzabile con il valore richiesto. | Superato | 100 pt |
 |  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | La modalità JSON è dichiarata ma non è tornato un oggetto valido con il valore. | Fallito · Media | 0 pt |
+|  | La modalità JSON è dichiarata ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.json_schema` | Lo schema rigoroso è dichiarato e la risposta lo rispettava. | Superato | 100 pt |
 |  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | Non conteggiato |
 |  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | Non conteggiato |
 |  | Lo schema rigoroso è dichiarato ma la risposta non lo rispettava. | Avviso · Bassa | 40 pt |
+|  | Lo schema rigoroso è dichiarato ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.max_output` | L'output è proseguito fino al limite di token richiesto. | Superato | 100 pt |
 |  | L'output si è fermato prima del limite con una lunghezza plausibile. | Superato | 90 pt |

@@ -507,9 +507,20 @@ billigeren oder offenen Backend) sowie Signale von
    Ein abweichender Fingerprint zieht seinen Gewichtsanteil an 100 Punkten ab
    (höchstens 25); einer allein bleibt NIEDRIG, zwei oder mehr ergeben einen
    zusammenfassenden Befund MITTEL.
-3. **Zurückgegebenes `model`-Feld** eines einfachen Aufrufs: Snapshot-Suffixe
-   und Aliasse werden toleriert; ein Wort einer kleineren Stufe (`mini`,
-   `flash`, `lite`, `8b`, …) oder eine andere Modellfamilie wird markiert.
+3. **Zurückgegebenes `model`-Feld** eines einfachen Aufrufs, verglichen mit
+   dem angegebenen Modell und mit der gesendeten ID (ein Deployment-Alias kann
+   von der Angabe abweichen). Beide IDs werden zuerst normalisiert:
+   Kleinschreibung, ohne Präfix `provider/` oder `vendor.` (`openai/`,
+   `models/`, `anthropic.`), ohne `:tag`, Bedrock-`-v2:0` oder
+   Snapshot-Datum. Dann entscheidet die Wissensbasis: Eine ID, die zum Profil
+   des angegebenen Modells aufgelöst wird, ist stimmig (exakt, Alias oder
+   Snapshot), eine, die zu einem anderen Profil aufgelöst wird, weicht ab, und
+   die Belege nennen beide Profile. Eine ID, die die Wissensbasis nicht
+   zuordnen kann, wird markiert, wenn sie ein Wort einer kleineren Stufe trägt,
+   das der Anfrage fehlt (`mini`, `flash`, `lite`, `8b`, …, nur als ganzes
+   Wort, `mini` steckt also nicht in `gemini`), eine andere Familie nennt oder
+   eine andere Versionsnummer trägt (`gpt-4o` → `gpt-3.5-turbo`); eine andere
+   ID, die nichts davon erklärt, wird als unbekannt festgehalten, ohne Abzug.
 
 Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 Ebenfalls nicht eindeutig und ohne Punktzahl (`model_identity.no_evidence`)
@@ -534,6 +545,7 @@ nichts. Teilweise Belege werden normal bewertet.
 | `model_identity.fp_aggregate` | Zwei oder mehr Verhaltens-Fingerprints wichen ab. | Warnung · Mittel | Kein Abzug |
 | `model_identity.model_field` | Das zurückgegebene model-Feld entsprach dem angefragten Modell. | Bestanden | Kein Abzug |
 |  | Das zurückgegebene model-Feld nennt ein anderes oder kleineres Modell. | Warnung · Mittel | Kein Abzug |
+|  | Das zurückgegebene model-Feld nennt eine andere ID, die ekte nicht zuordnen kann: festgehalten, nicht beurteilt. | Info | Kein Abzug |
 |  | Die Antwort enthielt kein verwertbares model-Feld. | Nicht eindeutig | Kein Abzug |
 | `model_identity.no_evidence` | Weder Selbstidentifikation noch ein Fingerprint lieferte eine verwertbare Antwort, und das model-Feld wich nicht ab: nicht bewertet. | Nicht eindeutig | Kein Abzug |
 
@@ -602,22 +614,41 @@ wenn die Funktion nicht angegeben ist, oder jedes Ergebnis zum strikten Schema,
 wenn das Profil dem Modell strikte Schemas abspricht — wird vermerkt, aber nicht
 gewertet: Für etwas, das niemand angibt, verliert ein Modell keine Punkte.
 
+Beantwortet das Relay eine Sonde mit einem 4xx (außer 401, 403, 408 und 429),
+obwohl das Profil die Funktion angibt, verweigert es eine angegebene Fähigkeit:
+Das wird wie eine nicht gelieferte gewertet, und die Zusammenfassung nennt
+Statuscode und Fehlermeldung. Es zählt nur, wenn das Relay dieselbe Anfrage ohne
+den Funktionsparameter beantwortet (eine zusätzliche Anfrage, nur solange noch
+keine andere Sonde zurückkam) und eine konfigurierte Baseline mit demselben
+Protokoll die Sonde nicht ebenfalls ablehnt; sonst gilt es als keine verwertbare
+Antwort bzw. als Grenze des Modells. Ein 4xx für eine Funktion, die niemand
+angibt, wird vermerkt, aber nicht gewertet.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `capability.tools` | Auf eine ausdrückliche Tool-Anfrage kam ein Tool-Aufruf zurück. | Bestanden | 100 Pkt. |
 |  | Tool-Aufrufe werden angegeben, aber es kam kein Tool-Aufruf zurück. | Fehlgeschlagen · Mittel | 0 Pkt. |
 |  | Es kam kein Tool-Aufruf zurück, und Tool-Aufrufe werden nicht angegeben. | Info | Nicht gewertet |
+|  | Tool-Aufrufe werden angegeben, aber das Relay hat die Sonde mit einem 4xx abgelehnt. | Fehlgeschlagen · Mittel | 0 Pkt. |
+|  | Mit 4xx abgelehnt, und die Baseline lehnt sie ebenfalls ab: eine Grenze des Modells. | Info | Nicht gewertet |
+|  | Mit 4xx abgelehnt; die Fähigkeit wird nicht angegeben. | Info | Nicht gewertet |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.tools.encoding` | Die Tool-Argumente kamen als Objekt, nicht als der JSON-String, den OpenAI liefert. | Warnung · Niedrig | Nicht gewertet |
 | `capability.json_mode` | Der JSON-Modus lieferte ein parsebares Objekt mit dem angefragten Wert. | Bestanden | 100 Pkt. |
 |  | Ein JSON-Objekt kam mit falschem Wert zurück; der JSON-Modus wird nicht angegeben. | Info | Nicht gewertet |
 |  | Es kam kein parsebares JSON-Objekt zurück; der JSON-Modus wird nicht angegeben. | Info | Nicht gewertet |
 |  | Der JSON-Modus wird angegeben, aber es kam kein gültiges Objekt mit dem Wert zurück. | Fehlgeschlagen · Mittel | 0 Pkt. |
+|  | Der JSON-Modus wird angegeben, aber das Relay hat die Sonde mit einem 4xx abgelehnt. | Fehlgeschlagen · Mittel | 0 Pkt. |
+|  | Mit 4xx abgelehnt, und die Baseline lehnt sie ebenfalls ab: eine Grenze des Modells. | Info | Nicht gewertet |
+|  | Mit 4xx abgelehnt; die Fähigkeit wird nicht angegeben. | Info | Nicht gewertet |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.json_schema` | Das strikte Schema wird angegeben und die Antwort entsprach ihm. | Bestanden | 100 Pkt. |
 |  | Das strikte Schema wurde nicht durchgesetzt, passend zur Angabe. | Info | Nicht gewertet |
 |  | Die Antwort entsprach dem Schema, obwohl dem angegebenen Modell strikte Schemas fehlen. | Info | Nicht gewertet |
 |  | Das strikte Schema wird angegeben, aber die Antwort entsprach ihm nicht. | Warnung · Niedrig | 40 Pkt. |
+|  | Das strikte Schema wird angegeben, aber das Relay hat die Sonde mit einem 4xx abgelehnt. | Fehlgeschlagen · Mittel | 0 Pkt. |
+|  | Mit 4xx abgelehnt, und die Baseline lehnt sie ebenfalls ab: eine Grenze des Modells. | Info | Nicht gewertet |
+|  | Mit 4xx abgelehnt; die Fähigkeit wird nicht angegeben. | Info | Nicht gewertet |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.max_output` | Die Ausgabe lief bis zur angefragten Token-Obergrenze. | Bestanden | 100 Pkt. |
 |  | Die Ausgabe endete vor der Obergrenze bei plausibler Länge. | Bestanden | 90 Pkt. |

@@ -24,6 +24,7 @@ from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
 from ekte.detectors.scale import DeductionScale, evidence_seqs, outcome
 from ekte.knowledge.identity import AMBIGUOUS_BRAND_WORDS, VENDOR_BRANDS, own_brand_words
+from ekte.knowledge.model_ids import compare_echoed_model
 from ekte.models import (
     CompletionOutcome,
     DetectorResult,
@@ -33,10 +34,6 @@ from ekte.models import (
     Severity,
     Status,
 )
-
-# Substrings that name a cheaper/smaller tier of a family. If the returned model
-# field carries one of these and the requested id does not, that is a downgrade.
-_DOWNGRADE_HINTS = ("mini", "nano", "flash", "lite", "small", "tiny", "8b", "7b", "3b", "1b")
 
 # Known LLM vendor/brand words (incl. Chinese). A model that self-identifies with
 # any of these — OTHER than its own brand — betrays a substitution, even when the KB
@@ -129,6 +126,8 @@ SCALE = DeductionScale(
             label="The echoed model field matched the requested model."),
     outcome("model_identity.model_field", "diverges", None, Status.WARN, Severity.MEDIUM,
             label="The echoed model field names a different or smaller model."),
+    outcome("model_identity.model_field", "unknown", None, Status.INFO,
+            label="The echoed model field names a different id that ekte cannot place: recorded, not judged."),
     outcome("model_identity.model_field", "unavailable", None, Status.INCONCLUSIVE,
             label="The response had no usable model field."),
     outcome("model_identity.no_evidence", "none", None, Status.INCONCLUSIVE,
@@ -510,8 +509,9 @@ class ModelIdentityDetector(Detector):
         return False
 
     async def _check_model_field(self, ctx: AuditContext, result: DetectorResult) -> bool:
-        """Compare the echoed ``model`` field to the requested id. Returns True if
-        it clearly names a different/cheaper model."""
+        """Compare the echoed ``model`` field to the claimed and requested ids
+        (see :func:`ekte.knowledge.model_ids.compare_echoed_model`). Returns True
+        if it clearly names a different/cheaper model."""
         outcome = await ctx.client.complete(
             RequestSpec(
                 messages=[{"role": "user", "content": prompts.text("model_identity.ping")}],
@@ -520,6 +520,7 @@ class ModelIdentityDetector(Detector):
             )
         )
         requested = ctx.target.model
+        claimed = ctx.target.claimed
         returned = (outcome.model_returned or "").strip()
         if not (outcome.ok) or not returned:
             result.findings.append(
@@ -538,7 +539,11 @@ class ModelIdentityDetector(Detector):
             )
             return False
 
-        if self._model_field_diverges(requested, returned):
+        # Compared with the claimed model and the id sent (a deployment alias
+        # may differ from the claim), through the knowledge base first.
+        cmp = compare_echoed_model(ctx.kb, returned, claimed, requested, claimed_profile=ctx.profile)
+        evidence = {"requested": requested, "claimed": claimed, "returned": returned, **cmp.evidence()}
+        if cmp.verdict == "diverges":
             result.findings.append(
                 SCALE.finding(
                     "model_identity.model_field",
@@ -549,11 +554,28 @@ class ModelIdentityDetector(Detector):
                         f"Response 'model' field ({returned}) differs from requested "
                         f"({requested})."
                     ),
-                    evidence={"requested": requested, "returned": returned},
+                    evidence=evidence,
                     recommendation="A smaller-tier or different-family model id in the response suggests routing to a substitute.",
                 )
             )
             return True
+
+        if cmp.verdict == "unknown":
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.model_field",
+                    "unknown",
+                    calls=[outcome],
+                    title="Echoed model field not recognized",
+                    summary=(
+                        f"Response 'model' field ({returned}) is a different id from requested "
+                        f"({requested}) that the knowledge base cannot place; not judged."
+                    ),
+                    evidence=evidence,
+                    recommendation="Ask the relay what the echoed id names, or add it to the knowledge base as an alias.",
+                )
+            )
+            return False
 
         result.findings.append(
             SCALE.finding(
@@ -562,7 +584,7 @@ class ModelIdentityDetector(Detector):
                 calls=[outcome],
                 title="Echoed model field consistent",
                 summary=f"Response 'model' field ({returned}) matches requested.",
-                evidence={"requested": requested, "returned": returned},
+                evidence=evidence,
             )
         )
         return False
@@ -613,34 +635,3 @@ class ModelIdentityDetector(Detector):
         if fp.expect_regex:
             return f"matches /{fp.expect_regex}/"
         return "native behavior"
-
-    @staticmethod
-    def _model_field_diverges(requested: str, returned: str) -> bool:
-        """Lenient comparison: ignore snapshot suffixes/aliases, flag a clear
-        downgrade-tier word or a different family."""
-        req = requested.lower()
-        ret = returned.lower()
-        if req == ret:
-            return False
-
-        # A downgrade-tier word present in the returned id but not the requested one.
-        # Checked BEFORE the snapshot/alias substring tolerance below, otherwise the
-        # most common substitution — gpt-4o -> gpt-4o-mini, where the requested id is
-        # a substring of the returned one — would be waved through as an "alias".
-        for hint in _DOWNGRADE_HINTS:
-            if hint in ret and hint not in req:
-                return True
-
-        def norm(name: str) -> str:
-            return "".join(ch for ch in name if ch.isalnum())
-
-        nreq, nret = norm(req), norm(ret)
-        # Snapshot/alias tolerance: one being a prefix/substring of the other
-        # (e.g. "gpt-4o" vs "gpt-4o-2024-08-06") is not a divergence.
-        if nreq and nret and (nreq in nret or nret in nreq):
-            return False
-
-        # Different leading family token (e.g. "gpt" vs "qwen", "claude" vs "llama").
-        req_family = re.split(r"[-_/:.\s]", req, maxsplit=1)[0]
-        ret_family = re.split(r"[-_/:.\s]", ret, maxsplit=1)[0]
-        return bool(req_family and ret_family and req_family != ret_family)

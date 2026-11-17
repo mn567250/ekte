@@ -144,6 +144,13 @@ async def test_wrong_ranking_and_echoed_model_are_high_risk(serve):
     assert report.verdict.risk_level == RiskLevel.HIGH
 
 
+async def test_unplaceable_echoed_model_is_info(serve):
+    serve(RerankServer(served="acme-rerank-turbo"))
+    report = await run_audit(_target(), _opts(suite="smoke"))
+    field = _finding(report, "rerank.model_field")
+    assert (field.outcome, field.status, field.score) == ("unknown", Status.INFO, None)
+
+
 async def test_missing_model_field_is_info(serve):
     serve(RerankServer(served=None))
     report = await run_audit(_target(), _opts(suite="smoke"))

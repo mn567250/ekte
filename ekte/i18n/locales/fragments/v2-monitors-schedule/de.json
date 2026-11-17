@@ -35,7 +35,7 @@
   "Choose how often it runs.": "Legen Sie fest, wie oft sie läuft.",
   "Choose…": "Auswählen…",
   "Could not cancel the run — please try again.": "Der Lauf konnte nicht abgebrochen werden – bitte erneut versuchen.",
-  "One full run took {d}, so it runs at most {every}.": "Ein vollständiger Lauf dauerte {d}, daher läuft sie höchstens {every}.",
+  "One full run took {d}, so it runs at most {every}.": "Ein vollständiger Lauf dauerte {d}, daher läuft sie {every} höchstens einmal.",
   "Progress of {name}": "Fortschritt von {name}",
   "Run cancelled.": "Lauf abgebrochen.",
   "{n} min": "{n} Min."

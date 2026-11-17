@@ -9,6 +9,7 @@
   "No vector was returned to measure.": "Ingen vektor ble returnert å måle.",
   "The relay echoes the requested model.": "Reléet gjengir den forespurte modellen.",
   "The relay echoes a different model than the one requested.": "Reléet gjengir en annen modell enn den som ble forespurt.",
+  "The relay echoes a different model id that ekte cannot place: recorded, not judged.": "Reléet gjengir en annen modell-ID som ekte ikke kan plassere: registrert, ikke vurdert.",
   "The relay echoes no model field.": "Reléet gjengir ikke noe model-felt.",
   "The pinned input's vector matches the previous run.": "Vektoren for den faste inndataen stemmer med forrige kjøring.",
   "The pinned input's vector moved since the previous run (cosine 0.95 to 0.995).": "Vektoren for den faste inndataen har flyttet seg siden forrige kjøring (cosinus 0,95 til 0,995).",
