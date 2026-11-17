@@ -91,6 +91,7 @@
   "Output stopped before the cap at a plausible length.": "Utdataen stoppet før taket ved en troverdig lengde.",
   "Output stopped below a quarter of the requested length.": "Utdataen stoppet under en firedel av den forespurte lengden.",
   "Output stopped below a quarter of the request despite a large claimed maximum.": "Utdataen stoppet under en firedel av forespørselen til tross for et stort oppgitt maksimum.",
+  "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "Utdataen ble kuttet med finish_reason length langt under den forespurte grensen: reléet begrenser utdata-tokenene.",
   "Recall held at the top rung (90% of the probed window): no deduction.": "Gjenkallingen holdt på øverste trinn (90 % av det probede vinduet): ingen fradrag.",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "Gjenkallingen er verifisert opp til probens tak; det oppgitte vinduet over det ble ikke prøvd.",
   "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "Gjenkallingen holdt opp til 50–90 % av det probede vinduet; trekker fra andelen av øverste trinn som ikke ble husket.",

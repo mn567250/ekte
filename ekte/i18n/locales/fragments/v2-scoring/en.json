@@ -91,6 +91,7 @@
   "Output stopped before the cap at a plausible length.": "Output stopped before the cap at a plausible length.",
   "Output stopped below a quarter of the requested length.": "Output stopped below a quarter of the requested length.",
   "Output stopped below a quarter of the request despite a large claimed maximum.": "Output stopped below a quarter of the request despite a large claimed maximum.",
+  "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.",
   "Recall held at the top rung (90% of the probed window): no deduction.": "Recall held at the top rung (90% of the probed window): no deduction.",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "Recall verified up to the probe cap; the declared window above it was not exercised.",
   "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.",

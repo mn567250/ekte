@@ -344,6 +344,8 @@
   "Confirm the served engine actually supports function calling.": "Confirme que o motor servido suporta realmente chamadas de funções.",
   "Verify the served engine honors response_format=json_object.": "Verifique se o motor servido respeita response_format=json_object.",
   "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "O relay recusa um parâmetro do pedido que o modelo declarado suporta; peça ao fornecedor que o encaminhe, ou use um endpoint que ofereça a funcionalidade.",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "O relay limita max_tokens abaixo do valor pedido; respostas longas serão truncadas. Peça ao fornecedor que encaminhe max_tokens, ou use um endpoint que o respeite.",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "Cortada (finish_reason=length) em ~{delivered_tokens} dos {requested_max_tokens} tokens pedidos: o relay limita os tokens de saída.",
   "Behavior is consistent with the claimed model.": "O comportamento corresponde ao modelo declarado.",
   "Mostly consistent with the claimed model; minor concerns.": "Globalmente coerente com o modelo declarado; pequenas reservas.",
   "Some behavior diverges from the claimed model — investigate.": "Parte do comportamento desvia-se do modelo declarado — investigue.",

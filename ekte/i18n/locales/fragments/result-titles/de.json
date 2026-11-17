@@ -161,6 +161,7 @@
     "Strict JSON schema honored": "Striktes JSON-Schema eingehalten",
     "Strict JSON schema not enforced (consistent with claim)": "Striktes JSON-Schema nicht durchgesetzt (passt zur Angabe)",
     "Sustained output to the request cap": "Ausgabe bis zur angefragten Obergrenze durchgehalten",
+    "Output clamped below the requested limit": "Ausgabe unter der angefragten Grenze gekappt",
     "Throughput versus the reference": "Durchsatz im Vergleich zur Referenz",
     "Time to first token consistency": "Gleichmäßigkeit der Zeit bis zum ersten Token",
     "Tool calling delivered": "Tool-Aufrufe geliefert",

@@ -91,6 +91,7 @@
   "Output stopped before the cap at a plausible length.": "Die Ausgabe endete vor der Obergrenze bei plausibler Länge.",
   "Output stopped below a quarter of the requested length.": "Die Ausgabe endete unter einem Viertel der angefragten Länge.",
   "Output stopped below a quarter of the request despite a large claimed maximum.": "Die Ausgabe endete unter einem Viertel der Anfrage trotz großem angegebenem Maximum.",
+  "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "Die Ausgabe wurde mit finish_reason length weit unter der angefragten Grenze abgeschnitten: Das Relay begrenzt die Ausgabe-Tokens.",
   "Recall held at the top rung (90% of the probed window): no deduction.": "Erinnerung hielt auf der obersten Stufe (90 % des geprüften Fensters): kein Abzug.",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "Erinnerung bis zur Probe-Obergrenze bestätigt; das angegebene Fenster darüber wurde nicht geprüft.",
   "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "Erinnerung hielt bis 50–90 % des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab.",

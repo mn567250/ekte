@@ -161,6 +161,7 @@
     "Strict JSON schema honored": "严格 JSON Schema 得到遵守",
     "Strict JSON schema not enforced (consistent with claim)": "未强制严格 JSON Schema（与声称一致）",
     "Sustained output to the request cap": "输出持续到所请求的上限",
+    "Output clamped below the requested limit": "输出被限制在请求上限之下",
     "Throughput versus the reference": "与参考值对比的吞吐",
     "Time to first token consistency": "首 token 延迟一致性",
     "Tool calling delivered": "工具调用已兑现",

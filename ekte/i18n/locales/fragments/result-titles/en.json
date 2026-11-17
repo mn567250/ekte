@@ -161,6 +161,7 @@
     "Strict JSON schema honored": "Strict JSON schema honored",
     "Strict JSON schema not enforced (consistent with claim)": "Strict JSON schema not enforced (consistent with claim)",
     "Sustained output to the request cap": "Sustained output to the request cap",
+    "Output clamped below the requested limit": "Output clamped below the requested limit",
     "Throughput versus the reference": "Throughput versus the reference",
     "Time to first token consistency": "Time to first token consistency",
     "Tool calling delivered": "Tool calling delivered",

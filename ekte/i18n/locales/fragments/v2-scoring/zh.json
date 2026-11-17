@@ -72,6 +72,7 @@
   "Output stopped before the cap at a plausible length.": "输出在上限前以合理长度结束。",
   "Output stopped below a quarter of the requested length.": "输出不足请求长度的四分之一就停止了。",
   "Output stopped below a quarter of the request despite a large claimed maximum.": "尽管声称的最大输出很大，输出仍不足请求的四分之一就停止了。",
+  "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "输出以 finish_reason length 在远低于请求上限处被截断：中转限制了输出 token。",
   "Recall held at the top rung (90% of the probed window): no deduction.": "在最高探测档（探测窗口的 90%）仍能回忆：不扣分。",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "已在探测上限内验证回忆；上限以上的声明窗口未被测试。",
   "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "在 50–90% 的探测窗口内能回忆；按最高探测档中未能回忆的比例扣分。",
