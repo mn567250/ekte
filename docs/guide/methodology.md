@@ -51,12 +51,18 @@ once per check, and reports list the subjects under their check.
 
 ekte scores eleven dimensions. A dimension's score is the **equal-weight mean of
 its detectors' scores**: a detector with many checks does not outweigh one with
-few, and a detector without a numeric score is left out. Its status is the
+few, and a detector without a numeric score is left out. A detector with a
+HIGH/CRITICAL finding **caps** the dimension at its own score, so passing
+siblings cannot average a failure away: a tampering detector at 10 next to three
+clean integrity detectors gives response integrity 10, not 77.5 (the lowest such
+detector wins). Transport advisories (see [Risk verdict](#risk-verdict)) and the
+connectivity dimension cap nothing. Its status is the
 worst status its detectors concluded, except that a HIGH/CRITICAL finding
 forces **Fail** and a MEDIUM finding lifts **Pass** to **Warning**, whatever the
 score. Every report records this per dimension (`DimensionScore.breakdown`:
-each detector's score, whether it counted, and any status override with the
-findings that caused it) and shows it under **Dimension details**
+each detector's score, whether it counted, the score cap with the detector and
+findings that caused it, and any status override with the findings that caused
+it) and shows it under **Dimension details**
 (Markdown/HTML/PDF) and in the expandable rows of **Per-dimension checks** in
 the web UI. A detector that crashes is reported with status **Error** and never
 aborts the audit.
@@ -66,8 +72,15 @@ aborts the audit.
 The **overall health score** is the weighted mean over the dimensions that
 produced a score (`DIMENSION_WEIGHTS` in `ekte/scoring.py`). A dimension that
 did not run (not in the suite, or not selected in a `custom` run) drops out and
-the remaining weights are renormalized. The rating is A (≥ 90), B (≥ 80),
-C (≥ 70), D (≥ 60) or F.
+the remaining weights are renormalized. The [risk level](#risk-verdict) then
+**caps** the score (`RISK_SCORE_CAPS` in `ekte/scoring.py`): at most **49** for
+`high` and **69** for `medium`; `low`, `clean` and `inconclusive` leave it as
+it is. The rating follows from the capped score and is A (≥ 90), B (≥ 80),
+C (≥ 70), D (≥ 60) or F, so a high risk always rates F and a medium risk at
+best D, and `--fail-under` gates on the capped score. When the cap applies, the
+summary says so, `verdict.uncapped_score` keeps the weighted mean and
+`verdict.score_cap` records the risk level, the cap and the findings that set the
+risk; the reports show it next to the score.
 
 | Dimension | Id | Weight | Role |
 |---|---|---|---|

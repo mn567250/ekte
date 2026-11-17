@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
-REPORT_SCHEMA_VERSION = "1.5"
+REPORT_SCHEMA_VERSION = "1.6"
 WEBHOOK_SCHEMA_VERSION = "1.0"
 # Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
 EVIDENCE_SCHEMA_VERSION = "1.2"
@@ -325,6 +325,18 @@ class StatusOverride(BaseModel):
     findings: list[str] = Field(default_factory=list)  # ids of those findings
 
 
+class DimensionScoreCap(BaseModel):
+    """Why a dimension scores below the mean of its detectors: a detector with
+    a HIGH/CRITICAL (non-advisory) finding caps the dimension at its score."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    detector: str  # DetectorResult.id of the capping detector
+    findings: list[str] = Field(default_factory=list)  # its HIGH/CRITICAL finding ids
+    cap: float  # the capping detector's score, now the dimension score
+    uncapped_score: float  # the equal-weight mean before the cap
+
+
 class DimensionBreakdown(BaseModel):
     """How a dimension's score and status were derived from its detectors."""
 
@@ -336,6 +348,9 @@ class DimensionBreakdown(BaseModel):
     # Worst status the detectors concluded, before any severity override.
     detector_status: Status = Status.NOT_RUN
     status_override: StatusOverride | None = None
+    # Set when a serious finding capped the score below the mean (report
+    # schema 1.6; absent in older reports and when no cap applied).
+    score_cap: DimensionScoreCap | None = None
 
 
 class DimensionScore(BaseModel):
@@ -639,6 +654,17 @@ class RunOutcomes(BaseModel):
     impaired_rate: float | None = None
 
 
+class VerdictScoreCap(BaseModel):
+    """Why the overall score is below the weighted mean of the dimensions:
+    the risk level caps it (``RISK_SCORE_CAPS`` in ekte/scoring.py)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    risk_level: RiskLevel  # the risk level whose cap applied
+    cap: float  # the highest overall score that risk level allows
+    findings: list[str] = Field(default_factory=list)  # ids of the findings that set the risk
+
+
 class Verdict(BaseModel):
     """The headline judgement a user reads first."""
 
@@ -656,6 +682,11 @@ class Verdict(BaseModel):
     # they were recorded.
     drivers: list[str] = Field(default_factory=list)
     checked: list[str] = Field(default_factory=list)
+    # The weighted mean of the dimension scores before the risk cap, and the
+    # cap when it lowered ``overall_score`` (report schema 1.6; None in older
+    # reports, ``score_cap`` also None when no cap applied).
+    uncapped_score: float | None = None
+    score_cap: VerdictScoreCap | None = None
 
 
 class RedactedTarget(BaseModel):

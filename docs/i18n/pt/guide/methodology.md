@@ -55,11 +55,18 @@ sujeitos sob a sua verificação.
 O ekte pontua onze dimensões. A pontuação de uma dimensão é a **média com peso
 igual das pontuações dos seus detetores**: um detetor com muitas verificações
 não pesa mais do que um com poucas, e um detetor sem pontuação numérica fica de
-fora. O seu estado é o pior estado concluído pelos seus detetores, exceto que
+fora. Um detetor com uma constatação de gravidade ALTA/CRÍTICA **limita** a
+dimensão à sua própria pontuação, para que detetores vizinhos aprovados não
+diluam uma falha na média: um detetor de adulteração com 10 ao lado de três
+detetores de integridade limpos dá 10 à integridade das respostas, não 77,5
+(vale o detetor mais baixo deste tipo). Os avisos de transporte (ver
+[Veredito de risco](#veredito-de-risco)) e a dimensão de conectividade não
+limitam nada. O seu estado é o pior estado concluído pelos seus detetores, exceto que
 uma constatação de gravidade ALTA/CRÍTICA impõe **Falha** e uma constatação de
 gravidade MÉDIA eleva **Aprovado** a **Aviso**, seja qual for a pontuação. Cada
 relatório regista este cálculo por dimensão (`DimensionScore.breakdown`: a
-pontuação de cada detetor, se foi contabilizada, e qualquer alteração de estado
+pontuação de cada detetor, se foi contabilizada, o limite da pontuação com o
+detetor e as constatações que o causaram, e qualquer alteração de estado
 com as constatações que a causaram) e mostra-o em **Dimension details**
 (Markdown/HTML/PDF) e nas linhas expansíveis de **Verificações por dimensão**
 da interface web. Um detetor que falha internamente aparece com o estado
@@ -70,8 +77,16 @@ da interface web. Um detetor que falha internamente aparece com o estado
 A **pontuação de saúde global** é a média ponderada das dimensões que
 produziram uma pontuação (`DIMENSION_WEIGHTS` em `ekte/scoring.py`). Uma
 dimensão que não foi executada (fora da suite, ou não selecionada numa execução
-`custom`) sai do cálculo e os pesos restantes são renormalizados. A nota é
-A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) ou F.
+`custom`) sai do cálculo e os pesos restantes são renormalizados. O
+[nível de risco](#veredito-de-risco) **limita** depois a pontuação
+(`RISK_SCORE_CAPS` em `ekte/scoring.py`): no máximo **49** com `high` e **69**
+com `medium`; `low`, `clean` e `inconclusive` deixam-na como está. A nota
+resulta da pontuação limitada e é A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) ou F,
+pelo que um risco alto dá sempre F e um médio no máximo D, e `--fail-under`
+avalia a pontuação limitada. Quando o limite se aplica, o resumo indica-o,
+`verdict.uncapped_score` guarda a média ponderada e `verdict.score_cap` regista
+o nível de risco, o limite e as constatações que determinaram o risco; os
+relatórios mostram-no junto à pontuação.
 
 | Dimensão | Id | Peso | Papel |
 |---|---|---|---|

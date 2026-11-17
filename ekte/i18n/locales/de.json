@@ -354,6 +354,7 @@
   "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "Das Relay begrenzt max_tokens unter den angefragten Wert; lange Antworten werden abgeschnitten. Bitten Sie den Anbieter, max_tokens weiterzuleiten, oder nutzen Sie einen Endpunkt, der den Wert beachtet.",
   "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "Bei ~{delivered_tokens} der angefragten {requested_max_tokens} Tokens abgeschnitten (finish_reason=length): Das Relay begrenzt die Ausgabe-Tokens.",
   "Overall health score {1}/100.": "Gesamt-Health-Score {1}/100.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Score auf {1} begrenzt, weil die Risikostufe „{2}“ lautet; der gewichtete Mittelwert der Dimensionen beträgt {3}.",
   "Findings: {1}.": "Befunde: {1}.",
   "No significant divergence findings.": "Keine wesentlichen Abweichungen festgestellt.",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "Das angegebene Modell wurde in der Wissensbasis nicht gefunden, daher sind Identitäts-/Fähigkeitsprüfungen eingeschränkt — übergeben Sie --declared-provider oder ergänzen Sie ein KB-Profil.",

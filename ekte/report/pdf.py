@@ -315,6 +315,9 @@ def _header(report: AuditReport) -> list[Flowable]:
         _t(_fmt_score(v.overall_score), bold=True, size=12) + _t("/100") + gap
         + _t("rating ") + _t(v.rating or "—", bold=True) + gap
         + _t("confidence ") + _t(v.confidence, bold=True), "body"))
+    cap_note = dims.overall_cap_note(report)
+    if cap_note:
+        out.append(_p(_t("Score: " + cap_note), "meta"))
     meta = [
         _t("mode ") + _code(report.mode),
         _t("suite ") + _code(report.suite)

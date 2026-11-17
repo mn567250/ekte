@@ -64,6 +64,16 @@
     ["Overall health score ([\\d.]+)/100\\.", "Overall health score {1}/100."],
     ["Custom run: (\\d+) of (\\d+) selected dimensions scored\\.", "Custom run: {1} of {2} selected dimensions scored."],
     [
+      "Score capped at ([\\d.]+) because the risk level is (high|medium); the weighted mean of the dimensions is ([\\d.]+)\\.",
+      "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.",
+      {
+        // the risk level as the UI labels it ("Likely substituted")
+        2: function (g, tr) {
+          return tr(g === "high" ? "Likely substituted" : "Deviations found");
+        },
+      },
+    ],
+    [
       "Findings: ((?:\\d+ (?:critical|high|medium)(?:, )?)+)\\.",
       "Findings: {1}.",
       {

@@ -811,3 +811,51 @@ def test_report_without_warnings_has_no_warnings_section(tmp_path):
             report["warnings"] = warnings
         html = _render(tmp_path, "en", report)["html"]
         assert "zr-warns" not in html and "<h3>Warnings" not in html
+
+
+def _capped_report() -> dict:
+    # a tampering relay (#247): the integrity dimension and the overall score are capped
+    from tests.test_scoring import _tampered
+
+    return json.loads(_tampered().model_dump_json())
+
+
+@needs_node
+def test_report_shows_the_score_caps(tmp_path):
+    report = _capped_report()
+    html = _render(tmp_path, "en", report)["html"]
+    text = " ".join(_text(html).split())
+    # the overall cap under the tiles, with the weighted mean and the finding that set the risk
+    assert ("Score capped at 49 because the risk level is “Likely substituted” (weighted mean of "
+            "the dimensions: 94.6). Findings that set the risk: integrity.tampering title.") in text
+    # the summary drops its own cap sentence (shown under the tiles)
+    summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
+    assert "capped" not in summary and "Findings: 1 critical." in summary
+    # the dimension details name the capping detector and finding
+    assert ("Mean 70, capped at 10, the score of integrity, by its high or critical findings: "
+            "integrity.tampering title.") in text
+
+
+@needs_node
+@pytest.mark.parametrize(("lang", "words"), [
+    ("de", ("Score auf 49 begrenzt", "Mittelwert 70, begrenzt auf 10")),
+    ("zh", ("综合分上限为 49", "平均分 70，上限为 10")),
+])
+def test_score_caps_are_translated(tmp_path, lang, words):
+    html = _render(tmp_path, lang, _capped_report())["html"]
+    text = " ".join(_text(html).split())
+    for w in words:
+        assert w in text, (lang, w)
+    assert "capped" not in text and "weighted mean" not in text
+    summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
+    assert "49" not in summary
+
+
+def test_backend_cap_sentence_is_translated():
+    # the verdict summary's cap sentence, translated as backend text (locales.js pattern)
+    from ekte import i18n
+
+    sentence = "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}."
+    for code in ("de", "es", "fr", "it", "nb", "pt", "zh"):
+        tr = i18n.ui(code, sentence)
+        assert tr != sentence and all(p in tr for p in ("{1}", "{2}", "{3}")), code

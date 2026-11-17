@@ -55,12 +55,19 @@ elencano i soggetti sotto il loro controllo.
 ekte assegna un punteggio a undici dimensioni. Il punteggio di una dimensione è
 la **media a pari peso dei punteggi dei suoi rilevatori**: un rilevatore con
 molti controlli non pesa più di uno con pochi, e un rilevatore senza punteggio
-numerico resta escluso. Il suo stato è il peggiore stato concluso dai suoi
+numerico resta escluso. Un rilevatore con una rilevazione di gravità
+ALTA/CRITICA **limita** la dimensione al proprio punteggio, così i rilevatori
+superati accanto non annullano un fallimento nella media: un rilevatore di
+manomissione a 10 accanto a tre rilevatori di integrità puliti dà 10
+all'integrità delle risposte, non 77,5 (vale il più basso di questi rilevatori).
+Gli avvisi di trasporto (vedi [Verdetto di rischio](#verdetto-di-rischio)) e la
+dimensione connettività non limitano nulla. Il suo stato è il peggiore stato concluso dai suoi
 rilevatori, tranne che una rilevazione di gravità ALTA/CRITICA impone
 **Fallito** e una rilevazione di gravità MEDIA porta **Superato** ad **Avviso**,
 qualunque sia il punteggio. Ogni rapporto registra questo calcolo per dimensione
 (`DimensionScore.breakdown`: il punteggio di ogni rilevatore, se è stato
-conteggiato, ed eventuali cambi di stato con le rilevazioni che li hanno
+conteggiato, il limite del punteggio con il rilevatore e le rilevazioni che lo
+hanno causato, ed eventuali cambi di stato con le rilevazioni che li hanno
 causati) e lo mostra in **Dimension details** (Markdown/HTML/PDF) e nelle righe
 espandibili dei **Controlli per dimensione** dell'interfaccia web. Un
 rilevatore che va in errore compare con stato **Errore** e non interrompe mai
@@ -72,7 +79,15 @@ Il **punteggio di salute complessivo** è la media ponderata delle dimensioni ch
 hanno prodotto un punteggio (`DIMENSION_WEIGHTS` in `ekte/scoring.py`). Una
 dimensione che non è stata eseguita (fuori dalla suite, o non selezionata in
 un'esecuzione `custom`) esce dal calcolo e i pesi restanti vengono
-rinormalizzati. Il voto è A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) o F.
+rinormalizzati. Il [livello di rischio](#verdetto-di-rischio) poi **limita** il
+punteggio (`RISK_SCORE_CAPS` in `ekte/scoring.py`): al massimo **49** con `high`
+e **69** con `medium`; `low`, `clean` e `inconclusive` lo lasciano invariato. Il
+voto deriva dal punteggio limitato ed è A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60)
+o F, quindi un rischio alto dà sempre F e uno medio al massimo D, e
+`--fail-under` valuta il punteggio limitato. Quando il limite si applica, il
+riepilogo lo dice, `verdict.uncapped_score` conserva la media ponderata e
+`verdict.score_cap` registra il livello di rischio, il limite e le rilevazioni
+che hanno determinato il rischio; i rapporti lo mostrano accanto al punteggio.
 
 | Dimensione | Id | Peso | Ruolo |
 |---|---|---|---|
