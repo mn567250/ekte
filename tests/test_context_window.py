@@ -203,11 +203,16 @@ _REAL_PER_HEURISTIC = 1.15
 
 
 def _window_server(audit_context, *, window: int | None, middle_misses: int = 0,
-                   error: CompletionOutcome | None = None, error_above: int = 0):
+                   error: CompletionOutcome | None = None, error_above: int = 0,
+                   real_per_heuristic: float = _REAL_PER_HEURISTIC,
+                   miss_above: bool = False):
     """An honest endpoint: recalls every needle, rejects a prompt only when its
-    REAL token count (plus the 64-token answer) exceeds ``window``. The first
-    ``middle_misses`` probes with the needle near the middle are answered without
-    it; ``error`` answers every prompt longer than ``error_above`` characters."""
+    REAL token count (``real_per_heuristic`` times ekte's heuristic count, plus the
+    64-token answer) exceeds ``window`` (``miss_above``: answers it without the
+    needle instead), and reports that real count as ``usage.prompt_tokens``. The
+    first ``middle_misses`` probes with the needle near the middle are answered
+    without it; ``error`` answers every prompt longer than ``error_above``
+    characters."""
     calls: list[int] = []
     left = [middle_misses]
 
@@ -216,18 +221,23 @@ def _window_server(audit_context, *, window: int | None, middle_misses: int = 0,
         calls.append(len(prompt))
         if error is not None and len(prompt) > error_above:
             return error
-        if window and estimate_tokens(prompt) * _REAL_PER_HEURISTIC + 64 > window:
+        real = int(estimate_tokens(prompt) * real_per_heuristic) + 8  # + chat template
+        over = bool(window and real + 64 > window)
+        if over and not miss_above:
             return CompletionOutcome(
                 ok=False, status_code=400,
                 error_message=f"This model's maximum context length is {window} tokens",
             )
-        found = _NEEDLE.search(prompt)
+        found = None if over else _NEEDLE.search(prompt)
         at = found.start() / len(prompt) if found else 0.0
         if found and left[0] and 0.3 < at < 0.7:
             left[0] -= 1
             found = None
         content = found.group(1) if found else "I could not find a pass phrase."
-        return CompletionOutcome(ok=True, status_code=200, content=content)
+        return CompletionOutcome(
+            ok=True, status_code=200, content=content,
+            usage={"prompt_tokens": real, "completion_tokens": 8, "total_tokens": real + 8},
+        )
 
     audit_context.client.complete = complete
     return calls
@@ -284,13 +294,14 @@ async def test_truncation_below_the_cap_still_fails(audit_context, monkeypatch):
 
 
 async def test_truncating_endpoint_fails(audit_context):
-    # The mock declares 128K; the endpoint holds only 60K.
-    _window_server(audit_context, window=60_000)
+    # The mock declares 128K; the endpoint holds only 50K.
+    _window_server(audit_context, window=50_000)
     result = await ContextWindowDetector().run(audit_context)
     assert result.status == Status.FAIL
     verdict = next(f for f in result.findings if f.check == "context_window.window")
     assert verdict.id == "context_window.truncation"
-    assert verdict.evidence["effective_window"] < 60_000
+    assert verdict.evidence["effective_window"] < 0.5 * verdict.evidence["top_rung"]
+    assert verdict.evidence["top_rung_share"] < 0.5
 
 
 async def test_window_between_half_and_top_is_short(audit_context):
@@ -300,7 +311,128 @@ async def test_window_between_half_and_top_is_short(audit_context):
     result = await ContextWindowDetector().run(audit_context)
     verdict = next(f for f in result.findings if f.check == "context_window.window")
     assert verdict.id == "context_window.short" and result.status == Status.FAIL
-    assert 0.5 <= verdict.evidence["ratio"] < 0.9
+    assert 0.5 <= verdict.evidence["top_rung_share"] < 1.0
+
+
+# --------------------------------------------------------------------------- #
+# One reference for the verdict and the deduction: the top rung (issue 261)
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize(
+    ("window", "share", "verdict_id", "status", "deduction"),
+    [
+        # Only the half rung (0.45 of the declared 128K) recalled, both refines
+        # (0.675 and 0.5625) failed: half of the top rung is short, not truncated.
+        (60_000, 0.5, "context_window.short", Status.WARN, 50.0),
+        # Only the quarter rung (0.225) recalled: below half of the top rung.
+        (30_000, 0.25, "context_window.truncation", Status.FAIL, 75.0),
+    ],
+)
+async def test_the_verdict_and_the_deduction_share_the_top_rung(
+    audit_context, window, share, verdict_id, status, deduction
+):
+    # A miss (not a size rejection), so the verdict is the only finding.
+    _window_server(audit_context, window=window, miss_above=True)
+    result = await ContextWindowDetector().run(audit_context)
+    top = result.evidence["top_rung"]
+    assert top == int(128_000 * 0.9)
+    verdict = next(f for f in result.findings if f.check == "context_window.window")
+    assert verdict.id == verdict_id and verdict.status == status
+    assert verdict.evidence["effective_window"] == int(top * share)
+    assert verdict.evidence["top_rung_share"] == share
+    assert verdict.deduction == deduction
+    assert result.status == status and result.score == round(100.0 - deduction, 1)
+
+
+def test_the_window_rows_split_at_half_of_the_top_rung():
+    from ekte.detectors.context_window import SCALE
+
+    short = SCALE.get("context_window.window", "short")
+    truncated = SCALE.get("context_window.window", "truncated")
+    assert short.max_deduction == 50.0 and truncated.max_deduction == 100.0
+    assert "top rung" in short.label and "top rung" in truncated.label
+
+
+# --------------------------------------------------------------------------- #
+# A tokenizer that counts more than the heuristic factor allows (issue 261)
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("declared", [8_192, 32_768, 128_000, 200_000])
+@pytest.mark.parametrize("real_per_heuristic", [1.4, 1.6])
+async def test_a_dense_tokenizer_overshooting_the_top_rung_is_not_short(
+    audit_context, monkeypatch, declared, real_per_heuristic
+):
+    # The endpoint counts 1.4x (1.6x) ekte's heuristic, not the 1.2 the haystack is
+    # built for, and rejects only above its genuine, declared window.
+    monkeypatch.setattr(audit_context, "declared_context_window", lambda: declared)
+    _window_server(audit_context, window=declared, real_per_heuristic=real_per_heuristic)
+    result = await ContextWindowDetector().run(audit_context)
+    bad = [f for f in result.findings if f.severity.value in ("medium", "high")]
+    assert bad == []
+    verdict = next(f for f in result.findings if f.check == "context_window.window")
+    assert verdict.id == "context_window.overshot" and verdict.status == Status.INFO
+    assert verdict.evidence["overshoot"] > 1.05
+    assert verdict.evidence["reported_prompt_tokens"] > verdict.evidence["effective_window"]
+    assert result.status == Status.PASS
+
+
+async def test_overshoot_needs_more_than_five_percent(audit_context):
+    # The tokenizer the factor was built for: no overshoot, a genuine short window.
+    _window_server(audit_context, window=100_000, real_per_heuristic=1.2, miss_above=True)
+    result = await ContextWindowDetector().run(audit_context)
+    verdict = next(f for f in result.findings if f.check == "context_window.window")
+    assert verdict.id == "context_window.short"
+
+
+async def test_overshoot_below_the_top_rung_is_still_truncation(audit_context):
+    # A dense tokenizer, but the endpoint fails far below its claim: the ladder's
+    # first failure is not the top rung, so the overshoot does not explain it.
+    _window_server(audit_context, window=40_000, real_per_heuristic=1.4)
+    result = await ContextWindowDetector().run(audit_context)
+    verdict = next(f for f in result.findings if f.check == "context_window.window")
+    assert verdict.id == "context_window.truncation"
+
+
+async def test_ladder_evidence_carries_the_reported_prompt_tokens(audit_context):
+    _window_server(audit_context, window=80_000)
+    result = await ContextWindowDetector().run(audit_context)
+    ladder = result.evidence["ladder"]
+    assert all("prompt_tokens" in row for row in ladder)
+    recalled = [row for row in ladder if row["recalled"]]
+    assert recalled and all(0 < row["prompt_tokens"] <= row["size"] for row in recalled)
+    # A size rejection carries no usage.
+    assert all(row["prompt_tokens"] is None for row in ladder if row["rejected"])
+    assert result.evidence["real_per_heuristic"] == 1.2
+
+
+async def test_ladder_evidence_without_usage_has_no_prompt_tokens(audit_context):
+    _keep_tail_server(audit_context, keep_chars=None)
+    result = await ContextWindowDetector().run(audit_context)
+    assert all(row["prompt_tokens"] is None for row in result.evidence["ladder"])
+
+
+def test_a_measured_tokenizer_factor_shrinks_the_haystack(monkeypatch):
+    from ekte.detectors import context_window as cw
+    from ekte.utils import tokenize
+
+    assert cw._heuristic_size(12_000, "o200k_base") == 10_000  # the 1.2 default
+    monkeypatch.setitem(tokenize.FILLER_REAL_PER_HEURISTIC, "dense-bpe", 1.5)
+    assert cw._heuristic_size(12_000, "dense-bpe") == 8_000
+    assert cw._heuristic_size(12_000, None) == 10_000
+    dense = _build_haystack(12_000, needle="EKTE-0123456789", depth=0.5, tokenizer="dense-bpe")
+    default = _build_haystack(12_000, needle="EKTE-0123456789", depth=0.5, tokenizer=None)
+    assert estimate_tokens(dense) <= 8_000 < estimate_tokens(default) <= 10_000
+
+
+def test_measured_tokenizer_factors_name_known_tokenizers():
+    from pathlib import Path
+
+    from ekte.utils import tokenize
+
+    known: set[str] = set()
+    data = Path(__file__).resolve().parents[1] / "ekte" / "knowledge" / "data"
+    for path in data.glob("*.yaml"):
+        known |= set(re.findall(r"^\s*tokenizer:\s*['\"]?([^'\"\s#]+)", path.read_text(), re.M))
+    assert set(tokenize.FILLER_REAL_PER_HEURISTIC) <= known
+    assert all(f >= 1.0 for f in tokenize.FILLER_REAL_PER_HEURISTIC.values())
 
 
 def test_classify_413_is_a_size_rejection():

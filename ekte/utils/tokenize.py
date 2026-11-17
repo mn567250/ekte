@@ -32,6 +32,26 @@ def heuristic_token_count(text: str) -> int:
     return cjk + pieces
 
 
+# Real prompt tokens per heuristic token for the context-window filler
+# (``ekte.detectors.helpers.build_filler``), by tokenizer family (the ``tokenizer:``
+# field of ``ekte/knowledge/data/*.yaml``). The context-window probe builds each
+# haystack at ``size / factor`` heuristic tokens so the REAL count stays within
+# the rung. Entries are data measured offline with the family's real tokenizer
+# (ekte never imports one at run time); a family without a measured entry uses
+# ``DEFAULT_FILLER_REAL_PER_HEURISTIC``, which covers the measured ~12% (o200k)
+# to ~15% (cl100k) under-count. No family has been measured yet (issue #261).
+FILLER_REAL_PER_HEURISTIC: dict[str, float] = {}
+DEFAULT_FILLER_REAL_PER_HEURISTIC = 1.2
+
+
+def filler_real_per_heuristic(tokenizer: str | None) -> float:
+    """Real tokens per heuristic token of the filler for ``tokenizer``'s family:
+    its measured entry in ``FILLER_REAL_PER_HEURISTIC``, else the default."""
+    if tokenizer and tokenizer in FILLER_REAL_PER_HEURISTIC:
+        return FILLER_REAL_PER_HEURISTIC[tokenizer]
+    return DEFAULT_FILLER_REAL_PER_HEURISTIC
+
+
 def estimate_tokens(text: str, tokenizer: str | None = None) -> int:
     """Estimated token count for ``text``.
 
