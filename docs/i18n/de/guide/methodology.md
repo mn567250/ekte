@@ -729,16 +729,31 @@ Completion-Token), `billing.missing-usage` (fehlende, unvollständige oder
 widersprüchliche `usage`) und, als bestätigendes Signal,
 `prompt.injected-system-prompt`.
 
-**Vorgehen.** Ein deterministischer Aufruf (ein bekannter Absatz zum
-Zusammenfassen, `temperature=0`). Prompt und sichtbare Antwort werden
-unabhängig mit einer sprachbewussten Heuristik (etwa ±25 %) gezählt, für jede
-Modellfamilie: ekte verwendet keine Tokenizer-Bibliothek und lädt keine herunter.
-Gemeldete Prompt-Token über dem 2,5-Fachen der Schätzung und mehr als 50 Token
-darüber gelten als aufgebläht. Completion-Token eines Reasoning-Modells
-enthalten legitim versteckte Reasoning-Token und werden nicht markiert; sonst
-sind Completion-Token über dem 3-Fachen der Schätzung und mehr als 80 Token
-darüber nur eine weiche Warnung, nie ein Fehlschlag, weil die Schätzung einer
-kurzen Antwort ungenau ist. `total` muss `prompt + completion` entsprechen
+**Vorgehen.** Drei deterministische Aufrufe: dieselbe Zusammenfassungsaufgabe
+in drei Prompt-Größen (etwa 150, 600 und 2.400 Token aus festen Absätzen,
+`temperature=0`). Prompts und sichtbare Antworten werden unabhängig mit einer
+sprachbewussten Heuristik gezählt (etwa ±25 %; sie zählt 12 bis 15 % weniger als
+echte Tokenizer), für jede Modellfamilie: ekte verwendet keine
+Tokenizer-Bibliothek und lädt keine herunter. Die gemeldeten Prompt-Token werden
+gegen die Schätzung gefittet: Die Steigung ist der proportionale Faktor, der
+Achsenabschnitt ein fester Overhead. Eine Steigung bis 1,35 besteht (die
+Unterzählung der Heuristik plus ein dichter Tokenizer), 1,35 bis 1,6 ist eine
+Warnung, über 1,6 ein Fehlschlag. Ein fester Overhead bei normaler Steigung ist
+keine Aufblähung: unter 30 Token dient er nur zur Information, ab 30 Token ist
+er eine niedrige Warnung, die auf `injected_prompt` verweist. Im
+Vergleichsmodus, mit einer Baseline desselben Modells auf demselben Protokoll,
+gehen dieselben drei Prompts an die Baseline, und `prompt_tokens` werden direkt
+verglichen: mehr als 3 % oder 5 Token über der Baseline (der größere Wert
+zählt) ist ein Fehlschlag, und das ersetzt das Urteil über die Steigung.
+Liefert nur einer der drei Aufrufe verwertbare Zahlen, greift die Prüfung der
+einzelnen Anfrage, mit dem Hinweis, dass die Steigung nicht gemessen werden
+konnte: Prompt-Token über dem 2,5-Fachen der Schätzung und mehr als 50 Token
+darüber gelten als aufgebläht. Completion-Token eines Reasoning-Modells (laut
+Wissensbasis oder weil die Antwort Reasoning-Token meldet) enthalten legitim
+versteckte Reasoning-Token und werden nicht markiert; sonst sind
+Completion-Token über dem 3-Fachen der Schätzung und mehr als 80 Token je
+Antwort darüber nur eine weiche Warnung, nie ein Fehlschlag, weil die Schätzung
+einer kurzen Antwort ungenau ist. `total` muss `prompt + completion` entsprechen
 (±2), und ein Total ohne Aufteilung wird markiert. Eine Unterzählung (unter der
 Hälfte der Schätzung) dient nur zur Information (schadet dem Käufer nicht).
 
@@ -746,6 +761,15 @@ Hälfte der Schätzung) dient nur zur Information (schadet dem Käufer nicht).
 |---|---|---|---|
 | `billing.request-failed` | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `billing.missing-usage` | Die Antwort enthielt überhaupt keine Token-Nutzung. | Warnung · Mittel | Obergrenze 75 |
+| `billing.prompt-vs-baseline` | Die gemeldeten Prompt-Tokens stimmen für dieselben Prompts mit der Baseline überein. | Bestanden | Kein Abzug |
+| `billing.prompt-vs-baseline` | Die gemeldeten Prompt-Tokens liegen für dieselben Prompts über denen der Baseline. | Fehlgeschlagen · Hoch | Obergrenze 55 |
+| `billing.prompt-vs-baseline` | Die gemeldeten Prompt-Tokens liegen unter denen der Baseline (nicht zum Nachteil des Käufers). | Info | Kein Abzug |
+| `billing.prompt-slope` | Die gemeldeten Prompt-Tokens wachsen proportional zur Schätzung (Steigung bis 1,35). | Bestanden | Kein Abzug |
+| `billing.prompt-slope` | Die gemeldeten Prompt-Tokens wachsen 1,35- bis 1,6-mal so schnell wie die Schätzung. | Warnung · Mittel | Obergrenze 70 |
+| `billing.prompt-slope` | Die gemeldeten Prompt-Tokens wachsen mehr als 1,6-mal so schnell wie die Schätzung. | Fehlgeschlagen · Hoch | Obergrenze 55 |
+| `billing.prompt-slope` | Nur eine Prompt-Größe lieferte verwertbare Zahlen; die Steigung ließ sich nicht messen. | Info | Kein Abzug |
+| `billing.fixed-overhead` | Ein kleiner fester Prompt-Token-Overhead (unter 30 Tokens), wie ihn Chat-Templates hinzufügen. | Info | Kein Abzug |
+| `billing.fixed-overhead` | Ein fester Prompt-Token-Overhead von 30 Tokens oder mehr bei jeder Anfrage. | Warnung · Niedrig | Obergrenze 90 |
 | `billing.usage-inflation` | Die gemeldeten Prompt-Tokens übersteigen die unabhängige Schätzung deutlich. | Fehlgeschlagen · Hoch | Obergrenze 55 |
 | `billing.usage-inflation-completion` | Die gemeldeten Completion-Tokens liegen weit über einer heuristischen Schätzung. | Warnung · Mittel | Obergrenze 70 |
 | `billing.reasoning-tokens` | Die Completion-Tokens übersteigen den sichtbaren Text, wie bei einem Reasoning-Modell zu erwarten. | Info | Kein Abzug |
@@ -760,9 +784,10 @@ Eine fehlgeschlagene Testanfrage lässt den Detektor unbewertet.
 **Einschränkungen.** Chat-Vorlagen und Sondertoken fügen einen kleinen festen
 Versatz hinzu; exakte Übereinstimmung ist nicht zu erwarten. Weicht das
 gelieferte Modell vom angegebenen ab, ist der „richtige“ Tokenizer unbekannt.
-Versteckte Reasoning-Token lassen sich von außen nicht zählen. Ein Test misst
-eine Größe; ein mit der Größe wachsender Multiplikator braucht wiederholte Läufe
-oder den Vergleichsmodus.
+Versteckte Reasoning-Token lassen sich von außen nicht zählen. Drei Größen bis
+etwa 2.400 Token trennen einen proportionalen Faktor von einem festen Overhead;
+ein Multiplikator, der erst bei viel größeren Prompts einsetzt, bleibt
+unentdeckt.
 
 ---
 
@@ -1083,7 +1108,7 @@ Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf ekte.
 | 5 | `context.window-truncation` | high | `context_window` | Leiter mit Nadel am Rand + binäre Suche; gemessen vs. angegeben |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | Tiefen 0,1/0,5/0,9 bei mittlerer Größe |
 | 7 | `stream.fake-streaming` | medium | `streaming` | Chunk-Anzahl, Zeitpunkt des ersten Tokens, Gleichförmigkeit der Abstände |
-| 8 | `billing.usage-inflation` | high | `billing` | unabhängige heuristische Token-Schätzung eines bekannten Tests |
+| 8 | `billing.usage-inflation` | high | `billing` | Steigung der gemeldeten Prompt-Token über drei Prompt-Größen gegenüber einer heuristischen Schätzung; im Vergleichsmodus die exakten Zahlen der Baseline |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | Vorhandensein, Aufteilung und Arithmetik der Usage; Usage-Chunk im Stream |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | Präfix-Caching per TTFT (informativ); nutzerübergreifendes Teilen und Logging bleiben mit einem Schlüssel unbeweisbar |
 | 11 | `infra.shared-upstream-key` | high | — | Roadmap (sinkendes Kontingent im Leerlauf, durchgesickerte Upstream-Request-IDs) |

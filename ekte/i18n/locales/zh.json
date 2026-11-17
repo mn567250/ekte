@@ -76,6 +76,8 @@
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "检查中转站在并发压力下的连接池与上游稳定性（HTTP 429 限流不计入此成功率）。",
   "Confirm with the provider how usage is metered if billing is per-token.": "若按 token 计费，请向服务商确认用量如何计量。",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "用已知长度的提示词核对计费；可能存在按 token 多计费。",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "将计费的提示 token 与基线对比；该中转站多报了输入 token。",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "如此大的固定开销表明可能存在隐藏的系统提示词；请运行 injected_prompt 检查（deep 套件）进一步核实。",
   "Confirm with the provider how prompt/completion tokens are metered.": "请向服务商确认 prompt/completion token 如何计量。",
   "Cross-check billing against output length; possible per-token overbilling.": "对照输出长度核对计费；可能存在按 token 多计费。",
   "Compare token accounting against a trusted baseline of the same model.": "将 token 计量与同款模型的可信基线对比。",
@@ -361,6 +363,22 @@
   "billing.missing-usage": [
    "未返回任何用量统计",
    "响应未包含 token usage；计费无法独立核验（usage 是否存在：{usage_present}）。"
+  ],
+  "billing.prompt-vs-baseline": [
+   "prompt token 与基线对比",
+   "对同一提示词，目标上报 {target_prompt} 个 prompt token，基线上报 {baseline_prompt} 个。"
+  ],
+  "billing.prompt-slope": [
+   "prompt token 增长与估算对比",
+   "在 {sizes} 种提示长度下，上报 prompt token 的增长速度是独立估算的 {slope} 倍（固定偏移 {intercept} 个 token）。"
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "未能测量 prompt token 斜率",
+   "只有一种提示长度返回了可用计数（上报 {reported_prompt}，估算 ~{estimated_prompt}）；无法测量斜率，因此采用单次请求的容差。"
+  ],
+  "billing.fixed-overhead": [
+   "固定 prompt token 开销",
+   "无论长度如何，每次请求都比估算多出约 {intercept} 个 prompt token（斜率 {slope}）。"
   ],
   "billing.usage-inflation": [
    "上报的 prompt token 远超估算",

@@ -724,23 +724,47 @@ fa davvero streaming.
 gonfiati), `billing.missing-usage` (`usage` mancante, parziale o incoerente) e,
 come segnale di conferma, `prompt.injected-system-prompt`.
 
-**Come funziona.** Una chiamata deterministica (un paragrafo noto da
-riassumere, `temperature=0`). Il prompt e la risposta visibile vengono contati
-in modo indipendente con un'euristica sensibile alla lingua (circa ±25 %), per
-ogni famiglia di modelli: ekte non usa alcuna libreria di tokenizer e non ne
-scarica. Token di prompt riportati oltre 2,5× la stima e più di 50 token sopra
-contano come gonfiamento. I token di completion di un modello di ragionamento
+**Come funziona.** Tre chiamate deterministiche: lo stesso compito di
+riassunto a tre dimensioni di prompt (circa 150, 600 e 2400 token di paragrafi
+fissi, `temperature=0`). I prompt e le risposte visibili vengono contati in
+modo indipendente con un'euristica sensibile alla lingua (circa ±25 %; conta
+dal 12 al 15 % in meno dei tokenizer reali), per ogni famiglia di modelli: ekte
+non usa alcuna libreria di tokenizer e non ne scarica. I token di prompt
+riportati vengono interpolati rispetto alla stima: la pendenza è il fattore
+proporzionale, l'intercetta un sovraccarico fisso. Una pendenza fino a 1,35 è
+superata (il conteggio per difetto dell'euristica più un tokenizer denso), da
+1,35 a 1,6 è un avviso, oltre 1,6 un fallimento. Un sovraccarico fisso con una
+pendenza normale non è gonfiamento: sotto i 30 token è informativo, da 30 token
+è un avviso basso che rimanda a `injected_prompt`. In modalità di confronto,
+con un riferimento dello stesso modello sullo stesso protocollo, gli stessi tre
+prompt vanno al riferimento e i `prompt_tokens` vengono confrontati
+direttamente: più del 3 % o di 5 token sopra il riferimento (il maggiore dei
+due) è un fallimento, e questo sostituisce il verdetto sulla pendenza. Se solo
+una delle tre chiamate restituisce conteggi utilizzabili, subentra il controllo
+sulla singola richiesta, con una nota che la pendenza non è stata misurata:
+token di prompt oltre 2,5× la stima e più di 50 token sopra contano come
+gonfiamento. I token di completion di un modello di ragionamento (secondo la
+base di conoscenza, o perché la risposta riporta token di ragionamento)
 includono legittimamente token di ragionamento nascosti e non vengono
 segnalati; altrimenti token di completion oltre 3× la stima e più di 80 token
-sopra sono un avviso lieve, mai un fallimento, perché la stima di una risposta
-breve è imprecisa. `total` deve essere `prompt + completion` (±2), e un totale
-senza ripartizione viene segnalato. Un conteggio inferiore (sotto la metà della
-stima) è informativo (non danneggia l'acquirente).
+per risposta sopra sono un avviso lieve, mai un fallimento, perché la stima di
+una risposta breve è imprecisa. `total` deve essere `prompt + completion` (±2),
+e un totale senza ripartizione viene segnalato. Un conteggio inferiore (sotto
+la metà della stima) è informativo (non danneggia l'acquirente).
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `billing.request-failed` | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Nessuna detrazione |
 | `billing.missing-usage` | La risposta non riportava alcun utilizzo di token. | Avviso · Media | tetto 75 |
+| `billing.prompt-vs-baseline` | I token di prompt dichiarati coincidono con quelli del riferimento per gli stessi prompt. | Superato | Nessuna detrazione |
+| `billing.prompt-vs-baseline` | I token di prompt dichiarati superano quelli del riferimento per gli stessi prompt. | Fallito · Alta | tetto 55 |
+| `billing.prompt-vs-baseline` | I token di prompt dichiarati sono inferiori a quelli del riferimento (non danneggia l'acquirente). | Info | Nessuna detrazione |
+| `billing.prompt-slope` | I token di prompt dichiarati crescono in proporzione alla stima (pendenza fino a 1,35). | Superato | Nessuna detrazione |
+| `billing.prompt-slope` | I token di prompt dichiarati crescono da 1,35 a 1,6 volte più in fretta della stima. | Avviso · Media | tetto 70 |
+| `billing.prompt-slope` | I token di prompt dichiarati crescono oltre 1,6 volte più in fretta della stima. | Fallito · Alta | tetto 55 |
+| `billing.prompt-slope` | Solo una dimensione di prompt ha restituito conteggi utilizzabili; non è stato possibile misurare la pendenza. | Info | Nessuna detrazione |
+| `billing.fixed-overhead` | Un piccolo sovraccarico fisso di token di prompt (meno di 30 token), come quello aggiunto dai template di chat. | Info | Nessuna detrazione |
+| `billing.fixed-overhead` | Un sovraccarico fisso di token di prompt di 30 token o più a ogni richiesta. | Avviso · Bassa | tetto 90 |
 | `billing.usage-inflation` | I token di prompt dichiarati superano di molto la stima indipendente. | Fallito · Alta | tetto 55 |
 | `billing.usage-inflation-completion` | I token di completion dichiarati sono molto sopra una stima euristica. | Avviso · Media | tetto 70 |
 | `billing.reasoning-tokens` | I token di completion superano il testo visibile, come previsto per un modello di ragionamento. | Info | Nessuna detrazione |
@@ -755,9 +779,9 @@ Una richiesta di sonda fallita lascia il rilevatore senza punteggio.
 **Avvertenze.** I template di chat e i token speciali aggiungono un piccolo
 scarto fisso; non ci si aspetta una corrispondenza esatta. Se il modello servito
 differisce da quello dichiarato, il tokenizer «giusto» è sconosciuto. I token di
-ragionamento nascosti non si possono contare dall'esterno. Una sonda misura una
-dimensione; un moltiplicatore che cresce con la dimensione richiede esecuzioni
-ripetute o la modalità di confronto.
+ragionamento nascosti non si possono contare dall'esterno. Tre dimensioni fino
+a circa 2400 token separano un fattore proporzionale da un sovraccarico fisso;
+un moltiplicatore che scatta solo con prompt molto più grandi resta invisibile.
 
 ---
 
@@ -1076,7 +1100,7 @@ I 16 trucchi dei relay individuati dalla ricerca si distribuiscono così in ekte
 | 5 | `context.window-truncation` | high | `context_window` | scala con ago al bordo + ricerca binaria; misurata vs dichiarata |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | profondità 0,1/0,5/0,9 a una dimensione media |
 | 7 | `stream.fake-streaming` | medium | `streaming` | numero di frammenti, momento del primo token, uniformità degli intervalli |
-| 8 | `billing.usage-inflation` | high | `billing` | stima euristica indipendente dei token di una sonda nota |
+| 8 | `billing.usage-inflation` | high | `billing` | pendenza dei token di prompt riportati su tre dimensioni di prompt rispetto a una stima euristica; in modalità di confronto, i conteggi esatti del riferimento |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | presenza, ripartizione e aritmetica dell'utilizzo; frammento di utilizzo del flusso |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | cache per prefisso tramite TTFT (informativo); condivisione tra utenti e logging restano indimostrabili con una chiave |
 | 11 | `infra.shared-upstream-key` | high | — | roadmap (quota che cala a riposo, ID di richiesta upstream trapelati) |
