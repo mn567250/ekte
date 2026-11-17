@@ -877,14 +877,22 @@ Eingabe-Token**: zwei Nutzernachrichten unterschiedlicher Größe ohne
 Systemnachricht; gemeldete `prompt_tokens` minus unabhängige Schätzung müssen
 klein bleiben. Ein Mehraufwand von mindestens 30 Token, der über beide Größen
 konstant bleibt (auf 16 genau), deutet auf einen versteckt vorangestellten Prompt
-statt auf proportionales Aufblähen. (2) Ein **Leck-Test**, der das Modell bittet,
-alle vorangehenden Anweisungen zu wiederholen. Nur beides zusammen erreicht
-MITTEL.
+statt auf proportionales Aufblähen. (2) Ein **Leck-Test**, der das Modell
+bittet, alle vorangehenden Anweisungen zu wiederholen. Die Antwort gilt nur als
+Leck, wenn sie anweisungsartigen Inhalt enthält: eine zitierte oder als
+Blockzitat gesetzte Passage oder mindestens zwei Sätze im Imperativ der zweiten
+Person („You are …“, „Always …“, „Do not …“) außerhalb einer Verneinung. `NONE`
+oder eine Verneinung in den ersten zwei Sätzen („es gibt keine
+Systemanweisungen“) ist kein Leck; alles andere, etwa eine Ablehnung, ist unklar
+und zählt ebenfalls nicht als Leck. Die Belege halten die Art der Antwort
+(`leak_answer_kind`) und ihre ersten 300 Zeichen fest. Ein Leck allein ist nur
+ein Hinweis und wird nicht gewertet, weil Modelle System-Prompts erfinden. Nur
+beides zusammen erreicht MITTEL.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `injected_prompt.verdict` (Injizierter System-Prompt) | Der Input-Token-Overhead ist klein und keine versteckten Anweisungen wurden preisgegeben. | Bestanden | 100 Pkt. |
-|  | Auf Nachfrage kam anweisungsartiger Text zurück (allein schwach). | Info · Niedrig | 85 Pkt. |
+|  | Auf Nachfrage kam anweisungsartiger Text zurück (nicht gewertet: Modelle erfinden so etwas). | Info | Nicht gewertet |
 |  | Ein großer fester Input-Token-Overhead, gleich über alle Nachrichtengrößen. | Warnung · Niedrig | 75 Pkt. |
 |  | Ein fester Input-Token-Overhead und ein preisgegebener Vorspann zusammen. | Warnung · Mittel | 55 Pkt. |
 |  | Keine verwertbaren Prompt-Token-Zahlen, um den Overhead zu messen. | Nicht eindeutig | Nicht gewertet |

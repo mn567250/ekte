@@ -863,13 +863,21 @@ mensagem de sistema; os `prompt_tokens` reportados menos a estimativa
 independente têm de continuar pequenos. Uma sobrecarga de pelo menos 30 tokens
 que se mantém constante (com margem de 16) nos dois tamanhos indica um prompt
 oculto acrescentado no início e não uma inflação proporcional. (2) Uma **sonda
-de fuga** que pede ao modelo para repetir quaisquer instruções anteriores. Só os
-dois juntos chegam a MÉDIA.
+de fuga** que pede ao modelo para repetir quaisquer instruções anteriores. A
+resposta só é uma fuga se contiver conteúdo com aspeto de instrução: uma
+passagem entre aspas ou em citação de bloco, ou pelo menos duas frases no
+imperativo da segunda pessoa («You are …», «Always …», «Do not …») fora de uma
+negação. `NONE`, ou uma negação nas duas primeiras frases («não há instruções de
+sistema»), não é fuga; qualquer outra resposta, como uma recusa, é incerta e
+também não conta como fuga. As evidências guardam o tipo de resposta
+(`leak_answer_kind`) e os seus primeiros 300 caracteres. Uma fuga sozinha é
+informativa e não é contabilizada, porque os modelos inventam prompts de
+sistema. Só os dois juntos chegam a MÉDIA.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `injected_prompt.verdict` (Prompt de sistema injetado) | A sobrecarga de tokens de entrada é pequena e nenhuma instrução oculta foi divulgada. | Aprovado | 100 pts |
-|  | Foi divulgado texto com aspeto de instrução quando pedido (fraco por si só). | Info · Baixa | 85 pts |
+|  | Revelou texto com aspeto de instrução quando pedido (não contabilizado: os modelos inventam). | Info | Não contabilizado |
 |  | Uma grande sobrecarga fixa de tokens de entrada, constante com o tamanho da mensagem. | Aviso · Baixa | 75 pts |
 |  | Uma sobrecarga fixa de tokens de entrada e um preâmbulo divulgado, juntos. | Aviso · Média | 55 pts |
 |  | Não há contagens de tokens de prompt utilizáveis para medir a sobrecarga. | Inconclusivo | Não contabilizado |

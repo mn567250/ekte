@@ -115,7 +115,7 @@
   "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.": "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.",
   "Effective context window": "Effective context window",
   "Input-token overhead is small and no hidden instructions leaked.": "Input-token overhead is small and no hidden instructions leaked.",
-  "Instruction-like text leaked when asked (weak on its own).": "Instruction-like text leaked when asked (weak on its own).",
+  "Instruction-like text leaked when asked (not counted: models confabulate).": "Instruction-like text leaked when asked (not counted: models confabulate).",
   "A large fixed input-token overhead, constant across message sizes.": "A large fixed input-token overhead, constant across message sizes.",
   "A fixed input-token overhead and a leaked preamble together.": "A fixed input-token overhead and a leaked preamble together.",
   "No usable prompt token counts to measure the overhead.": "No usable prompt token counts to measure the overhead.",

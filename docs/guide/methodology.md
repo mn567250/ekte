@@ -815,14 +815,21 @@ idle, leaked upstream request ids) are on the roadmap.
 two user messages of different sizes without a system message; reported
 `prompt_tokens` minus the independent estimate must stay small. An overhead of
 at least 30 tokens that stays constant (within 16) across both sizes reads as a
-hidden prepended prompt rather than proportional inflation. (2) A **leak
-probe** asking the model to repeat any preceding instructions. Only both
-together reach MEDIUM.
+hidden prepended prompt rather than proportional inflation. (2) A **leak probe**
+asking the model to repeat any preceding instructions. The answer is a leak only
+if it contains instruction-like content: a quoted or block-quoted passage, or at
+least two second-person imperative sentences ("You are …", "Always …", "Do not
+…") outside a denial. `NONE`, or a denial in the first two sentences ("there are
+no system instructions"), is no leak; anything else, such as a refusal, is
+unclear and also counts as no leak. The evidence keeps the kind of answer
+(`leak_answer_kind`) and its first 300 characters. A leak alone is informational
+and not counted, because models confabulate system prompts. Only both together
+reach MEDIUM.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `injected_prompt.verdict` (Injected system prompt) | Input-token overhead is small and no hidden instructions leaked. | Pass | 100 pts |
-|  | Instruction-like text leaked when asked (weak on its own). | Info · Low | 85 pts |
+|  | Instruction-like text leaked when asked (not counted: models confabulate). | Info | Not counted |
 |  | A large fixed input-token overhead, constant across message sizes. | Warning · Low | 75 pts |
 |  | A fixed input-token overhead and a leaked preamble together. | Warning · Medium | 55 pts |
 |  | No usable prompt token counts to measure the overhead. | Inconclusive | Not counted |

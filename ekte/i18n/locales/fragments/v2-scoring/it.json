@@ -115,7 +115,7 @@
   "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.": "Una sonda ha ricevuto un errore (parametro rifiutato, errore HTTP o del server) prima del gradino più alto: non è prova di troncamento.",
   "Effective context window": "Finestra di contesto effettiva",
   "Input-token overhead is small and no hidden instructions leaked.": "Il sovraccarico di token in ingresso è piccolo e non sono trapelate istruzioni nascoste.",
-  "Instruction-like text leaked when asked (weak on its own).": "Su richiesta è trapelato un testo simile a istruzioni (debole da solo).",
+  "Instruction-like text leaked when asked (not counted: models confabulate).": "Su richiesta è trapelato un testo simile a istruzioni (non conteggiato: i modelli inventano).",
   "A large fixed input-token overhead, constant across message sizes.": "Un grande sovraccarico fisso di token in ingresso, costante al variare del messaggio.",
   "A fixed input-token overhead and a leaked preamble together.": "Un sovraccarico fisso di token in ingresso e un preambolo trapelato, insieme.",
   "No usable prompt token counts to measure the overhead.": "Nessun conteggio utilizzabile di token di prompt per misurare il sovraccarico.",

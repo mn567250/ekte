@@ -869,13 +869,21 @@ sistema; los `prompt_tokens` informados menos la estimación independiente
 deben seguir siendo pequeños. Una sobrecarga de al menos 30 tokens que se
 mantiene constante (con 16 de margen) en ambos tamaños indica un prompt oculto
 antepuesto y no un inflado proporcional. (2) Una **sonda de filtración** que
-pide al modelo repetir cualquier instrucción anterior. Solo ambos juntos
-alcanzan MEDIA.
+pide al modelo repetir cualquier instrucción anterior. La respuesta solo es una
+filtración si contiene contenido con aspecto de instrucciones: un pasaje entre
+comillas o en cita de bloque, o al menos dos frases en imperativo de segunda
+persona («You are …», «Always …», «Do not …») fuera de una negación. `NONE`, o
+una negación en las dos primeras frases («no hay instrucciones de sistema»), no
+es filtración; cualquier otra cosa, como una negativa, es dudosa y tampoco
+cuenta como filtración. La evidencia guarda el tipo de respuesta
+(`leak_answer_kind`) y sus primeros 300 caracteres. Una filtración sola es
+informativa y no computa, porque los modelos inventan prompts de sistema. Solo
+ambos juntos alcanzan MEDIA.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `injected_prompt.verdict` (Prompt de sistema inyectado) | La sobrecarga de tokens de entrada es pequeña y no se filtraron instrucciones ocultas. | Correcto | 100 pts |
-|  | Se filtró texto con aspecto de instrucciones al pedirlo (débil por sí solo). | Info · Baja | 85 pts |
+|  | Se filtró texto con aspecto de instrucciones al pedirlo (no computa: los modelos lo inventan). | Info | No computa |
 |  | Una gran sobrecarga fija de tokens de entrada, constante con el tamaño del mensaje. | Advertencia · Baja | 75 pts |
 |  | Una sobrecarga fija de tokens de entrada y un preámbulo filtrado a la vez. | Advertencia · Media | 55 pts |
 |  | No hay recuentos de tokens de prompt utilizables para medir la sobrecarga. | No concluyente | No computa |
