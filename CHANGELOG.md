@@ -44,6 +44,40 @@ answer cut off by length counted as reaching the requested cap.
   max-output check now fails instead of passing. The report schema is
   unchanged.
 
+### Billing: prompt-token slope over three sizes, and the baseline's counts ([#252](https://github.com/mn567250/ekte/issues/252))
+
+The billing check sent one ~150-token prompt and flagged prompt tokens only
+above 2.5x the estimate, so usage inflated by 1.5x, 2.0x or 2.4x read
+"consistent" with a score of 100, and a fixed +300-token overhead read as HIGH
+"usage inflation". Part of the audit review ([#246](https://github.com/mn567250/ekte/issues/246)).
+
+- The probe is sent at three prompt sizes (about 150, 600 and 2,400 tokens;
+  new fixed paragraphs `billing.more_paragraphs` in `ekte/prompts/en.json`)
+  and the reported prompt tokens are fitted against the estimate. New check
+  `billing.prompt-slope`: a slope up to 1.35 passes, 1.35 to 1.6 is Warning ·
+  Medium (cap 70), above 1.6 Fail · High (cap 55).
+- A fixed overhead with a normal slope is no longer inflation. New check
+  `billing.fixed-overhead`: Info below 30 tokens, Warning · Low (cap 90) from
+  30 tokens, pointing to `injected_prompt`.
+- Compare mode: with a baseline of the same model on the same protocol the
+  same three prompts go to the baseline and `prompt_tokens` are compared
+  directly. New check `billing.prompt-vs-baseline`: more than 3% or 5 tokens
+  above the baseline is Fail · High (cap 55); it replaces the slope verdict.
+- A model counts as a reasoning model when the knowledge base says so or the
+  response reports reasoning tokens, so an unprofiled reasoning model no
+  longer gets a completion-inflation warning.
+- When only one of the three calls returns usable counts, the former
+  single-request check (`billing.usage-inflation`, 2.5x and 50 tokens) stands
+  in, with the note `billing.prompt-slope-unmeasured`.
+- The check now makes 3 requests (6 in compare mode); `--dry-run` counts them.
+  The evidence's `ratio_prompt` / `ratio_completion` (the Analytics billing
+  ratios) are now taken over the three requests, and `slope`, `intercept` and
+  the per-size counts are added.
+- Billing scores change: relays that over-report prompt tokens by 35% or more
+  now lose points, which can lower the Billing & usage dimension and the
+  verdict. The report schema is unchanged; score comparability across versions
+  is tracked in [#168](https://github.com/mn567250/ekte/issues/168).
+
 ### Capability: probes the relay rejects count as undelivered ([#248](https://github.com/mn567250/ekte/issues/248))
 
 A relay that answered the tools, JSON-mode and strict-schema probes with HTTP
@@ -87,6 +121,35 @@ an honest aggregator requested as `openai/gpt-4o` that echoed
 - The embedding and rerank identity checks (`embed.model_field`,
   `rerank.model_field`) use the same comparison and gain the same `unknown`
   outcome (Info, not scored).
+
+### Added
+
+- **Upgrade fixture for 0.35.0.** `tests/fixtures/upgrade/v0.35.0/` is a data
+  directory written by the released 0.35.0 from PyPI (history, monitors with
+  stored and unstored keys, your own knowledge-base entries); the upgrade tests
+  open it with the current code and check that nothing is lost.
+
+## [0.35.0] - 2026-11-16
+
+History and Analytics now show the same numbers, computed once on the server
+in SQLite: every request of a run has exactly one outcome, so the success,
+error and rate-limited rates add up to 100%, History reaches every saved run,
+and every widget answers in under 50 ms p95 on a 20,000-run history (#117).
+History, Analytics and Monitors share one filter panel, keep their filters in
+the URL and show new data without a reload (#150). A monitor can have a run
+window (#165), Analytics can forecast its trends (#148), and every result
+that could not judge says why (#204). The web UI was rebuilt on one page
+template, one set of design tokens and shared components, with a compact
+header on phones (#202–#233). Reports gain schema 1.3 and 1.4, evidence
+schema 1.1.
+
+**Upgrading.** The first start migrates `history.db` (to schema version 16)
+and the monitors database (to schema version 5), writes a backup first and
+says so on stderr; older runs are re-extracted once. Two groups of breaking
+changes affect the stored rates and the web UI's internal HTTP API:
+the rate definitions and several `/api/` endpoints and parameters (#117), and
+the History default period, day ranges, the shared `tz` and
+`GET /api/watches` (#150). See the *Breaking changes* lists below.
 
 ### Web UI: one page template ([#230](https://github.com/mn567250/ekte/issues/230))
 
@@ -786,6 +849,16 @@ how many saved runs it re-extracts.
   (recalibrated with 5 runs: slowest p95 77.5 ms, before 124.9 ms).
 
 ### Fixed
+
+- **The accessibility LLM review is current for the changed pages**
+  ([#265](https://github.com/mn567250/ekte/issues/265)). All 54 requests (6
+  pages × 8 languages, plus one translation comparison per page) were exported
+  again and answered by Claude Code subagents without an API call. The review
+  found nothing in any step. `a11y-llm-review.json` and the conformance report
+  (`bitv-report.json`) carry the new review, and exporting again changes no
+  request. The review also caught a German typo: the Monitors hint "… läuft sie
+  höchstens alle 5 Min.." ended in two full stops. It now reads "… läuft sie
+  alle 5 Min. höchstens einmal."
 
 - **A page notice's role follows its importance**
   ([#193](https://github.com/mn567250/ekte/issues/193)). `EkteNotice.show`

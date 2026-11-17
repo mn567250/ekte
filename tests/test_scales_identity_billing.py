@@ -105,7 +105,11 @@ async def test_billing_honest_usage_is_consistent(audit_context, mock_server):
     mock_server.inflate_usage_factor = 1.0
     result = await BillingDetector().run(audit_context)
     _matches_scale(result, billing.SCALE)
-    assert [f.outcome for f in result.findings] == ["consistent"]
+    assert [(f.id, f.outcome) for f in result.findings] == [
+        ("billing.prompt-slope", "proportional"),
+        ("billing.fixed-overhead", "small"),
+        ("billing.usage-consistent", "consistent"),
+    ]
     assert result.score == 100.0
 
 
@@ -113,7 +117,7 @@ async def test_billing_inflation_caps_at_55(audit_context, mock_server):
     mock_server.inflate_usage_factor = 6.0
     result = await BillingDetector().run(audit_context)
     _matches_scale(result, billing.SCALE)
-    inflated = next(f for f in result.findings if f.id == "billing.usage-inflation")
+    inflated = next(f for f in result.findings if f.id == "billing.prompt-slope")
     assert (inflated.outcome, inflated.cap) == ("inflated", 55.0)
     assert result.score == 55.0 and result.status == Status.FAIL
 

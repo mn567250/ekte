@@ -332,6 +332,8 @@
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Revise el pool de conexiones del intermediario y la estabilidad del upstream bajo carga paralela (la limitación HTTP 429 se excluye de esta tasa).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Si la facturación es por token, confirme con el proveedor cómo se mide el uso.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Contraste la facturación con un prompt de tamaño conocido; posible sobrefacturación por token.",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "Compare los tokens de prompt facturados con los de la referencia; el relay declara tokens de entrada de más.",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "Una sobrecarga fija tan grande sugiere un prompt de sistema oculto; ejecute la comprobación injected_prompt (suite deep) para examinarlo.",
   "Confirm with the provider how prompt/completion tokens are metered.": "Confirme con el proveedor cómo se miden los tokens de prompt/completion.",
   "Cross-check billing against output length; possible per-token overbilling.": "Contraste la facturación con la longitud de la salida; posible sobrefacturación por token.",
   "Compare token accounting against a trusted baseline of the same model.": "Compare el recuento de tokens con una referencia de confianza del mismo modelo.",
@@ -665,6 +667,22 @@
   "billing.missing-usage": [
    "No se devolvieron estadísticas de uso",
    "La respuesta no incluye uso de tokens; la facturación no se puede verificar (¿usage presente?: {usage_present})."
+  ],
+  "billing.prompt-vs-baseline": [
+   "Tokens de prompt frente a la referencia",
+   "Para el mismo prompt, el objetivo declaró {target_prompt} tokens de prompt y la referencia {baseline_prompt}."
+  ],
+  "billing.prompt-slope": [
+   "Crecimiento de los tokens de prompt frente a la estimación",
+   "En {sizes} tamaños de prompt, los tokens de prompt declarados crecen {slope} veces más rápido que la estimación independiente (desplazamiento fijo de {intercept} tokens)."
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "Pendiente de tokens de prompt no medida",
+   "Solo un tamaño de prompt devolvió recuentos utilizables (declarado {reported_prompt}, estimado ~{estimated_prompt}); no se pudo medir la pendiente, por lo que se aplica el margen de una sola solicitud."
+  ],
+  "billing.fixed-overhead": [
+   "Sobrecarga fija de tokens de prompt",
+   "Cada solicitud lleva unos {intercept} tokens de prompt más que la estimación, sea cual sea su tamaño (pendiente {slope})."
   ],
   "billing.usage-inflation": [
    "Tokens de prompt declarados muy por encima de la estimación",

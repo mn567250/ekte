@@ -729,24 +729,48 @@ sí haga streaming.
 inflados), `billing.missing-usage` (`usage` ausente, parcial o incoherente) y,
 como señal de corroboración, `prompt.injected-system-prompt`.
 
-**Cómo funciona.** Una llamada determinista (un párrafo conocido que resumir,
-`temperature=0`). El prompt y la respuesta visible se cuentan de forma
-independiente con una heurística sensible al idioma (aprox. ±25 %), para todas
-las familias de modelos: ekte no usa ninguna biblioteca de tokenizer ni descarga
-ninguna. Tokens de prompt informados por encima de 2,5× la estimación y más de
-50 tokens por encima cuentan como inflación. Los tokens de completion de un modelo
-de razonamiento incluyen legítimamente tokens de razonamiento ocultos y no se
-señalan; si no, tokens de completion por encima de 3× la estimación y más de 80
-tokens por encima son una advertencia suave, nunca un fallo, porque la
-estimación de una respuesta corta es ruidosa. `total` debe ser
-`prompt + completion` (±2), y un total sin desglose se señala. Un recuento
-inferior (menos de la mitad de la estimación) es informativo (no perjudica al
-comprador).
+**Cómo funciona.** Tres llamadas deterministas: la misma tarea de resumen en
+tres tamaños de prompt (unos 150, 600 y 2.400 tokens de párrafos fijos,
+`temperature=0`). Los prompts y las respuestas visibles se cuentan de forma
+independiente con una heurística sensible al idioma (aprox. ±25 %; cuenta entre
+un 12 y un 15 % menos que los tokenizers reales), para todas las familias de
+modelos: ekte no usa ninguna biblioteca de tokenizer ni descarga ninguna. Los
+tokens de prompt informados se ajustan frente a la estimación: la pendiente es
+el factor proporcional y la ordenada en el origen, una sobrecarga fija. Una
+pendiente de hasta 1,35 es correcta (el recuento a la baja de la heurística más
+un tokenizer denso), de 1,35 a 1,6 es una advertencia y por encima de 1,6 un
+fallo. Una sobrecarga fija con una pendiente normal no es inflación: por debajo
+de 30 tokens es informativa; a partir de 30 tokens es una advertencia baja que
+remite a `injected_prompt`. En el modo comparación, con una referencia del
+mismo modelo y el mismo protocolo, los mismos tres prompts se envían a la
+referencia y `prompt_tokens` se compara directamente: más de un 3 % o de 5
+tokens por encima de la referencia (el mayor de los dos) es un fallo, y esto
+sustituye al veredicto de la pendiente. Si solo una de las tres llamadas
+devuelve recuentos utilizables, se aplica la comprobación de una sola petición,
+con una nota de que no se pudo medir la pendiente: tokens de prompt por encima
+de 2,5× la estimación y más de 50 tokens por encima cuentan como inflación. Los
+tokens de completion de un modelo de razonamiento (según la base de
+conocimiento, o porque la respuesta informa de tokens de razonamiento) incluyen
+legítimamente tokens de razonamiento ocultos y no se señalan; si no, tokens de
+completion por encima de 3× la estimación y más de 80 tokens por respuesta por
+encima son una advertencia suave, nunca un fallo, porque la estimación de una
+respuesta corta es ruidosa. `total` debe ser `prompt + completion` (±2), y un
+total sin desglose se señala. Un recuento inferior (menos de la mitad de la
+estimación) es informativo (no perjudica al comprador).
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `billing.request-failed` | No hubo una respuesta útil para evaluar. | No concluyente · Baja | Sin deducción |
 | `billing.missing-usage` | La respuesta no incluía ningún uso de tokens. | Advertencia · Media | tope 75 |
+| `billing.prompt-vs-baseline` | Los tokens de prompt informados coinciden con los de la referencia para los mismos prompts. | Correcto | Sin deducción |
+| `billing.prompt-vs-baseline` | Los tokens de prompt informados superan los de la referencia para los mismos prompts. | Fallo · Alta | tope 55 |
+| `billing.prompt-vs-baseline` | Los tokens de prompt informados están por debajo de los de la referencia (no perjudica al comprador). | Info | Sin deducción |
+| `billing.prompt-slope` | Los tokens de prompt informados crecen en proporción a la estimación (pendiente de hasta 1,35). | Correcto | Sin deducción |
+| `billing.prompt-slope` | Los tokens de prompt informados crecen entre 1,35 y 1,6 veces más rápido que la estimación. | Advertencia · Media | tope 70 |
+| `billing.prompt-slope` | Los tokens de prompt informados crecen más de 1,6 veces más rápido que la estimación. | Fallo · Alta | tope 55 |
+| `billing.prompt-slope` | Solo un tamaño de prompt devolvió recuentos utilizables; no se pudo medir la pendiente. | Info | Sin deducción |
+| `billing.fixed-overhead` | Una pequeña sobrecarga fija de tokens de prompt (menos de 30 tokens), como la que añaden las plantillas de chat. | Info | Sin deducción |
+| `billing.fixed-overhead` | Una sobrecarga fija de tokens de prompt de 30 tokens o más en cada solicitud. | Advertencia · Baja | tope 90 |
 | `billing.usage-inflation` | Los tokens de prompt informados superan con creces la estimación independiente. | Fallo · Alta | tope 55 |
 | `billing.usage-inflation-completion` | Los tokens de completion informados están muy por encima de una estimación heurística. | Advertencia · Media | tope 70 |
 | `billing.reasoning-tokens` | Los tokens de completion superan el texto visible, como es de esperar en un modelo de razonamiento. | Info | Sin deducción |
@@ -761,9 +785,9 @@ Una petición de sonda fallida deja el detector sin puntuación.
 **Advertencias.** Las plantillas de chat y los tokens especiales añaden un
 pequeño desfase fijo; no se espera una coincidencia exacta. Si el modelo servido
 difiere del declarado, el tokenizer «correcto» es desconocido. Los tokens de
-razonamiento ocultos no pueden contarse desde fuera. Una sonda mide un tamaño;
-un multiplicador que crece con el tamaño requiere ejecuciones repetidas o el
-modo comparación.
+razonamiento ocultos no pueden contarse desde fuera. Tres tamaños de hasta unos
+2.400 tokens separan un factor proporcional de una sobrecarga fija; un
+multiplicador que solo aparece con prompts mucho mayores pasa inadvertido.
 
 ---
 
@@ -1086,7 +1110,7 @@ Los 16 trucos de relay de la investigación se reparten así en ekte.
 | 5 | `context.window-truncation` | high | `context_window` | escalera con aguja en el borde + búsqueda binaria; medida vs declarada |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | profundidades 0,1/0,5/0,9 con un tamaño medio |
 | 7 | `stream.fake-streaming` | medium | `streaming` | número de fragmentos, momento del primer token, uniformidad de intervalos |
-| 8 | `billing.usage-inflation` | high | `billing` | estimación heurística independiente de tokens de una sonda conocida |
+| 8 | `billing.usage-inflation` | high | `billing` | pendiente de los tokens de prompt informados en tres tamaños de prompt frente a una estimación heurística; en el modo comparación, los recuentos exactos de la referencia |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | presencia, desglose y aritmética del uso; fragmento de uso del flujo |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | caché por prefijo mediante TTFT (informativo); compartir entre usuarios y el registro siguen sin poder probarse con una clave |
 | 11 | `infra.shared-upstream-key` | high | — | hoja de ruta (cuota que baja en reposo, identificadores de petición upstream filtrados) |

@@ -552,11 +552,19 @@ TTFT 指第一个可见内容 token。推理模型（知识库标注为推理模
 `billing.missing-usage`（`usage` 缺失、不完整或自相矛盾），并佐证
 `prompt.injected-system-prompt`。
 
-**做法。** 一次确定性调用（总结一段已知文字，`temperature=0`）。对所有模型系列，都用
-对语言敏感的启发式方法（约 ±25%）独立计算 prompt 与可见回答的 token 数：ekte 不使用任何
-分词器库，也不下载分词器。上报的 prompt token 超过估算的 2.5 倍且多出 50 个以上，视为虚高。
-推理模型的 completion token 正当地包含隐藏的推理 token，不告警；否则 completion token
-超过估算的 3 倍且多出 80 个以上时给出较轻的警告，绝不判为失败，因为对简短回答的估算噪声较大。
+**做法。** 三次确定性调用：同一个总结任务，使用三种提示长度（约 150、600 和 2,400 个 token
+的固定段落，`temperature=0`）。对所有模型系列，都用对语言敏感的启发式方法（约 ±25%；比真实
+分词器少计 12% 至 15%）独立计算 prompt 与可见回答的 token 数：ekte 不使用任何分词器库，
+也不下载分词器。将上报的 prompt token 对估算值做拟合：斜率是比例系数，截距是固定开销。
+斜率不超过 1.35 为通过（启发式的少计加上较密的分词器），1.35 至 1.6 为警告，超过 1.6 为失败。
+斜率正常时的固定开销不算虚高：低于 30 个 token 仅供参考，达到 30 个 token 则给出低级别警告，
+并指向 `injected_prompt`。在对比模式下，如果基线是同一模型且使用同一协议，同样的三个提示
+也会发给基线，并直接比较 `prompt_tokens`：比基线多出 3% 或 5 个 token（取较大者）以上
+即判为失败，并以此取代斜率判定。如果三次调用中只有一次返回了可用计数，则改用单次请求检查，
+并注明无法测量斜率：上报的 prompt token 超过估算的 2.5 倍且多出 50 个以上，视为虚高。
+推理模型（依据知识库，或因为响应上报了推理 token）的 completion token 正当地包含隐藏的
+推理 token，不告警；否则 completion token 超过估算的 3 倍且平均每个回答多出 80 个以上时
+给出较轻的警告，绝不判为失败，因为对简短回答的估算噪声较大。
 `total` 必须等于 `prompt + completion`（误差 ±2），只有总数而没有拆分也会告警。
 少报（低于估算的一半）仅供参考（对买方无害）。
 
@@ -564,6 +572,15 @@ TTFT 指第一个可见内容 token。推理模型（知识库标注为推理模
 |---|---|---|---|
 | `billing.request-failed` | 没有可用于判断的响应。 | 不确定 · 低 | 不扣分 |
 | `billing.missing-usage` | 响应完全没有返回 token 用量。 | 警告 · 中 | 上限 75 |
+| `billing.prompt-vs-baseline` | 对相同的提示词，上报的提示 token 与基线一致。 | 通过 | 不扣分 |
+| `billing.prompt-vs-baseline` | 对相同的提示词，上报的提示 token 高于基线。 | 失败 · 高 | 上限 55 |
+| `billing.prompt-vs-baseline` | 上报的提示 token 低于基线（不损害买方）。 | 信息 | 不扣分 |
+| `billing.prompt-slope` | 上报的提示 token 与估算成比例增长（斜率不超过 1.35）。 | 通过 | 不扣分 |
+| `billing.prompt-slope` | 上报的提示 token 增长速度是估算的 1.35 至 1.6 倍。 | 警告 · 中 | 上限 70 |
+| `billing.prompt-slope` | 上报的提示 token 增长速度超过估算的 1.6 倍。 | 失败 · 高 | 上限 55 |
+| `billing.prompt-slope` | 只有一种提示长度返回了可用计数；无法测量斜率。 | 信息 | 不扣分 |
+| `billing.fixed-overhead` | 存在较小的固定提示 token 开销（低于 30 个 token），与对话模板的开销相符。 | 信息 | 不扣分 |
+| `billing.fixed-overhead` | 每次请求都有 30 个或更多 token 的固定提示 token 开销。 | 警告 · 低 | 上限 90 |
 | `billing.usage-inflation` | 上报的提示 token 远超独立估算。 | 失败 · 高 | 上限 55 |
 | `billing.usage-inflation-completion` | 上报的补全 token 远高于启发式估算。 | 警告 · 中 | 上限 70 |
 | `billing.reasoning-tokens` | 补全 token 多于可见文本，这对推理模型来说属于正常。 | 信息 | 不扣分 |
@@ -577,7 +594,8 @@ TTFT 指第一个可见内容 token。推理模型（知识库标注为推理模
 
 **注意事项。** chat 模板和特殊 token 会带来一个小的固定偏移，因此不应期望精确相等。
 若实际服务的模型与所声称的不同，“正确”的分词器也就未知。隐藏的推理 token 无法从
-外部计数。一次探测只测一个长度；要发现随长度增长的倍数，需要多次运行或对比模式。
+外部计数。三种长度（最长约 2,400 个 token）可以区分比例系数与固定开销；只在更长的提示上
+才出现的倍数仍然无法发现。
 
 ---
 
@@ -828,7 +846,7 @@ token/秒、稳定性、错误以及负载下的稳定性。**随文档数量的
 | 5 | `context.window-truncation` | high | `context_window` | 边缘放针的阶梯 + 二分搜索；实测 vs 声称 |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | 中等长度下的深度 0.1/0.5/0.9 |
 | 7 | `stream.fake-streaming` | medium | `streaming` | 分片数量、首 token 时机、间隔均匀度 |
-| 8 | `billing.usage-inflation` | high | `billing` | 对一个已知探测做独立的启发式 token 估算 |
+| 8 | `billing.usage-inflation` | high | `billing` | 在三种提示长度下，上报 prompt token 相对启发式估算的斜率；对比模式下使用基线的精确计数 |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | 用量是否存在、是否拆分、算术是否一致；流式用量分片 |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | 用 TTFT 判断前缀缓存（仅供参考）；跨用户共享与日志记录用单个密钥无法证明 |
 | 11 | `infra.shared-upstream-key` | high | — | 路线图（空闲时配额仍在减少、泄漏的上游 request id） |
