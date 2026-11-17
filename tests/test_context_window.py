@@ -430,7 +430,7 @@ def test_measured_tokenizer_factors_name_known_tokenizers():
     known: set[str] = set()
     data = Path(__file__).resolve().parents[1] / "ekte" / "knowledge" / "data"
     for path in data.glob("*.yaml"):
-        known |= set(re.findall(r"^\s*tokenizer:\s*['\"]?([^'\"\s#]+)", path.read_text(), re.M))
+        known |= set(re.findall(r"^\s*tokenizer:\s*['\"]?([^'\"\s#]+)", path.read_text(encoding="utf-8"), re.M))
     assert set(tokenize.FILLER_REAL_PER_HEURISTIC) <= known
     assert all(f >= 1.0 for f in tokenize.FILLER_REAL_PER_HEURISTIC.values())
 
