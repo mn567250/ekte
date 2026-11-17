@@ -85,7 +85,9 @@
   "Connectivity": "Konnektivität",
   "Reliably reachable?": "Zuverlässig erreichbar?",
   "Concurrency reliability": "Zuverlässigkeit unter Parallellast",
+  "Response integrity": "Antwortintegrität",
   "Stable under load?": "Stabil unter Last?",
+  "Is the response unaltered?": "Ist die Antwort unverändert?",
   "Streaming authenticity": "Echtheit des Streamings",
   "Real streaming or faked?": "Echtes oder vorgetäuschtes Streaming?",
   "Transport security": "Transportsicherheit",
@@ -98,6 +100,7 @@
   "Real streaming, or buffered and faked?": "Echtes Streaming, oder gepuffert und vorgetäuscht?",
   "Is token usage over-reported?": "Wird der Token-Verbrauch zu hoch gemeldet?",
   "Success rate and latency under load": "Erfolgsquote und Latenz unter Last",
+  "Is the response tampered with, injected into or cached?": "Wird die Antwort manipuliert, um eingeschleuste Inhalte ergänzt oder aus einem Cache geliefert?",
   "Transport encryption and key handling": "Transportverschlüsselung und Schlüsselhandhabung",
   "Capabilities": "Fähigkeiten",
   "Billing": "Abrechnung",
@@ -279,6 +282,7 @@
   "Model identity & downgrade fingerprinting": "Modellidentität & Herabstufungs-Fingerprinting",
   "Prompt prefix-cache (timing)": "Prompt-Präfix-Cache (Timing)",
   "OpenAI-compatibility conformance": "Konformität der OpenAI-Kompatibilität",
+  "Wire-protocol conformance": "Konformität mit dem Übertragungsprotokoll",
   "LLM-judged quality / downgrade assessment": "Qualitäts-/Herabstufungsbewertung durch ein LLM",
   "Concurrent reliability & latency": "Zuverlässigkeit & Latenz unter Parallellast",
   "Transport & secret-handling signals": "Signale zu Transport & Geheimnisbehandlung",
@@ -332,6 +336,8 @@
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Prüfen Sie den Verbindungspool des Relays und die Upstream-Stabilität unter paralleler Last (HTTP-429-Drosselung ist aus dieser Quote ausgenommen).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Klären Sie mit dem Anbieter, wie der Verbrauch gemessen wird, falls pro Token abgerechnet wird.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Gleichen Sie die Abrechnung mit einem Prompt bekannter Größe ab; mögliche Überabrechnung pro Token.",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "Vergleichen Sie die abgerechneten Prompt-Tokens mit denen der Baseline; das Relay meldet zu viele Input-Tokens.",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "Ein so großer fester Overhead deutet auf einen verborgenen System-Prompt hin; führen Sie die Prüfung injected_prompt (Suite deep) aus, um ihn zu untersuchen.",
   "Confirm with the provider how prompt/completion tokens are metered.": "Klären Sie mit dem Anbieter, wie Prompt-/Completion-Tokens gemessen werden.",
   "Cross-check billing against output length; possible per-token overbilling.": "Gleichen Sie die Abrechnung mit der Ausgabelänge ab; mögliche Überabrechnung pro Token.",
   "Compare token accounting against a trusted baseline of the same model.": "Vergleichen Sie die Token-Zählung mit einer vertrauenswürdigen Referenz desselben Modells.",
@@ -343,6 +349,9 @@
   "Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe.": "Lange Generierungen können hinter der angegebenen Obergrenze zurückbleiben; mit einer längeren Sonde bestätigen.",
   "Confirm the served engine actually supports function calling.": "Prüfen Sie, ob die bereitgestellte Engine Funktionsaufrufe wirklich unterstützt.",
   "Verify the served engine honors response_format=json_object.": "Prüfen Sie, ob die bereitgestellte Engine response_format=json_object einhält.",
+  "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "Das Relay verweigert einen Anfrageparameter, den das angegebene Modell unterstützt; bitten Sie den Anbieter, ihn weiterzuleiten, oder nutzen Sie einen Endpunkt, der die Funktion bereitstellt.",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "Das Relay begrenzt max_tokens unter den angefragten Wert; lange Antworten werden abgeschnitten. Bitten Sie den Anbieter, max_tokens weiterzuleiten, oder nutzen Sie einen Endpunkt, der den Wert beachtet.",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "Bei ~{delivered_tokens} der angefragten {requested_max_tokens} Tokens abgeschnitten (finish_reason=length): Das Relay begrenzt die Ausgabe-Tokens.",
   "Overall health score {1}/100.": "Gesamt-Health-Score {1}/100.",
   "Findings: {1}.": "Befunde: {1}.",
   "No significant divergence findings.": "Keine wesentlichen Abweichungen festgestellt.",
@@ -377,6 +386,9 @@
   "Expected 4 non-empty vectors, got {returned_vectors}.": "4 nicht-leere Vektoren erwartet, {returned_vectors} erhalten.",
   "POST /rerank failed (HTTP {status_code}).": "POST /rerank fehlgeschlagen (HTTP {status_code}).",
   "Invalid request got no HTTP response ({error_type}); could not confirm OpenAI-style client-error handling.": "Die ungültige Anfrage erhielt keine HTTP-Antwort ({error_type}); eine Fehlerbehandlung im OpenAI-Stil ließ sich nicht bestätigen.",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}), and the baseline rejects it too (HTTP {baseline_status_code}): a limit of the model; not counted.": "Das Relay hat die Sonde mit HTTP {status_code} abgelehnt ({relay_error}), und die Baseline lehnt sie ebenfalls ab (HTTP {baseline_status_code}): eine Grenze des Modells; nicht gewertet.",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}); the capability is not claimed, so this is not counted.": "Das Relay hat die Sonde mit HTTP {status_code} abgelehnt ({relay_error}); die Fähigkeit wird nicht angegeben, daher nicht gewertet.",
+  "The capability is claimed, but the relay rejected the probe with HTTP {status_code}: {relay_error}": "Die Fähigkeit wird angegeben, aber das Relay hat die Sonde mit HTTP {status_code} abgelehnt: {relay_error}",
   "Request failed (HTTP {status_code}, type {error_type}).": "Anfrage fehlgeschlagen (HTTP {status_code}, Typ {error_type}).",
   "Request failed (HTTP {status_code}).": "Anfrage fehlgeschlagen (HTTP {status_code}).",
   "Request failed (type {error_type}).": "Anfrage fehlgeschlagen (Typ {error_type}).",
@@ -662,6 +674,22 @@
   "billing.missing-usage": [
    "Keine Verbrauchsangaben zurückgegeben",
    "Die Antwort enthält keinen Token-Verbrauch; die Abrechnung lässt sich nicht unabhängig prüfen (usage vorhanden: {usage_present})."
+  ],
+  "billing.prompt-vs-baseline": [
+   "Prompt-Tokens im Vergleich zur Baseline",
+   "Für denselben Prompt meldete das Ziel {target_prompt} Prompt-Tokens, die Baseline {baseline_prompt}."
+  ],
+  "billing.prompt-slope": [
+   "Wachstum der Prompt-Tokens gegenüber der Schätzung",
+   "Über {sizes} Prompt-Größen wachsen die gemeldeten Prompt-Tokens {slope}-mal so schnell wie die unabhängige Schätzung (fester Versatz {intercept} Tokens)."
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "Steigung der Prompt-Tokens nicht gemessen",
+   "Nur eine Prompt-Größe lieferte verwertbare Zahlen (gemeldet {reported_prompt}, geschätzt ~{estimated_prompt}); die Steigung ließ sich nicht messen, daher gilt die Toleranz für eine einzelne Anfrage."
+  ],
+  "billing.fixed-overhead": [
+   "Fester Prompt-Token-Overhead",
+   "Jede Anfrage enthält unabhängig von ihrer Größe etwa {intercept} Prompt-Tokens mehr als die Schätzung (Steigung {slope})."
   ],
   "billing.usage-inflation": [
    "Gemeldete Prompt-Tokens weit über der Schätzung",

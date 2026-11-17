@@ -73,7 +73,7 @@ Flere eksempler, konfigurasjonsfiler og bruk fra skript eller LLM-agenter:
 
 ## Hva den kontrollerer
 
-ekte gir score i ti dimensjoner. De fire **kjernedimensjonene** — modellidentitet,
+ekte gir score i elleve dimensjoner. De fire **kjernedimensjonene** — modellidentitet,
 kontekstvindu, påståtte egenskaper og fakturering og forbruk — avslører mest
 direkte en falsk vare. Navnene er de nettgrensesnittet og rapportene bruker.
 
@@ -81,13 +81,14 @@ direkte en falsk vare. Navnene er de nettgrensesnittet og rapportene bruker.
 |---|---|---|
 | **Modellidentitet** | `model_identity` | Stille nedgradering eller bytte av modell |
 | **Kontekstvindu** | `context_window` | Stille avkorting av kontekst og lost-in-the-middle |
-| **Påståtte egenskaper** | `capability` | Verktøykall, JSON-modus, maks utdata eller syn som ikke innfris |
+| **Påståtte egenskaper** | `capability` | Verktøykall, JSON-modus, maks utdata eller syn som ikke innfris, eller utdata som reléet begrenser |
 | **Protokollsamsvar** | `protocol` | Forespørselsparametere og svarattributter som droppes eller ignoreres |
 | **Fakturering og forbruk** | `billing` | Oppblåst eller manglende tokenforbruk |
 | **Tilkobling** | `connectivity` | Om endepunktet kan nås, og den annonserte modellisten |
 | **Ekte strømming** | `streaming` | Forfalsket strømming (bufre og så dele opp) |
 | **Pålitelighet ved samtidighet** | `reliability` | Feil og nedbremsing under samtidig last |
-| **Transportsikkerhet** | `security` | Ukryptert HTTP, ekko av hemmeligheter, injiserte systemprompter, manipulering |
+| **Svarintegritet** | `integrity` | Manipulerte svar, injiserte systemprompter, svar levert fra en hurtigbuffer |
+| **Transportsikkerhet** | `security` | Ukryptert HTTP, gjengitt API-nøkkel, hoder som avslører oppstrømstjenesten |
 | **Ytelse** | `performance` | Hvor jevne forsinkelse, tid til første token og gjennomstrømning er |
 
 Hvordan hver kontroll fungerer og hvordan konklusjonen nås:

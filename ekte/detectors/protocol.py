@@ -1,4 +1,4 @@
-"""Protocol detector — OpenAI-compatibility conformance.
+"""Protocol detector — wire-protocol conformance.
 
 A relay can return content yet still violate the OpenAI chat-completion contract:
 forget prior turns, ignore ``stop``, or reject malformed input with a non-standard
@@ -58,7 +58,7 @@ SCALE = Scale(
 @register
 class ProtocolDetector(Detector):
     id = "protocol"
-    name = "OpenAI-compatibility conformance"
+    name = "Wire-protocol conformance"
     dimension = Dimension.PROTOCOL
     min_suite = "standard"
     cost_hint = 3

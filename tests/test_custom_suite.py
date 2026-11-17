@@ -75,8 +75,12 @@ def test_build_options_dimension_implies_custom():
 # --------------------------------------------------------------------------- #
 def test_custom_runs_every_detector_of_the_selected_dimension_at_deep_depth():
     security = {i for i, cls in REGISTRY.items() if cls.dimension == Dimension.SECURITY}
-    assert _ids(["security"]) == security
-    assert {"injected_prompt", "integrity", "prompt_cache"} <= security  # deep-only ones
+    assert _ids(["security"]) == security == {"security"}
+    integrity = {i for i, cls in REGISTRY.items()
+                 if cls.dimension == Dimension.INTEGRITY and cls.surface == "chat"}
+    assert _ids(["integrity"]) == integrity
+    # deep-only ones
+    assert integrity == {"injected_prompt", "integrity", "prompt_cache", "determinism"}
 
 
 def test_custom_performance_runs_only_the_probe():
@@ -128,15 +132,17 @@ def _det(dim: Dimension, score: float) -> DetectorResult:
 
 def test_weights_sum_to_100_and_include_performance():
     assert sum(DIMENSION_WEIGHTS.values()) == 100.0
-    assert DIMENSION_WEIGHTS[Dimension.PERFORMANCE] == 6.0
+    assert DIMENSION_WEIGHTS[Dimension.PERFORMANCE] == 4.0
+    assert DIMENSION_WEIGHTS[Dimension.INTEGRITY] == 6.0
+    assert DIMENSION_WEIGHTS[Dimension.SECURITY] == 4.0
 
 
 def test_overall_score_uses_only_the_selected_dimensions():
     dets = [_det(Dimension.PROTOCOL, 60.0), _det(Dimension.PERFORMANCE, 90.0)]
     selected = ["protocol", "performance"]
     dims = build_dimensions(dets, None, selected=selected)
-    # protocol weighs 8, performance 6
-    assert overall_score(dims) == round((60 * 8 + 90 * 6) / 14, 1)
+    # protocol weighs 6, performance 4
+    assert overall_score(dims) == round((60 * 6 + 90 * 4) / 10, 1)
     reasons = {d.dimension.value: d.reason for d in dims}
     assert reasons["model_identity"] == "Not selected in this custom run."
     assert reasons["protocol"] != "Not selected in this custom run."

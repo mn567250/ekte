@@ -52,7 +52,7 @@ listent les sujets sous leur vérification.
 
 ### Score et statut d'une dimension
 
-ekte note dix dimensions. Le score d'une dimension est la **moyenne à poids
+ekte note onze dimensions. Le score d'une dimension est la **moyenne à poids
 égal des scores de ses détecteurs** : un détecteur riche en vérifications ne
 pèse pas plus qu'un détecteur qui en a peu, et un détecteur sans score
 numérique est laissé de côté. Son statut est le pire statut conclu par ses
@@ -78,13 +78,14 @@ note est A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) ou F.
 | Identité du modèle | `model_identity` | 21 | cœur |
 | Fenêtre de contexte | `context_window` | 19 | cœur |
 | Capacités annoncées | `capability` | 13 | cœur |
-| Conformité du protocole | `protocol` | 8 |  |
 | Facturation et consommation | `billing` | 8 | cœur |
 | Connectivité | `connectivity` | 7 |  |
+| Conformité du protocole | `protocol` | 6 |  |
 | Authenticité du streaming | `streaming` | 6 |  |
 | Fiabilité en concurrence | `reliability` | 6 |  |
-| Sécurité du transport | `security` | 6 |  |
-| Performance | `performance` | 6 |  |
+| Intégrité des réponses | `integrity` | 6 |  |
+| Sécurité du transport | `security` | 4 |  |
+| Performance | `performance` | 4 |  |
 
 Le verdict est établi sur les dimensions qui ont **tourné** — une exécution
 `custom` ne vérifie que sa sélection. Deux groupes de dimensions comptent :
@@ -107,8 +108,7 @@ Les **avertissements de transport** sont exclus aussi (`ADVISORY_CHECKS` dans
 la lenteur sous charge disent comment le relais est joint, pas quel modèle il
 sert. Ils abaissent toujours le score et le statut de leur dimension, figurent
 après les constats de substitution parmi les constats clés, et le résumé les
-signale comme avertissements (à partir de la gravité Moyenne). La falsification des réponses (intégrité) et une
-clé API renvoyée font toujours monter le risque.
+signale comme avertissements (à partir de la gravité Moyenne). Une clé API renvoyée fait toujours monter le risque, de même que les constats de la dimension Intégrité des réponses (falsification, prompt système injecté, cache de réponses) : ce n'est pas une dimension cœur, seule leur gravité fixe le risque.
 
 | Risque | Libellé dans l'interface | Quand |
 |---|---|---|
@@ -144,10 +144,9 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
 | Détecteur | Id | Dimension | À partir de la suite |
 |---|---|---|---|
 | Connectivité et complétion de base | `connectivity` | Connectivité | `smoke` |
-| Conformité à la compatibilité OpenAI | `protocol` | Conformité du protocole | `standard` |
+| Conformité au protocole d'échange | `protocol` | Conformité du protocole | `standard` |
 | Prise en charge des attributs de requête | `protocol_request` | Conformité du protocole | `standard` |
 | Disponibilité des attributs de réponse | `protocol_response` | Conformité du protocole | `standard` |
-| Déterminisme et exactitude du cache | `determinism` | Conformité du protocole | `deep` |
 | Fenêtre de contexte réelle et troncature | `context_window` | Fenêtre de contexte | `deep` |
 | Identité du modèle et empreinte de déclassement | `model_identity` | Identité du modèle | `standard` |
 | Évaluation de qualité / déclassement par un LLM juge | `quality_judge` | Identité du modèle | `deep` (uniquement avec `--judge`) |
@@ -157,9 +156,10 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
 | Audit de facturation des tokens | `billing` | Facturation et consommation | `standard` |
 | Fiabilité et latence en concurrence | `reliability` | Fiabilité en concurrence | `standard` |
 | Signaux de transport et de gestion des secrets | `security` | Sécurité du transport | `smoke` |
-| Détection de prompt système injecté | `injected_prompt` | Sécurité du transport | `deep` |
-| Intégrité des réponses / falsification | `integrity` | Sécurité du transport | `deep` |
-| Cache de préfixe de prompt (timing) | `prompt_cache` | Sécurité du transport | `deep` |
+| Déterminisme et exactitude du cache | `determinism` | Intégrité des réponses | `deep` |
+| Détection de prompt système injecté | `injected_prompt` | Intégrité des réponses | `deep` |
+| Intégrité des réponses / falsification | `integrity` | Intégrité des réponses | `deep` |
+| Cache de préfixe de prompt (timing) | `prompt_cache` | Intégrité des réponses | `deep` |
 | Sonde de performance | `performance` | Performance | `deep` (en `standard` uniquement avec une référence, 5 requêtes) |
 
 - **smoke** exécute connectivité et sécurité ; **standard** ajoute les
@@ -264,10 +264,9 @@ modèle a répondu. Ses constats ne relèvent jamais le verdict de risque.
 
 **Détecte.** Les relais dont le middleware casse le contrat du protocole (tours
 perdus, séquences d'arrêt ignorées, erreurs malformées, champs de réponse
-absents ou à zéro, paramètres de requête supprimés) et, via le déterminisme,
-`cache.ignore-temperature`. Couvre en partie `capability.json-tool-fakery`.
+absents ou à zéro, paramètres de requête supprimés). Couvre en partie `capability.json-tool-fakery`.
 
-### `protocol` — Conformité à la compatibilité OpenAI
+### `protocol` — Conformité au protocole d'échange
 
 **Fonctionnement.** Trois sondes : une conversation multi-tours qui doit se
 souvenir d'une couleur d'un tour précédent ; une séquence `stop` qui doit
@@ -345,29 +344,6 @@ référence sur le même protocole le rejette aussi. Outils et mode JSON restent
 |  | Rejeté avec un 4xx, alors que la référence l'accepte. | Échec · Moyenne | 15 pts |
 |  | Rejeté, mais le modèle lui-même ne le prend pas en charge ; non compté. | Info | Non compté |
 |  | Erreur serveur ou pas de réponse ; non compté. | Non concluant · Faible | Non compté |
-
-### `determinism` — Déterminisme et exactitude du cache
-
-**Fonctionnement.** Quatre prompts créatifs identiques à `temperature=1.0`
-(sans seed) : un vrai modèle varie ; une sortie identique à l'octet près sur
-tous les échantillons indique un cache de réponses qui ignore
-l'échantillonnage. Le verdict est suspendu pour les modèles de raisonnement,
-qui ignorent légitimement la température. Deux questions factuelles
-identiques à `temperature=0` sont purement indicatives.
-
-Pour conclure à un cache, au moins trois des quatre échantillons doivent être
-exploitables (et tous les exploitables identiques) ; avec moins, la vérification
-n'est pas concluante.
-
-| Contrôle | Résultat | Statut | Effet |
-|---|---|---|---|
-| `determinism.temp1_variability` | Les échantillons répétés à temperature=1.0 différaient, comme avec un véritable échantillonnage. | Réussi | 100 pts |
-|  | Les échantillons étaient identiques, mais les modèles de raisonnement ignorent légitimement temperature. | Info | 100 pts |
-|  | Tous les échantillons exploitables (au moins 3) à temperature=1.0 étaient identiques à l'octet près, ce qui suggère une mise en cache des réponses. | Avertissement · Moyenne | 55 pts |
-|  | Moins de 3 échantillons exploitables à temperature=1.0 pour en juger. | Non concluant · Faible | Non compté |
-| `determinism.temp0_stability` | Réponses identiques à temperature=0 (attendu) ; à titre indicatif, non noté. | Info | Non compté |
-|  | Les réponses différaient à temperature=0 ; à titre indicatif, non noté. | Info | Non compté |
-|  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 
 **Mises en garde.** Les passerelles peuvent ajouter des champs propres au
 fournisseur ; seuls les champs obligatoires absents ou invalides sont signalés.
@@ -641,32 +617,59 @@ aux capacités du profil :
   modèle l'annonce et simplement notée (à titre indicatif) sinon. Ignoré sans
   profil.
 - **Sortie maximale :** une longue génération plafonnée à min(sortie maximale
-  annoncée, 2048) tokens ; atteindre le plafond ou une longueur plausible
-  réussit, s'arrêter sous le quart est signalé.
+  annoncée, `--max-output-probe-tokens`) tokens, 2048 par défaut. Une réponse
+  coupée avec `finish_reason: length` n'atteint le plafond que si au moins
+  80 % des tokens demandés sont revenus : les tokens de complétion déclarés,
+  sinon une estimation à partir du texte ; pour un modèle de raisonnement, les
+  tokens de raisonnement comptent comme fournis. Coupée en dessous, le relais
+  bride la sortie, ce qui échoue. Une longueur plausible réussit, s'arrêter
+  sous le quart est signalé. Quand les tokens de complétion déclarés et
+  l'estimation du texte d'un modèle sans raisonnement diffèrent de plus de
+  3 fois, la preuve le note (la facturation juge le décompte).
 
 Une observation sans annonce à vérifier — aucun appel d'outil ni objet JSON
 quand la fonction n'est pas annoncée, ou tout résultat du schéma strict quand le
 profil indique que le modèle n'a pas de schémas stricts — est notée mais non
 comptée : un modèle ne perd jamais de points pour ce que personne n'annonce.
 
+Une sonde à laquelle le relais répond par un 4xx (hors 401, 403, 408 et 429)
+alors que le profil annonce la fonction est une capacité refusée : elle compte
+comme une capacité non fournie, et son résumé cite le code de statut et le
+message d'erreur. Elle n'est comptée que si le relais répond à la même requête
+sans le paramètre de la fonction (une requête de plus, envoyée seulement tant
+qu'aucune autre sonde n'est revenue) et qu'une référence configurée sur le même
+protocole ne rejette pas aussi la sonde ; sinon, c'est une absence de réponse
+exploitable, ou une limite du modèle. Un 4xx pour une fonction que personne
+n'annonce est noté mais non compté.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `capability.tools` | Un appel d'outil est revenu pour une demande explicite d'outil. | Réussi | 100 pts |
 |  | L'appel d'outils est annoncé mais aucun appel d'outil n'est revenu. | Échec · Moyenne | 0 pts |
 |  | Aucun appel d'outil n'est revenu, et l'appel d'outils n'est pas annoncé. | Info | Non compté |
+|  | L'appel d'outils est annoncé mais le relais a rejeté la sonde avec un 4xx. | Échec · Moyenne | 0 pts |
+|  | Rejeté avec un 4xx, et la référence le rejette aussi : une limite du modèle. | Info | Non compté |
+|  | Rejeté avec un 4xx ; la capacité n'est pas annoncée. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.tools.encoding` | Les arguments de l'outil sont arrivés en objet, pas en chaîne JSON comme chez OpenAI. | Avertissement · Faible | Non compté |
 | `capability.json_mode` | Le mode JSON a renvoyé un objet analysable avec la valeur demandée. | Réussi | 100 pts |
 |  | Un objet JSON est revenu avec une mauvaise valeur ; le mode JSON n'est pas annoncé. | Info | Non compté |
 |  | Aucun objet JSON analysable n'est revenu ; le mode JSON n'est pas annoncé. | Info | Non compté |
 |  | Le mode JSON est annoncé mais aucun objet valide avec la valeur n'est revenu. | Échec · Moyenne | 0 pts |
+|  | Le mode JSON est annoncé mais le relais a rejeté la sonde avec un 4xx. | Échec · Moyenne | 0 pts |
+|  | Rejeté avec un 4xx, et la référence le rejette aussi : une limite du modèle. | Info | Non compté |
+|  | Rejeté avec un 4xx ; la capacité n'est pas annoncée. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.json_schema` | Le schéma strict est annoncé et la réponse s'y conformait. | Réussi | 100 pts |
 |  | Le schéma strict n'a pas été appliqué, conformément à l'annonce. | Info | Non compté |
 |  | La réponse s'y conformait bien que le modèle annoncé n'ait pas de schémas stricts. | Info | Non compté |
 |  | Le schéma strict est annoncé mais la réponse ne s'y conformait pas. | Avertissement · Faible | 40 pts |
+|  | Le schéma strict est annoncé mais le relais a rejeté la sonde avec un 4xx. | Échec · Moyenne | 0 pts |
+|  | Rejeté avec un 4xx, et la référence le rejette aussi : une limite du modèle. | Info | Non compté |
+|  | Rejeté avec un 4xx ; la capacité n'est pas annoncée. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.max_output` | La sortie a continué jusqu'au plafond de tokens demandé. | Réussi | 100 pts |
+|  | La sortie a été coupée avec finish_reason length bien en dessous de la limite demandée : le relais limite les tokens de sortie. | Échec · Moyenne | 0 pts |
 |  | La sortie s'est arrêtée avant le plafond, à une longueur plausible. | Réussi | 90 pts |
 |  | La sortie s'est arrêtée sous le quart de la longueur demandée. | Avertissement · Faible | 70 pts |
 |  | La sortie s'est arrêtée sous le quart de la demande malgré un maximum annoncé élevé. | Avertissement · Faible | 60 pts |
@@ -744,24 +747,49 @@ référence qui fait réellement du streaming.
 surévalués), `billing.missing-usage` (`usage` absent, partiel ou incohérent)
 et, comme signal de corroboration, `prompt.injected-system-prompt`.
 
-**Fonctionnement.** Un appel déterministe (un paragraphe connu à résumer,
-`temperature=0`). Le prompt et la réponse visible sont comptés
-indépendamment avec une heuristique sensible à la langue (environ ±25 %), pour
-toutes les familles de modèles : ekte n'utilise aucune bibliothèque de tokenizer
-et n'en télécharge aucune. Des tokens de prompt rapportés au-delà de 2,5×
-l'estimation et de plus de 50 tokens au-dessus comptent comme gonflement. Les
-tokens de complétion d'un modèle de raisonnement incluent légitimement des
-tokens de raisonnement cachés et ne sont pas signalés ; sinon, des tokens de
-complétion au-delà de 3× l'estimation et de plus de 80 tokens au-dessus sont un
-avertissement léger, jamais un échec, car l'estimation d'une réponse courte est
-bruitée. `total` doit égaler `prompt + completion` (±2), et un total sans
-répartition est signalé. Un sous-comptage (moins de la moitié de l'estimation)
-est indicatif (sans préjudice pour l'acheteur).
+**Fonctionnement.** Trois appels déterministes : la même tâche de résumé à
+trois tailles de prompt (environ 150, 600 et 2 400 tokens de paragraphes fixes,
+`temperature=0`). Les prompts et les réponses visibles sont comptés
+indépendamment avec une heuristique sensible à la langue (environ ±25 % ; elle
+compte 12 à 15 % de moins que les vrais tokenizers), pour toutes les familles
+de modèles : ekte n'utilise aucune bibliothèque de tokenizer et n'en télécharge
+aucune. Les tokens de prompt rapportés sont ajustés par rapport à l'estimation :
+la pente est le facteur proportionnel, l'ordonnée à l'origine un surcoût fixe.
+Une pente jusqu'à 1,35 passe (le sous-comptage de l'heuristique plus un
+tokenizer dense), de 1,35 à 1,6 c'est un avertissement, au-delà de 1,6 un
+échec. Un surcoût fixe avec une pente normale n'est pas un gonflement : sous 30
+tokens il est indicatif, à partir de 30 tokens c'est un avertissement faible
+qui renvoie à `injected_prompt`. En mode comparaison, avec une référence du
+même modèle sur le même protocole, les trois mêmes prompts sont envoyés à la
+référence et les `prompt_tokens` sont comparés directement : plus de 3 % ou de
+5 tokens au-dessus de la référence (la plus grande des deux valeurs) est un
+échec, et cela remplace le verdict sur la pente. Si un seul des trois appels
+renvoie des décomptes exploitables, le contrôle sur une requête unique prend le
+relais, avec une note indiquant que la pente n'a pas pu être mesurée : des
+tokens de prompt au-delà de 2,5× l'estimation et de plus de 50 tokens au-dessus
+comptent comme gonflement. Les tokens de complétion d'un modèle de raisonnement
+(selon la base de connaissances, ou parce que la réponse rapporte des tokens de
+raisonnement) incluent légitimement des tokens de raisonnement cachés et ne
+sont pas signalés ; sinon, des tokens de complétion au-delà de 3× l'estimation
+et de plus de 80 tokens par réponse au-dessus sont un avertissement léger,
+jamais un échec, car l'estimation d'une réponse courte est bruitée. `total`
+doit égaler `prompt + completion` (±2), et un total sans répartition est
+signalé. Un sous-comptage (moins de la moitié de l'estimation) est indicatif
+(sans préjudice pour l'acheteur).
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `billing.request-failed` | Aucune réponse exploitable pour juger. | Non concluant · Faible | Aucune déduction |
 | `billing.missing-usage` | La réponse ne comportait aucune consommation de tokens. | Avertissement · Moyenne | plafond 75 |
+| `billing.prompt-vs-baseline` | Les tokens de prompt déclarés correspondent à ceux de la référence pour les mêmes prompts. | Réussi | Aucune déduction |
+| `billing.prompt-vs-baseline` | Les tokens de prompt déclarés dépassent ceux de la référence pour les mêmes prompts. | Échec · Élevée | plafond 55 |
+| `billing.prompt-vs-baseline` | Les tokens de prompt déclarés sont inférieurs à ceux de la référence (sans préjudice pour l'acheteur). | Info | Aucune déduction |
+| `billing.prompt-slope` | Les tokens de prompt déclarés croissent proportionnellement à l'estimation (pente jusqu'à 1,35). | Réussi | Aucune déduction |
+| `billing.prompt-slope` | Les tokens de prompt déclarés croissent 1,35 à 1,6 fois plus vite que l'estimation. | Avertissement · Moyenne | plafond 70 |
+| `billing.prompt-slope` | Les tokens de prompt déclarés croissent plus de 1,6 fois plus vite que l'estimation. | Échec · Élevée | plafond 55 |
+| `billing.prompt-slope` | Une seule taille de prompt a fourni des décomptes exploitables ; la pente n'a pas pu être mesurée. | Info | Aucune déduction |
+| `billing.fixed-overhead` | Un petit surcoût fixe de tokens de prompt (moins de 30 tokens), comme en ajoutent les modèles de chat. | Info | Aucune déduction |
+| `billing.fixed-overhead` | Un surcoût fixe de tokens de prompt de 30 tokens ou plus à chaque requête. | Avertissement · Faible | plafond 90 |
 | `billing.usage-inflation` | Les tokens de prompt déclarés dépassent largement l'estimation indépendante. | Échec · Élevée | plafond 55 |
 | `billing.usage-inflation-completion` | Les tokens de complétion déclarés sont bien au-dessus d'une estimation heuristique. | Avertissement · Moyenne | plafond 70 |
 | `billing.reasoning-tokens` | Les tokens de complétion dépassent le texte visible, comme attendu pour un modèle de raisonnement. | Info | Aucune déduction |
@@ -776,9 +804,10 @@ Une requête de sonde échouée laisse le détecteur sans score.
 **Mises en garde.** Les modèles de chat et les tokens spéciaux ajoutent un
 petit décalage fixe ; une égalité exacte n'est pas attendue. Si le modèle servi
 diffère du modèle annoncé, le « bon » tokenizer est inconnu. Les tokens de
-raisonnement cachés ne se comptent pas de l'extérieur. Une sonde mesure une
-taille ; un multiplicateur qui croît avec la taille demande des exécutions
-répétées ou le mode comparaison.
+raisonnement cachés ne se comptent pas de l'extérieur. Trois tailles jusqu'à
+environ 2 400 tokens séparent un facteur proportionnel d'un surcoût fixe ; un
+multiplicateur qui n'apparaît que sur des prompts bien plus grands reste
+invisible.
 
 ---
 
@@ -822,36 +851,9 @@ feuille de route.
 
 ---
 
-## `security` — Sécurité du transport
+## `integrity` — Intégrité des réponses
 
-**Détecte.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-des indices de `privacy.prompt-logging-leakage` (mise en cache par préfixe) et
-l'hygiène de base du transport et des secrets.
-
-### `security` — Signaux de transport et de gestion des secrets
-
-**Fonctionnement.** Vérifie que l'endpoint utilise HTTPS, que la clé d'API
-n'apparaît jamais telle quelle dans une réponse, et quels en-têtes de réponse
-trahissent un amont ou un proxy (`server`, `via`, `x-powered-by`,
-`x-upstream-*`, `x-litellm-*`, … ; à titre indicatif). Il rappelle aussi la
-limite : la journalisation des prompts et les clés amont partagées ne sont pas
-prouvables de l'extérieur. Le HTTP en clair vers cette machine ou un réseau privé
-(`localhost`, `127.x`, `192.168.x`, `*.local`, … — un modèle auto-hébergé)
-n'est qu'un Avertissement sans plafond, car la clé ne traverse pas Internet ;
-vers tout autre hôte il reste Échec · Élevée. Dans les deux cas `security.tls`
-est un avertissement de transport et ne fait jamais monter le verdict de risque.
-
-| Contrôle | Résultat | Statut | Effet |
-|---|---|---|---|
-| `security.tls` | Le point d'accès utilise HTTPS. | Réussi | Aucune déduction |
-|  | Le point d'accès n'est pas en HTTPS ; la clé API circule en clair. | Échec · Élevée | plafond 40 |
-|  | HTTP en clair vers un hôte local ou du réseau privé ; la clé API ne traverse pas Internet. | Avertissement · Faible | Aucune déduction |
-| `security.key_echo` | La clé API n'apparaît pas dans la réponse. | Réussi | Aucune déduction |
-|  | La clé API apparaît telle quelle dans la réponse. | Échec · Élevée | plafond 30 |
-| `security.headers` | Aucun en-tête de réponse ne révèle l'amont (à titre indicatif). | Réussi | Aucune déduction |
-|  | Des en-têtes de réponse révèlent l'amont ou le proxy (à titre indicatif). | Info · Faible | Aucune déduction |
-|  | Aucun en-tête de réponse à inspecter. | Non concluant | Aucune déduction |
-| `security.note` | La journalisation des prompts et les clés amont partagées ne sont pas prouvables de l'extérieur. | Info | Aucune déduction |
+**Détecte.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` et des indices de `privacy.prompt-logging-leakage` (mise en cache par préfixe) : la réponse est-elle celle du modèle, intacte et fraîchement générée. Sur les surfaces embedding et rerank, la dimension contient la vérification du déterminisme. Ce n'est pas une dimension cœur : ses constats fixent le risque par leur seule gravité.
 
 ### `injected_prompt` — Détection de prompt système injecté
 
@@ -892,6 +894,29 @@ Une réponse coupée à la limite de sortie est non concluante, pas une substitu
 |  | Une valeur canari a été substituée alors que la référence de confiance l'a gardée intacte. | Échec · Critique | 10 pts |
 |  | Aucun canari n'a été répété tel quel, la falsification n'a donc pas pu être évaluée. | Non concluant | Non compté |
 
+### `determinism` — Déterminisme et exactitude du cache
+
+**Fonctionnement.** Quatre prompts créatifs identiques à `temperature=1.0`
+(sans seed) : un vrai modèle varie ; une sortie identique à l'octet près sur
+tous les échantillons indique un cache de réponses qui ignore
+l'échantillonnage. Le verdict est suspendu pour les modèles de raisonnement,
+qui ignorent légitimement la température. Deux questions factuelles
+identiques à `temperature=0` sont purement indicatives.
+
+Pour conclure à un cache, au moins trois des quatre échantillons doivent être
+exploitables (et tous les exploitables identiques) ; avec moins, la vérification
+n'est pas concluante.
+
+| Contrôle | Résultat | Statut | Effet |
+|---|---|---|---|
+| `determinism.temp1_variability` | Les échantillons répétés à temperature=1.0 différaient, comme avec un véritable échantillonnage. | Réussi | 100 pts |
+|  | Les échantillons étaient identiques, mais les modèles de raisonnement ignorent légitimement temperature. | Info | 100 pts |
+|  | Tous les échantillons exploitables (au moins 3) à temperature=1.0 étaient identiques à l'octet près, ce qui suggère une mise en cache des réponses. | Avertissement · Moyenne | 55 pts |
+|  | Moins de 3 échantillons exploitables à temperature=1.0 pour en juger. | Non concluant · Faible | Non compté |
+| `determinism.temp0_stability` | Réponses identiques à temperature=0 (attendu) ; à titre indicatif, non noté. | Info | Non compté |
+|  | Les réponses différaient à temperature=0 ; à titre indicatif, non noté. | Info | Non compté |
+|  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
+
 ### `prompt_cache` — Cache de préfixe de prompt (timing)
 
 **Fonctionnement.** Un préfixe unique d'environ 1 200 tokens est envoyé deux
@@ -916,6 +941,37 @@ sondes. La journalisation en boîte noire est **impossible à prouver** côté c
 ekte ne peut pas montrer un partage de cache *entre utilisateurs* avec une
 seule clé : l'absence de signal temporel ne prouve pas que les prompts ne sont
 pas journalisés.
+
+---
+
+## `security` — Sécurité du transport
+
+**Détecte.** L'hygiène de base du transport et des secrets : HTTP en clair, une clé API renvoyée dans la réponse et des en-têtes de réponse qui révèlent l'amont.
+
+### `security` — Signaux de transport et de gestion des secrets
+
+**Fonctionnement.** Vérifie que l'endpoint utilise HTTPS, que la clé d'API
+n'apparaît jamais telle quelle dans une réponse, et quels en-têtes de réponse
+trahissent un amont ou un proxy (`server`, `via`, `x-powered-by`,
+`x-upstream-*`, `x-litellm-*`, … ; à titre indicatif). Il rappelle aussi la
+limite : la journalisation des prompts et les clés amont partagées ne sont pas
+prouvables de l'extérieur. Le HTTP en clair vers cette machine ou un réseau privé
+(`localhost`, `127.x`, `192.168.x`, `*.local`, … — un modèle auto-hébergé)
+n'est qu'un Avertissement sans plafond, car la clé ne traverse pas Internet ;
+vers tout autre hôte il reste Échec · Élevée. Dans les deux cas `security.tls`
+est un avertissement de transport et ne fait jamais monter le verdict de risque.
+
+| Contrôle | Résultat | Statut | Effet |
+|---|---|---|---|
+| `security.tls` | Le point d'accès utilise HTTPS. | Réussi | Aucune déduction |
+|  | Le point d'accès n'est pas en HTTPS ; la clé API circule en clair. | Échec · Élevée | plafond 40 |
+|  | HTTP en clair vers un hôte local ou du réseau privé ; la clé API ne traverse pas Internet. | Avertissement · Faible | Aucune déduction |
+| `security.key_echo` | La clé API n'apparaît pas dans la réponse. | Réussi | Aucune déduction |
+|  | La clé API apparaît telle quelle dans la réponse. | Échec · Élevée | plafond 30 |
+| `security.headers` | Aucun en-tête de réponse ne révèle l'amont (à titre indicatif). | Réussi | Aucune déduction |
+|  | Des en-têtes de réponse révèlent l'amont ou le proxy (à titre indicatif). | Info · Faible | Aucune déduction |
+|  | Aucun en-tête de réponse à inspecter. | Non concluant | Aucune déduction |
+| `security.note` | La journalisation des prompts et les clés amont partagées ne sont pas prouvables de l'extérieur. | Info | Aucune déduction |
 
 ---
 
@@ -1019,7 +1075,7 @@ modèle substitué en chat.
 | Dimension du vecteur | `embed.dimension` | Identité du modèle | longueur renvoyée contre la dimension native du modèle annoncé (base de connaissances, ou `claimed_dimensions`) |
 | Modèle renvoyé | `embed.model_field` | Identité du modèle | le champ `model` de la réponse nomme le modèle annoncé |
 | Dérive des vecteurs | `embed.drift` | Identité du modèle | le vecteur de l'entrée épinglée de la sonde contre l'exécution enregistrée précédente |
-| Déterminisme | `embed.determinism` | Fiabilité en concurrence | la même entrée deux fois donne un cosinus ≥ 0,9999 |
+| Déterminisme | `embed.determinism` | Intégrité des réponses | la même entrée deux fois donne un cosinus ≥ 0,9999 |
 | Distinction | `embed.distinctness` | Capacités annoncées | des entrées sans rapport donnent un cosinus inférieur à 0,98 |
 | Sonde de performance | `performance.embed` | Performance | latence, démarrage à froid, débit, mise à l'échelle par lots |
 
@@ -1053,8 +1109,7 @@ connaissances ; la vitesse brute ne compte que face à une référence.
 
 Un audit de rerank (`surface` `rerank`) n'envoie que des requêtes `POST /rerank` et
 est noté sur l'échelle commune 0–100 et la note A–F avec ses propres poids :
-identité du modèle 30, capacités annoncées 30, performance 20, fiabilité en
-concurrence 10, connectivité 10. Un classement à réponse connue raté (capacités
+identité du modèle 30, capacités annoncées 30, performance 20, intégrité des réponses 10, connectivité 10. Un classement à réponse connue raté (capacités
 annoncées, ÉLEVÉ) ou un modèle substitué (identité du modèle, ÉLEVÉ) rend le risque
 ÉLEVÉ.
 
@@ -1064,7 +1119,7 @@ annoncées, ÉLEVÉ) ou un modèle substitué (identité du modèle, ÉLEVÉ) re
 | Réponse connue | `rerank.known_answer` | Capacités annoncées | une sonde avec un document manifestement pertinent le place en tête |
 | Modèle renvoyé | `rerank.identity` | Identité du modèle | le champ `model` de la réponse nomme le modèle annoncé |
 | Dérive du classement | `rerank.drift` | Identité du modèle | le classement et les scores de la sonde épinglée contre l'exécution enregistrée précédente |
-| Déterminisme | `rerank.determinism` | Fiabilité en concurrence | la même requête deux fois donne le même classement et les mêmes scores |
+| Déterminisme | `rerank.determinism` | Intégrité des réponses | la même requête deux fois donne le même classement et les mêmes scores |
 | Sonde de performance | `performance.rerank` | Performance | latence, démarrage à froid, documents/s, évolution selon le nombre de documents |
 
 **Dérive du classement.** Chaque exécution conserve le classement et les scores
@@ -1103,7 +1158,7 @@ Les 16 astuces de relais issues de la recherche se répartissent ainsi dans ekte
 | 5 | `context.window-truncation` | high | `context_window` | échelle à aiguille en bordure + recherche dichotomique ; mesuré vs annoncé |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | profondeurs 0,1/0,5/0,9 à taille moyenne |
 | 7 | `stream.fake-streaming` | medium | `streaming` | nombre de fragments, moment du premier token, uniformité des écarts |
-| 8 | `billing.usage-inflation` | high | `billing` | estimation heuristique indépendante des tokens d'une sonde connue |
+| 8 | `billing.usage-inflation` | high | `billing` | pente des tokens de prompt rapportés sur trois tailles de prompt par rapport à une estimation heuristique ; en mode comparaison, les décomptes exacts de la référence |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | présence, répartition et arithmétique de l'usage ; fragment d'usage du flux |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | mise en cache par préfixe via le TTFT (indicatif) ; partage entre utilisateurs et journalisation restent improuvables avec une clé |
 | 11 | `infra.shared-upstream-key` | high | — | feuille de route (quota qui baisse au repos, identifiants de requête amont divulgués) |

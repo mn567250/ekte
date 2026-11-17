@@ -29,15 +29,16 @@ from ekte.models import (
 # score, so a dimension that did not run (or was not selected) drops out.
 DIMENSION_WEIGHTS: dict[Dimension, float] = {
     Dimension.CONNECTIVITY: 7.0,
-    Dimension.PROTOCOL: 8.0,
+    Dimension.PROTOCOL: 6.0,
     Dimension.CONTEXT_WINDOW: 19.0,
     Dimension.MODEL_IDENTITY: 21.0,
     Dimension.CAPABILITY: 13.0,
     Dimension.STREAMING: 6.0,
     Dimension.BILLING: 8.0,
     Dimension.RELIABILITY: 6.0,
-    Dimension.SECURITY: 6.0,
-    Dimension.PERFORMANCE: 6.0,
+    Dimension.INTEGRITY: 6.0,
+    Dimension.SECURITY: 4.0,
+    Dimension.PERFORMANCE: 4.0,
 }
 
 # Dimensions judged against the claimed model's knowledge-base profile: when
@@ -53,6 +54,9 @@ _PROFILE_DIMENSIONS = (
 # (货不对板): a different model, a smaller context window, missing capabilities
 # or inflated billing. One HIGH finding here makes the risk HIGH.
 _CORE_DIMENSIONS = (*_PROFILE_DIMENSIONS, Dimension.BILLING)
+# Response integrity (tampering, an injected system prompt, a response cache)
+# is neither a profile nor a core dimension: its findings set the risk through
+# their severity alone.
 
 # Pure transport/reachability dimensions. A HIGH here (relay down, throttled,
 # transient 5xx) means we could not assess the model — NOT that the relay serves a
@@ -67,7 +71,7 @@ _EMBEDDING_WEIGHTS: dict[Dimension, float] = {
     Dimension.CONNECTIVITY: 10.0,
     Dimension.MODEL_IDENTITY: 40.0,
     Dimension.CAPABILITY: 15.0,
-    Dimension.RELIABILITY: 15.0,
+    Dimension.INTEGRITY: 15.0,
     Dimension.PERFORMANCE: 20.0,
 }
 
@@ -77,7 +81,7 @@ _RERANK_WEIGHTS: dict[Dimension, float] = {
     Dimension.MODEL_IDENTITY: 30.0,
     Dimension.CAPABILITY: 30.0,
     Dimension.PERFORMANCE: 20.0,
-    Dimension.RELIABILITY: 10.0,
+    Dimension.INTEGRITY: 10.0,
     Dimension.CONNECTIVITY: 10.0,
 }
 
@@ -119,8 +123,8 @@ def _dims_for(table: dict[str, tuple[Dimension, ...]], surface: str | None) -> s
 # burst or a slow tail lower their dimension's score and status and are listed
 # as advisories in the verdict, but never escalate the substitution risk ladder
 # — a self-hosted ``http://localhost`` endpoint must not read as "diverges from
-# the claimed model". Integrity tampering and an echoed API key (other SECURITY
-# checks) still escalate.
+# the claimed model". An echoed API key (the other SECURITY check) and the
+# INTEGRITY findings (tampering, an injected prompt, a cache) still escalate.
 ADVISORY_CHECKS = frozenset({
     "security.tls",
     "reliability.success_rate",
@@ -458,6 +462,7 @@ DIMENSION_NAMES: dict[Dimension, str] = {
     Dimension.STREAMING: "Streaming authenticity",
     Dimension.BILLING: "Billing & usage",
     Dimension.RELIABILITY: "Concurrency reliability",
+    Dimension.INTEGRITY: "Response integrity",
     Dimension.SECURITY: "Transport security",
     Dimension.PERFORMANCE: "Performance",
 }

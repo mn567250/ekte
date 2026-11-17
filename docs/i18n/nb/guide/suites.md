@@ -29,7 +29,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--suite custom`; i en konfigurasjonsfil bruker du
 `run.dimensions: [protocol, performance]`. Dimensjonene er `connectivity`,
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
-`billing`, `reliability`, `security` og `performance`. I nettgrensesnittet åpner
+`billing`, `reliability`, `integrity`, `security` og `performance`. I nettgrensesnittet åpner
 knappen for testsettet `custom` det samme valget (**Dimensjoner som skal
 kjøres**) på revisjonssiden og på overvåkingene.
 

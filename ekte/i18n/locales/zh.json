@@ -17,6 +17,7 @@
   "Model identity & downgrade fingerprinting": "模型身份与降级指纹",
   "Prompt prefix-cache (timing)": "提示前缀缓存（时序）",
   "OpenAI-compatibility conformance": "OpenAI 兼容性规范",
+  "Wire-protocol conformance": "通信协议规范",
   "LLM-judged quality / downgrade assessment": "LLM 评委质量 / 降级评估",
   "Concurrent reliability & latency": "并发可靠性与延迟",
   "Transport & secret-handling signals": "传输与密钥处理信号",
@@ -76,6 +77,8 @@
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "检查中转站在并发压力下的连接池与上游稳定性（HTTP 429 限流不计入此成功率）。",
   "Confirm with the provider how usage is metered if billing is per-token.": "若按 token 计费，请向服务商确认用量如何计量。",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "用已知长度的提示词核对计费；可能存在按 token 多计费。",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "将计费的提示 token 与基线对比；该中转站多报了输入 token。",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "如此大的固定开销表明可能存在隐藏的系统提示词；请运行 injected_prompt 检查（deep 套件）进一步核实。",
   "Confirm with the provider how prompt/completion tokens are metered.": "请向服务商确认 prompt/completion token 如何计量。",
   "Cross-check billing against output length; possible per-token overbilling.": "对照输出长度核对计费；可能存在按 token 多计费。",
   "Compare token accounting against a trusted baseline of the same model.": "将 token 计量与同款模型的可信基线对比。",
@@ -87,6 +90,9 @@
   "Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe.": "长文本生成可能达不到声称的上限；请用更长的探针确认。",
   "Confirm the served engine actually supports function calling.": "确认所提供的引擎确实支持函数调用。",
   "Verify the served engine honors response_format=json_object.": "确认所提供的引擎遵守 response_format=json_object。",
+  "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "中转拒绝了声称模型所支持的请求参数；请要求服务商转发该参数，或改用提供该功能的端点。",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "中转把 max_tokens 限制在请求值之下，长回答会被截断。请要求服务商转发 max_tokens，或改用遵守该参数的端点。",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "在请求的 {requested_max_tokens} token 中约 {delivered_tokens} 处即被截断（finish_reason=length）：中转限制了输出 token。",
   "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified.": "usage 仅给出 total={reported_total}（prompt={reported_prompt}，completion={reported_completion}）；按 token 计费所依赖的分项缺失、无法核验。",
   "JSON mode honored; parsed keys: {parsed_keys|list}.": "JSON 模式生效；解析出的键：{parsed_keys|list}。",
   "Tool call delivered ({tool_name}); arguments returned as {arguments_type}.": "已返回工具调用（{tool_name}）；参数类型为 {arguments_type}。",
@@ -103,6 +109,9 @@
   "Expected 4 non-empty vectors, got {returned_vectors}.": "预期 4 个非空向量，实际收到 {returned_vectors} 个。",
   "POST /rerank failed (HTTP {status_code}).": "POST /rerank 失败（HTTP {status_code}）。",
   "Invalid request got no HTTP response ({error_type}); could not confirm OpenAI-style client-error handling.": "非法请求没有收到 HTTP 响应（{error_type}）；无法确认是否按 OpenAI 风格处理客户端错误。",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}), and the baseline rejects it too (HTTP {baseline_status_code}): a limit of the model; not counted.": "中转以 HTTP {status_code} 拒绝了探测（{relay_error}），基线也拒绝（HTTP {baseline_status_code}）：属于模型本身的限制；不计分。",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}); the capability is not claimed, so this is not counted.": "中转以 HTTP {status_code} 拒绝了探测（{relay_error}）；未声称支持该能力，因此不计分。",
+  "The capability is claimed, but the relay rejected the probe with HTTP {status_code}: {relay_error}": "声称支持该能力，但中转以 HTTP {status_code} 拒绝了探测：{relay_error}",
   "Request failed (HTTP {status_code}, type {error_type}).": "请求失败（HTTP {status_code}，类型 {error_type}）。",
   "Request failed (HTTP {status_code}).": "请求失败（HTTP {status_code}）。",
   "Request failed (type {error_type}).": "请求失败（类型 {error_type}）。",
@@ -150,6 +159,7 @@
   "Capability claims": "能力声明",
   "Billing & usage": "计费用量",
   "Concurrency reliability": "并发可靠",
+  "Response integrity": "响应完整性",
   "Transport security": "传输安全",
   "Performance": "性能",
   "Language": "语言",
@@ -360,6 +370,22 @@
   "billing.missing-usage": [
    "未返回任何用量统计",
    "响应未包含 token usage；计费无法独立核验（usage 是否存在：{usage_present}）。"
+  ],
+  "billing.prompt-vs-baseline": [
+   "prompt token 与基线对比",
+   "对同一提示词，目标上报 {target_prompt} 个 prompt token，基线上报 {baseline_prompt} 个。"
+  ],
+  "billing.prompt-slope": [
+   "prompt token 增长与估算对比",
+   "在 {sizes} 种提示长度下，上报 prompt token 的增长速度是独立估算的 {slope} 倍（固定偏移 {intercept} 个 token）。"
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "未能测量 prompt token 斜率",
+   "只有一种提示长度返回了可用计数（上报 {reported_prompt}，估算 ~{estimated_prompt}）；无法测量斜率，因此采用单次请求的容差。"
+  ],
+  "billing.fixed-overhead": [
+   "固定 prompt token 开销",
+   "无论长度如何，每次请求都比估算多出约 {intercept} 个 prompt token（斜率 {slope}）。"
   ],
   "billing.usage-inflation": [
    "上报的 prompt token 远超估算",

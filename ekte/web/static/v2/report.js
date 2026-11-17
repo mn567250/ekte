@@ -123,6 +123,7 @@
     protocol: ["协议兼容", "接口是否规范？"],
     connectivity: ["连通性", "稳定可达？"],
     reliability: ["并发可靠", "压力下稳不稳？"],
+    integrity: ["响应完整性", "响应是否原样未改？"],
     streaming: ["流式真实", "真流式还是假装？"],
     security: ["传输安全", "密钥是否安全？"],
     performance: ["性能表现", "快慢是否稳定？"],
@@ -135,6 +136,7 @@
     protocol: ["Protocol compliance", "Is the API spec-compliant?"],
     connectivity: ["Connectivity", "Reliably reachable?"],
     reliability: ["Concurrency reliability", "Stable under load?"],
+    integrity: ["Response integrity", "Is the response unaltered?"],
     streaming: ["Streaming authenticity", "Real streaming or faked?"],
     security: ["Transport security", "Are keys handled safely?"],
     performance: ["Performance", "Is its speed consistent?"],
@@ -146,13 +148,13 @@
   // back as "not run".
   var DIM_ORDER = [
     "connectivity", "protocol", "context_window", "model_identity", "capability",
-    "streaming", "billing", "reliability", "security", "performance",
+    "streaming", "billing", "reliability", "integrity", "security", "performance",
   ];
   // Another surface scores only the dimensions it has evidence for
   // (ekte/scoring.py SURFACE_WEIGHTS); a missing surface is chat.
   var SURFACE_DIMS = {
-    embedding: ["connectivity", "model_identity", "capability", "reliability", "performance"],
-    rerank: ["connectivity", "model_identity", "capability", "reliability", "performance"],
+    embedding: ["connectivity", "model_identity", "capability", "integrity", "performance"],
+    rerank: ["connectivity", "model_identity", "capability", "integrity", "performance"],
   };
   var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
   function surfaceOf(r) {
@@ -204,12 +206,12 @@
   var DIMDESC_EMBED = {
     model_identity: ["向量是否属于声称的模型？", "Do the vectors come from the claimed model?"],
     capability: ["不同输入是否得到不同向量？", "Do different inputs give different vectors?"],
-    reliability: ["同一输入是否得到同一向量？", "Does the same input give the same vector?"],
+    integrity: ["同一输入是否得到同一向量？", "Does the same input give the same vector?"],
   };
   var DIMDESC_RERANK = {
     model_identity: ["排序是否来自声称的模型？", "Do the rankings come from the claimed model?"],
     capability: ["显而易见的答案是否排在首位？", "Does the obvious answer rank first?"],
-    reliability: ["同一请求是否得到同一排序？", "Does the same request give the same ranking?"],
+    integrity: ["同一请求是否得到同一排序？", "Does the same request give the same ranking?"],
   };
   var DIMDESC = { embedding: DIMDESC_EMBED, rerank: DIMDESC_RERANK };
   function dimName(k, surface) {

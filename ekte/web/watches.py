@@ -69,7 +69,7 @@ from pathlib import Path
 from typing import Any
 
 from ekte import datadir, dbmigrate, i18n, runwindow, secretbox
-from ekte.config import SURFACES
+from ekte.config import SURFACES, stored_dimensions
 from ekte.knowledge import snapshot as kb_snapshot
 from ekte.models import RiskLevel
 
@@ -673,7 +673,8 @@ def _row_to_dict(row: sqlite3.Row, *, include_key: bool) -> dict[str, Any]:
         dims = json.loads(raw_dims) if isinstance(raw_dims, str) and raw_dims else []
     except (ValueError, TypeError):
         dims = []
-    d["dimensions"] = [str(x) for x in dims] if isinstance(dims, list) else []
+    # a selection saved before the integrity dimension existed, in today's ids
+    d["dimensions"] = stored_dimensions(d["surface"], dims)
     # kb_usage: the pinned profile's match/sources (the profile itself stays
     # in kb_snapshots); exposed as `kb`, None when nothing is pinned.
     raw_kb = d.pop("kb_usage", None)

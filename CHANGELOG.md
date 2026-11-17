@@ -59,6 +59,116 @@ mode sent only the self-identification to the baseline.
   identity score can now drop when a model reports a cutoff more than a year
   before its profile's; the report schema is unchanged (#168).
 
+### Scoring: a response integrity dimension ([#260](https://github.com/mn567250/ekte/issues/260))
+
+The "Transport security" dimension held response tampering, injected system
+prompts and response caches, none of which is transport: a tampering relay could
+read "does not deliver what it advertises: Transport security". The response
+cache check sat under protocol compliance, and on embeddings and rerank under
+concurrency reliability.
+
+- New dimension `integrity`, **Response integrity**: the `integrity`
+  (tampering), `injected_prompt`, `determinism` and `prompt_cache` detectors,
+  and on the embedding and rerank surfaces `embed.determinism` and
+  `rerank.determinism`. It is neither a core nor a profile dimension: its
+  findings set the risk through their severity, as before.
+- `security` (Transport security) keeps the TLS, key-echo and header checks.
+- Chat weights: response integrity 6, transport security 4 (was 6),
+  performance 4 (was 6), protocol compliance 6 (was 8, it no longer holds the
+  determinism check; the sum stays 100). Embedding: response integrity 15 and
+  rerank: response integrity 10 replace concurrency reliability, which those
+  surfaces no longer score. Overall scores of new runs can therefore differ
+  from older runs of the same relay.
+- The `protocol` detector is now named **Wire-protocol conformance** (was
+  "OpenAI-compatibility conformance"): it also checks Anthropic Messages and
+  OpenAI Responses targets. Its id is unchanged.
+- `--dimension`, `run.dimensions` and the web UI's **Dimensions to run** accept
+  `integrity`. A custom selection of `security` no longer runs the integrity
+  detectors; select `integrity` as well. Embedding and rerank monitors and runs
+  saved with `reliability` selected read it as `integrity`.
+- **Report schema 1.5** (see #168): the `Dimension` enum gains `integrity`.
+  Reports written before keep their dimensions and detector assignments as
+  recorded and show response integrity as not recorded.
+
+### Capability: the max-output check catches a relay that clamps the output ([#253](https://github.com/mn567250/ekte/issues/253))
+
+A relay that clamped `max_tokens` to 100 returned ten lines, stopped with
+`finish_reason: length` and passed the max-output check with 100 points: any
+answer cut off by length counted as reaching the requested cap.
+
+- An answer cut off by length now reaches the cap (`to_cap`) only when at least
+  80 % of the requested tokens came back: the reported completion tokens, else
+  an estimate from the text. A reasoning model's reasoning tokens (profile or
+  reported reasoning tokens) count as delivered, so a model that spends the
+  whole budget thinking still passes; without any usage its hidden reasoning
+  cannot be counted and it is not called clamped.
+- Below that it is the new outcome `clamped` of `capability.max_output`:
+  Fail · Medium, 0 points. The evidence gives the requested cap, the delivered
+  tokens and where the count comes from, and notes when a non-reasoning
+  model's reported completion tokens and the text estimate are more than 3x
+  apart (billing judges the count).
+- New option `--max-output-probe-tokens` (config `run.max_output_probe_tokens`,
+  default 2048): the probe requests min(declared max output, this), so a
+  higher value catches a relay that caps a long-output model at, say, 4K.
+- The capability score and the verdict of a clamping relay drop (#168): its
+  max-output check now fails instead of passing. The report schema is
+  unchanged.
+
+### Billing: prompt-token slope over three sizes, and the baseline's counts ([#252](https://github.com/mn567250/ekte/issues/252))
+
+The billing check sent one ~150-token prompt and flagged prompt tokens only
+above 2.5x the estimate, so usage inflated by 1.5x, 2.0x or 2.4x read
+"consistent" with a score of 100, and a fixed +300-token overhead read as HIGH
+"usage inflation". Part of the audit review ([#246](https://github.com/mn567250/ekte/issues/246)).
+
+- The probe is sent at three prompt sizes (about 150, 600 and 2,400 tokens;
+  new fixed paragraphs `billing.more_paragraphs` in `ekte/prompts/en.json`)
+  and the reported prompt tokens are fitted against the estimate. New check
+  `billing.prompt-slope`: a slope up to 1.35 passes, 1.35 to 1.6 is Warning ·
+  Medium (cap 70), above 1.6 Fail · High (cap 55).
+- A fixed overhead with a normal slope is no longer inflation. New check
+  `billing.fixed-overhead`: Info below 30 tokens, Warning · Low (cap 90) from
+  30 tokens, pointing to `injected_prompt`.
+- Compare mode: with a baseline of the same model on the same protocol the
+  same three prompts go to the baseline and `prompt_tokens` are compared
+  directly. New check `billing.prompt-vs-baseline`: more than 3% or 5 tokens
+  above the baseline is Fail · High (cap 55); it replaces the slope verdict.
+- A model counts as a reasoning model when the knowledge base says so or the
+  response reports reasoning tokens, so an unprofiled reasoning model no
+  longer gets a completion-inflation warning.
+- When only one of the three calls returns usable counts, the former
+  single-request check (`billing.usage-inflation`, 2.5x and 50 tokens) stands
+  in, with the note `billing.prompt-slope-unmeasured`.
+- The check now makes 3 requests (6 in compare mode); `--dry-run` counts them.
+  The evidence's `ratio_prompt` / `ratio_completion` (the Analytics billing
+  ratios) are now taken over the three requests, and `slope`, `intercept` and
+  the per-size counts are added.
+- Billing scores change: relays that over-report prompt tokens by 35% or more
+  now lose points, which can lower the Billing & usage dimension and the
+  verdict. The report schema is unchanged; score comparability across versions
+  is tracked in [#168](https://github.com/mn567250/ekte/issues/168).
+
+### Capability: probes the relay rejects count as undelivered ([#248](https://github.com/mn567250/ekte/issues/248))
+
+A relay that answered the tools, JSON-mode and strict-schema probes with HTTP
+400 for a model claiming all three scored 100 on the max-output check alone:
+every rejected probe was "no usable response" and not counted.
+
+- A 4xx (not 401, 403, 408 or 429) to a probe for a claimed feature is the new
+  outcome `rejected` of `capability.tools`, `capability.json_mode` and
+  `capability.json_schema`: Fail · Medium, 0 points, like `not_delivered`. Its
+  summary quotes the status code and the relay's error message.
+- It counts only when the relay answers the same request without the feature
+  parameter: one plain control request, sent only while no other probe has
+  come back. A relay that rejects that too stays `failed` (Inconclusive).
+- With a baseline on the same protocol, a probe the baseline rejects too is
+  `model_limit` (Info, not counted); a 4xx for a feature the profile does not
+  claim, or with no profile, is `rejected_unclaimed` (Info, not counted).
+- 5xx, timeouts, 401/403/408/429 and failures on ekte's side or the network
+  path stay `failed`, as before. The capability score of such a relay drops
+  from 100 to 25 (three zeros and the max-output pass); the verdict can change
+  with it ([#168](https://github.com/mn567250/ekte/issues/168)).
+
 ### Model identity: the echoed `model` field is compared through the knowledge base ([#250](https://github.com/mn567250/ekte/issues/250))
 
 The echoed `model` field was compared with the requested id by tier words and
@@ -81,6 +191,35 @@ an honest aggregator requested as `openai/gpt-4o` that echoed
 - The embedding and rerank identity checks (`embed.model_field`,
   `rerank.model_field`) use the same comparison and gain the same `unknown`
   outcome (Info, not scored).
+
+### Added
+
+- **Upgrade fixture for 0.35.0.** `tests/fixtures/upgrade/v0.35.0/` is a data
+  directory written by the released 0.35.0 from PyPI (history, monitors with
+  stored and unstored keys, your own knowledge-base entries); the upgrade tests
+  open it with the current code and check that nothing is lost.
+
+## [0.35.0] - 2026-11-16
+
+History and Analytics now show the same numbers, computed once on the server
+in SQLite: every request of a run has exactly one outcome, so the success,
+error and rate-limited rates add up to 100%, History reaches every saved run,
+and every widget answers in under 50 ms p95 on a 20,000-run history (#117).
+History, Analytics and Monitors share one filter panel, keep their filters in
+the URL and show new data without a reload (#150). A monitor can have a run
+window (#165), Analytics can forecast its trends (#148), and every result
+that could not judge says why (#204). The web UI was rebuilt on one page
+template, one set of design tokens and shared components, with a compact
+header on phones (#202–#233). Reports gain schema 1.3 and 1.4, evidence
+schema 1.1.
+
+**Upgrading.** The first start migrates `history.db` (to schema version 16)
+and the monitors database (to schema version 5), writes a backup first and
+says so on stderr; older runs are re-extracted once. Two groups of breaking
+changes affect the stored rates and the web UI's internal HTTP API:
+the rate definitions and several `/api/` endpoints and parameters (#117), and
+the History default period, day ranges, the shared `tz` and
+`GET /api/watches` (#150). See the *Breaking changes* lists below.
 
 ### Web UI: one page template ([#230](https://github.com/mn567250/ekte/issues/230))
 
@@ -780,6 +919,16 @@ how many saved runs it re-extracts.
   (recalibrated with 5 runs: slowest p95 77.5 ms, before 124.9 ms).
 
 ### Fixed
+
+- **The accessibility LLM review is current for the changed pages**
+  ([#265](https://github.com/mn567250/ekte/issues/265)). All 54 requests (6
+  pages × 8 languages, plus one translation comparison per page) were exported
+  again and answered by Claude Code subagents without an API call. The review
+  found nothing in any step. `a11y-llm-review.json` and the conformance report
+  (`bitv-report.json`) carry the new review, and exporting again changes no
+  request. The review also caught a German typo: the Monitors hint "… läuft sie
+  höchstens alle 5 Min.." ended in two full stops. It now reads "… läuft sie
+  alle 5 Min. höchstens einmal."
 
 - **A page notice's role follows its importance**
   ([#193](https://github.com/mn567250/ekte/issues/193)). `EkteNotice.show`

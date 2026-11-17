@@ -49,7 +49,7 @@ once per check, and reports list the subjects under their check.
 
 ### Dimension score and status
 
-ekte scores ten dimensions. A dimension's score is the **equal-weight mean of
+ekte scores eleven dimensions. A dimension's score is the **equal-weight mean of
 its detectors' scores**: a detector with many checks does not outweigh one with
 few, and a detector without a numeric score is left out. Its status is the
 worst status its detectors concluded, except that a HIGH/CRITICAL finding
@@ -74,13 +74,14 @@ C (≥ 70), D (≥ 60) or F.
 | Model identity | `model_identity` | 21 | core |
 | Context window | `context_window` | 19 | core |
 | Capability claims | `capability` | 13 | core |
-| Protocol compliance | `protocol` | 8 |  |
 | Billing & usage | `billing` | 8 | core |
 | Connectivity | `connectivity` | 7 |  |
+| Protocol compliance | `protocol` | 6 |  |
 | Streaming authenticity | `streaming` | 6 |  |
 | Concurrency reliability | `reliability` | 6 |  |
-| Transport security | `security` | 6 |  |
-| Performance | `performance` | 6 |  |
+| Response integrity | `integrity` | 6 |  |
+| Transport security | `security` | 4 |  |
+| Performance | `performance` | 4 |  |
 
 The verdict is judged on the dimensions that **ran** — a `custom` run checks
 only its selection. Two groups of dimensions matter:
@@ -102,8 +103,7 @@ The **transport advisories** are left out too (`ADVISORY_CHECKS` in
 `reliability.latency`): plain HTTP, failures or slowness under load say how the
 relay is reached, not which model it serves. They still lower their dimension's
 score and status, are listed after the substitution findings in the key
-findings and are noted in the summary as advisories when Medium or higher. Integrity tampering and an
-echoed API key still escalate.
+findings and are noted in the summary as advisories when Medium or higher. An echoed API key still escalates, and so do the findings of the response integrity dimension (tampering, an injected system prompt, a response cache): it is not a core dimension, so their severity alone sets the risk.
 
 | Risk | Label in the UI | When |
 |---|---|---|
@@ -138,10 +138,9 @@ result says that model identity was not verified.
 | Detector | Id | Dimension | From suite |
 |---|---|---|---|
 | Connectivity & basic completion | `connectivity` | Connectivity | `smoke` |
-| OpenAI-compatibility conformance | `protocol` | Protocol compliance | `standard` |
+| Wire-protocol conformance | `protocol` | Protocol compliance | `standard` |
 | Request attribute support | `protocol_request` | Protocol compliance | `standard` |
 | Response attribute availability | `protocol_response` | Protocol compliance | `standard` |
-| Determinism & cache-correctness | `determinism` | Protocol compliance | `deep` |
 | Real context window & truncation | `context_window` | Context window | `deep` |
 | Model identity & downgrade fingerprinting | `model_identity` | Model identity | `standard` |
 | LLM-judged quality / downgrade assessment | `quality_judge` | Model identity | `deep` (only with `--judge`) |
@@ -151,9 +150,10 @@ result says that model identity was not verified.
 | Token/usage billing audit | `billing` | Billing & usage | `standard` |
 | Concurrent reliability & latency | `reliability` | Concurrency reliability | `standard` |
 | Transport & secret-handling signals | `security` | Transport security | `smoke` |
-| Injected system-prompt detection | `injected_prompt` | Transport security | `deep` |
-| Response integrity / tampering | `integrity` | Transport security | `deep` |
-| Prompt prefix-cache (timing) | `prompt_cache` | Transport security | `deep` |
+| Determinism & cache-correctness | `determinism` | Response integrity | `deep` |
+| Injected system-prompt detection | `injected_prompt` | Response integrity | `deep` |
+| Response integrity / tampering | `integrity` | Response integrity | `deep` |
+| Prompt prefix-cache (timing) | `prompt_cache` | Response integrity | `deep` |
 | Performance probe | `performance` | Performance | `deep` (on `standard` only in compare mode, 5 requests) |
 
 - **smoke** runs connectivity and security; **standard** adds the protocol,
@@ -249,10 +249,9 @@ verdict.
 
 **Catches.** Relays whose middleware breaks the wire contract (dropped turns,
 ignored stop sequences, malformed errors, missing or zeroed response fields,
-stripped request parameters) and, via determinism, `cache.ignore-temperature`.
-It partly covers `capability.json-tool-fakery`.
+stripped request parameters). It partly covers `capability.json-tool-fakery`.
 
-### `protocol` — OpenAI-compatibility conformance
+### `protocol` — Wire-protocol conformance
 
 **How it works.** Three probes: a multi-turn conversation that must recall a
 color from an earlier turn; a `stop` sequence that must truncate the output; and
@@ -325,26 +324,6 @@ protocol rejects it too. Tools and JSON mode stay with `capability`, `stop` with
 |  | Rejected with a 4xx, while the baseline accepts it. | Fail · Medium | 15 pts |
 |  | Rejected, but the model itself does not support it; not counted. | Info | Not counted |
 |  | Server error or no response; not counted. | Inconclusive · Low | Not counted |
-
-### `determinism` — Determinism & cache-correctness
-
-**How it works.** Four identical creative prompts at `temperature=1.0` (no
-seed): a genuine model varies; byte-identical output across all samples points
-to a response cache that ignores sampling. At least three of the four samples
-must be usable (and all usable ones identical) for the caching call; with fewer
-the check is inconclusive. The verdict is suppressed for
-reasoning models, which legitimately ignore temperature. Two identical factual
-prompts at `temperature=0` are informational only.
-
-| Check | Outcome | Status | Effect |
-|---|---|---|---|
-| `determinism.temp1_variability` | Repeated samples at temperature=1.0 differed, as genuine sampling does. | Pass | 100 pts |
-|  | Samples were identical, but reasoning models legitimately ignore temperature. | Info | 100 pts |
-|  | All usable samples (at least 3) at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
-|  | Fewer than 3 usable samples at temperature=1.0 to judge by. | Inconclusive · Low | Not counted |
-| `determinism.temp0_stability` | Identical answers at temperature=0 (expected); informational, not scored. | Info | Not counted |
-|  | Answers differed at temperature=0; informational, not scored. | Info | Not counted |
-|  | No usable response to judge by. | Inconclusive · Low | Not counted |
 
 **Caveats.** Gateways may add provider-specific extra fields; only missing or
 invalid required fields are flagged. Anthropic↔OpenAI dialect translation
@@ -596,33 +575,58 @@ profile's capability flags:
 - **Strict schema:** a strict `json_schema`; conformance is verified when the
   model claims it and noted (informational) when it does not. Skipped without a
   profile.
-- **Max output:** a long generation capped at min(declared max output, 2048)
-  tokens; reaching the cap or a plausible length passes, stopping below a
-  quarter of it is flagged.
+- **Max output:** a long generation capped at min(declared max output,
+  `--max-output-probe-tokens`) tokens, 2048 by default. An answer cut off with
+  `finish_reason: length` reaches the cap only when at least 80 % of the
+  requested tokens came back: the reported completion tokens, else an estimate
+  from the text, with a reasoning model's reasoning tokens counted as delivered.
+  Cut off below that, the relay clamps the output, which fails. A plausible
+  length passes, stopping below a quarter of it is flagged. When the reported
+  completion tokens and the text estimate of a non-reasoning model are more
+  than 3x apart, the evidence notes it (billing judges the count).
 
 An observation without a claim to verify — no tool call or JSON object when the
 feature is not claimed, or any strict-schema result when the profile says the
 model lacks strict schemas — is noted but not counted, so a model is never
 marked down for what nobody claimed.
 
+A probe the relay answers with a 4xx (other than 401, 403, 408 and 429)
+although the profile claims the feature is a refused capability: it scores like
+an undelivered one, and its summary quotes the status code and error message. It
+counts only if the relay answers the same request without the feature parameter
+(one extra request, sent only while no other probe has come back) and a
+configured baseline on the same protocol does not reject the probe too;
+otherwise it is no usable response, or a limit of the model. A 4xx for a
+feature nobody claims is noted but not counted.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `capability.tools` | A tool call came back for an explicit tool-use request. | Pass | 100 pts |
 |  | Tool calling is claimed but no tool call came back. | Fail · Medium | 0 pts |
 |  | No tool call came back, and tool calling is not claimed. | Info | Not counted |
+|  | Tool calling is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.tools.encoding` | Tool arguments arrived as an object, not the JSON string OpenAI returns. | Warning · Low | Not counted |
 | `capability.json_mode` | JSON mode returned a parseable object with the requested value. | Pass | 100 pts |
 |  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | Not counted |
 |  | No parseable JSON object came back; JSON mode is not claimed. | Info | Not counted |
 |  | JSON mode is claimed but no valid object with the value came back. | Fail · Medium | 0 pts |
+|  | JSON mode is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.json_schema` | The strict schema is claimed and the response conformed. | Pass | 100 pts |
 |  | The strict schema was not enforced, consistent with the claim. | Info | Not counted |
 |  | The response conformed although the claimed model lacks strict schemas. | Info | Not counted |
 |  | The strict schema is claimed but the response did not conform. | Warning · Low | 40 pts |
+|  | The strict schema is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
+|  | The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens. | Fail · Medium | 0 pts |
 |  | Output stopped before the cap at a plausible length. | Pass | 90 pts |
 |  | Output stopped below a quarter of the requested length. | Warning · Low | 70 pts |
 |  | Output stopped below a quarter of the request despite a large claimed maximum. | Warning · Low | 60 pts |
@@ -694,22 +698,44 @@ known-streaming baseline.
 tokens), `billing.missing-usage` (no, partial or inconsistent `usage`) and, as
 a corroborating signal, `prompt.injected-system-prompt`.
 
-**How it works.** One deterministic call (a known paragraph to summarize,
-`temperature=0`). The prompt and the visible answer are counted independently
-with a language-aware heuristic (about ±25%), for every model family: ekte uses
-no tokenizer library and downloads none. Reported prompt tokens above 2.5× the
-estimate and more than 50 tokens over it count as inflation. Completion tokens
-of a reasoning model legitimately include hidden reasoning tokens and are not
-flagged; otherwise completion tokens above 3× the estimate and more than 80
-tokens over it are a soft warning, never a failure, because the estimate of a
-short answer is noisy. `total` must equal `prompt + completion` (±2), and a
-total without the split is flagged. An undercount (below half the estimate) is
-informational (not buyer-harmful).
+**How it works.** Three deterministic calls: the same summarization task at
+three prompt sizes (about 150, 600 and 2,400 tokens of fixed paragraphs,
+`temperature=0`). The prompts and the visible answers are counted
+independently with a language-aware heuristic (about ±25%; it under-counts real
+tokenizers by 12 to 15%), for every model family: ekte uses no tokenizer library
+and downloads none. The reported prompt tokens are fitted against the estimate:
+the slope is the proportional factor, the intercept a fixed overhead. A slope up
+to 1.35 passes (the heuristic's under-count plus a dense tokenizer), 1.35 to 1.6
+is a warning and above 1.6 a failure. A fixed overhead with a normal slope is
+not inflation: below 30 tokens it is informational, from 30 tokens a low warning
+that points to `injected_prompt`. In compare mode, with a baseline of the same
+model on the same protocol, the same three prompts go to the baseline and
+`prompt_tokens` are compared directly: more than 3% or 5 tokens above the
+baseline (whichever is larger) is a failure, and this replaces the slope
+verdict. If only one of the three calls returns usable counts, the
+single-request check stands in, with a note that the slope could not be
+measured: prompt tokens above 2.5× the estimate and more than 50 tokens over it
+count as inflation. Completion tokens of a reasoning model (per the knowledge
+base, or because the response reports reasoning tokens) legitimately include
+hidden reasoning tokens and are not flagged; otherwise completion tokens above
+3× the estimate and more than 80 tokens per answer over it are a soft warning,
+never a failure, because the estimate of a short answer is noisy. `total` must
+equal `prompt + completion` (±2), and a total without the split is flagged. An
+undercount (below half the estimate) is informational (not buyer-harmful).
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `billing.request-failed` | No usable response to judge by. | Inconclusive · Low | No deduction |
 | `billing.missing-usage` | The response carried no token usage at all. | Warning · Medium | cap 75 |
+| `billing.prompt-vs-baseline` | Reported prompt tokens match the baseline's for the same prompts. | Pass | No deduction |
+| `billing.prompt-vs-baseline` | Reported prompt tokens exceed the baseline's for the same prompts. | Fail · High | cap 55 |
+| `billing.prompt-vs-baseline` | Reported prompt tokens are below the baseline's (not buyer-harmful). | Info | No deduction |
+| `billing.prompt-slope` | Reported prompt tokens grow in proportion to the estimate (slope up to 1.35). | Pass | No deduction |
+| `billing.prompt-slope` | Reported prompt tokens grow 1.35 to 1.6 times as fast as the estimate. | Warning · Medium | cap 70 |
+| `billing.prompt-slope` | Reported prompt tokens grow more than 1.6 times as fast as the estimate. | Fail · High | cap 55 |
+| `billing.prompt-slope` | Only one prompt size returned usable counts; the slope could not be measured. | Info | No deduction |
+| `billing.fixed-overhead` | A small fixed prompt-token overhead (under 30 tokens), as chat templates add. | Info | No deduction |
+| `billing.fixed-overhead` | A fixed prompt-token overhead of 30 tokens or more on every request. | Warning · Low | cap 90 |
 | `billing.usage-inflation` | Reported prompt tokens far exceed the independent estimate. | Fail · High | cap 55 |
 | `billing.usage-inflation-completion` | Reported completion tokens are far above a heuristic estimate. | Warning · Medium | cap 70 |
 | `billing.reasoning-tokens` | Completion tokens exceed the visible text, as expected for a reasoning model. | Info | No deduction |
@@ -724,8 +750,9 @@ A failed probe request leaves the detector unscored.
 **Caveats.** Chat templates and special tokens add a small fixed offset, so an
 exact match is not expected. If the served model differs from the claimed one,
 the "right" tokenizer is unknown. Hidden reasoning tokens cannot be counted
-from outside. One probe measures one size; a size-scaling multiplier needs
-repeated runs or compare mode.
+from outside. Three sizes up to about 2,400 tokens separate a proportional
+factor from a fixed overhead; a multiplier that only sets in on much larger
+prompts stays unseen.
 
 ---
 
@@ -766,35 +793,9 @@ idle, leaked upstream request ids) are on the roadmap.
 
 ---
 
-## `security` — Transport security
+## `integrity` — Response integrity
 
-**Catches.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-evidence toward `privacy.prompt-logging-leakage` (prefix caching), and basic
-transport and secret hygiene.
-
-### `security` — Transport & secret-handling signals
-
-**How it works.** Checks that the endpoint uses HTTPS, that the API key never
-appears verbatim in a response, and which response headers reveal an upstream or
-proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`, `x-litellm-*`, …;
-informational). It also states the limit: prompt logging and shared upstream
-keys are not provable from outside. Plain HTTP to this machine or a private
-network (`localhost`, `127.x`, `192.168.x`, `*.local`, … — a self-hosted model)
-is only a Warning without a cap, since the key does not cross the internet;
-plain HTTP to any other host stays Fail · High. Either way `security.tls` is a
-transport advisory and never raises the risk verdict.
-
-| Check | Outcome | Status | Effect |
-|---|---|---|---|
-| `security.tls` | The endpoint uses HTTPS. | Pass | No deduction |
-|  | The endpoint is not HTTPS; the API key travels in clear text. | Fail · High | cap 40 |
-|  | Plain HTTP to a local or private-network host; the API key does not cross the internet. | Warning · Low | No deduction |
-| `security.key_echo` | The API key does not appear in the response. | Pass | No deduction |
-|  | The API key appears verbatim in the response. | Fail · High | cap 30 |
-| `security.headers` | No response header reveals the upstream (informational). | Pass | No deduction |
-|  | Response headers reveal the upstream or proxy (informational). | Info · Low | No deduction |
-|  | No response headers to inspect. | Inconclusive | No deduction |
-| `security.note` | Prompt logging and shared upstream keys are not provable from outside. | Info | No deduction |
+**Catches.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` and evidence toward `privacy.prompt-logging-leakage` (prefix caching): whether the response is the model's own, unaltered and freshly generated. On the embedding and rerank surfaces the dimension holds the determinism check. It is not a core dimension: its findings set the risk through their severity alone.
 
 ### `injected_prompt` — Injected system-prompt detection
 
@@ -833,6 +834,26 @@ An answer cut off at the output limit is inconclusive, not a substitution.
 |  | A canary value was substituted while the trusted baseline kept it intact. | Fail · Critical | 10 pts |
 |  | No canary was echoed verbatim, so tampering could not be assessed. | Inconclusive | Not counted |
 
+### `determinism` — Determinism & cache-correctness
+
+**How it works.** Four identical creative prompts at `temperature=1.0` (no
+seed): a genuine model varies; byte-identical output across all samples points
+to a response cache that ignores sampling. At least three of the four samples
+must be usable (and all usable ones identical) for the caching call; with fewer
+the check is inconclusive. The verdict is suppressed for
+reasoning models, which legitimately ignore temperature. Two identical factual
+prompts at `temperature=0` are informational only.
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `determinism.temp1_variability` | Repeated samples at temperature=1.0 differed, as genuine sampling does. | Pass | 100 pts |
+|  | Samples were identical, but reasoning models legitimately ignore temperature. | Info | 100 pts |
+|  | All usable samples (at least 3) at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
+|  | Fewer than 3 usable samples at temperature=1.0 to judge by. | Inconclusive · Low | Not counted |
+| `determinism.temp0_stability` | Identical answers at temperature=0 (expected); informational, not scored. | Info | Not counted |
+|  | Answers differed at temperature=0; informational, not scored. | Info | Not counted |
+|  | No usable response to judge by. | Inconclusive · Low | Not counted |
+
 ### `prompt_cache` — Prompt prefix-cache (timing)
 
 **How it works.** A unique ~1,200-token prefix is streamed twice (cold, then
@@ -854,6 +875,36 @@ after a warm-up) can evade a finite set of probes. Black-box logging is
 **unprovable** from the client, and ekte cannot show *cross-user* cache sharing
 from one key: the absence of a timing signal does not prove prompts are not
 logged.
+
+---
+
+## `security` — Transport security
+
+**Catches.** Basic transport and secret hygiene: plain HTTP, an API key echoed in a response and response headers that reveal the upstream.
+
+### `security` — Transport & secret-handling signals
+
+**How it works.** Checks that the endpoint uses HTTPS, that the API key never
+appears verbatim in a response, and which response headers reveal an upstream or
+proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`, `x-litellm-*`, …;
+informational). It also states the limit: prompt logging and shared upstream
+keys are not provable from outside. Plain HTTP to this machine or a private
+network (`localhost`, `127.x`, `192.168.x`, `*.local`, … — a self-hosted model)
+is only a Warning without a cap, since the key does not cross the internet;
+plain HTTP to any other host stays Fail · High. Either way `security.tls` is a
+transport advisory and never raises the risk verdict.
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `security.tls` | The endpoint uses HTTPS. | Pass | No deduction |
+|  | The endpoint is not HTTPS; the API key travels in clear text. | Fail · High | cap 40 |
+|  | Plain HTTP to a local or private-network host; the API key does not cross the internet. | Warning · Low | No deduction |
+| `security.key_echo` | The API key does not appear in the response. | Pass | No deduction |
+|  | The API key appears verbatim in the response. | Fail · High | cap 30 |
+| `security.headers` | No response header reveals the upstream (informational). | Pass | No deduction |
+|  | Response headers reveal the upstream or proxy (informational). | Info · Low | No deduction |
+|  | No response headers to inspect. | Inconclusive | No deduction |
+| `security.note` | Prompt logging and shared upstream keys are not provable from outside. | Info | No deduction |
 
 ---
 
@@ -951,7 +1002,7 @@ detectors; the suite still sets the depth. An embedding audit sends only
 | Vector dimension | `embed.dimension` | Model identity | returned length vs the claimed model's native dimension (KB, or `claimed_dimensions`) |
 | Echoed model | `embed.model_field` | Model identity | the response's `model` field names the claimed model |
 | Vector drift | `embed.drift` | Model identity | the pinned probe input's vector vs the previous saved run |
-| Determinism | `embed.determinism` | Concurrency reliability | the same input twice gives cosine ≥ 0.9999 |
+| Determinism | `embed.determinism` | Response integrity | the same input twice gives cosine ≥ 0.9999 |
 | Distinctness | `embed.distinctness` | Capability claims | unrelated inputs give cosine below 0.98 |
 | Performance probe | `performance.embed` | Performance | latency, cold start, throughput, batch scaling |
 
@@ -994,7 +1045,7 @@ serialized (linear, WARN LOW).
 
 A rerank audit (`surface` `rerank`) sends only `POST /rerank` requests and is
 scored on the shared 0–100 scale and A–F grade with its own weights: model
-identity 30, capability claims 30, performance 20, concurrency reliability 10,
+identity 30, capability claims 30, performance 20, response integrity 10,
 connectivity 10. A failed known-answer ranking (capability claims, HIGH) or a
 swapped model (model identity, HIGH) makes the risk HIGH.
 
@@ -1004,7 +1055,7 @@ swapped model (model identity, HIGH) makes the risk HIGH.
 | Known answer | `rerank.known_answer` | Capability claims | a probe with one obviously relevant document ranks it first |
 | Echoed model | `rerank.identity` | Model identity | the response's `model` field names the claimed model |
 | Ranking drift | `rerank.drift` | Model identity | the pinned probe's ranking and scores vs the previous saved run |
-| Determinism | `rerank.determinism` | Concurrency reliability | the same query twice gives the same ranking and scores |
+| Determinism | `rerank.determinism` | Response integrity | the same query twice gives the same ranking and scores |
 | Performance probe | `performance.rerank` | Performance | latency, cold start, documents/s, document-count scaling |
 
 **Ranking drift.** Every run stores the ranking and the rounded scores of one
@@ -1036,7 +1087,7 @@ The 16 relay tricks from the research map onto ekte as follows.
 | 5 | `context.window-truncation` | high | `context_window` | edge-needle ladder + binary search; measured vs declared |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | depths 0.1/0.5/0.9 at a mid size |
 | 7 | `stream.fake-streaming` | medium | `streaming` | chunk count, first-token timing, gap uniformity |
-| 8 | `billing.usage-inflation` | high | `billing` | independent heuristic token estimate of one known probe |
+| 8 | `billing.usage-inflation` | high | `billing` | slope of reported prompt tokens over three prompt sizes against a heuristic estimate; the baseline's exact counts in compare mode |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | usage presence, split and arithmetic; stream usage chunk |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | prefix caching by TTFT (informational); cross-user sharing and logging stay unprovable from one key |
 | 11 | `infra.shared-upstream-key` | high | — | roadmap (quota decreasing while idle, leaked upstream request ids) |

@@ -301,7 +301,7 @@
             - term: Versjon
             - definition:
               - code: ekte v<version>
-            - heading "Kontroller per dimensjon 1 av 10 dimensjoner kjørt" [level=3]
+            - heading "Kontroller per dimensjon 1 av 11 dimensjoner kjørt" [level=3]
             - button "Protokollsamsvar"
             - text: Følger API-et spesifikasjonen?
             - meter "Protokollsamsvar Følger API-et spesifikasjonen?"
@@ -319,6 +319,8 @@
             - text: Er tokenforbruket blåst opp? Ikke kjørt
             - button "Pålitelighet ved samtidighet"
             - text: Stabil under last? Ikke kjørt
+            - button "Svarintegritet"
+            - text: Er svaret uendret? Ikke kjørt
             - button "Transportsikkerhet"
             - text: Håndteres nøkler trygt? Ikke kjørt
             - button "Ytelse"

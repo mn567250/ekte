@@ -140,12 +140,12 @@ def test_every_dimension_is_listed_even_if_not_run():
     md = render_markdown(_report())
     details = md[md.index("## Dimension details"):md.index("## Findings")]
     for dim in ("connectivity", "protocol", "context_window", "model_identity", "capability",
-                "streaming", "billing", "reliability", "security", "performance"):
+                "streaming", "billing", "reliability", "integrity", "security", "performance"):
         assert f"### ➖ {dim} — — (not_run)" in details, dim
         assert f"| {dim} | — |" in md, dim
     assert "- Not recorded in this report." in details
     page = render_html(_report())
-    assert page.count('<details class="dim">') == 10
+    assert page.count('<details class="dim">') == 11
 
 
 def test_exports_draw_the_running_median_and_its_band():

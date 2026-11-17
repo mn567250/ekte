@@ -301,7 +301,7 @@
             - term: Version
             - definition:
               - code: ekte v<version>
-            - heading "Per-dimension checks 1 of 10 dimensions run" [level=3]
+            - heading "Per-dimension checks 1 of 11 dimensions run" [level=3]
             - button "Protocol compliance"
             - text: Is the API spec-compliant?
             - meter "Protocol compliance Is the API spec-compliant?"
@@ -319,6 +319,8 @@
             - text: Is token usage inflated? Not run
             - button "Concurrency reliability"
             - text: Stable under load? Not run
+            - button "Response integrity"
+            - text: Is the response unaltered? Not run
             - button "Transport security"
             - text: Are keys handled safely? Not run
             - button "Performance"
