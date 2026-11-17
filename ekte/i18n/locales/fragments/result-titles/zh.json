@@ -34,6 +34,7 @@
     "Context window verified up to the probe cap": "上下文窗口已在探测上限内验证",
     "Context-window probe answered with an error": "上下文窗口探测收到错误响应",
     "Context-window probe could not run": "上下文窗口探测无法运行",
+    "Context-window probe overshot its token budget": "上下文窗口探测超出了 token 预算",
     "Context-window probe timed out": "上下文窗口探测超时",
     "Could not assess temperature=0 stability": "无法评估 temperature=0 下的稳定性",
     "Could not assess temperature=1.0 variability": "无法评估 temperature=1.0 下的变异性",

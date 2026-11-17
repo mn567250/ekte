@@ -34,6 +34,7 @@
   "Context window verified up to the probe cap": "Janela de contexto verificada até ao limite da sonda",
   "Context-window probe answered with an error": "A sonda da janela de contexto recebeu um erro",
   "Context-window probe could not run": "Não foi possível executar a sonda de janela de contexto",
+  "Context-window probe overshot its token budget": "A sonda da janela de contexto excedeu o seu orçamento de tokens",
   "Context-window probe timed out": "A sonda da janela de contexto esgotou o tempo limite",
   "Could not assess temperature=0 stability": "Não foi possível avaliar a estabilidade com temperature=0",
   "Could not assess temperature=1.0 variability": "Não foi possível avaliar a variabilidade com temperature=1.0",

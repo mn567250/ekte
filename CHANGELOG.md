@@ -43,6 +43,38 @@ became `suspected` (Warning · Medium).
   instructions is no longer marked down; with a fixed overhead an honest
   denial now gives `overhead` (Warning · Low, 75) instead of `suspected`.
 
+### Context window: one reference for the verdict and the deduction, and probe overshoot ([#261](https://github.com/mn567250/ekte/issues/261))
+
+The context-window verdict was judged against the probed window (`measured /
+upper < 0.5` was truncation) but deducted against the top rung (90% of it), so
+a window recalled at exactly half the top rung (0.45 of the window, both
+refines failed) read Fail · High "far below the declared one" with a deduction
+of 50, the Warning row's maximum. And a tokenizer that counts the filler more
+densely than the fixed 1.2 correction allows could push the top rung past a
+genuine window and draw a Medium "short" verdict against an honest endpoint.
+Part of the audit review ([#246](https://github.com/mn567250/ekte/issues/246)).
+This changes verdicts and scores ([#168](https://github.com/mn567250/ekte/issues/168)).
+
+- The verdict and the deduction share one reference, the top rung: below half
+  of it is `truncated` (Fail · High), from half of it up `short` (Warning ·
+  Medium, at most −50). A window at half the top rung is now Warning (−50),
+  at a quarter Fail (−75). The scale labels say "of the top rung" instead of
+  "50-90% of the probed window".
+- The verdict's evidence `ratio` (measured / probed window) is replaced by
+  `top_rung_share` (measured / top rung); the translated summaries name it
+  with the top rung's size.
+- New outcome `overshot` (Info, no deduction) of `context_window.window`
+  (finding `context_window.overshot`): when the ascending ladder failed first
+  at the top rung and the endpoint reported more than 5% more
+  `usage.prompt_tokens` for the largest recalled size than its budget, the
+  window above is reported as not exercised instead of `short`, and a
+  rejection in that range is no longer read as "rejected below the claim".
+- Every ladder row records the endpoint's reported `prompt_tokens`; the
+  detector evidence records the token factor used (`real_per_heuristic`).
+- `ekte/utils/tokenize.py` has a table of per-tokenizer filler factors
+  (`FILLER_REAL_PER_HEURISTIC`) that the haystack size uses; it is empty until
+  the factors are measured offline, so every family keeps 1.2.
+
 ### Model identity: knowledge-cutoff probe, baseline fingerprints and honest vendor-only wording ([#251](https://github.com/mn567250/ekte/issues/251))
 
 A same-vendor downgrade (`gpt-4o` served by `gpt-4o-mini`) passed every brand

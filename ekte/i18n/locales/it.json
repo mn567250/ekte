@@ -315,10 +315,11 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Aumenta --timeout / --max-request-time, o riduci --max-context-tokens, per misurare la finestra completa.",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Controlla l'errore (ad es. un parametro di richiesta che questo endpoint rifiuta) e riesegui per misurare la finestra.",
   "Raise --max-context-tokens to exercise the full declared window.": "Aumenta --max-context-tokens per provare l'intera finestra dichiarata.",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "Considera non verificata la finestra oltre il prompt più grande richiamato; un fattore di token misurato per questa famiglia di tokenizer permetterebbe alla sonda di raggiungerla.",
   "Compare against a trusted baseline to confirm.": "Confronta con un riferimento affidabile per conferma.",
   "The relay likely truncates or summarizes long prompts.": "L'intermediario probabilmente tronca o riassume i prompt lunghi.",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Finestra reale ~{effective_window} << {declared} dichiarati (rapporto {ratio}, sospetto troncamento silenzioso). L'inizio di un prompt di ~{front_truncated_at} token è stato scartato mentre la fine veniva ancora ricordata (troncamento in testa).",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Finestra reale ~{effective_window} inferiore ai {declared} dichiarati (rapporto {ratio}, il ricordo peggiora prima del limite). L'inizio di un prompt di ~{front_truncated_at} token è stato scartato mentre la fine veniva ancora ricordata (troncamento in testa).",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Finestra reale ~{effective_window} << {declared} dichiarati (quota {top_rung_share} del gradino più alto di {top_rung} token, sospetto troncamento silenzioso). L'inizio di un prompt di ~{front_truncated_at} token è stato scartato mentre la fine veniva ancora ricordata (troncamento in testa).",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Finestra reale ~{effective_window} inferiore ai {declared} dichiarati (quota {top_rung_share} del gradino più alto di {top_rung} token, il ricordo peggiora prima del limite). L'inizio di un prompt di ~{front_truncated_at} token è stato scartato mentre la fine veniva ancora ricordata (troncamento in testa).",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Nemmeno un prompt di ~{smallest_probed} token viene ricordato; la finestra utile è molto inferiore ai {declared} dichiarati. L'inizio di un prompt di ~{front_truncated_at} token è stato scartato mentre la fine veniva ancora ricordata (troncamento in testa).",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Nessuna finestra dichiarata da confrontare; finestra effettiva misurata ~{effective_window} token. L'inizio di un prompt di ~{front_truncated_at} token è stato scartato mentre la fine veniva ancora ricordata (troncamento in testa).",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "Il server scarta silenziosamente l'inizio dei prompt lunghi; aumenta la sua impostazione di lunghezza del contesto o considera la finestra dichiarata come non verificata.",
@@ -568,15 +569,15 @@
   ],
   "context_window.truncation": [
    "Finestra di contesto reale molto inferiore a quella dichiarata",
-   "Finestra di contesto reale ~{effective_window} << finestra sondata di {upper} token (dichiarata {declared}; rapporto {ratio}, sospetto troncamento silenzioso)."
+   "Finestra di contesto reale ~{effective_window} << finestra sondata di {upper} token (dichiarata {declared}; quota {top_rung_share} del gradino più alto di {top_rung} token, sospetto troncamento silenzioso)."
   ],
   "context_window.short": [
    "Finestra di contesto reale inferiore a quella dichiarata",
-   "Finestra di contesto reale ~{effective_window} sotto la finestra sondata di {upper} token (dichiarata {declared}; rapporto {ratio}, il richiamo peggiora prima del limite)."
+   "Finestra di contesto reale ~{effective_window} sotto la finestra sondata di {upper} token (dichiarata {declared}; quota {top_rung_share} del gradino più alto di {top_rung} token, il richiamo peggiora prima del limite)."
   ],
   "context_window.consistent": [
    "Finestra di contesto misurata coerente con quella dichiarata",
-   "L'ago viene ancora ricordato a ~{effective_window} token, vicino ai {declared} dichiarati (rapporto {ratio})."
+   "L'ago viene ancora ricordato a ~{effective_window} token, vicino ai {declared} dichiarati (quota {top_rung_share} del gradino più alto di {top_rung} token)."
   ],
   "context_window.measured": [
    "Finestra di contesto effettiva misurata",
@@ -585,6 +586,10 @@
   "context_window.verified_to_cap": [
    "Finestra di contesto verificata fino al limite della sonda",
    "L'ago viene richiamato a ~{effective_window} token, il gradino più alto sotto il limite di sonda di {probe_cap} token; la finestra dichiarata di {declared} token oltre non è stata provata."
+  ],
+  "context_window.overshot": [
+   "La sonda della finestra di contesto ha sforato il suo budget di token",
+   "L'endpoint ha contato il prompt di ~{effective_window} token come {reported_prompt_tokens} token di prompt ({overshoot} volte il suo budget) e solo il gradino più alto di {top_rung} token è fallito: la sonda ha sforato, quindi la finestra oltre ~{reported_prompt_tokens} token non è stata provata (non è prova di una finestra inferiore ai {declared} dichiarati)."
   ],
   "context_window.probe_error": [
    "La sonda della finestra di contesto ha ricevuto un errore",
