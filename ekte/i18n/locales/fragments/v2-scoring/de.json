@@ -103,8 +103,9 @@
   "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "Die Ausgabe wurde mit finish_reason length weit unter der angefragten Grenze abgeschnitten: Das Relay begrenzt die Ausgabe-Tokens.",
   "Recall held at the top rung (90% of the probed window): no deduction.": "Erinnerung hielt auf der obersten Stufe (90 % des geprüften Fensters): kein Abzug.",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "Erinnerung bis zur Probe-Obergrenze bestätigt; das angegebene Fenster darüber wurde nicht geprüft.",
-  "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "Erinnerung hielt bis 50–90 % des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab.",
-  "Recall failed below half of the probed window; deducts the share of the top rung that did not recall.": "Erinnerung versagte unterhalb der Hälfte des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab.",
+  "Recall held at half of the top rung or above, but not at the top rung; deducts the share of the top rung that did not recall.": "Erinnerung hielt ab der Hälfte der obersten Stufe, aber nicht auf ihr; zieht den nicht erinnerten Anteil der obersten Stufe ab.",
+  "Recall failed below half of the top rung; deducts the share of the top rung that did not recall.": "Erinnerung versagte unterhalb der Hälfte der obersten Stufe; zieht den nicht erinnerten Anteil der obersten Stufe ab.",
+  "Only the top rung failed and the endpoint counted the largest recalled prompt more than 5% above its budget: the probe overshot, the window above it was not exercised.": "Nur die oberste Stufe versagte, und der Endpunkt zählte den größten erinnerten Prompt mehr als 5 % über seinem Budget: Die Probe hat überschossen, das Fenster darüber wurde nicht geprüft.",
   "Not even the smallest probe size recalled the needle.": "Nicht einmal die kleinste Probengröße erinnerte die Nadel.",
   "The start and end were recalled but the middle was not, twice.": "Anfang und Ende wurden erinnert, die Mitte zweimal nicht.",
   "A prompt well below the declared window was rejected as too long.": "Ein Prompt weit unter dem angegebenen Fenster wurde als zu lang abgelehnt.",
@@ -114,7 +115,7 @@
   "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.": "Eine Probe wurde vor der obersten Stufe mit einem Fehler beantwortet (abgelehnter Parameter, HTTP- oder Serverfehler): kein Beleg für Kürzung.",
   "Effective context window": "Effektives Kontextfenster",
   "Input-token overhead is small and no hidden instructions leaked.": "Der Input-Token-Overhead ist klein und keine versteckten Anweisungen wurden preisgegeben.",
-  "Instruction-like text leaked when asked (weak on its own).": "Auf Nachfrage kam anweisungsartiger Text zurück (allein schwach).",
+  "Instruction-like text leaked when asked (not counted: models confabulate).": "Auf Nachfrage kam anweisungsartiger Text zurück (nicht gewertet: Modelle erfinden so etwas).",
   "A large fixed input-token overhead, constant across message sizes.": "Ein großer fester Input-Token-Overhead, gleich über alle Nachrichtengrößen.",
   "A fixed input-token overhead and a leaked preamble together.": "Ein fester Input-Token-Overhead und ein preisgegebener Vorspann zusammen.",
   "No usable prompt token counts to measure the overhead.": "Keine verwertbaren Prompt-Token-Zahlen, um den Overhead zu messen.",
@@ -165,6 +166,15 @@
   "Vision is claimed but the model did not name the image's color.": "Vision wird angegeben, aber das Modell nannte die Farbe des Bildes nicht.",
   "Vision is not claimed, so no image was sent.": "Vision wird nicht angegeben, daher wurde kein Bild gesendet.",
   "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.": "Mittelwert {mean}, begrenzt auf {cap}, die Bewertung von {det}, durch dessen Befunde mit hohem oder kritischem Schweregrad: {list}. Eine Dimension wird nicht höher bewertet als ihr niedrigster Detektor mit einem solchen Befund.",
-  "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.": "Score auf {cap} begrenzt, weil die Risikostufe „{risk}“ lautet (gewichteter Mittelwert der Dimensionen: {mean}). Befunde, die das Risiko bestimmen: {list}."
+  "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.": "Score auf {cap} begrenzt, weil die Risikostufe „{risk}“ lautet (gewichteter Mittelwert der Dimensionen: {mean}). Befunde, die das Risiko bestimmen: {list}.",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "Die Antwort wich vom nativen Verhalten ab, die der Referenz entsprach ihm: zieht den Gewichtsanteil der Probe an 100 Punkten ab.",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "Die Antwort wich ab, die der Referenz aber auch: ein Problem der Wissensbasis, kein Beleg gegen das Relay; kein Abzug.",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "Der angegebene Wissensstichtag liegt höchstens 6 Monate neben dem des angegebenen Modells.",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "Der angegebene Wissensstichtag liegt mehr als 12 Monate vor dem des angegebenen Modells: zieht wie ein Fingerprint seinen Gewichtsanteil an 100 Punkten ab.",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "Der angegebene Wissensstichtag liegt mehr als 12 Monate früher, der der Referenz stimmt: zieht seinen Gewichtsanteil an 100 Punkten ab.",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "Der angegebene Wissensstichtag liegt mehr als 12 Monate früher, der der Referenz aber auch: ein Problem der Wissensbasis, kein Beleg gegen das Relay; kein Abzug.",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "Der angegebene Wissensstichtag weicht um mehr als 6 Monate ab, liegt aber nicht mehr als 12 Monate früher: festgehalten, nicht beurteilt.",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "Keine Antwort im Format CUTOFF=YYYY-MM zum Beurteilen.",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "Keine Prüfung konnte das angegebene Modell von anderen Modellen seines Anbieters unterscheiden, und weder Referenz noch Richter wurden genutzt: der Anbieter stimmt, das konkrete Modell wurde nicht geprüft."
  }
 }

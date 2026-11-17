@@ -49,6 +49,100 @@ verdict: a tampering relay scored 98.2 and rated **A** with risk `high`, and
   than those of older runs; reports written before keep their recorded
   scores.
 
+### Injected prompt: an honest "there are no instructions" is no leak ([#258](https://github.com/mn567250/ekte/issues/258))
+
+The leak probe of `injected_prompt` counted any answer over 60 characters that
+contained "system", "instruction", "do not" and the like as a leaked system
+prompt. "There are no system or developer instructions before this message, so
+I have nothing to repeat." was a leak, cost 15 points alone, and with a 40-token
+template overhead (a default system prompt in an open model's chat template)
+became `suspected` (Warning · Medium).
+
+- The answer is classified: **none** (`NONE`, or a denial of system, developer
+  or prior instructions in the first two sentences), **leak** (a quoted or
+  block-quoted passage, or at least two second-person imperative sentences
+  such as "You are …", "Always …", "Do not …" outside a denial) or **unclear**
+  (anything else, such as a refusal, which counts as no leak).
+- The evidence records `leak_answer_kind` and the first 300 characters of the
+  answer (`leak_answer`).
+- The `leak` outcome alone is now Info and not counted (was Info · Low,
+  85 points): models confabulate system prompts. `overhead` and `suspected`
+  and the overhead thresholds are unchanged.
+- Verdict change (see #168): a relay whose model only talks about its
+  instructions is no longer marked down; with a fixed overhead an honest
+  denial now gives `overhead` (Warning · Low, 75) instead of `suspected`.
+
+### Context window: one reference for the verdict and the deduction, and probe overshoot ([#261](https://github.com/mn567250/ekte/issues/261))
+
+The context-window verdict was judged against the probed window (`measured /
+upper < 0.5` was truncation) but deducted against the top rung (90% of it), so
+a window recalled at exactly half the top rung (0.45 of the window, both
+refines failed) read Fail · High "far below the declared one" with a deduction
+of 50, the Warning row's maximum. And a tokenizer that counts the filler more
+densely than the fixed 1.2 correction allows could push the top rung past a
+genuine window and draw a Medium "short" verdict against an honest endpoint.
+Part of the audit review ([#246](https://github.com/mn567250/ekte/issues/246)).
+This changes verdicts and scores ([#168](https://github.com/mn567250/ekte/issues/168)).
+
+- The verdict and the deduction share one reference, the top rung: below half
+  of it is `truncated` (Fail · High), from half of it up `short` (Warning ·
+  Medium, at most −50). A window at half the top rung is now Warning (−50),
+  at a quarter Fail (−75). The scale labels say "of the top rung" instead of
+  "50-90% of the probed window".
+- The verdict's evidence `ratio` (measured / probed window) is replaced by
+  `top_rung_share` (measured / top rung); the translated summaries name it
+  with the top rung's size.
+- New outcome `overshot` (Info, no deduction) of `context_window.window`
+  (finding `context_window.overshot`): when the ascending ladder failed first
+  at the top rung and the endpoint reported more than 5% more
+  `usage.prompt_tokens` for the largest recalled size than its budget, the
+  window above is reported as not exercised instead of `short`, and a
+  rejection in that range is no longer read as "rejected below the claim".
+- Every ladder row records the endpoint's reported `prompt_tokens`; the
+  detector evidence records the token factor used (`real_per_heuristic`).
+- `ekte/utils/tokenize.py` has a table of per-tokenizer filler factors
+  (`FILLER_REAL_PER_HEURISTIC`) that the haystack size uses; it is empty until
+  the factors are measured offline, so every family keeps 1.2.
+
+### Model identity: knowledge-cutoff probe, baseline fingerprints and honest vendor-only wording ([#251](https://github.com/mn567250/ekte/issues/251))
+
+A same-vendor downgrade (`gpt-4o` served by `gpt-4o-mini`) passed every brand
+check: 186 of 195 packaged chat profiles have no fingerprint of their own, the
+profiles' `knowledge_cutoff` was never compared with an answer, and compare
+mode sent only the self-identification to the baseline.
+
+- New check `model_identity.cutoff`: for every profile whose
+  `knowledge_cutoff` names a month, the model is asked for its cutoff as
+  `CUTOFF=YYYY-MM` (prompt `model_identity.cutoff` in `ekte/prompts/en.json`).
+  Within 6 months is a Pass; more than 12 months earlier is a Warning · Low
+  that deducts like a fingerprint of weight 1 and counts toward
+  `model_identity.fp_aggregate`; any other gap is Info; no parseable answer is
+  Inconclusive. Never HIGH on its own. Profiles with a vague cutoff ("~2025",
+  "not officially published") get no probe. This adds one request per audit
+  and, as one more weight in the fingerprint pool, slightly lowers the share
+  each diverging fingerprint deducts.
+- Compare mode sends every fingerprint probe and the cutoff probe to the
+  baseline as well. A divergence the baseline does not share is corroborated
+  (new outcome `corroborated`, Warning · Medium); one the baseline shares too
+  is a knowledge-base problem (new outcome `baseline_also_diverged`, Info, no
+  deduction). A rival brand stays HIGH either way.
+- The model's own fingerprints now run before the provider-wide ones, so the
+  six-probe limit never drops the only probes that can tell it from a
+  sibling. When none of them answered and neither a baseline nor a judge was
+  used, the new Info finding `model_identity.model_specific` (evidence
+  `model_specific_checks: 0`) says the vendor is consistent but the specific
+  model was not verified; every result records `model_specific_checks`. The
+  verdict summary and the model identity dimension's reason then say so too.
+- Knowledge-base schema: a fingerprint can record which sibling models a
+  measurement showed it separates (`separates_from`) and when (`verified`,
+  required with `separates_from`); `docs/dev/knowledge-base.md` describes how
+  to add a verified model-specific fingerprint. A test pins, per provider, the
+  number of chat profiles without one and fails if it rises. No fingerprint
+  data was added: new fingerprints need measuring against the genuine models.
+- Scoring scale, methodology (all languages) and translations updated. The
+  identity score can now drop when a model reports a cutoff more than a year
+  before its profile's; the report schema is unchanged (#168).
+
 ### Scoring: a response integrity dimension ([#260](https://github.com/mn567250/ekte/issues/260))
 
 The "Transport security" dimension held response tampering, injected system

@@ -139,6 +139,7 @@
     "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.",
     "No problems found in the checked dimensions; model identity was not verified.",
     "Minor concerns in the checked dimensions; model identity was not verified.",
+    "The answers fit the claimed model's vendor, but no check could tell that model from the vendor's other models and neither a baseline nor a judge was used: the specific model was not verified.",
     "ekte reports black-box evidence of divergence and risk, not proof of fraud.",
   ].forEach(function (s) {
     P.push([esc(s), s]);

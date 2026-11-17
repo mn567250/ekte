@@ -192,7 +192,8 @@ identidad del modelo indica que la identidad del modelo no se verificó.
   comparación usa la referencia como juez.
 - **Modo comparación** (`ekte compare`) da a las sondas una referencia de
   confianza: `model_identity` registra la autoidentificación de la referencia
-  junto a la del objetivo, `protocol_request` reenvía a la referencia los
+  junto a la del objetivo y envía también cada huella y la sonda de fecha de
+  corte a la referencia, `protocol_request` reenvía a la referencia los
   parámetros rechazados, `integrity` eleva a CRÍTICA una sustitución que la
   referencia no hace, `quality_judge` muestra ambos lados al juez y
   `performance` sondea ambos endpoints de forma alterna. La confianza solo puede
@@ -374,16 +375,19 @@ debe devolverlo.
 
 - **Ventana sondeada.** La sonda llega hasta `upper` = la ventana declarada,
   limitada por `--max-context-tokens` (200K por defecto). Cada veredicto se
-  juzga frente a `upper`, nunca frente a la parte de una ventana declarada
-  mayor que quede por encima del tope.
+  juzga frente al peldaño superior (el 90 % de `upper`, abajo), nunca frente a
+  la parte de una ventana declarada mayor que quede por encima del tope.
 - **Los tamaños son tokens reales.** La estimación de tokens integrada en ekte
   cuenta este relleno entre un 12 % (o200k) y un 15 % (cl100k) por debajo de
   los tokenizadores reales, así que cada prompt se construye a tamaño ÷ 1,2
   según la estimación (aguja y pregunta incluidas): un peldaño de tamaño N cabe
-  en N tokens reales. Los tamaños de la evidencia (`size`, `effective_window`,
-  `top_rung`) son esos presupuestos de tokens reales; las filas de la escalera
-  incluyen además la estimación con que se construyó cada prompt
-  (`heuristic_tokens`).
+  en N tokens reales. Una familia de tokenizadores con un factor medido sin
+  conexión usaría su propio factor (`real_per_heuristic` en la evidencia); aún
+  no se ha medido ninguno, así que todas usan 1,2. Los tamaños de la evidencia
+  (`size`, `effective_window`, `top_rung`) son esos presupuestos de tokens
+  reales; las filas de la escalera incluyen además la estimación con que se
+  construyó cada prompt (`heuristic_tokens`) y los tokens de prompt que el
+  endpoint informó para él (`prompt_tokens`).
 
 1. Una escalera de siete tamaños como mucho, que se divide a la mitad desde un
    **peldaño superior al 90 % de `upper`** (ningún peldaño alcanza la ventana
@@ -415,19 +419,27 @@ debe devolverlo.
    como truncamiento ni `no_recall`. Solo una respuesta sin la aguja es un
    fallo.
 
-La ventana medida (el mayor tamaño recordado) se compara con `upper`: recordar
-en el peldaño superior es coherente (o, si la ventana declarada supera el tope,
-**verificado hasta el tope**: la ventana por encima no se probó); por debajo,
-el veredicto descuenta la parte del peldaño superior que no se recordó — una
-advertencia desde la mitad de `upper`, un fallo por debajo. Sin ventana
-declarada, la medida se informa pero no se puntúa.
+La ventana medida (el mayor tamaño recordado) se compara con el peldaño
+superior: recordar en el peldaño superior es coherente (o, si la ventana
+declarada supera el tope, **verificado hasta el tope**: la ventana por encima no
+se probó); por debajo, el veredicto descuenta la parte del peldaño superior que
+no se recordó (`top_rung_share`) — una advertencia desde la mitad del peldaño
+superior, un fallo por debajo. El veredicto y la deducción usan la misma
+referencia, así que una advertencia nunca descuenta más de 50 puntos. Si solo
+falló el peldaño superior y el endpoint informó para el mayor tamaño recordado
+más de un 5 % más tokens de prompt que su presupuesto, la sonda **se excedió**
+(el tokenizador del endpoint cuenta el relleno más denso de lo que permite el
+factor): la ventana por encima se informa como no probada (Info), nunca como
+corta ni como rechazo por debajo de lo declarado. Sin ventana declarada, la
+medida se informa pero no se puntúa.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `context_window.window` (Ventana de contexto efectiva) | El recuerdo se mantuvo en el peldaño superior (90 % de la ventana sondeada): sin deducción. | Correcto | Sin deducción |
 |  | Recuerdo verificado hasta el tope de la sonda; la ventana declarada por encima no se probó. | Correcto | Sin deducción |
-|  | El recuerdo se mantuvo hasta el 50-90 % de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Advertencia · Media | hasta −50 pts |
-|  | El recuerdo falló por debajo de la mitad de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Fallo · Alta | hasta −100 pts |
+|  | Solo falló el peldaño superior y el endpoint contó el mayor prompt recordado más de un 5 % por encima de su presupuesto: la sonda se excedió, la ventana por encima no se probó. | Info | Sin deducción |
+|  | El recuerdo se mantuvo desde la mitad del peldaño superior, pero no en el peldaño superior; descuenta la parte del peldaño superior que no se recordó. | Advertencia · Media | hasta −50 pts |
+|  | El recuerdo falló por debajo de la mitad del peldaño superior; descuenta la parte del peldaño superior que no se recordó. | Fallo · Alta | hasta −100 pts |
 |  | Ni siquiera el tamaño de sonda más pequeño recordó la aguja. | Fallo · Alta | −100 pts |
 | `context_window.lost_in_middle` | Se recordaron el principio y el final, pero la parte central no, dos veces. | Advertencia · Media | −15 pts |
 | `context_window.rejected_below_claim` | Un prompt muy por debajo de la ventana declarada fue rechazado por demasiado largo. | Fallo · Alta | Sin deducción |
@@ -457,7 +469,14 @@ cuando cambian el comportamiento.
 
 ### `model_identity` — Identidad del modelo y huella de degradación
 
-**Cómo funciona.** Tres señales independientes:
+**Cómo funciona.** Lo que se ejecuta depende del perfil del modelo declarado:
+la autoidentificación y el campo `model` devuelto siempre, la sonda de fecha de
+corte cuando el `knowledge_cutoff` del perfil indica un mes, y las huellas de
+código puro del perfil, primero las propias del modelo. Solo las huellas propias
+del modelo lo distinguen de un modelo más barato del mismo proveedor (`gpt-4o`
+servido por `gpt-4o-mini`); las comprobaciones de marca y las huellas de todo el
+proveedor valen para cualquier modelo del proveedor, y la fecha de corte suele
+ser compartida.
 
 1. **Autoidentificación** a `temperature=0`, cotejada por palabras completas
    con las palabras clave de identidad del perfil (la marca auténtica) y con
@@ -490,7 +509,22 @@ cuando cambian el comportamiento.
    desvía resta
    su parte de peso sobre 100 puntos (25 como mucho); sola se queda en BAJA,
    dos o más añaden un hallazgo agregado MEDIO.
-3. **Campo `model` devuelto** por una llamada simple, comparado con el modelo
+   En el modo de comparación cada sonda se envía también a la referencia: una
+   desviación que la referencia no comparte queda corroborada (MEDIA); una que la
+   referencia comparte es un problema de la base de conocimiento, no una prueba
+   contra el relay, y se registra como Info sin deducción (evidencia
+   `baseline_also_diverged`). Una marca rival sigue siendo ALTA en todo caso.
+3. **Fecha de corte del conocimiento** (`model_identity.cutoff`), cuando el
+   `knowledge_cutoff` del perfil es `YYYY-MM` o `YYYY-MM-DD`: se pregunta al
+   modelo su fecha de corte como `CUTOFF=YYYY-MM`. A 6 meses o menos de la del
+   perfil es coherente; más de 12 meses antes, como respondería un modelo más
+   antiguo del proveedor, es una advertencia BAJA que resta como una huella de
+   peso 1 y cuenta para el hallazgo agregado; cualquier otra diferencia se
+   registra como Info; una respuesta sin ese formato es no concluyente. Una fecha
+   de corte declarada por el propio modelo es evidencia débil, así que esta
+   comprobación nunca es ALTA; en el modo de comparación la referencia la
+   corrobora o la descarta como a una huella.
+4. **Campo `model` devuelto** por una llamada simple, comparado con el modelo
    declarado y con el id enviado (un alias de despliegue puede diferir de lo
    declarado). Ambos ids se normalizan primero: minúsculas, sin prefijo
    `provider/` ni `vendor.` (`openai/`, `models/`, `anthropic.`), sin `:tag`,
@@ -513,6 +547,13 @@ deja vacía cada petición no aporta evidencia de identidad, y el eco del
 nombre solicitado no prueba nada por sí solo. La evidencia parcial puntúa
 con normalidad.
 
+Cuando ninguna de las huellas propias del modelo respondió y no se usó
+referencia ni juez, un hallazgo Info (`model_identity.model_specific`,
+evidencia `model_specific_checks: 0`) indica que las respuestas encajan con el
+proveedor pero que el modelo concreto no se verificó. Cada resultado registra
+`model_specific_checks`.
+El resumen del veredicto y el motivo de la dimensión de identidad del modelo también lo indican.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `model_identity.self_id` | La autodescripción nombró la marca auténtica. | Correcto | Sin deducción |
@@ -522,14 +563,23 @@ con normalidad.
 |  | No hubo una respuesta útil para evaluar. | No concluyente | Sin deducción |
 | `model_identity.fp` (Huellas de comportamiento) | La respuesta coincidió con el comportamiento nativo del modelo declarado. | Correcto | Sin deducción |
 |  | La respuesta se desvió del comportamiento nativo: resta la parte de peso de la sonda sobre 100 puntos. | Advertencia · Baja | hasta −25 pts |
+|  | La respuesta se apartó del comportamiento nativo mientras la de la referencia coincidía: resta la parte del peso de la sonda sobre 100 puntos. | Advertencia · Media | hasta −25 pts |
+|  | La respuesta se apartó, pero también la de la referencia: un problema de la base de conocimiento, no una prueba contra el relay; sin deducción. | Info | Sin deducción |
 |  | La respuesta nombró una marca rival y no la auténtica: resta la parte de peso de la sonda. | Fallo · Alta | hasta −25 pts · tope 20 |
 |  | No hubo una respuesta útil para evaluar. | No concluyente | Sin deducción |
 |  | La sonda necesita más salida que el tope de identidad de 512 tokens; no se ejecuta. | Info | Sin deducción |
+| `model_identity.cutoff` | La fecha de corte de conocimiento declarada está a 6 meses o menos de la del modelo declarado. | Correcto | Sin deducción |
+|  | La fecha de corte de conocimiento declarada es más de 12 meses anterior a la del modelo declarado: resta su parte del peso sobre 100 puntos como una huella. | Advertencia · Baja | hasta −25 pts |
+|  | La fecha de corte de conocimiento declarada es más de 12 meses anterior mientras la de la referencia es coherente: resta su parte del peso sobre 100 puntos. | Advertencia · Media | hasta −25 pts |
+|  | La fecha de corte de conocimiento declarada es más de 12 meses anterior, pero también la de la referencia: un problema de la base de conocimiento, no una prueba contra el relay; sin deducción. | Info | Sin deducción |
+|  | La fecha de corte de conocimiento declarada difiere en más de 6 meses, pero no es más de 12 meses anterior: se registra, no se evalúa. | Info | Sin deducción |
+|  | No hay respuesta en el formato CUTOFF=YYYY-MM para evaluar. | No concluyente | Sin deducción |
 | `model_identity.fp_aggregate` | Dos o más huellas de comportamiento se desviaron. | Advertencia · Media | Sin deducción |
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |
 |  | El campo model devuelto nombra otro id que ekte no puede identificar: se registra, no se juzga. | Info | Sin deducción |
 |  | La respuesta no tenía un campo model utilizable. | No concluyente | Sin deducción |
+| `model_identity.model_specific` | Ninguna comprobación pudo distinguir el modelo declarado de otros modelos de su proveedor y no se usó referencia ni juez: el proveedor es coherente, el modelo concreto no se verificó. | Info | Sin deducción |
 | `model_identity.no_evidence` | Ni la autoidentificación ni ninguna huella devolvieron una respuesta utilizable y el campo model no divergió: sin puntuar. | No concluyente | Sin deducción |
 
 ### `quality_judge` — Evaluación de calidad / degradación por un LLM juez
@@ -834,13 +884,21 @@ sistema; los `prompt_tokens` informados menos la estimación independiente
 deben seguir siendo pequeños. Una sobrecarga de al menos 30 tokens que se
 mantiene constante (con 16 de margen) en ambos tamaños indica un prompt oculto
 antepuesto y no un inflado proporcional. (2) Una **sonda de filtración** que
-pide al modelo repetir cualquier instrucción anterior. Solo ambos juntos
-alcanzan MEDIA.
+pide al modelo repetir cualquier instrucción anterior. La respuesta solo es una
+filtración si contiene contenido con aspecto de instrucciones: un pasaje entre
+comillas o en cita de bloque, o al menos dos frases en imperativo de segunda
+persona («You are …», «Always …», «Do not …») fuera de una negación. `NONE`, o
+una negación en las dos primeras frases («no hay instrucciones de sistema»), no
+es filtración; cualquier otra cosa, como una negativa, es dudosa y tampoco
+cuenta como filtración. La evidencia guarda el tipo de respuesta
+(`leak_answer_kind`) y sus primeros 300 caracteres. Una filtración sola es
+informativa y no computa, porque los modelos inventan prompts de sistema. Solo
+ambos juntos alcanzan MEDIA.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `injected_prompt.verdict` (Prompt de sistema inyectado) | La sobrecarga de tokens de entrada es pequeña y no se filtraron instrucciones ocultas. | Correcto | 100 pts |
-|  | Se filtró texto con aspecto de instrucciones al pedirlo (débil por sí solo). | Info · Baja | 85 pts |
+|  | Se filtró texto con aspecto de instrucciones al pedirlo (no computa: los modelos lo inventan). | Info | No computa |
 |  | Una gran sobrecarga fija de tokens de entrada, constante con el tamaño del mensaje. | Advertencia · Baja | 75 pts |
 |  | Una sobrecarga fija de tokens de entrada y un preámbulo filtrado a la vez. | Advertencia · Media | 55 pts |
 |  | No hay recuentos de tokens de prompt utilizables para medir la sobrecarga. | No concluyente | No computa |

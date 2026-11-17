@@ -188,7 +188,8 @@ at modellidentiteten ikke ble verifisert.
   referansen som dommer.
 - **Sammenligningsmodus** (`ekte compare`) gir probene en pålitelig referanse:
   `model_identity` registrerer referansens selvidentifikasjon ved siden av
-  målets, `protocol_request` sender avviste parametere på nytt til referansen,
+  målets og sender også hvert fingeravtrykk og kunnskapsgrense-proben til
+  referansen, `protocol_request` sender avviste parametere på nytt til referansen,
   `integrity` trapper et bytte som referansen ikke gjør, opp til CRITICAL,
   `quality_judge` viser dommeren begge sider, og `performance` prober begge
   endepunktene vekselvis. Sikkerheten kan bare nå høy med en referanse.
@@ -362,14 +363,18 @@ den.
 
 - **Probet vindu.** Proben kjører opp til `upper` = det oppgitte vinduet, begrenset
   av `--max-context-tokens` (standard 200K). Hver konklusjon vurderes mot
-  `upper`, aldri mot delen av et større oppgitt vindu over taket.
+  øverste trinn (90 % av `upper`, se under), aldri mot delen av et større
+  oppgitt vindu over taket.
 - **Størrelsene er ekte tokens.** ektes innebygde tokenanslag teller denne
   fyllteksten omtrent 12 % (o200k) til 15 % (cl100k) for lavt sammenlignet med
   ekte tokenizere, så hver prompt bygges med størrelse ÷ 1,2 etter anslaget (nål
   og spørsmål inkludert): et trinn på størrelse N holder seg innenfor N ekte
-  tokens. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
+  tokens. En tokenizer-familie med en faktor målt offline ville bruke sin egen
+  faktor (`real_per_heuristic` i bevisene); ingen er målt ennå, så alle familier
+  bruker 1,2. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
   disse budsjettene i ekte tokens; radene i stigen har også anslaget en prompt ble
-  bygget etter (`heuristic_tokens`).
+  bygget etter (`heuristic_tokens`) og prompttokenene endepunktet rapporterte for
+  den (`prompt_tokens`).
 
 1. En stige med høyst sju størrelser, som halveres nedover fra et **øverste trinn
    på 90 % av `upper`** (så ingen trinn når hele vinduet, og det blir plass til
@@ -397,19 +402,26 @@ den.
    rapporteres som ikke verifisert (uavklart, gir ikke score), aldri som
    avkorting eller `no_recall`. Bare et svar uten nålen er en bom.
 
-Det målte vinduet (den største huskede størrelsen) sammenlignes med `upper`:
-gjenkalling på øverste trinn er konsistent (eller, når det oppgitte vinduet er
-større enn taket, **verifisert opp til taket**: vinduet over det ble ikke prøvd);
-under det trekker konklusjonen fra andelen av øverste trinn som ikke ble husket —
-en WARN fra halvparten av `upper` og opp, en FAIL under halvparten. Uten et
+Det målte vinduet (den største huskede størrelsen) sammenlignes med øverste
+trinn: gjenkalling på øverste trinn er konsistent (eller, når det oppgitte
+vinduet er større enn taket, **verifisert opp til taket**: vinduet over det ble
+ikke prøvd); under det trekker konklusjonen fra andelen av øverste trinn som
+ikke ble husket (`top_rung_share`) — en WARN fra halvparten av øverste trinn og
+opp, en FAIL under halvparten. Konklusjonen og fradraget har samme referanse, så
+en WARN trekker aldri fra mer enn 50 poeng. Når bare øverste trinn sviktet og
+endepunktet rapporterte mer enn 5 % flere prompttokens for den største huskede
+størrelsen enn budsjettet, **skjøt proben over** (endepunktets tokenizer teller
+fyllteksten tettere enn faktoren tillater): vinduet over rapporteres som ikke
+prøvd (Info), aldri som for kort eller som en avvisning under påstanden. Uten et
 oppgitt vindu rapporteres målingen, men gir ikke score.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `context_window.window` (Effektivt kontekstvindu) | Gjenkallingen holdt på øverste trinn (90 % av det probede vinduet): ingen fradrag. | Bestått | Ingen fradrag |
 |  | Gjenkallingen er verifisert opp til probens tak; det oppgitte vinduet over det ble ikke prøvd. | Bestått | Ingen fradrag |
-|  | Gjenkallingen holdt opp til 50–90 % av det probede vinduet; trekker fra andelen av øverste trinn som ikke ble husket. | Advarsel · Middels | opptil −50 poeng |
-|  | Gjenkallingen sviktet under halvparten av det probede vinduet; trekker fra andelen av øverste trinn som ikke ble husket. | Ikke bestått · Høy | opptil −100 poeng |
+|  | Bare øverste trinn sviktet, og endepunktet telte den største huskede prompten mer enn 5 % over budsjettet: proben skjøt over, vinduet over den ble ikke prøvd. | Info | Ingen fradrag |
+|  | Gjenkallingen holdt fra halvparten av øverste trinn og opp, men ikke på øverste trinn; trekker fra andelen av øverste trinn som ikke ble husket. | Advarsel · Middels | opptil −50 poeng |
+|  | Gjenkallingen sviktet under halvparten av øverste trinn; trekker fra andelen av øverste trinn som ikke ble husket. | Ikke bestått · Høy | opptil −100 poeng |
 |  | Ikke engang den minste probestørrelsen fikk nålen husket. | Ikke bestått · Høy | −100 poeng |
 | `context_window.lost_in_middle` | Starten og slutten ble husket, men ikke midten, to ganger. | Advarsel · Middels | −15 poeng |
 | `context_window.rejected_below_claim` | En prompt godt under det oppgitte vinduet ble avvist som for lang. | Ikke bestått · Høy | Ingen fradrag |
@@ -437,7 +449,14 @@ de endrer atferden.
 
 ### `model_identity` — Modellidentitet og fingeravtrykk for nedgradering
 
-**Slik virker den.** Tre uavhengige signaler:
+**Slik virker den.** Hva som kjøres, avhenger av profilen til den oppgitte
+modellen: selvidentifikasjonen og det gjengitte `model`-feltet alltid,
+kunnskapsgrense-proben når profilens `knowledge_cutoff` angir en måned, og
+profilens fingeravtrykk i ren kode, modellens egne først. Bare modellens egne
+fingeravtrykk skiller den fra en billigere modell fra samme leverandør
+(`gpt-4o` levert av `gpt-4o-mini`); merkekontrollene og leverandørens felles
+fingeravtrykk gjelder for alle leverandørens modeller, og kunnskapsgrensen er
+ofte felles.
 
 1. **Selvidentifikasjon** ved `temperature=0`, sammenlignet som hele ord mot
    profilens identitetsnøkkelord (det ekte merket) og en liste over konkurrerende
@@ -467,7 +486,22 @@ de endrer atferden.
    oppføres som Info, og en annen probe tar plassen. Et avvikende fingeravtrykk
    trekker fra sin vektandel av 100 poeng (høyst 25); ett alene forblir LOW, to
    eller flere legger til et samlet MEDIUM-funn.
-3. **Gjengitt `model`-felt** fra et vanlig kall, sammenlignet med den oppgitte
+   I sammenligningsmodus sendes hver probe også til referansen: et avvik som
+   referansen ikke deler, er bekreftet (MEDIUM); et som referansen deler, er et
+   problem i kunnskapsbasen, ikke bevis mot reléet, og registreres som Info uten
+   fradrag (bevis `baseline_also_diverged`). Et konkurrerende merke forblir HIGH
+   uansett.
+3. **Kunnskapsgrense** (`model_identity.cutoff`), når profilens
+   `knowledge_cutoff` er `YYYY-MM` eller `YYYY-MM-DD`: modellen blir spurt om
+   treningsgrensen sin som `CUTOFF=YYYY-MM`. Innenfor 6 måneder fra profilens
+   stemmer den; mer enn 12 måneder tidligere, slik en eldre modell fra
+   leverandøren ville svart, er den en LOW-advarsel som trekker fra som et
+   fingeravtrykk med vekt 1 og teller med i det samlede funnet; enhver annen
+   avstand registreres som Info; et svar uten dette formatet er uavklart. En
+   selvrapportert kunnskapsgrense er svakt bevis, så denne kontrollen er aldri
+   HIGH; i sammenligningsmodus bekrefter eller avkrefter referansen den som et
+   fingeravtrykk.
+4. **Gjengitt `model`-felt** fra et vanlig kall, sammenlignet med den oppgitte
    modellen og med ID-en som ble sendt (et deployment-alias kan avvike fra det
    oppgitte). Begge ID-ene normaliseres først: små bokstaver, uten prefiks
    `provider/` eller `vendor.` (`openai/`, `models/`, `anthropic.`), uten
@@ -488,6 +522,13 @@ ikke avviker: et relé som avviser eller tømmer hver forespørsel, gir ingen
 identitetsbevis, og et ekko av det forespurte navnet beviser ingenting alene.
 Delvise bevis gir score som vanlig.
 
+Når ingen av modellens egne fingeravtrykk ga svar og verken referanse eller
+dommer ble brukt, sier et Info-funn (`model_identity.model_specific`, bevis
+`model_specific_checks: 0`) at svarene passer leverandøren, men at den konkrete
+modellen ikke ble verifisert. Hvert resultat registrerer
+`model_specific_checks`.
+Sammendraget av dommen og begrunnelsen for dimensjonen modellidentitet sier det også.
+
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `model_identity.self_id` | Selvbeskrivelsen nevnte det ekte merket. | Bestått | Ingen fradrag |
@@ -497,14 +538,23 @@ Delvise bevis gir score som vanlig.
 |  | Ikke noe brukbart svar å vurdere. | Uavklart | Ingen fradrag |
 | `model_identity.fp` (Atferdsfingeravtrykk) | Svaret stemte med den oppgitte modellens egen atferd. | Bestått | Ingen fradrag |
 |  | Svaret avvek fra den egne atferden: trekker fra probens vektandel av 100 poeng. | Advarsel · Lav | opptil −25 poeng |
+|  | Svaret avvek fra den native oppførselen mens referansens svar stemte: trekker probens vektandel av 100 poeng. | Advarsel · Middels | opptil −25 poeng |
+|  | Svaret avvek, men det gjorde referansens også: et problem i kunnskapsbasen, ikke bevis mot reléet; ingen trekk. | Info | Ingen fradrag |
 |  | Svaret nevnte et konkurrerende merke og ikke det ekte: trekker fra probens vektandel. | Ikke bestått · Høy | opptil −25 poeng · tak 20 |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart | Ingen fradrag |
 |  | Proben trenger mer utdata enn identitetstaket på 512 tokens; ikke kjørt. | Info | Ingen fradrag |
+| `model_identity.cutoff` | Den oppgitte kunnskapsgrensen ligger innenfor 6 måneder fra den oppgitte modellens. | Bestått | Ingen fradrag |
+|  | Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder før den oppgitte modellens: trekker sin vektandel av 100 poeng som et fingeravtrykk. | Advarsel · Lav | opptil −25 poeng |
+|  | Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder tidligere mens referansens stemmer: trekker sin vektandel av 100 poeng. | Advarsel · Middels | opptil −25 poeng |
+|  | Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder tidligere, men referansens også: et problem i kunnskapsbasen, ikke bevis mot reléet; ingen trekk. | Info | Ingen fradrag |
+|  | Den oppgitte kunnskapsgrensen avviker med mer enn 6 måneder, men ligger ikke mer enn 12 måneder tidligere: registrert, ikke vurdert. | Info | Ingen fradrag |
+|  | Ikke noe svar i formatet CUTOFF=YYYY-MM å vurdere. | Uavklart | Ingen fradrag |
 | `model_identity.fp_aggregate` | To eller flere atferdsfingeravtrykk avvek. | Advarsel · Middels | Ingen fradrag |
 | `model_identity.model_field` | Det gjengitte model-feltet stemte med den forespurte modellen. | Bestått | Ingen fradrag |
 |  | Det gjengitte model-feltet nevner en annen eller mindre modell. | Advarsel · Middels | Ingen fradrag |
 |  | Det gjengitte model-feltet nevner en annen ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Ingen fradrag |
 |  | Svaret hadde ikke noe brukbart model-felt. | Uavklart | Ingen fradrag |
+| `model_identity.model_specific` | Ingen kontroll kunne skille den oppgitte modellen fra leverandørens andre modeller, og verken referanse eller dommer ble brukt: leverandøren stemmer, den konkrete modellen ble ikke verifisert. | Info | Ingen fradrag |
 | `model_identity.no_evidence` | Ingen selvidentifikasjon eller fingeravtrykkssvar var brukbart, og model-feltet avvek ikke: gir ikke score. | Uavklart | Ingen fradrag |
 
 ### `quality_judge` — Kvalitets-/nedgraderingsvurdering ved LLM-dommer
@@ -801,12 +851,20 @@ rapporterte `prompt_tokens` minus det uavhengige anslaget må holde seg lite. En
 overhead på minst 30 tokens som holder seg konstant (innenfor 16) på tvers av
 begge størrelsene, leses som en skjult prompt foran heller enn proporsjonal
 oppblåsing. (2) En **lekkasjeprobe** som ber modellen gjenta eventuelle
-foregående instruksjoner. Bare begge sammen når MEDIUM.
+foregående instruksjoner. Svaret er en lekkasje bare hvis det inneholder
+instruksjonsaktig innhold: et sitert avsnitt eller blokksitat, eller minst to
+setninger i imperativ andre person («You are …», «Always …», «Do not …») utenfor
+en benektelse. `NONE`, eller en benektelse i de to første setningene («det
+finnes ingen systeminstruksjoner»), er ingen lekkasje; alt annet, for eksempel
+en avvisning, er uklart og teller heller ikke som lekkasje. Bevisene tar vare på
+svartypen (`leak_answer_kind`) og de første 300 tegnene i svaret. En lekkasje
+alene er bare informasjon og telles ikke, fordi modeller dikter opp
+systemprompter. Bare begge sammen når MEDIUM.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `injected_prompt.verdict` (Injisert systemprompt) | Overheaden i inndatatokens er liten, og ingen skjulte instruksjoner lekket. | Bestått | 100 poeng |
-|  | Instruksjonsaktig tekst lekket når det ble spurt (svakt alene). | Info · Lav | 85 poeng |
+|  | Instruksjonsaktig tekst lekket når det ble spurt (telles ikke: modeller dikter opp slikt). | Info | Telles ikke |
 |  | En stor fast overhead i inndatatokens, konstant på tvers av meldingsstørrelser. | Advarsel · Lav | 75 poeng |
 |  | En fast overhead i inndatatokens og en lekket innledning sammen. | Advarsel · Middels | 55 poeng |
 |  | Ingen brukbare tellinger av prompttokens til å måle overheaden. | Uavklart | Telles ikke |

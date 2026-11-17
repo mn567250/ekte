@@ -195,7 +195,8 @@ sull'identità del modello dice che l'identità del modello non è stata verific
   modalità di confronto usa il riferimento come giudice.
 - **Modalità di confronto** (`ekte compare`) dà alle sonde un riferimento
   affidabile: `model_identity` registra l'autoidentificazione del riferimento
-  accanto a quella dell'obiettivo, `protocol_request` reinvia al riferimento i
+  accanto a quella dell'obiettivo e invia anche ogni impronta e la sonda della
+  data limite al riferimento, `protocol_request` reinvia al riferimento i
   parametri rifiutati, `integrity` porta a CRITICA una sostituzione che il
   riferimento non fa, `quality_judge` mostra entrambi i lati al giudice e
   `performance` sonda i due endpoint a turno. L'affidabilità può essere alta
@@ -377,16 +378,20 @@ il modello deve restituirlo.
 
 - **Finestra sondata.** La sonda arriva fino a `upper` = la finestra
   dichiarata, limitata da `--max-context-tokens` (200K predefinito). Ogni
-  verdetto è giudicato rispetto a `upper`, mai rispetto alla parte di una
-  finestra dichiarata più grande che sta oltre il limite.
+  verdetto è giudicato rispetto al gradino più alto (il 90% di `upper`, sotto),
+  mai rispetto alla parte di una finestra dichiarata più grande che sta oltre il
+  limite.
 - **Le dimensioni sono token reali.** La stima dei token integrata in ekte
   sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
   rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
   ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
-  resta entro N token reali. Le dimensioni nelle prove (`size`,
-  `effective_window`, `top_rung`) sono questi budget di token reali; le righe
-  della scala riportano anche la stima con cui è stato costruito un prompt
-  (`heuristic_tokens`).
+  resta entro N token reali. Una famiglia di tokenizer con un fattore misurato
+  offline userebbe il proprio fattore (`real_per_heuristic` nelle prove);
+  nessuno è ancora misurato, quindi ogni famiglia usa 1,2. Le dimensioni nelle
+  prove (`size`, `effective_window`, `top_rung`) sono questi budget di token
+  reali; le righe della scala riportano anche la stima con cui è stato
+  costruito un prompt (`heuristic_tokens`) e i token di prompt che l'endpoint
+  ha dichiarato per esso (`prompt_tokens`).
 
 1. Una scala di al più sette dimensioni, dimezzata a partire da un **gradino
    più alto al 90% di `upper`** (nessun gradino raggiunge la finestra intera,
@@ -419,18 +424,26 @@ il modello deve restituirlo.
    l'ago è un fallimento.
 
 La finestra misurata (la dimensione richiamata più grande) viene confrontata con
-`upper`: un richiamo al gradino più alto è coerente (oppure, se la finestra
-dichiarata supera il limite, **verificata fino al limite**: la finestra oltre
-non è stata provata); sotto, il verdetto detrae la quota del gradino più alto
-non richiamata — un avviso dalla metà di `upper` in su, un fallimento sotto.
-Senza finestra dichiarata la misura viene riportata ma non valutata.
+il gradino più alto: un richiamo al gradino più alto è coerente (oppure, se la
+finestra dichiarata supera il limite, **verificata fino al limite**: la finestra
+oltre non è stata provata); sotto, il verdetto detrae la quota del gradino più
+alto non richiamata (`top_rung_share`) — un avviso dalla metà del gradino più
+alto in su, un fallimento sotto. Verdetto e detrazione hanno lo stesso
+riferimento, quindi un avviso non detrae mai più di 50 punti. Se è fallito solo
+il gradino più alto e l'endpoint ha dichiarato per la dimensione richiamata più
+grande oltre il 5% di token di prompt in più del suo budget, la sonda **ha
+sforato** (il tokenizer dell'endpoint conta il riempimento più denso di quanto
+il fattore preveda): la finestra oltre viene riportata come non provata (Info),
+mai come corta né come rifiuto sotto la dichiarazione. Senza finestra
+dichiarata la misura viene riportata ma non valutata.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `context_window.window` (Finestra di contesto effettiva) | Il richiamo ha tenuto al gradino più alto (90% della finestra sondata): nessuna detrazione. | Superato | Nessuna detrazione |
 |  | Richiamo verificato fino al limite della sonda; la finestra dichiarata oltre non è stata provata. | Superato | Nessuna detrazione |
-|  | Il richiamo ha tenuto fino al 50-90% della finestra sondata; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
-|  | Il richiamo è fallito sotto la metà della finestra sondata; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
+|  | Solo il gradino più alto è fallito e l'endpoint ha contato il prompt più grande richiamato oltre il 5% sopra il suo budget: la sonda ha sforato, la finestra oltre non è stata provata. | Info | Nessuna detrazione |
+|  | Il richiamo ha tenuto da metà del gradino più alto in su, ma non al gradino più alto; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
+|  | Il richiamo è fallito sotto la metà del gradino più alto; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
 |  | Nemmeno la dimensione di sonda più piccola ha richiamato l'ago. | Fallito · Alta | −100 pt |
 | `context_window.lost_in_middle` | L'inizio e la fine sono stati richiamati, ma la parte centrale no, per due volte. | Avviso · Media | −15 pt |
 | `context_window.rejected_below_claim` | Un prompt ben al di sotto della finestra dichiarata è stato rifiutato come troppo lungo. | Fallito · Alta | Nessuna detrazione |
@@ -460,7 +473,14 @@ quando cambiano il comportamento.
 
 ### `model_identity` — Identità del modello e impronta di declassamento
 
-**Come funziona.** Tre segnali indipendenti:
+**Come funziona.** Ciò che viene eseguito dipende dal profilo del modello
+dichiarato: l'autoidentificazione e il campo `model` restituito sempre, la sonda
+della data limite delle conoscenze quando il `knowledge_cutoff` del profilo
+indica un mese, e le impronte di solo codice del profilo, prima quelle del
+modello. Solo le impronte proprie del modello lo distinguono da un modello più
+economico dello stesso fornitore (`gpt-4o` servito da `gpt-4o-mini`); i
+controlli del marchio e le impronte comuni al fornitore valgono per ogni suo
+modello, e la data limite è spesso condivisa.
 
 1. **Autoidentificazione** a `temperature=0`, confrontata a parole intere con le
    parole chiave di identità del profilo (il marchio autentico) e con un elenco
@@ -493,7 +513,22 @@ quando cambiano il comportamento.
    Un'impronta che si discosta
    toglie la sua quota di peso su 100 punti (al più 25); da sola resta BASSA,
    due o più aggiungono una rilevazione aggregata MEDIA.
-3. **Campo `model` restituito** da una chiamata semplice, confrontato con il
+   In modalità confronto ogni sonda va anche al riferimento: uno scostamento che
+   il riferimento non condivide è corroborato (MEDIA); uno che il riferimento
+   condivide è un problema della base di conoscenza, non una prova contro il
+   relay, ed è registrato come Info senza detrazione (prova
+   `baseline_also_diverged`). Un marchio concorrente resta ALTA in ogni caso.
+3. **Data limite delle conoscenze** (`model_identity.cutoff`), quando il
+   `knowledge_cutoff` del profilo è `YYYY-MM` o `YYYY-MM-DD`: si chiede al
+   modello la sua data limite nel formato `CUTOFF=YYYY-MM`. Entro 6 mesi da
+   quella del profilo è coerente; oltre 12 mesi prima, come risponderebbe un
+   modello più vecchio del fornitore, è un avviso BASSA che toglie punti come
+   un'impronta di peso 1 e conta per la rilevazione aggregata; ogni altra
+   differenza è registrata come Info; una risposta senza quel formato è non
+   conclusiva. Una data limite dichiarata dal modello è una prova debole, quindi
+   questo controllo non è mai ALTA; in modalità confronto il riferimento la
+   conferma o la smentisce come un'impronta.
+4. **Campo `model` restituito** da una chiamata semplice, confrontato con il
    modello dichiarato e con l'id inviato (un alias di deployment può differire
    dalla dichiarazione). Entrambi gli id vengono prima normalizzati: minuscole,
    senza prefisso `provider/` o `vendor.` (`openai/`, `models/`,
@@ -516,6 +551,13 @@ rifiuta o svuota ogni richiesta non fornisce prove d'identità, e l'eco del
 nome richiesto da solo non prova nulla. Prove parziali vengono valutate
 normalmente.
 
+Quando nessuna delle impronte proprie del modello ha risposto e non sono stati
+usati né riferimento né giudice, una rilevazione Info
+(`model_identity.model_specific`, prova `model_specific_checks: 0`) indica che
+le risposte sono coerenti con il fornitore ma che il modello specifico non è
+stato verificato. Ogni risultato registra `model_specific_checks`.
+Lo dicono anche il riepilogo del verdetto e la motivazione della dimensione identità del modello.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `model_identity.self_id` | L'autodescrizione ha nominato il marchio autentico. | Superato | Nessuna detrazione |
@@ -525,14 +567,23 @@ normalmente.
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo | Nessuna detrazione |
 | `model_identity.fp` (Impronte comportamentali) | La risposta corrispondeva al comportamento nativo del modello dichiarato. | Superato | Nessuna detrazione |
 |  | La risposta si è discostata dal comportamento nativo: toglie la quota di peso della sonda su 100 punti. | Avviso · Bassa | fino a −25 pt |
+|  | La risposta si è discostata dal comportamento nativo mentre quella della baseline vi corrispondeva: sottrae la quota di peso della sonda su 100 punti. | Avviso · Media | fino a −25 pt |
+|  | La risposta si è discostata, ma anche quella della baseline: un problema della base di conoscenza, non una prova contro il relay; nessuna detrazione. | Info | Nessuna detrazione |
 |  | La risposta ha nominato un marchio concorrente e non quello autentico: toglie la quota di peso della sonda. | Fallito · Alta | fino a −25 pt · tetto 20 |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo | Nessuna detrazione |
 |  | La sonda richiede più output del limite di identità di 512 token; non eseguita. | Info | Nessuna detrazione |
+| `model_identity.cutoff` | Il limite di conoscenza dichiarato è entro 6 mesi da quello del modello dichiarato. | Superato | Nessuna detrazione |
+|  | Il limite di conoscenza dichiarato è di oltre 12 mesi precedente a quello del modello dichiarato: sottrae la sua quota di peso su 100 punti come un'impronta. | Avviso · Bassa | fino a −25 pt |
+|  | Il limite di conoscenza dichiarato è di oltre 12 mesi precedente mentre quello della baseline è coerente: sottrae la sua quota di peso su 100 punti. | Avviso · Media | fino a −25 pt |
+|  | Il limite di conoscenza dichiarato è di oltre 12 mesi precedente, ma anche quello della baseline: un problema della base di conoscenza, non una prova contro il relay; nessuna detrazione. | Info | Nessuna detrazione |
+|  | Il limite di conoscenza dichiarato si discosta di oltre 6 mesi, ma non è di oltre 12 mesi precedente: registrato, non giudicato. | Info | Nessuna detrazione |
+|  | Nessuna risposta nel formato CUTOFF=YYYY-MM da giudicare. | Non conclusivo | Nessuna detrazione |
 | `model_identity.fp_aggregate` | Due o più impronte comportamentali si sono discostate. | Avviso · Media | Nessuna detrazione |
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |
 |  | Il campo model restituito indica un altro id che ekte non sa identificare: registrato, non giudicato. | Info | Nessuna detrazione |
 |  | La risposta non aveva un campo model utilizzabile. | Non conclusivo | Nessuna detrazione |
+| `model_identity.model_specific` | Nessun controllo ha potuto distinguere il modello dichiarato dagli altri modelli del suo fornitore e non sono stati usati né baseline né giudice: il fornitore è coerente, il modello specifico non è stato verificato. | Info | Nessuna detrazione |
 | `model_identity.no_evidence` | Né l'autoidentificazione né alcuna impronta hanno dato una risposta utilizzabile e il campo model non divergeva: non valutato. | Non conclusivo | Nessuna detrazione |
 
 ### `quality_judge` — Valutazione di qualità / declassamento da parte di un LLM giudice
@@ -837,12 +888,20 @@ input**: due messaggi utente di dimensioni diverse senza messaggio di sistema; i
 overhead di almeno 30 token che resta costante (entro 16) in entrambe le
 dimensioni indica un prompt nascosto anteposto e non un gonfiamento
 proporzionale. (2) Una **sonda di fuga** che chiede al modello di ripetere ogni
-istruzione precedente. Solo entrambi insieme arrivano a MEDIA.
+istruzione precedente. La risposta è una fuga solo se contiene contenuto simile
+a istruzioni: un passaggio tra virgolette o in citazione a blocco, oppure almeno
+due frasi all'imperativo di seconda persona («You are …», «Always …», «Do not
+…») al di fuori di una negazione. `NONE`, o una negazione nelle prime due frasi
+(«non ci sono istruzioni di sistema»), non è una fuga; qualsiasi altra risposta,
+come un rifiuto, è incerta e non conta nemmeno come fuga. Le evidenze conservano
+il tipo di risposta (`leak_answer_kind`) e i suoi primi 300 caratteri. Una fuga
+da sola è informativa e non conteggiata, perché i modelli inventano prompt di
+sistema. Solo entrambi insieme arrivano a MEDIA.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `injected_prompt.verdict` (Prompt di sistema iniettato) | Il sovraccarico di token in ingresso è piccolo e non sono trapelate istruzioni nascoste. | Superato | 100 pt |
-|  | Su richiesta è trapelato un testo simile a istruzioni (debole da solo). | Info · Bassa | 85 pt |
+|  | Su richiesta è trapelato un testo simile a istruzioni (non conteggiato: i modelli inventano). | Info | Non conteggiato |
 |  | Un grande sovraccarico fisso di token in ingresso, costante al variare del messaggio. | Avviso · Bassa | 75 pt |
 |  | Un sovraccarico fisso di token in ingresso e un preambolo trapelato, insieme. | Avviso · Media | 55 pt |
 |  | Nessun conteggio utilizzabile di token di prompt per misurare il sovraccarico. | Non conclusivo | Non conteggiato |
