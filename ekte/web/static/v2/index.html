@@ -261,7 +261,7 @@
           <div class="grp" id="dims-grp" hidden>
             <span class="lab" id="lab-dims" data-en="Dimensions to run">Dimensions to run</span>
             <div class="chips" id="dims" role="group" aria-labelledby="lab-dims" aria-describedby="dims-hint">
-              <button type="button" aria-pressed="true" data-v="model_identity" data-en="Model identity">Model identity</button><button type="button" aria-pressed="true" data-v="context_window" data-en="Context window">Context window</button><button type="button" aria-pressed="true" data-v="capability" data-en="Capability claims">Capability claims</button><button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">Protocol compliance</button><button type="button" aria-pressed="true" data-v="connectivity" data-en="Connectivity">Connectivity</button><button type="button" aria-pressed="true" data-v="streaming" data-en="Streaming authenticity">Streaming authenticity</button><button type="button" aria-pressed="true" data-v="billing" data-en="Billing &amp; usage">Billing & usage</button><button type="button" aria-pressed="true" data-v="reliability" data-en="Concurrency reliability">Concurrency reliability</button><button type="button" aria-pressed="true" data-v="performance" data-en="Performance">Performance</button><button type="button" aria-pressed="true" data-v="security" data-en="Transport security">Transport security</button>
+              <button type="button" aria-pressed="true" data-v="model_identity" data-en="Model identity">Model identity</button><button type="button" aria-pressed="true" data-v="context_window" data-en="Context window">Context window</button><button type="button" aria-pressed="true" data-v="capability" data-en="Capability claims">Capability claims</button><button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">Protocol compliance</button><button type="button" aria-pressed="true" data-v="connectivity" data-en="Connectivity">Connectivity</button><button type="button" aria-pressed="true" data-v="streaming" data-en="Streaming authenticity">Streaming authenticity</button><button type="button" aria-pressed="true" data-v="billing" data-en="Billing &amp; usage">Billing & usage</button><button type="button" aria-pressed="true" data-v="reliability" data-en="Concurrency reliability">Concurrency reliability</button><button type="button" aria-pressed="true" data-v="integrity" data-en="Response integrity">Response integrity</button><button type="button" aria-pressed="true" data-v="performance" data-en="Performance">Performance</button><button type="button" aria-pressed="true" data-v="security" data-en="Transport security">Transport security</button>
             </div>
             <div class="hint" id="dims-hint" data-en="Only the selected dimensions run, at deep depth; the overall score is computed from them alone.">Only the selected dimensions run, at deep depth; the overall score is computed from them alone.</div>
           </div>
@@ -406,6 +406,7 @@
     capability: ["能力声明", "Capability claims"], billing: ["计费用量", "Billing & usage"],
     protocol: ["协议兼容", "Protocol compliance"], connectivity: ["连通性", "Connectivity"],
     reliability: ["并发可靠", "Concurrency reliability"], streaming: ["流式真实", "Streaming authenticity"],
+    integrity: ["响应完整性", "Response integrity"],
     security: ["传输安全", "Transport security"], performance: ["性能表现", "Performance"],
   };
   function statusLabel(s) { return window.EKTE_I18N ? EKTE_I18N.label("STATUS", s) : s; }
@@ -432,8 +433,8 @@
   // ---------- endpoint type (surface) ----------
   // The dimensions each non-chat surface scores (ekte/scoring.py); chat has all.
   var SURFACE_DIMS = {
-    embedding: ["model_identity", "capability", "connectivity", "reliability", "performance"],
-    rerank: ["model_identity", "capability", "connectivity", "reliability", "performance"],
+    embedding: ["model_identity", "capability", "connectivity", "integrity", "performance"],
+    rerank: ["model_identity", "capability", "connectivity", "integrity", "performance"],
   };
   function surfaceVal() {
     var r = document.querySelector('#surface input:checked');

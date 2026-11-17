@@ -72,7 +72,7 @@ Altri esempi, file di configurazione e uso da script o agenti LLM:
 
 ## Cosa controlla
 
-ekte assegna un punteggio a dieci dimensioni. Le quattro **dimensioni centrali** —
+ekte assegna un punteggio a undici dimensioni. Le quattro **dimensioni centrali** —
 identità del modello, finestra di contesto, capacità dichiarate e fatturazione e
 consumo — rivelano più direttamente una merce non conforme. I nomi sono quelli
 dell'interfaccia web e dei rapporti.
@@ -87,7 +87,8 @@ dell'interfaccia web e dei rapporti.
 | **Connettività** | `connectivity` | Raggiungibilità dell'endpoint e l'elenco dei modelli pubblicizzato |
 | **Autenticità dello streaming** | `streaming` | Streaming finto (buffer e poi spezzettamento) |
 | **Affidabilità in concorrenza** | `reliability` | Errori e rallentamenti sotto carico concorrente |
-| **Sicurezza del trasporto** | `security` | HTTP in chiaro, eco dei segreti, prompt di sistema iniettati, manomissioni |
+| **Integrità delle risposte** | `integrity` | Risposte manomesse, prompt di sistema iniettati, risposte servite da una cache |
+| **Sicurezza del trasporto** | `security` | HTTP in chiaro, chiave API restituita, intestazioni che rivelano l'upstream |
 | **Prestazioni** | `performance` | Quanto sono costanti latenza, tempo al primo token e throughput |
 
 Come funziona ogni controllo e come si arriva al verdetto:

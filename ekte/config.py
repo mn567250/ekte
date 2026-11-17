@@ -213,6 +213,21 @@ def validate_dimensions(suite: str, value: str | list[str] | tuple[str, ...] | N
     return [d for d in DIMENSIONS if d in picked]
 
 
+def stored_dimensions(surface: str | None, value: object) -> list[str]:
+    """A custom selection saved by an earlier version, in today's ids.
+
+    Until the ``integrity`` dimension existed the determinism check of the
+    embedding and rerank surfaces was filed under ``reliability``, which those
+    surfaces no longer have: a saved monitor or report that selected it means
+    ``integrity`` now. Chat selections are returned as they are.
+    """
+    dims = [str(x) for x in value] if isinstance(value, (list, tuple)) else []
+    if (surface or "chat") == "chat":
+        return dims
+    renamed = ["integrity" if d == "reliability" else d for d in dims]
+    return list(dict.fromkeys(renamed))
+
+
 def validate_format(value: str) -> str:
     if value not in FORMATS:
         raise ConfigError(f"Unknown format {value!r}. Choose from: {', '.join(FORMATS)}")

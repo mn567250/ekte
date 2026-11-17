@@ -52,7 +52,7 @@ SCALE = Scale(
 class DeterminismDetector(Detector):
     id = "determinism"
     name = "Determinism & cache-correctness"
-    dimension = Dimension.PROTOCOL
+    dimension = Dimension.INTEGRITY
     min_suite = "deep"
     cost_hint = 6
 

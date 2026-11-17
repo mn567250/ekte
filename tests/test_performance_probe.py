@@ -326,7 +326,7 @@ async def test_compare_audit_on_standard_has_probe_and_comparison(patched_make_c
     det = next(d for d in report.detectors if d.id == "performance")
     assert det.dimension == Dimension.PERFORMANCE and det.score is not None
     dim = next(d for d in report.dimensions if d.dimension == Dimension.PERFORMANCE)
-    assert dim.score == det.score and dim.weight == 6.0
+    assert dim.score == det.score and dim.weight == 4.0
 
 
 async def test_non_streaming_probe(knowledge_base):

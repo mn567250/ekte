@@ -192,6 +192,7 @@
         "streaming",
         "billing",
         "reliability",
+        "integrity",
         "security",
         "performance"
       ],
@@ -2432,8 +2433,8 @@
       "default": null
     },
     "schema_version": {
-      "default": "1.4",
-      "description": "Version of this schema (MAJOR.MINOR), independent of the ekte version; this schema describes version 1.4. Documents without the field were written before schemas were versioned and match version 1.0.",
+      "default": "1.5",
+      "description": "Version of this schema (MAJOR.MINOR), independent of the ekte version; this schema describes version 1.5. Documents without the field were written before schemas were versioned and match version 1.0.",
       "pattern": "^[0-9]+\\.[0-9]+$",
       "type": "string"
     },
@@ -2497,5 +2498,5 @@
   ],
   "title": "ekte audit report",
   "type": "object",
-  "x-schema-version": "1.4"
+  "x-schema-version": "1.5"
 }

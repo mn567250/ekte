@@ -29,7 +29,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--suite custom`; num ficheiro de configuração use
 `run.dimensions: [protocol, performance]`. As dimensões são `connectivity`,
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
-`billing`, `reliability`, `security` e `performance`. Na interface web, o botão
+`billing`, `reliability`, `integrity`, `security` e `performance`. Na interface web, o botão
 de suite `custom` abre a mesma escolha (**Dimensões a executar**) na página de
 auditoria e nos monitores.
 

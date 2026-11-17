@@ -118,7 +118,7 @@ SURFACE_STATE_JS = """
 """
 
 # The custom suite's dimensions on the embedding and rerank surfaces (ekte/scoring.py).
-SURFACE_DIMS = ["model_identity", "capability", "connectivity", "reliability", "performance"]
+SURFACE_DIMS = ["model_identity", "capability", "connectivity", "integrity", "performance"]
 
 
 @pytest.mark.bitv(*AXE_WCAG_STEPS, axe=True)
@@ -147,6 +147,6 @@ def test_audit_surface_states(open_page, page_id: str, surface: str, theme: str)
         issues.append(f"shown field groups {st['groups']}, want {want}")
     if not chat and st["dims"] != SURFACE_DIMS:
         issues.append(f"custom dimensions shown {st['dims']}, want {SURFACE_DIMS}")
-    if chat and len(st["dims"]) != 10:
-        issues.append(f"chat shows {len(st['dims'])} custom dimensions, want all 10")
+    if chat and len(st["dims"]) != 11:
+        issues.append(f"chat shows {len(st['dims'])} custom dimensions, want all 11")
     assert_no_issues(issues, where, "surface-states")

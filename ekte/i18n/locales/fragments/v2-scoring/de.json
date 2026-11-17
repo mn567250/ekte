@@ -123,7 +123,6 @@
   "A canary value was substituted (not yet confirmed by a baseline).": "Ein Canary-Wert wurde ersetzt (noch nicht durch eine Baseline bestätigt).",
   "A canary value was substituted while the trusted baseline kept it intact.": "Ein Canary-Wert wurde ersetzt, während die vertrauenswürdige Baseline ihn unverändert ließ.",
   "No canary was echoed verbatim, so tampering could not be assessed.": "Kein Canary wurde wörtlich zurückgegeben, daher ließ sich Manipulation nicht beurteilen.",
-  "Response integrity": "Antwortintegrität",
   "None of the probe requests succeeded.": "Keine der Probe-Anfragen war erfolgreich.",
   "Unique probe prompts came back from a cache (left out of the statistics).": "Eindeutige Probe-Prompts kamen aus einem Cache (aus der Statistik ausgenommen).",
   "The model spends hidden reasoning tokens; TTFT includes thinking.": "Das Modell verbraucht versteckte Reasoning-Tokens; die TTFT enthält das Nachdenken.",

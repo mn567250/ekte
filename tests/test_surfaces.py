@@ -122,7 +122,7 @@ def test_embedding_weights():
     weights = SURFACE_WEIGHTS["embedding"]
     assert sum(weights.values()) == 100.0
     assert set(weights) == {
-        Dimension.CONNECTIVITY, Dimension.MODEL_IDENTITY, Dimension.RELIABILITY,
+        Dimension.CONNECTIVITY, Dimension.MODEL_IDENTITY, Dimension.INTEGRITY,
         Dimension.CAPABILITY, Dimension.PERFORMANCE,
     }
     assert max(weights, key=weights.__getitem__) == Dimension.MODEL_IDENTITY
@@ -132,7 +132,7 @@ def test_embedding_scores_only_its_dimensions():
     results = [
         _result(Dimension.CONNECTIVITY, 100.0),
         _result(Dimension.MODEL_IDENTITY, 90.0),
-        _result(Dimension.RELIABILITY, 80.0),
+        _result(Dimension.INTEGRITY, 80.0),
         _result(Dimension.CAPABILITY, 70.0),
         _result(Dimension.PERFORMANCE, 60.0),
     ]
@@ -174,7 +174,7 @@ def test_rerank_weights():
     assert weights_for("rerank") is weights
     assert weights == {
         Dimension.MODEL_IDENTITY: 30.0, Dimension.CAPABILITY: 30.0, Dimension.PERFORMANCE: 20.0,
-        Dimension.RELIABILITY: 10.0, Dimension.CONNECTIVITY: 10.0,
+        Dimension.INTEGRITY: 10.0, Dimension.CONNECTIVITY: 10.0,
     }
 
 
@@ -182,7 +182,7 @@ def test_rerank_scores_only_its_dimensions():
     results = [
         _result(Dimension.CONNECTIVITY, 100.0),
         _result(Dimension.MODEL_IDENTITY, 90.0),
-        _result(Dimension.RELIABILITY, 80.0),
+        _result(Dimension.INTEGRITY, 80.0),
         _result(Dimension.CAPABILITY, 70.0),
         _result(Dimension.PERFORMANCE, 60.0),
     ]

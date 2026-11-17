@@ -24,7 +24,7 @@ SCHEMA_ID = "https://raw.githubusercontent.com/mn567250/ekte/main/docs/schemas/c
 
 SUITES = ("smoke", "standard", "deep", "full", "custom")
 DIMENSIONS = ("connectivity", "protocol", "context_window", "model_identity", "capability",
-              "streaming", "billing", "reliability", "security", "performance")
+              "streaming", "billing", "reliability", "integrity", "security", "performance")
 APIS = ("auto", "openai", "anthropic", "responses")
 FORMATS = ("json", "md", "html", "pdf", "all")
 

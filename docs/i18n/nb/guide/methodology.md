@@ -52,7 +52,7 @@ kontrollen sin.
 
 ### Dimensjonsscore og status
 
-ekte gir score i ti dimensjoner. En dimensjons score er **gjennomsnittet med lik
+ekte gir score i elleve dimensjoner. En dimensjons score er **gjennomsnittet med lik
 vekt av detektorenes scorer**: en detektor med mange kontroller veier ikke mer
 enn en med få, og en detektor uten numerisk score utelates. Statusen er den
 verste statusen detektorene konkluderte med, bortsett fra at et
@@ -77,13 +77,14 @@ B (≥ 80), C (≥ 70), D (≥ 60) eller F.
 | Modellidentitet | `model_identity` | 21 | kjerne |
 | Kontekstvindu | `context_window` | 19 | kjerne |
 | Påståtte egenskaper | `capability` | 13 | kjerne |
-| Protokollsamsvar | `protocol` | 8 |  |
 | Fakturering og forbruk | `billing` | 8 | kjerne |
 | Tilkobling | `connectivity` | 7 |  |
+| Protokollsamsvar | `protocol` | 6 |  |
 | Ekte strømming | `streaming` | 6 |  |
 | Pålitelighet ved samtidighet | `reliability` | 6 |  |
-| Transportsikkerhet | `security` | 6 |  |
-| Ytelse | `performance` | 6 |  |
+| Svarintegritet | `integrity` | 6 |  |
+| Transportsikkerhet | `security` | 4 |  |
+| Ytelse | `performance` | 4 |  |
 
 Konklusjonen vurderes på dimensjonene som **kjørte** — en `custom`-kjøring
 kontrollerer bare utvalget sitt. To grupper av dimensjoner betyr noe:
@@ -104,8 +105,7 @@ kunne ikke vurderes, og det er ikke bevis på en annen modell.
 feil eller treghet under last sier hvordan reléet nås, ikke hvilken modell det
 leverer. De senker fortsatt score og status i dimensjonen sin, vises etter
 funnene om bytte blant de viktigste funnene og nevnes i sammendraget som råd når
-de er Middels eller høyere. Manipulering av integriteten og en gjengitt
-API-nøkkel trapper fortsatt opp.
+de er Middels eller høyere. En gjengitt API-nøkkel trapper fortsatt opp, og det gjør også funnene i dimensjonen Svarintegritet (manipulering, injisert systemprompt, svarbuffer): den er ikke en kjernedimensjon, så alvorligheten alene bestemmer risikoen.
 
 | Risiko | Etikett i grensesnittet | Når |
 |---|---|---|
@@ -140,10 +140,9 @@ at modellidentiteten ikke ble verifisert.
 | Detektor | ID | Dimensjon | Fra testsett |
 |---|---|---|---|
 | Tilkobling og enkel fullføring | `connectivity` | Tilkobling | `smoke` |
-| Samsvar med OpenAI-kompatibilitet | `protocol` | Protokollsamsvar | `standard` |
+| Samsvar med overføringsprotokollen | `protocol` | Protokollsamsvar | `standard` |
 | Støtte for forespørselsattributter | `protocol_request` | Protokollsamsvar | `standard` |
 | Tilgjengelighet av svarattributter | `protocol_response` | Protokollsamsvar | `standard` |
-| Determinisme og korrekt hurtigbuffer | `determinism` | Protokollsamsvar | `deep` |
 | Reelt kontekstvindu og avkorting | `context_window` | Kontekstvindu | `deep` |
 | Modellidentitet og fingeravtrykk for nedgradering | `model_identity` | Modellidentitet | `standard` |
 | Kvalitets-/nedgraderingsvurdering ved LLM-dommer | `quality_judge` | Modellidentitet | `deep` (bare med `--judge`) |
@@ -153,9 +152,10 @@ at modellidentiteten ikke ble verifisert.
 | Revisjon av token-/forbruksfakturering | `billing` | Fakturering og forbruk | `standard` |
 | Pålitelighet og forsinkelse ved samtidighet | `reliability` | Pålitelighet ved samtidighet | `standard` |
 | Signaler om transport og hemmelighetshåndtering | `security` | Transportsikkerhet | `smoke` |
-| Påvisning av injisert systemprompt | `injected_prompt` | Transportsikkerhet | `deep` |
-| Svarintegritet / manipulering | `integrity` | Transportsikkerhet | `deep` |
-| Prefiks-hurtigbuffer for prompt (tidsmåling) | `prompt_cache` | Transportsikkerhet | `deep` |
+| Determinisme og korrekt hurtigbuffer | `determinism` | Svarintegritet | `deep` |
+| Påvisning av injisert systemprompt | `injected_prompt` | Svarintegritet | `deep` |
+| Svarintegritet / manipulering | `integrity` | Svarintegritet | `deep` |
+| Prefiks-hurtigbuffer for prompt (tidsmåling) | `prompt_cache` | Svarintegritet | `deep` |
 | Ytelsesprobe | `performance` | Ytelse | `deep` (på `standard` bare i sammenligningsmodus, 5 forespørsler) |
 
 - **smoke** kjører tilkobling og sikkerhet; **standard** legger til detektorene
@@ -253,10 +253,9 @@ aldri risikokonklusjonen.
 
 **Fanger.** Releer der mellomvaren bryter protokollkontrakten (droppede turer,
 ignorerte stoppsekvenser, feilformede feil, manglende eller tomme (null) svarfelt,
-fjernede forespørselsparametere) og, via determinisme,
-`cache.ignore-temperature`. Den dekker delvis `capability.json-tool-fakery`.
+fjernede forespørselsparametere). Den dekker delvis `capability.json-tool-fakery`.
 
-### `protocol` — Samsvar med OpenAI-kompatibilitet
+### `protocol` — Samsvar med overføringsprotokollen
 
 **Slik virker den.** Tre prober: en samtale over flere turer som må huske en
 farge fra en tidligere tur; en `stop`-sekvens som må kutte utdataen; og en
@@ -329,26 +328,6 @@ referanse på samme protokoll også avviser den. Verktøy og JSON-modus hører t
 |  | Avvist med en 4xx, mens referansen godtar den. | Ikke bestått · Middels | 15 poeng |
 |  | Avvist, men selve modellen støtter den ikke; telles ikke. | Info | Telles ikke |
 |  | Serverfeil eller ikke noe svar; telles ikke. | Uavklart · Lav | Telles ikke |
-
-### `determinism` — Determinisme og korrekt hurtigbuffer
-
-**Slik virker den.** Fire identiske kreative prompter ved `temperature=1.0`
-(uten seed): en ekte modell varierer, og byte-identisk utdata i alle prøvene tyder
-på en hurtigbuffer for svar som ignorerer sampling. Minst tre av de fire prøvene
-må være brukbare (og alle brukbare identiske) for å konkludere med bufring; med
-færre er kontrollen uavklart. Konklusjonen undertrykkes for resonnerende
-modeller, som med rette ignorerer temperaturen. To identiske faktaprompter ved
-`temperature=0` er bare til informasjon.
-
-| Kontroll | Utfall | Status | Effekt |
-|---|---|---|---|
-| `determinism.temp1_variability` | Gjentatte prøver ved temperature=1.0 var forskjellige, slik ekte sampling gir. | Bestått | 100 poeng |
-|  | Prøvene var identiske, men resonnerende modeller ignorerer med rette temperaturen. | Info | 100 poeng |
-|  | Alle brukbare prøver (minst 3) ved temperature=1.0 var byte-identiske, noe som tyder på bufring av svar. | Advarsel · Middels | 55 poeng |
-|  | Færre enn 3 brukbare prøver ved temperature=1.0 å vurdere. | Uavklart · Lav | Telles ikke |
-| `determinism.temp0_stability` | Identiske svar ved temperature=0 (forventet); til informasjon, gir ikke score. | Info | Telles ikke |
-|  | Svarene var forskjellige ved temperature=0; til informasjon, gir ikke score. | Info | Telles ikke |
-|  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 
 **Forbehold.** Gatewayer kan legge til leverandørspesifikke ekstrafelt; bare
 manglende eller ugyldige påkrevde felt flagges. Oversettelse mellom dialektene
@@ -796,35 +775,9 @@ i ro, lekkede forespørsels-ID-er fra oppstrøms) står på veikartet.
 
 ---
 
-## `security` — Transportsikkerhet
+## `integrity` — Svarintegritet
 
-**Fanger.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-bevis i retning av `privacy.prompt-logging-leakage` (prefiksbufring), og
-grunnleggende hygiene for transport og hemmeligheter.
-
-### `security` — Signaler om transport og hemmelighetshåndtering
-
-**Slik virker den.** Kontrollerer at endepunktet bruker HTTPS, at API-nøkkelen
-aldri vises ordrett i et svar, og hvilke svarhoder som avslører en oppstrøms
-tjeneste eller proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`,
-`x-litellm-*`, …; til informasjon). Den oppgir også grensen: logging av prompter
-og delte nøkler oppstrøms kan ikke bevises utenfra. Ren HTTP til denne maskinen
-eller et privat nettverk (`localhost`, `127.x`, `192.168.x`, `*.local`, … — en
-selvdriftet modell) er bare en Advarsel uten tak, siden nøkkelen ikke krysser
-internett; ren HTTP til andre verter forblir Ikke bestått · Høy. Uansett er
-`security.tls` et transportråd og hever aldri risikokonklusjonen.
-
-| Kontroll | Utfall | Status | Effekt |
-|---|---|---|---|
-| `security.tls` | Endepunktet bruker HTTPS. | Bestått | Ingen fradrag |
-|  | Endepunktet bruker ikke HTTPS; API-nøkkelen sendes i klartekst. | Ikke bestått · Høy | tak 40 |
-|  | Ren HTTP til en vert på lokalt eller privat nettverk; API-nøkkelen krysser ikke internett. | Advarsel · Lav | Ingen fradrag |
-| `security.key_echo` | API-nøkkelen vises ikke i svaret. | Bestått | Ingen fradrag |
-|  | API-nøkkelen vises ordrett i svaret. | Ikke bestått · Høy | tak 30 |
-| `security.headers` | Ingen svarhoder avslører oppstrøms (til informasjon). | Bestått | Ingen fradrag |
-|  | Svarhoder avslører oppstrøms eller proxy (til informasjon). | Info · Lav | Ingen fradrag |
-|  | Ingen svarhoder å undersøke. | Uavklart | Ingen fradrag |
-| `security.note` | Logging av prompter og delte nøkler oppstrøms kan ikke bevises utenfra. | Info | Ingen fradrag |
+**Fanger.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` og bevis i retning av `privacy.prompt-logging-leakage` (prefiksbufring): om svaret er modellens eget, uendret og nygenerert. På embedding- og rerank-overflatene inneholder dimensjonen determinismekontrollen. Den er ikke en kjernedimensjon: funnene bestemmer risikoen bare gjennom alvorligheten sin.
 
 ### `injected_prompt` — Påvisning av injisert systemprompt
 
@@ -863,6 +816,26 @@ utdatagrensen, er uavklart, ikke et bytte.
 |  | En kanariverdi ble byttet ut, mens den pålitelige referansen beholdt den uendret. | Ikke bestått · Kritisk | 10 poeng |
 |  | Ingen kanari ble gjentatt ordrett, så manipulering kunne ikke vurderes. | Uavklart | Telles ikke |
 
+### `determinism` — Determinisme og korrekt hurtigbuffer
+
+**Slik virker den.** Fire identiske kreative prompter ved `temperature=1.0`
+(uten seed): en ekte modell varierer, og byte-identisk utdata i alle prøvene tyder
+på en hurtigbuffer for svar som ignorerer sampling. Minst tre av de fire prøvene
+må være brukbare (og alle brukbare identiske) for å konkludere med bufring; med
+færre er kontrollen uavklart. Konklusjonen undertrykkes for resonnerende
+modeller, som med rette ignorerer temperaturen. To identiske faktaprompter ved
+`temperature=0` er bare til informasjon.
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `determinism.temp1_variability` | Gjentatte prøver ved temperature=1.0 var forskjellige, slik ekte sampling gir. | Bestått | 100 poeng |
+|  | Prøvene var identiske, men resonnerende modeller ignorerer med rette temperaturen. | Info | 100 poeng |
+|  | Alle brukbare prøver (minst 3) ved temperature=1.0 var byte-identiske, noe som tyder på bufring av svar. | Advarsel · Middels | 55 poeng |
+|  | Færre enn 3 brukbare prøver ved temperature=1.0 å vurdere. | Uavklart · Lav | Telles ikke |
+| `determinism.temp0_stability` | Identiske svar ved temperature=0 (forventet); til informasjon, gir ikke score. | Info | Telles ikke |
+|  | Svarene var forskjellige ved temperature=0; til informasjon, gir ikke score. | Info | Telles ikke |
+|  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
+
 ### `prompt_cache` — Prefiks-hurtigbuffer for prompt (tidsmåling)
 
 **Slik virker den.** Et unikt prefiks på ~1 200 tokens strømmes to ganger (kaldt,
@@ -884,6 +857,36 @@ JSON for verktøykall; bare en utbytting av *verdier* teller. Betinget manipuler
 begrenset sett med prober. Logging er **umulig å bevise** med black box-tester fra
 klienten, og ekte kan ikke vise deling av hurtigbuffer *mellom brukere* med én
 nøkkel: at et tidssignal mangler, beviser ikke at prompter ikke logges.
+
+---
+
+## `security` — Transportsikkerhet
+
+**Fanger.** Grunnleggende hygiene for transport og hemmeligheter: ren HTTP, en API-nøkkel gjengitt i svaret og svarhoder som avslører oppstrømstjenesten.
+
+### `security` — Signaler om transport og hemmelighetshåndtering
+
+**Slik virker den.** Kontrollerer at endepunktet bruker HTTPS, at API-nøkkelen
+aldri vises ordrett i et svar, og hvilke svarhoder som avslører en oppstrøms
+tjeneste eller proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`,
+`x-litellm-*`, …; til informasjon). Den oppgir også grensen: logging av prompter
+og delte nøkler oppstrøms kan ikke bevises utenfra. Ren HTTP til denne maskinen
+eller et privat nettverk (`localhost`, `127.x`, `192.168.x`, `*.local`, … — en
+selvdriftet modell) er bare en Advarsel uten tak, siden nøkkelen ikke krysser
+internett; ren HTTP til andre verter forblir Ikke bestått · Høy. Uansett er
+`security.tls` et transportråd og hever aldri risikokonklusjonen.
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `security.tls` | Endepunktet bruker HTTPS. | Bestått | Ingen fradrag |
+|  | Endepunktet bruker ikke HTTPS; API-nøkkelen sendes i klartekst. | Ikke bestått · Høy | tak 40 |
+|  | Ren HTTP til en vert på lokalt eller privat nettverk; API-nøkkelen krysser ikke internett. | Advarsel · Lav | Ingen fradrag |
+| `security.key_echo` | API-nøkkelen vises ikke i svaret. | Bestått | Ingen fradrag |
+|  | API-nøkkelen vises ordrett i svaret. | Ikke bestått · Høy | tak 30 |
+| `security.headers` | Ingen svarhoder avslører oppstrøms (til informasjon). | Bestått | Ingen fradrag |
+|  | Svarhoder avslører oppstrøms eller proxy (til informasjon). | Info · Lav | Ingen fradrag |
+|  | Ingen svarhoder å undersøke. | Uavklart | Ingen fradrag |
+| `security.note` | Logging av prompter og delte nøkler oppstrøms kan ikke bevises utenfra. | Info | Ingen fradrag |
 
 ---
 
@@ -984,7 +987,7 @@ scoren 0–100 og karakteren A–F, med vekter per overflate. Et dimensjonsavvik
 | Vektordimensjon | `embed.dimension` | Modellidentitet | returnert lengde mot den oppgitte modellens egen dimensjon (kunnskapsbasen, eller `claimed_dimensions`) |
 | Gjengitt modell | `embed.model_field` | Modellidentitet | svarets `model`-felt nevner den oppgitte modellen |
 | Vektordrift | `embed.drift` | Modellidentitet | vektoren for den faste probeinndataen mot forrige lagrede kjøring |
-| Determinisme | `embed.determinism` | Pålitelighet ved samtidighet | samme inndata to ganger gir cosinus ≥ 0,9999 |
+| Determinisme | `embed.determinism` | Svarintegritet | samme inndata to ganger gir cosinus ≥ 0,9999 |
 | Atskillelse | `embed.distinctness` | Påståtte egenskaper | urelaterte inndata gir cosinus under 0,98 |
 | Ytelsesprobe | `performance.embed` | Ytelse | forsinkelse, kaldstart, gjennomstrømning, batchskalering |
 
@@ -1028,8 +1031,7 @@ deles dokumentene opp eller serialiseres (lineært, WARN LOW).
 
 En rerank-revisjon (`surface` `rerank`) sender bare `POST /rerank`-forespørsler og
 gis score på den felles skalaen 0–100 og karakteren A–F med egne vekter:
-modellidentitet 30, påståtte egenskaper 30, ytelse 20, pålitelighet ved
-samtidighet 10, tilkobling 10. En mislykket rangering med kjent svar (påståtte
+modellidentitet 30, påståtte egenskaper 30, ytelse 20, svarintegritet 10, tilkobling 10. En mislykket rangering med kjent svar (påståtte
 egenskaper, HIGH) eller en byttet modell (modellidentitet, HIGH) gjør risikoen
 HIGH.
 
@@ -1039,7 +1041,7 @@ HIGH.
 | Kjent svar | `rerank.known_answer` | Påståtte egenskaper | en probe med ett åpenbart relevant dokument rangerer det først |
 | Gjengitt modell | `rerank.identity` | Modellidentitet | svarets `model`-felt nevner den oppgitte modellen |
 | Rangeringsdrift | `rerank.drift` | Modellidentitet | den faste probens rangering og scorer mot forrige lagrede kjøring |
-| Determinisme | `rerank.determinism` | Pålitelighet ved samtidighet | samme spørring to ganger gir samme rangering og scorer |
+| Determinisme | `rerank.determinism` | Svarintegritet | samme spørring to ganger gir samme rangering og scorer |
 | Ytelsesprobe | `performance.rerank` | Ytelse | forsinkelse, kaldstart, dokumenter/s, skalering med antall dokumenter |
 
 **Rangeringsdrift.** Hver kjøring lagrer rangeringen og de avrundede scorene for

@@ -11,7 +11,7 @@ scored on the same dimensions:
 * ``embed.drift`` — a pinned input's vector against the previous saved run of
   the same target and claimed model; a different vector means a silent model
   swap (MODEL_IDENTITY);
-* ``embed.determinism`` — the same input twice gives the same vector (RELIABILITY);
+* ``embed.determinism`` — the same input twice gives the same vector (INTEGRITY);
 * ``embed.distinctness`` — unrelated inputs give clearly different vectors
   (CAPABILITY);
 * ``performance.embed`` — the performance probe (:mod:`ekte.detectors.embed_performance`).

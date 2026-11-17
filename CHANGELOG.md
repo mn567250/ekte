@@ -20,6 +20,37 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Scoring: a response integrity dimension ([#260](https://github.com/mn567250/ekte/issues/260))
+
+The "Transport security" dimension held response tampering, injected system
+prompts and response caches, none of which is transport: a tampering relay could
+read "does not deliver what it advertises: Transport security". The response
+cache check sat under protocol compliance, and on embeddings and rerank under
+concurrency reliability.
+
+- New dimension `integrity`, **Response integrity**: the `integrity`
+  (tampering), `injected_prompt`, `determinism` and `prompt_cache` detectors,
+  and on the embedding and rerank surfaces `embed.determinism` and
+  `rerank.determinism`. It is neither a core nor a profile dimension: its
+  findings set the risk through their severity, as before.
+- `security` (Transport security) keeps the TLS, key-echo and header checks.
+- Chat weights: response integrity 6, transport security 4 (was 6),
+  performance 4 (was 6), protocol compliance 6 (was 8, it no longer holds the
+  determinism check; the sum stays 100). Embedding: response integrity 15 and
+  rerank: response integrity 10 replace concurrency reliability, which those
+  surfaces no longer score. Overall scores of new runs can therefore differ
+  from older runs of the same relay.
+- The `protocol` detector is now named **Wire-protocol conformance** (was
+  "OpenAI-compatibility conformance"): it also checks Anthropic Messages and
+  OpenAI Responses targets. Its id is unchanged.
+- `--dimension`, `run.dimensions` and the web UI's **Dimensions to run** accept
+  `integrity`. A custom selection of `security` no longer runs the integrity
+  detectors; select `integrity` as well. Embedding and rerank monitors and runs
+  saved with `reliability` selected read it as `integrity`.
+- **Report schema 1.5** (see #168): the `Dimension` enum gains `integrity`.
+  Reports written before keep their dimensions and detector assignments as
+  recorded and show response integrity as not recorded.
+
 ### Capability: the max-output check catches a relay that clamps the output ([#253](https://github.com/mn567250/ekte/issues/253))
 
 A relay that clamped `max_tokens` to 100 returned ten lines, stopped with
