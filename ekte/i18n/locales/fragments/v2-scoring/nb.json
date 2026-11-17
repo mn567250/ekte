@@ -163,6 +163,9 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score.",
   "The model named the color of the test image.": "Modellen nevnte fargen på testbildet.",
   "Vision is claimed but the model did not name the image's color.": "Syn er påstått, men modellen nevnte ikke fargen på bildet.",
-  "Vision is not claimed, so no image was sent.": "Syn er ikke påstått, så ikke noe bilde ble sendt."
+  "Vision is not claimed, so no image was sent.": "Syn er ikke påstått, så ikke noe bilde ble sendt.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Scoren er begrenset til {1} fordi risikonivået er «{2}»; det vektede gjennomsnittet av dimensjonene er {3}.",
+  "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.": "Gjennomsnitt {mean}, begrenset til {cap}, scoren til {det}, på grunn av funnene med høy eller kritisk alvorlighetsgrad: {list}. En dimensjon får ikke høyere score enn den laveste detektoren med et slikt funn.",
+  "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.": "Scoren er begrenset til {cap} fordi risikonivået er «{risk}» (vektet gjennomsnitt av dimensjonene: {mean}). Funn som bestemmer risikoen: {list}."
  }
 }

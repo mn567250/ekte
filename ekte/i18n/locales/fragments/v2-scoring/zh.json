@@ -144,6 +144,7 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "流式请求成功，但没有返回可供判断的内容；不计分。",
   "The model named the color of the test image.": "模型说出了测试图片的颜色。",
   "Vision is claimed but the model did not name the image's color.": "声称支持视觉，但模型没有说出图片的颜色。",
-  "Vision is not claimed, so no image was sent.": "未声称支持视觉，因此没有发送图片。"
+  "Vision is not claimed, so no image was sent.": "未声称支持视觉，因此没有发送图片。",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "综合分上限为 {1}，因为风险等级为「{2}」；各维度加权平均分为 {3}。"
  }
 }

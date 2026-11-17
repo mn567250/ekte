@@ -163,6 +163,9 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "O stream teve sucesso, mas não entregou conteúdo para avaliar; sem pontuação.",
   "The model named the color of the test image.": "O modelo nomeou a cor da imagem de teste.",
   "Vision is claimed but the model did not name the image's color.": "A visão é declarada, mas o modelo não nomeou a cor da imagem.",
-  "Vision is not claimed, so no image was sent.": "A visão não é declarada, por isso nenhuma imagem foi enviada."
+  "Vision is not claimed, so no image was sent.": "A visão não é declarada, por isso nenhuma imagem foi enviada.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Pontuação limitada a {1} porque o nível de risco é «{2}»; a média ponderada das dimensões é {3}.",
+  "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.": "Média {mean}, limitada a {cap}, a pontuação de {det}, devido às suas constatações de gravidade alta ou crítica: {list}. Uma dimensão não pontua acima do seu detetor mais baixo com uma constatação destas.",
+  "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.": "Pontuação limitada a {cap} porque o nível de risco é «{risk}» (média ponderada das dimensões: {mean}). Constatações que determinam o risco: {list}."
  }
 }

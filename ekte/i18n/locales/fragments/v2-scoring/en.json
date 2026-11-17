@@ -163,6 +163,9 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "The stream succeeded but delivered no content to judge by; not scored.",
   "The model named the color of the test image.": "The model named the color of the test image.",
   "Vision is claimed but the model did not name the image's color.": "Vision is claimed but the model did not name the image's color.",
-  "Vision is not claimed, so no image was sent.": "Vision is not claimed, so no image was sent."
+  "Vision is not claimed, so no image was sent.": "Vision is not claimed, so no image was sent.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.",
+  "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.": "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.",
+  "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.": "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}."
  }
 }
