@@ -366,3 +366,56 @@ def test_bundled_performance_references_load():
     kb = load_knowledge_base(None, include_user=False)
     refs = [m.performance for _, m in kb.all_models() if m.performance]
     assert refs and all(r.decode_tps and r.source for r in refs)
+
+
+# --------------------------------------------------------------------------- #
+# model-specific fingerprints (issue #251)
+# --------------------------------------------------------------------------- #
+# Chat profiles per provider that have NO model-specific fingerprint: no pure-
+# code probe of their own within the identity output cap, so the identity check
+# cannot tell them from a sibling of the same vendor. Lower a number when you
+# add a verified fingerprint (docs/dev/knowledge-base.md); it must never rise.
+_WITHOUT_MODEL_SPECIFIC = {
+    "ai2": 6, "anthropic": 23, "arcee": 3, "cohere": 8, "deepcogito": 1, "deepseek": 5,
+    "gemini": 12, "glm": 19, "ibm": 3, "liquid": 4, "meta": 8, "microsoft": 8, "mistral": 11,
+    "moonshot": 12, "nous": 4, "nvidia": 3, "openai": 29, "qwen": 20, "xai": 7,
+}
+
+
+def _is_chat(model: ModelProfile) -> bool:
+    return (
+        "text" in model.modalities
+        and model.embedding_dimensions == 0
+        and "rerank" not in f"{model.id} {model.family or ''}".lower()
+    )
+
+
+def test_chat_profiles_without_a_model_specific_fingerprint_do_not_grow():
+    from ekte.detectors.model_identity import ModelIdentityDetector
+
+    kb = load_knowledge_base(None, include_user=False)
+    cap = ModelIdentityDetector.MAX_FINGERPRINT_OUTPUT
+    without: dict[str, int] = {}
+    for provider, model in kb.all_models():
+        if not _is_chat(model):
+            continue
+        resolved = ResolvedProfile(provider=provider, model=model)
+        if not resolved.model_specific_fingerprints(cap):
+            without[provider.provider] = without.get(provider.provider, 0) + 1
+    report = {p: without.get(p, 0) for p in sorted({*without, *_WITHOUT_MODEL_SPECIFIC})}
+    print("chat profiles without a model-specific fingerprint:", report)
+    risen = {p: n for p, n in report.items() if n > _WITHOUT_MODEL_SPECIFIC.get(p, 0)}
+    assert risen == {}, f"more chat profiles without a model-specific fingerprint: {risen}"
+
+
+def test_separates_from_names_siblings_of_the_same_provider():
+    kb = load_knowledge_base(None, include_user=False)
+    for provider in kb.providers.values():
+        ids = {m.id for m in provider.models}
+        for fp in provider.fingerprints:
+            assert not fp.separates_from, f"{provider.provider}/{fp.id}: separates_from is model-level only"
+        for model in provider.models:
+            for fp in model.fingerprints:
+                unknown = set(fp.separates_from) - ids
+                assert not unknown, f"{provider.provider}/{model.id}/{fp.id}: {unknown}"
+                assert model.id not in fp.separates_from

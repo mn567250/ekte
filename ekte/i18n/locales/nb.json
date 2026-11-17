@@ -315,10 +315,11 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Øk --timeout / --max-request-time, eller senk --max-context-tokens, for å måle hele vinduet.",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Sjekk feilen (f.eks. en forespørselsparameter dette endepunktet avviser), og kjør på nytt for å måle vinduet.",
   "Raise --max-context-tokens to exercise the full declared window.": "Øk --max-context-tokens for å prøve hele det oppgitte vinduet.",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "Behandle vinduet over den største huskede prompten som ubekreftet; en målt tokenfaktor for denne tokenizer-familien ville la proben nå det.",
   "Compare against a trusted baseline to confirm.": "Sammenlign med en pålitelig referanse for å bekrefte.",
   "The relay likely truncates or summarizes long prompts.": "Reléet avkorter eller oppsummerer trolig lange prompter.",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Reelt kontekstvindu ~{effective_window} << oppgitt {declared} (forhold {ratio}, mistanke om stille avkorting). Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Reelt kontekstvindu ~{effective_window} er under oppgitte {declared} (forhold {ratio}, gjenkallingen svekkes før den annonserte grensen). Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Reelt kontekstvindu ~{effective_window} << oppgitt {declared} (andel {top_rung_share} av øverste trinn på {top_rung} tokens, mistanke om stille avkorting). Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Reelt kontekstvindu ~{effective_window} er under oppgitte {declared} (andel {top_rung_share} av øverste trinn på {top_rung} tokens, gjenkallingen svekkes før den annonserte grensen). Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Selv en prompt på ~{smallest_probed} tokens ga ikke gjenkalling; det brukbare vinduet ser ut til å være langt under oppgitte {declared}. Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ikke noe oppgitt kontekstvindu å sammenligne med; målt effektivt vindu ~{effective_window} tokens. Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "Serveren dropper stille starten av lange prompter; øk innstillingen for kontekstlengde, eller betrakt det oppgitte vinduet som ikke verifisert.",
@@ -500,7 +501,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Noen kontroller stemmer ikke med det som annonseres: {dims} — kontroller",
   "No problems in the checked dimensions (model identity not verified)": "Ingen problemer i de kontrollerte dimensjonene (modellidentitet ikke verifisert)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Noen få små avvik i de kontrollerte dimensjonene (modellidentitet ikke verifisert)",
-  "It does not deliver what it advertises": "Den leverer ikke det som annonseres"
+  "It does not deliver what it advertises": "Den leverer ikke det som annonseres",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Kjør ekte compare mot en pålitelig referanse for den oppgitte modellen (eller legg til --judge) for å skille den fra billigere modeller fra samme leverandør.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Ingenting å endre på reléet: den ekte modellen bommer også på denne forventningen. Meld fra om proben så kunnskapsbasen kan rettes.",
+  "self-reported knowledge cutoff": "selvrapportert kunnskapsgrense"
  },
  "findings": {
   "connectivity.models": [
@@ -565,15 +569,15 @@
   ],
   "context_window.truncation": [
    "Reelt kontekstvindu langt mindre enn oppgitt",
-   "Reelt kontekstvindu ~{effective_window} << probet vindu på {upper} tokens (oppgitt {declared}; forhold {ratio}, mistanke om stille avkorting)."
+   "Reelt kontekstvindu ~{effective_window} << probet vindu på {upper} tokens (oppgitt {declared}; andel {top_rung_share} av øverste trinn på {top_rung} tokens, mistanke om stille avkorting)."
   ],
   "context_window.short": [
    "Reelt kontekstvindu mindre enn oppgitt",
-   "Reelt kontekstvindu ~{effective_window} under det probede vinduet på {upper} tokens (oppgitt {declared}; forhold {ratio}, gjenkallingen svekkes før grensen)."
+   "Reelt kontekstvindu ~{effective_window} under det probede vinduet på {upper} tokens (oppgitt {declared}; andel {top_rung_share} av øverste trinn på {top_rung} tokens, gjenkallingen svekkes før grensen)."
   ],
   "context_window.consistent": [
    "Målt kontekstvindu stemmer med påstanden",
-   "Nålen huskes fortsatt ved ~{effective_window} tokens, nær de oppgitte {declared} (forhold {ratio})."
+   "Nålen huskes fortsatt ved ~{effective_window} tokens, nær de oppgitte {declared} (andel {top_rung_share} av øverste trinn på {top_rung} tokens)."
   ],
   "context_window.measured": [
    "Målt effektivt kontekstvindu",
@@ -582,6 +586,10 @@
   "context_window.verified_to_cap": [
    "Kontekstvinduet er verifisert opp til probens tak",
    "Nålen huskes ved ~{effective_window} tokens, øverste trinn under probens tak på {probe_cap} tokens; det oppgitte vinduet på {declared} tokens over det ble ikke prøvd."
+  ],
+  "context_window.overshot": [
+   "Kontekstvindu-proben gikk over tokenbudsjettet sitt",
+   "Endepunktet telte prompten på ~{effective_window} tokens som {reported_prompt_tokens} prompttokens ({overshoot} ganger budsjettet), og bare øverste trinn på {top_rung} tokens sviktet: proben skjøt over, så vinduet over ~{reported_prompt_tokens} tokens ble ikke prøvd (ikke bevis for et vindu under oppgitte {declared})."
   ],
   "context_window.probe_error": [
    "Kontekstvindu-proben fikk en feil som svar",
@@ -899,6 +907,14 @@
   "performance.reference": [
    "Gjennomstrømning sammenlignet med referansen",
    "Målets gjennomstrømning {target_tps_p50} tok/s, referanse {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Kunnskapsgrense",
+   "Sammenligning av den selvrapporterte kunnskapsgrensen med den oppgitte modellens ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Konkret modell ikke verifisert",
+   "Svarene stemmer med leverandøren ({vendor}), men ingen kontroll skiller {model} fra leverandørens andre modeller; den konkrete modellen ble ikke verifisert."
   ]
  }
 }

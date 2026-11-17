@@ -34,6 +34,7 @@
   "Context window verified up to the probe cap": "Janela de contexto verificada até ao limite da sonda",
   "Context-window probe answered with an error": "A sonda da janela de contexto recebeu um erro",
   "Context-window probe could not run": "Não foi possível executar a sonda de janela de contexto",
+  "Context-window probe overshot its token budget": "A sonda da janela de contexto excedeu o seu orçamento de tokens",
   "Context-window probe timed out": "A sonda da janela de contexto esgotou o tempo limite",
   "Could not assess temperature=0 stability": "Não foi possível avaliar a estabilidade com temperature=0",
   "Could not assess temperature=1.0 variability": "Não foi possível avaliar a variabilidade com temperature=1.0",
@@ -192,6 +193,14 @@
   "Fingerprint skipped: {1}": "Impressão digital ignorada: {1}",
   "Response attribute {1}": "Atributo de resposta {1}",
   "Request attribute {1}": "Atributo de pedido {1}",
-  "Not re-scored: the recorded run has no answer to some requests": "Não reavaliado: a execução registada não tem resposta para alguns pedidos"
+  "Not re-scored: the recorded run has no answer to some requests": "Não reavaliado: a execução registada não tem resposta para alguns pedidos",
+  "Knowledge cutoff not reported": "Data de corte não indicada",
+  "Knowledge cutoff consistent": "Data de corte coerente",
+  "Knowledge cutoff differs from the claimed model's": "A data de corte difere da do modelo declarado",
+  "Knowledge cutoff earlier on the baseline too": "Data de corte anterior também na referência",
+  "Knowledge cutoff earlier than the claimed model's, baseline consistent": "Data de corte anterior à do modelo declarado, referência coerente",
+  "Knowledge cutoff earlier than the claimed model's": "Data de corte anterior à do modelo declarado",
+  "Specific model not verified": "Modelo concreto não verificado",
+  "Fingerprint diverged on the baseline too: {1}": "Impressão digital divergente também na referência: {1}"
  }
 }

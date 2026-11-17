@@ -34,6 +34,7 @@
     "Context window verified up to the probe cap": "上下文窗口已在探测上限内验证",
     "Context-window probe answered with an error": "上下文窗口探测收到错误响应",
     "Context-window probe could not run": "上下文窗口探测无法运行",
+    "Context-window probe overshot its token budget": "上下文窗口探测超出了 token 预算",
     "Context-window probe timed out": "上下文窗口探测超时",
     "Could not assess temperature=0 stability": "无法评估 temperature=0 下的稳定性",
     "Could not assess temperature=1.0 variability": "无法评估 temperature=1.0 下的变异性",
@@ -192,6 +193,14 @@
     "Fingerprint skipped: {1}": "行为指纹已跳过：{1}",
     "Response attribute {1}": "响应属性 {1}",
     "Request attribute {1}": "请求属性 {1}",
-    "Not re-scored: the recorded run has no answer to some requests": "未重新评分：录制的检测缺少部分请求的应答"
+    "Not re-scored: the recorded run has no answer to some requests": "未重新评分：录制的检测缺少部分请求的应答",
+    "Knowledge cutoff not reported": "未报告知识截止日期",
+    "Knowledge cutoff consistent": "知识截止日期一致",
+    "Knowledge cutoff differs from the claimed model's": "知识截止日期与所声明模型的不同",
+    "Knowledge cutoff earlier on the baseline too": "基准的知识截止日期同样更早",
+    "Knowledge cutoff earlier than the claimed model's, baseline consistent": "知识截止日期早于所声明模型，基准一致",
+    "Knowledge cutoff earlier than the claimed model's": "知识截止日期早于所声明模型",
+    "Specific model not verified": "具体模型未经验证",
+    "Fingerprint diverged on the baseline too: {1}": "行为指纹在基准上同样偏离：{1}"
   }
 }

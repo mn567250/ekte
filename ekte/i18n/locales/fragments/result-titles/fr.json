@@ -34,6 +34,7 @@
     "Context window verified up to the probe cap": "Fenêtre de contexte vérifiée jusqu'au plafond de la sonde",
     "Context-window probe answered with an error": "La sonde de fenêtre de contexte a reçu une erreur",
     "Context-window probe could not run": "Sonde de fenêtre de contexte impossible",
+    "Context-window probe overshot its token budget": "La sonde de fenêtre de contexte a dépassé son budget de jetons",
     "Context-window probe timed out": "Délai dépassé pour la sonde de fenêtre de contexte",
     "Could not assess temperature=0 stability": "Stabilité à temperature=0 non évaluable",
     "Could not assess temperature=1.0 variability": "Variabilité à temperature=1.0 non évaluable",
@@ -192,6 +193,14 @@
     "Fingerprint skipped: {1}": "Empreinte ignorée : {1}",
     "Response attribute {1}": "Attribut de réponse {1}",
     "Request attribute {1}": "Attribut de requête {1}",
-    "Not re-scored: the recorded run has no answer to some requests": "Non réévalué : l'exécution enregistrée n'a pas de réponse à certaines requêtes"
+    "Not re-scored: the recorded run has no answer to some requests": "Non réévalué : l'exécution enregistrée n'a pas de réponse à certaines requêtes",
+    "Knowledge cutoff not reported": "Date limite des connaissances non indiquée",
+    "Knowledge cutoff consistent": "Date limite des connaissances cohérente",
+    "Knowledge cutoff differs from the claimed model's": "La date limite des connaissances diffère de celle du modèle annoncé",
+    "Knowledge cutoff earlier on the baseline too": "Date limite des connaissances antérieure aussi sur la référence",
+    "Knowledge cutoff earlier than the claimed model's, baseline consistent": "Date limite des connaissances antérieure à celle du modèle annoncé, référence cohérente",
+    "Knowledge cutoff earlier than the claimed model's": "Date limite des connaissances antérieure à celle du modèle annoncé",
+    "Specific model not verified": "Modèle précis non vérifié",
+    "Fingerprint diverged on the baseline too: {1}": "Empreinte divergente aussi sur la référence : {1}"
   }
 }

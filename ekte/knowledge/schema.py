@@ -9,6 +9,7 @@ audit against it.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -40,6 +41,13 @@ class FingerprintProbe(BaseModel):
     # sent as written regardless of any UI or alert language.
     prompt_lang: str = "en"
     language_bound: str | None = None
+    # Provenance of a model-level fingerprint that tells this model apart from
+    # its siblings (docs/dev/knowledge-base.md): the ids of the same-provider
+    # models a measurement showed failing the expectation the genuine model
+    # meets, and the ISO date (YYYY-MM-DD) of that measurement. Recorded in the
+    # report's evidence; ``separates_from`` needs ``verified``.
+    separates_from: list[str] = Field(default_factory=list)
+    verified: str | None = None
 
     @model_validator(mode="after")
     def _non_english_probes_say_why(self) -> FingerprintProbe:
@@ -49,6 +57,20 @@ class FingerprintProbe(BaseModel):
                 "language_bound reason (why this probe must not be in English)"
             )
         return self
+
+    @model_validator(mode="after")
+    def _separation_is_verified(self) -> FingerprintProbe:
+        if self.verified is not None and not _ISO_DATE.match(self.verified):
+            raise ValueError(f"fingerprint {self.id!r}: verified must be an ISO date (YYYY-MM-DD)")
+        if self.separates_from and self.verified is None:
+            raise ValueError(
+                f"fingerprint {self.id!r}: separates_from needs verified, the date the "
+                "probe was measured against the genuine model and those siblings"
+            )
+        return self
+
+
+_ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class PerformanceReference(BaseModel):
@@ -120,6 +142,19 @@ class ModelProfile(BaseModel):
     performance: PerformanceReference | None = None
     notes: str = ""
 
+    def cutoff_month(self) -> tuple[int, int] | None:
+        """``knowledge_cutoff`` as (year, month) when it names a month
+        (``YYYY-MM`` or ``YYYY-MM-DD``); None for a year alone, an estimate
+        ("~2025 (undisclosed)") or no value, which the identity cutoff probe
+        cannot compare with."""
+        m = _CUTOFF_MONTH.match((self.knowledge_cutoff or "").strip())
+        if not m or not 1 <= int(m[2]) <= 12:
+            return None
+        return int(m[1]), int(m[2])
+
+
+_CUTOFF_MONTH = re.compile(r"^(\d{4})-(\d{2})(?:-\d{2})?$")
+
 
 class ProviderProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -150,6 +185,15 @@ class ResolvedProfile(BaseModel):
 
     def all_fingerprints(self) -> list[FingerprintProbe]:
         return [*self.provider.fingerprints, *self.model.fingerprints]
+
+    def model_specific_fingerprints(self, max_tokens: int) -> list[FingerprintProbe]:
+        """The model's own pure-code fingerprints that fit ``max_tokens``: the
+        only probes that can tell this model from a sibling of the same vendor
+        (provider-level probes hold for every model of the provider)."""
+        return [
+            fp for fp in self.model.fingerprints
+            if fp.pure_code_checkable and fp.max_tokens <= max_tokens
+        ]
 
 
 class KnowledgeBase(BaseModel):

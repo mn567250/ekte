@@ -116,6 +116,7 @@ RESULT_TITLE_PATTERNS = (
     "Fingerprint consistent: {1}",
     "Fingerprint inconclusive: {1}",
     "Fingerprint skipped: {1}",
+    "Fingerprint diverged on the baseline too: {1}",
     "Response attribute {1}",
     "Request attribute {1}",
 )

@@ -103,8 +103,9 @@
   "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "La salida se cortó con finish_reason length muy por debajo del límite solicitado: el relay limita los tokens de salida.",
   "Recall held at the top rung (90% of the probed window): no deduction.": "El recuerdo se mantuvo en el peldaño superior (90 % de la ventana sondeada): sin deducción.",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "Recuerdo verificado hasta el tope de la sonda; la ventana declarada por encima no se probó.",
-  "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "El recuerdo se mantuvo hasta el 50-90 % de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó.",
-  "Recall failed below half of the probed window; deducts the share of the top rung that did not recall.": "El recuerdo falló por debajo de la mitad de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó.",
+  "Recall held at half of the top rung or above, but not at the top rung; deducts the share of the top rung that did not recall.": "El recuerdo se mantuvo desde la mitad del peldaño superior, pero no en el peldaño superior; descuenta la parte del peldaño superior que no se recordó.",
+  "Recall failed below half of the top rung; deducts the share of the top rung that did not recall.": "El recuerdo falló por debajo de la mitad del peldaño superior; descuenta la parte del peldaño superior que no se recordó.",
+  "Only the top rung failed and the endpoint counted the largest recalled prompt more than 5% above its budget: the probe overshot, the window above it was not exercised.": "Solo falló el peldaño superior y el endpoint contó el mayor prompt recordado más de un 5 % por encima de su presupuesto: la sonda se excedió, la ventana por encima no se probó.",
   "Not even the smallest probe size recalled the needle.": "Ni siquiera el tamaño de sonda más pequeño recordó la aguja.",
   "The start and end were recalled but the middle was not, twice.": "Se recordaron el principio y el final, pero la parte central no, dos veces.",
   "A prompt well below the declared window was rejected as too long.": "Un prompt muy por debajo de la ventana declarada fue rechazado por demasiado largo.",
@@ -114,7 +115,7 @@
   "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.": "Una sonda recibió un error (un parámetro rechazado, un error HTTP o del servidor) antes del peldaño superior: no es evidencia de truncamiento.",
   "Effective context window": "Ventana de contexto efectiva",
   "Input-token overhead is small and no hidden instructions leaked.": "La sobrecarga de tokens de entrada es pequeña y no se filtraron instrucciones ocultas.",
-  "Instruction-like text leaked when asked (weak on its own).": "Se filtró texto con aspecto de instrucciones al pedirlo (débil por sí solo).",
+  "Instruction-like text leaked when asked (not counted: models confabulate).": "Se filtró texto con aspecto de instrucciones al pedirlo (no computa: los modelos lo inventan).",
   "A large fixed input-token overhead, constant across message sizes.": "Una gran sobrecarga fija de tokens de entrada, constante con el tamaño del mensaje.",
   "A fixed input-token overhead and a leaked preamble together.": "Una sobrecarga fija de tokens de entrada y un preámbulo filtrado a la vez.",
   "No usable prompt token counts to measure the overhead.": "No hay recuentos de tokens de prompt utilizables para medir la sobrecarga.",
@@ -164,6 +165,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "El stream tuvo éxito pero no entregó contenido para juzgar; sin puntuación.",
   "The model named the color of the test image.": "El modelo nombró el color de la imagen de prueba.",
   "Vision is claimed but the model did not name the image's color.": "Se declara visión pero el modelo no nombró el color de la imagen.",
-  "Vision is not claimed, so no image was sent.": "No se declara visión, así que no se envió ninguna imagen."
+  "Vision is not claimed, so no image was sent.": "No se declara visión, así que no se envió ninguna imagen.",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "La respuesta se apartó del comportamiento nativo mientras la de la referencia coincidía: resta la parte del peso de la sonda sobre 100 puntos.",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "La respuesta se apartó, pero también la de la referencia: un problema de la base de conocimiento, no una prueba contra el relay; sin deducción.",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "La fecha de corte de conocimiento declarada está a 6 meses o menos de la del modelo declarado.",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "La fecha de corte de conocimiento declarada es más de 12 meses anterior a la del modelo declarado: resta su parte del peso sobre 100 puntos como una huella.",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "La fecha de corte de conocimiento declarada es más de 12 meses anterior mientras la de la referencia es coherente: resta su parte del peso sobre 100 puntos.",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "La fecha de corte de conocimiento declarada es más de 12 meses anterior, pero también la de la referencia: un problema de la base de conocimiento, no una prueba contra el relay; sin deducción.",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "La fecha de corte de conocimiento declarada difiere en más de 6 meses, pero no es más de 12 meses anterior: se registra, no se evalúa.",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "No hay respuesta en el formato CUTOFF=YYYY-MM para evaluar.",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "Ninguna comprobación pudo distinguir el modelo declarado de otros modelos de su proveedor y no se usó referencia ni juez: el proveedor es coherente, el modelo concreto no se verificó."
  }
 }

@@ -315,10 +315,11 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Aumente --timeout / --max-request-time, o reduzca --max-context-tokens, para medir la ventana completa.",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Revise el error (p. ej., un parámetro de solicitud que este endpoint rechaza) y vuelva a ejecutar para medir la ventana.",
   "Raise --max-context-tokens to exercise the full declared window.": "Aumente --max-context-tokens para probar la ventana declarada completa.",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "Trate la ventana por encima del mayor prompt recordado como no verificada; un factor de tokens medido para esta familia de tokenizadores permitiría a la sonda alcanzarla.",
   "Compare against a trusted baseline to confirm.": "Compare con una referencia de confianza para confirmarlo.",
   "The relay likely truncates or summarizes long prompts.": "Es probable que el intermediario trunque o resuma los prompts largos.",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} << {declared} declarados (proporción {ratio}, se sospecha truncado silencioso). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} inferior a los {declared} declarados (proporción {ratio}, el recuerdo se degrada antes del límite). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} << {declared} declarados (proporción {top_rung_share} del peldaño superior de {top_rung} tokens, se sospecha truncado silencioso). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} inferior a los {declared} declarados (proporción {top_rung_share} del peldaño superior de {top_rung} tokens, el recuerdo se degrada antes del límite). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ni siquiera un prompt de ~{smallest_probed} tokens se recuerda; la ventana útil es muy inferior a los {declared} declarados. Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "No hay ventana declarada con la que comparar; ventana efectiva medida ~{effective_window} tokens. Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "El servidor descarta en silencio el inicio de los prompts largos; aumenta su ajuste de longitud de contexto o considera la ventana declarada como no verificada.",
@@ -500,7 +501,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Algunas comprobaciones no coinciden con lo anunciado: {dims} — verifíquelo",
   "No problems in the checked dimensions (model identity not verified)": "Sin problemas en las dimensiones comprobadas (identidad del modelo no verificada)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Algunos problemas menores en las dimensiones comprobadas (identidad del modelo no verificada)",
-  "It does not deliver what it advertises": "No ofrece lo que anuncia"
+  "It does not deliver what it advertises": "No ofrece lo que anuncia",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Ejecute ekte compare contra una referencia de confianza del modelo declarado (o añada --judge) para distinguirlo de modelos más baratos del mismo proveedor.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Nada que cambiar en el relay: el modelo genuino tampoco cumple esta expectativa. Informe de la sonda para que se corrija la base de conocimiento.",
+  "self-reported knowledge cutoff": "fecha de corte de conocimiento declarada"
  },
  "findings": {
   "connectivity.models": [
@@ -565,15 +569,15 @@
   ],
   "context_window.truncation": [
    "Ventana de contexto real muy inferior a la declarada",
-   "Ventana de contexto real ~{effective_window} << ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, se sospecha truncado silencioso)."
+   "Ventana de contexto real ~{effective_window} << ventana probada de {upper} tokens (declarada {declared}; proporción {top_rung_share} del peldaño superior de {top_rung} tokens, se sospecha truncado silencioso)."
   ],
   "context_window.short": [
    "Ventana de contexto real inferior a la declarada",
-   "Ventana de contexto real ~{effective_window} por debajo de la ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, el recuerdo se degrada antes del límite)."
+   "Ventana de contexto real ~{effective_window} por debajo de la ventana probada de {upper} tokens (declarada {declared}; proporción {top_rung_share} del peldaño superior de {top_rung} tokens, el recuerdo se degrada antes del límite)."
   ],
   "context_window.consistent": [
    "Ventana de contexto medida coherente con la declarada",
-   "La aguja se sigue recordando a ~{effective_window} tokens, cerca de los {declared} declarados (proporción {ratio})."
+   "La aguja se sigue recordando a ~{effective_window} tokens, cerca de los {declared} declarados (proporción {top_rung_share} del peldaño superior de {top_rung} tokens)."
   ],
   "context_window.measured": [
    "Ventana de contexto efectiva medida",
@@ -582,6 +586,10 @@
   "context_window.verified_to_cap": [
    "Ventana de contexto verificada hasta el tope de la sonda",
    "La aguja se recordó a ~{effective_window} tokens, el peldaño superior bajo el tope de sonda de {probe_cap} tokens; la ventana declarada de {declared} tokens por encima no se probó."
+  ],
+  "context_window.overshot": [
+   "La sonda de ventana de contexto excedió su presupuesto de tokens",
+   "El endpoint contó el prompt de ~{effective_window} tokens como {reported_prompt_tokens} tokens de prompt ({overshoot} veces su presupuesto) y solo falló el peldaño superior de {top_rung} tokens: la sonda se excedió, así que la ventana por encima de ~{reported_prompt_tokens} tokens no se probó (no es evidencia de una ventana inferior a los {declared} declarados)."
   ],
   "context_window.probe_error": [
    "La sonda de ventana de contexto recibió un error",
@@ -899,6 +907,14 @@
   "performance.reference": [
    "Rendimiento frente a la referencia",
    "Rendimiento del objetivo {target_tps_p50} tok/s, referencia {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Fecha de corte de conocimiento",
+   "Comparación de la fecha de corte declarada con la del modelo declarado ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Modelo concreto no verificado",
+   "Las respuestas son coherentes con el proveedor ({vendor}), pero ninguna comprobación distingue {model} de sus otros modelos; el modelo concreto no se verificó."
   ]
  }
 }

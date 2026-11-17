@@ -84,8 +84,9 @@
   "The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens.": "输出以 finish_reason length 在远低于请求上限处被截断：中转限制了输出 token。",
   "Recall held at the top rung (90% of the probed window): no deduction.": "在最高探测档（探测窗口的 90%）仍能回忆：不扣分。",
   "Recall verified up to the probe cap; the declared window above it was not exercised.": "已在探测上限内验证回忆；上限以上的声明窗口未被测试。",
-  "Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall.": "在 50–90% 的探测窗口内能回忆；按最高探测档中未能回忆的比例扣分。",
-  "Recall failed below half of the probed window; deducts the share of the top rung that did not recall.": "不到探测窗口的一半就无法回忆；按最高探测档中未能回忆的比例扣分。",
+  "Recall held at half of the top rung or above, but not at the top rung; deducts the share of the top rung that did not recall.": "在最高探测档的一半或以上能回忆，但在最高探测档不能；按最高探测档中未能回忆的比例扣分。",
+  "Recall failed below half of the top rung; deducts the share of the top rung that did not recall.": "不到最高探测档的一半就无法回忆；按最高探测档中未能回忆的比例扣分。",
+  "Only the top rung failed and the endpoint counted the largest recalled prompt more than 5% above its budget: the probe overshot, the window above it was not exercised.": "只有最高探测档失败，且端点对最大的已回忆提示所计的 token 超出其预算 5% 以上：探测超出了预算，其上的窗口未被测试。",
   "Not even the smallest probe size recalled the needle.": "连最小的探测长度都没能回忆起针。",
   "The start and end were recalled but the middle was not, twice.": "开头和结尾都能回忆，但中间两次都不能。",
   "A prompt well below the declared window was rejected as too long.": "远小于声明窗口的提示被以过长为由拒绝。",
@@ -95,7 +96,7 @@
   "A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation.": "在到达最高探测档之前，探测收到了错误响应（参数被拒、HTTP 或服务器错误）：并非截断的证据。",
   "Effective context window": "实际上下文窗口",
   "Input-token overhead is small and no hidden instructions leaked.": "输入 token 开销很小，且没有泄露隐藏指令。",
-  "Instruction-like text leaked when asked (weak on its own).": "被要求时泄露了类似指令的文本（单独来看较弱）。",
+  "Instruction-like text leaked when asked (not counted: models confabulate).": "被要求时泄露了类似指令的文本（不计分：模型会编造此类内容）。",
   "A large fixed input-token overhead, constant across message sizes.": "存在较大的固定输入 token 开销，且不随消息长度变化。",
   "A fixed input-token overhead and a leaked preamble together.": "固定的输入 token 开销与泄露的前置提示同时出现。",
   "No usable prompt token counts to measure the overhead.": "没有可用的提示 token 数来测量开销。",
@@ -145,6 +146,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "流式请求成功，但没有返回可供判断的内容；不计分。",
   "The model named the color of the test image.": "模型说出了测试图片的颜色。",
   "Vision is claimed but the model did not name the image's color.": "声称支持视觉，但模型没有说出图片的颜色。",
-  "Vision is not claimed, so no image was sent.": "未声称支持视觉，因此没有发送图片。"
+  "Vision is not claimed, so no image was sent.": "未声称支持视觉，因此没有发送图片。",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "回答偏离原生行为，而基准的回答符合：按该探针的权重占比从 100 分中扣分。",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "回答偏离，但基准的回答同样偏离：属于知识库问题，并非中转站的证据；不扣分。",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "自报的知识截止日期与所声明模型的相差不超过 6 个月。",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "自报的知识截止日期比所声明模型的早 12 个月以上：与行为指纹一样按其权重占比从 100 分中扣分。",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "自报的知识截止日期早 12 个月以上，而基准的一致：按其权重占比从 100 分中扣分。",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "自报的知识截止日期早 12 个月以上，但基准的同样如此：属于知识库问题，并非中转站的证据；不扣分。",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "自报的知识截止日期相差超过 6 个月，但并未早 12 个月以上：仅记录，不评判。",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "没有 CUTOFF=YYYY-MM 格式的回答可供评判。",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "没有任何检查能把所声明模型与同厂商的其他模型区分开，且未使用基准或评审模型：厂商一致，但具体模型未经验证。"
  }
 }

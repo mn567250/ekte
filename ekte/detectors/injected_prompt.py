@@ -9,13 +9,20 @@ independent tells are combined so an honest relay is not falsely accused:
    template overhead). A hidden prepended prompt shows up as a LARGE overhead that
    stays constant as the user message grows — distinguishing it from proportional
    billing inflation.
-2. A *leak* response when asked to repeat any preceding instructions.
+2. A *leak* response when asked to repeat any preceding instructions. The answer
+   is classified (:func:`classify_leak_answer`) as ``none`` (``NONE`` or an honest
+   denial such as "there are no system instructions"), ``leak`` (a quoted passage
+   or at least two second-person imperative sentences outside a denial) or
+   ``unclear`` (anything else, e.g. a refusal), which counts as no leak.
 
 Only when both point the same way does this rise to a (still cautious) WARN; a
-single tell stays low and never escalates overall risk on its own.
+single tell stays low and never escalates overall risk on its own. A leak alone
+is informational and not counted: models confabulate system prompts.
 """
 
 from __future__ import annotations
+
+import re
 
 from ekte import prompts
 from ekte.context import AuditContext
@@ -31,14 +38,82 @@ from ekte.utils.tokenize import estimate_messages_tokens
 _OVERHEAD_TOKENS = 30
 # The two probes' overheads must agree within this to count as a *fixed* prefix.
 _OVERHEAD_CONSISTENCY = 16
+# How much of the leak answer the evidence keeps, so a reader can check the classification.
+_LEAK_EVIDENCE_CHARS = 300
+
+# A denial: a negation, at most a few words, then a qualifier (system, developer,
+# prior, ...) and the thing denied (instructions, prompt, message) - or the thing
+# denied followed by "before / preceding / above".
+_NEGATION = (
+    r"(?:there\s+(?:are|is|were|was)\s+no"
+    r"|there\s+(?:aren't|are\s+not|isn't|is\s+not|weren't|wasn't)\s+any"
+    r"|i\s+(?:have|had|got|received|see|found)\s+no"
+    r"|i\s+(?:do\s+not|don't|did\s+not|didn't)\s+(?:have|see|find|receive|have\s+access\s+to)\s+any"
+    r"|i\s+(?:cannot|can't|can\s+not|could\s+not|couldn't|am\s+unable\s+to)\s+(?:see|find|access|detect)\s+any"
+    r"|no)"
+)
+_GAP = r"(?:\s+[\w'-]+){0,3}?"
+_QUALIFIER = r"(?:system|developer|prior|preceding|previous|earlier|hidden)"
+_DENIED = r"(?:instructions?|prompts?|messages?)"
+_DENIAL_RE = re.compile(
+    rf"\b{_NEGATION}{_GAP}\s+{_QUALIFIER}\b[\w\s/,'-]{{0,40}}?\b{_DENIED}\b"
+    rf"|\b{_NEGATION}{_GAP}\s+{_DENIED}\s+(?:before|preceding|prior\s+to|above|ahead\s+of)\b",
+    re.IGNORECASE,
+)
+# A quoted passage (straight or curly double quotes, backticks), a fenced block or
+# a block quote: quoted instruction text.
+_QUOTED_RE = re.compile(
+    r'"[^"\n]{20,}"|\u201c[^\u201d\n]{20,}\u201d|```|`[^`\n]{20,}`|^\s*>\s*\S',
+    re.MULTILINE,
+)
+# A sentence in the second-person imperative, as system prompts are written.
+_IMPERATIVE_RE = re.compile(
+    r"^(?:you\s+are|you're|you\s+must|you\s+should|you\s+will|you\s+need\s+to|you\s+have\s+to"
+    r"|you\s+may\s+not|always|never|do\s+not|don't)\b",
+    re.IGNORECASE,
+)
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+# A short label before the sentence proper ("System prompt: You are ...", "- ", "1.").
+_SENTENCE_PREFIX_RE = re.compile(r"^(?:[-*\u2022]\s*|\d+[.)]\s*|[\w '-]{1,30}:\s*)+")
+
+
+def _sentences(text: str) -> list[str]:
+    return [s.strip() for s in _SENTENCE_SPLIT_RE.split(text) if s.strip()]
+
+
+def classify_leak_answer(text: str) -> str:
+    """Classify the answer to the leak probe: ``none``, ``leak`` or ``unclear``.
+
+    ``leak`` needs instruction-like content - a quoted or block-quoted passage, or
+    at least two second-person imperative sentences outside a denial sentence.
+    ``none`` is ``NONE`` or a denial (no system / developer / prior instructions)
+    in the first two sentences. Anything else (a refusal, small talk) is
+    ``unclear``. Leak content wins over a denial: a denial followed by quoted
+    instructions is a leak.
+    """
+    stripped = text.strip()
+    if stripped.upper().strip(" .!\"'`") == "NONE":
+        return "none"
+    sentences = _sentences(stripped)
+    denials = [bool(_DENIAL_RE.search(s)) for s in sentences]
+    imperatives = sum(
+        1
+        for s, denial in zip(sentences, denials, strict=True)
+        if not denial and _IMPERATIVE_RE.match(_SENTENCE_PREFIX_RE.sub("", s.lstrip("\"'\u201c`(")))
+    )
+    if _QUOTED_RE.search(stripped) or imperatives >= 2:
+        return "leak"
+    if any(denials[:2]):
+        return "none"
+    return "unclear"
 
 
 # The detector score is its one verdict's points (the published scale).
 SCALE = Scale(
     outcome("injected_prompt.verdict", "clean", 100.0, Status.PASS,
             label="Input-token overhead is small and no hidden instructions leaked."),
-    outcome("injected_prompt.verdict", "leak", 85.0, Status.INFO, Severity.LOW,
-            label="Instruction-like text leaked when asked (weak on its own)."),
+    outcome("injected_prompt.verdict", "leak", None, Status.INFO,
+            label="Instruction-like text leaked when asked (not counted: models confabulate)."),
     outcome("injected_prompt.verdict", "overhead", 75.0, Status.WARN, Severity.LOW,
             label="A large fixed input-token overhead, constant across message sizes."),
     outcome("injected_prompt.verdict", "suspected", 55.0, Status.WARN, Severity.MEDIUM,
@@ -62,9 +137,10 @@ class InjectedPromptDetector(Detector):
         tok = ctx.tokenizer_hint()
 
         overhead = await self._measure_overhead(ctx, tok)
-        leaked = await self._leak_probe(ctx)
+        leak = await self._leak_probe(ctx)
+        leaked = leak["leak_answer_kind"] == "leak"
 
-        result.evidence.update({"overhead": overhead, "leak_detected": leaked})
+        result.evidence.update({"overhead": overhead, "leak_detected": leaked, **leak})
 
         fixed_prefix = (
             overhead is not None
@@ -86,7 +162,7 @@ class InjectedPromptDetector(Detector):
                         f"message sizes) AND the model leaked instruction-like content "
                         f"when asked. A hidden prepended system prompt is suspected."
                     ),
-                    evidence={"overhead": overhead, "leak_detected": True},
+                    evidence={"overhead": overhead, "leak_detected": True, **leak},
                     recommendation="Compare prompt_tokens against a trusted baseline for the same input.",
                 )
             )
@@ -105,7 +181,7 @@ class InjectedPromptDetector(Detector):
                         f"constant as the message grows — consistent with a hidden "
                         f"prepended prompt, but a single signal. Corroborate."
                     ),
-                    evidence={"overhead": overhead},
+                    evidence={"overhead": overhead, "leak_detected": False, **leak},
                 )
             )
             result.status = Status.WARN
@@ -120,9 +196,9 @@ class InjectedPromptDetector(Detector):
                     summary=(
                         "When asked to repeat preceding instructions the model returned "
                         "instruction-like text rather than NONE. Models confabulate, so "
-                        "this is weak on its own."
+                        "on its own this is not counted."
                     ),
-                    evidence={"leak_detected": True},
+                    evidence={"overhead": overhead, "leak_detected": True, **leak},
                 )
             )
             result.status = Status.INFO
@@ -136,7 +212,7 @@ class InjectedPromptDetector(Detector):
                     title="Could not measure input-token overhead",
                     summary="No usable prompt_tokens in the responses; overhead check skipped.",
                     recommendation=advice.NO_PROMPT_TOKENS,
-                    evidence={},
+                    evidence={"leak_detected": False, **leak},
                 )
             )
             result.status = Status.INCONCLUSIVE
@@ -149,7 +225,7 @@ class InjectedPromptDetector(Detector):
                     id="injected_prompt.clean",
                     title="No sign of an injected system prompt",
                     summary="Input-token overhead is small/template-sized and no preamble leaked.",
-                    evidence={"overhead": overhead},
+                    evidence={"overhead": overhead, "leak_detected": False, **leak},
                 )
             )
             result.status = Status.PASS
@@ -181,7 +257,9 @@ class InjectedPromptDetector(Detector):
             "spread": max(overheads) - min(overheads),
         }
 
-    async def _leak_probe(self, ctx: AuditContext) -> bool:
+    async def _leak_probe(self, ctx: AuditContext) -> dict:
+        """The leak probe's answer, classified: ``leak_answer_kind`` (None without
+        an answer) and the first characters of the answer."""
         outcome = await ctx.client.complete(
             RequestSpec(
                 messages=[{"role": "user", "content": prompts.text("injected_prompt.leak")}],
@@ -190,12 +268,9 @@ class InjectedPromptDetector(Detector):
             )
         )
         if not (outcome.ok and outcome.has_content()):
-            return False
+            return {"leak_answer_kind": None, "leak_answer": None}
         text = outcome.content.strip()
-        # Compliant "NONE" (allowing minor punctuation) => no leak.
-        if text.upper().strip(" .\"'") == "NONE":
-            return False
-        # Substantial, instruction-flavored content => a (weak) leak signal.
-        lowered = text.lower()
-        instruction_markers = ("you are", "system", "assistant", "instruction", "do not", "always", "must")
-        return len(text) > 60 and any(m in lowered for m in instruction_markers)
+        return {
+            "leak_answer_kind": classify_leak_answer(text),
+            "leak_answer": text[:_LEAK_EVIDENCE_CHARS],
+        }

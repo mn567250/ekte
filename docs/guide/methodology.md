@@ -172,7 +172,8 @@ result says that model identity was not verified.
   uses the baseline as the judge.
 - **Compare mode** (`ekte compare`) gives the probes a trusted baseline:
   `model_identity` records the baseline's self-identification next to the
-  target's, `protocol_request` re-sends rejected parameters to the baseline,
+  target's and sends every fingerprint and the cutoff probe to the baseline
+  too, `protocol_request` re-sends rejected parameters to the baseline,
   `integrity` escalates a substitution the baseline does not make to CRITICAL,
   `quality_judge` shows the judge both sides, and `performance` probes both
   endpoints alternately. Confidence can only reach high with a baseline.
@@ -342,13 +343,18 @@ marker is embedded in non-repetitive filler, and the model must return it.
 
 - **Probed window.** The probe runs up to `upper` = the declared window, capped
   by `--max-context-tokens` (default 200K). Every verdict is judged against
-  `upper`, never against the part of a larger declared window above the cap.
+  the top rung (90% of `upper`, below), never against the part of a larger
+  declared window above the cap.
 - **Sizes are real tokens.** ekte's built-in token estimate under-counts this
   filler by about 12% (o200k) to 15% (cl100k) against real tokenizers, so each
   prompt is built at size ÷ 1.2 by the estimate (needle and question included):
-  a size-N rung stays within N real tokens. Sizes in the evidence (`size`,
-  `effective_window`, `top_rung`) are these real-token budgets; the ladder rows
-  also carry the estimate a prompt was built at (`heuristic_tokens`).
+  a size-N rung stays within N real tokens. A tokenizer family with a factor
+  measured offline would use its own factor (`real_per_heuristic` in the
+  evidence); none is measured yet, so every family uses 1.2. Sizes in the
+  evidence (`size`, `effective_window`, `top_rung`) are these real-token
+  budgets; the ladder rows also carry the estimate a prompt was built at
+  (`heuristic_tokens`) and the prompt tokens the endpoint reported for it
+  (`prompt_tokens`).
 
 1. A ladder of at most seven sizes, halving down from a **top rung at 90% of
    `upper`** (so no rung reaches the full window, leaving room for the answer
@@ -377,19 +383,26 @@ marker is embedded in non-repetitive filler, and the model must return it.
    size is reported as unverified (inconclusive, not scored), never as
    truncation or `no_recall`. Only an answer without the needle is a miss.
 
-The measured window (largest recalled size) is compared with `upper`: recall
-at the top rung is consistent (or, when the declared window exceeds the cap,
-**verified to the cap**: the window above it was not exercised); below it, the
-verdict deducts the share of the top rung that did not recall — a WARN from
-half of `upper` up, a FAIL below half. Without a declared window the
+The measured window (largest recalled size) is compared with the top rung:
+recall at the top rung is consistent (or, when the declared window exceeds the
+cap, **verified to the cap**: the window above it was not exercised); below it,
+the verdict deducts the share of the top rung that did not recall
+(`top_rung_share`) — a WARN from half of the top rung up, a FAIL below half.
+The verdict and the deduction use the same reference, so a WARN never deducts
+more than 50 points. When only the top rung failed and the endpoint reported
+more than 5% more prompt tokens for the largest recalled size than its budget,
+the probe **overshot** (the endpoint's tokenizer counts the filler denser than
+the factor allows): the window above it is reported as not exercised (Info),
+never as short or as a rejection below the claim. Without a declared window the
 measurement is reported but not scored.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `context_window.window` (Effective context window) | Recall held at the top rung (90% of the probed window): no deduction. | Pass | No deduction |
 |  | Recall verified up to the probe cap; the declared window above it was not exercised. | Pass | No deduction |
-|  | Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
-|  | Recall failed below half of the probed window; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
+|  | Only the top rung failed and the endpoint counted the largest recalled prompt more than 5% above its budget: the probe overshot, the window above it was not exercised. | Info | No deduction |
+|  | Recall held at half of the top rung or above, but not at the top rung; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
+|  | Recall failed below half of the top rung; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
 |  | Not even the smallest probe size recalled the needle. | Fail · High | −100 pts |
 | `context_window.lost_in_middle` | The start and end were recalled but the middle was not, twice. | Warning · Medium | −15 pts |
 | `context_window.rejected_below_claim` | A prompt well below the declared window was rejected as too long. | Fail · High | No deduction |
@@ -417,7 +430,13 @@ when they change behavior.
 
 ### `model_identity` — Model identity & downgrade fingerprinting
 
-**How it works.** Three independent signals:
+**How it works.** What runs depends on the claimed model's profile: the
+self-identification and the echoed `model` field always, the knowledge-cutoff
+probe when the profile's `knowledge_cutoff` names a month, and the profile's
+pure-code fingerprints, the model's own first. Only the model's own
+fingerprints can tell it from a cheaper model of the same vendor (`gpt-4o`
+served by `gpt-4o-mini`); the brand checks and the provider-wide fingerprints
+hold for every model of the vendor, and a same-vendor cutoff is often shared.
 
 1. **Self-identification** at `temperature=0`, matched whole-word against the
    profile's identity keywords (the genuine brand) and a list of rival brands
@@ -446,8 +465,21 @@ when they change behavior.
    probe that needs more output (such as a max-output check) is skipped,
    listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
-   one alone stays LOW, two or more add a MEDIUM aggregate.
-3. **Echoed `model` field** of a plain call, compared with the claimed model
+   one alone stays LOW, two or more add a MEDIUM aggregate. In compare mode
+   each probe is also sent to the baseline: a divergence the baseline does not
+   share is corroborated (MEDIUM); one the baseline shares is a knowledge-base
+   problem, not relay evidence, and is recorded as Info without deduction
+   (evidence `baseline_also_diverged`). A rival brand stays HIGH either way.
+3. **Knowledge cutoff** (`model_identity.cutoff`), when the profile's
+   `knowledge_cutoff` is `YYYY-MM` or `YYYY-MM-DD`: the model is asked for its
+   training cutoff as `CUTOFF=YYYY-MM`. Within 6 months of the profile's it is
+   consistent; more than 12 months earlier, as an older model of the vendor
+   would answer, it is a LOW warning that deducts like a fingerprint of weight
+   1 and counts toward the aggregate; any other gap is recorded as Info; an
+   answer without that format is inconclusive. A self-reported cutoff is soft
+   evidence, so this check is never HIGH; in compare mode the baseline
+   corroborates or clears it like a fingerprint.
+4. **Echoed `model` field** of a plain call, compared with the claimed model
    and with the id sent (a deployment alias may differ from the claim). Both
    ids are normalized first: lower case, no `provider/` or `vendor.` prefix
    (`openai/`, `models/`, `anthropic.`), no `:tag`, Bedrock `-v2:0` or
@@ -468,6 +500,12 @@ answer and the echoed `model` field does not diverge: a relay that rejects
 or empties every request gives no identity evidence, and an echo of the
 requested name proves nothing on its own. Partial evidence scores normally.
 
+When none of the model's own fingerprints answered and neither a baseline
+nor a judge was used, an Info finding (`model_identity.model_specific`, evidence
+`model_specific_checks: 0`) says that the answers fit the vendor but the
+specific model was not verified. Every result records `model_specific_checks`.
+The verdict summary and the model identity dimension's reason say so as well.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `model_identity.self_id` | The self-description named the genuine brand. | Pass | No deduction |
@@ -477,14 +515,23 @@ requested name proves nothing on its own. Partial evidence scores normally.
 |  | No usable response to judge by. | Inconclusive | No deduction |
 | `model_identity.fp` (Behavioral fingerprints) | The answer matched the claimed model's native behavior. | Pass | No deduction |
 |  | The answer diverged from native behavior: deducts the probe's weight share of 100 points. | Warning · Low | up to −25 pts |
+|  | The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points. | Warning · Medium | up to −25 pts |
+|  | The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction. | Info | No deduction |
 |  | The answer named a rival brand and not the genuine one: deducts the probe's weight share. | Fail · High | up to −25 pts · cap 20 |
 |  | No usable response to judge by. | Inconclusive | No deduction |
 |  | The probe needs more output than the 512-token identity cap; not run. | Info | No deduction |
+| `model_identity.cutoff` | The reported knowledge cutoff is within 6 months of the claimed model's. | Pass | No deduction |
+|  | The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint. | Warning · Low | up to −25 pts |
+|  | The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points. | Warning · Medium | up to −25 pts |
+|  | The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction. | Info | No deduction |
+|  | The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged. | Info | No deduction |
+|  | No answer in the CUTOFF=YYYY-MM format to judge by. | Inconclusive | No deduction |
 | `model_identity.fp_aggregate` | Two or more behavioral fingerprints diverged. | Warning · Medium | No deduction |
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |
 |  | The echoed model field names a different id that ekte cannot place: recorded, not judged. | Info | No deduction |
 |  | The response had no usable model field. | Inconclusive | No deduction |
+| `model_identity.model_specific` | No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified. | Info | No deduction |
 | `model_identity.no_evidence` | No self-identification or fingerprint answer was usable and the model field did not diverge: not scored. | Inconclusive | No deduction |
 
 ### `quality_judge` — LLM-judged quality / downgrade assessment
@@ -768,14 +815,21 @@ idle, leaked upstream request ids) are on the roadmap.
 two user messages of different sizes without a system message; reported
 `prompt_tokens` minus the independent estimate must stay small. An overhead of
 at least 30 tokens that stays constant (within 16) across both sizes reads as a
-hidden prepended prompt rather than proportional inflation. (2) A **leak
-probe** asking the model to repeat any preceding instructions. Only both
-together reach MEDIUM.
+hidden prepended prompt rather than proportional inflation. (2) A **leak probe**
+asking the model to repeat any preceding instructions. The answer is a leak only
+if it contains instruction-like content: a quoted or block-quoted passage, or at
+least two second-person imperative sentences ("You are …", "Always …", "Do not
+…") outside a denial. `NONE`, or a denial in the first two sentences ("there are
+no system instructions"), is no leak; anything else, such as a refusal, is
+unclear and also counts as no leak. The evidence keeps the kind of answer
+(`leak_answer_kind`) and its first 300 characters. A leak alone is informational
+and not counted, because models confabulate system prompts. Only both together
+reach MEDIUM.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `injected_prompt.verdict` (Injected system prompt) | Input-token overhead is small and no hidden instructions leaked. | Pass | 100 pts |
-|  | Instruction-like text leaked when asked (weak on its own). | Info · Low | 85 pts |
+|  | Instruction-like text leaked when asked (not counted: models confabulate). | Info | Not counted |
 |  | A large fixed input-token overhead, constant across message sizes. | Warning · Low | 75 pts |
 |  | A fixed input-token overhead and a leaked preamble together. | Warning · Medium | 55 pts |
 |  | No usable prompt token counts to measure the overhead. | Inconclusive | Not counted |

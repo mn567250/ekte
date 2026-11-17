@@ -107,6 +107,14 @@ NO_IDENTITY_EVIDENCE = (
     "No identity probe got a usable answer: fix the failures shown in the identity findings "
     "(or under Connectivity) and re-run, or run ekte compare against a trusted baseline."
 )
+VERIFY_SPECIFIC_MODEL = (
+    "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell "
+    "it from cheaper models of the same vendor."
+)
+KB_PROBE_DIVERGES_ON_BASELINE = (
+    "Nothing to change on the relay: the genuine model misses this expectation too. Report "
+    "the probe so the knowledge base can be corrected."
+)
 BY_DESIGN = (
     "Nothing to change: this probe is skipped by design to keep the identity check's output "
     "small, and another probe takes its place."
