@@ -488,7 +488,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Certaines vérifications ne correspondent pas à ce qui est annoncé : {dims} — à vérifier",
   "No problems in the checked dimensions (model identity not verified)": "Aucun problème dans les dimensions vérifiées (identité du modèle non vérifiée)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Quelques problèmes mineurs dans les dimensions vérifiées (identité du modèle non vérifiée)",
-  "It does not deliver what it advertises": "Il ne fournit pas ce qu'il annonce"
+  "It does not deliver what it advertises": "Il ne fournit pas ce qu'il annonce",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Lancez ekte compare contre une référence de confiance du modèle annoncé (ou ajoutez --judge) pour le distinguer des modèles moins chers du même fournisseur.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Rien à changer côté relais : le modèle authentique manque lui aussi cette attente. Signalez la sonde pour que la base de connaissances soit corrigée.",
+  "self-reported knowledge cutoff": "date limite des connaissances annoncée"
  },
  "findings": {
   "connectivity.models": [
@@ -871,6 +874,14 @@
   "performance.reference": [
    "Débit par rapport à la référence",
    "Débit de la cible {target_tps_p50} tok/s, référence {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Date limite des connaissances",
+   "Comparaison de la date limite annoncée avec celle du modèle annoncé ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Modèle précis non vérifié",
+   "Les réponses sont cohérentes avec le fournisseur ({vendor}), mais aucune vérification ne distingue {model} de ses autres modèles ; le modèle précis n'a pas été vérifié."
   ]
  }
 }

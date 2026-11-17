@@ -176,6 +176,14 @@
     "Fingerprint skipped: {1}": "Huella omitida: {1}",
     "Response attribute {1}": "Atributo de respuesta {1}",
     "Request attribute {1}": "Atributo de solicitud {1}",
-    "Not re-scored: the recorded run has no answer to some requests": "Sin volver a puntuar: la ejecución registrada no tiene respuesta para algunas peticiones"
+    "Not re-scored: the recorded run has no answer to some requests": "Sin volver a puntuar: la ejecución registrada no tiene respuesta para algunas peticiones",
+    "Knowledge cutoff not reported": "Fecha de corte no indicada",
+    "Knowledge cutoff consistent": "Fecha de corte coherente",
+    "Knowledge cutoff differs from the claimed model's": "La fecha de corte difiere de la del modelo declarado",
+    "Knowledge cutoff earlier on the baseline too": "Fecha de corte anterior también en la referencia",
+    "Knowledge cutoff earlier than the claimed model's, baseline consistent": "Fecha de corte anterior a la del modelo declarado, referencia coherente",
+    "Knowledge cutoff earlier than the claimed model's": "Fecha de corte anterior a la del modelo declarado",
+    "Specific model not verified": "Modelo concreto no verificado",
+    "Fingerprint diverged on the baseline too: {1}": "Huella divergente también en la referencia: {1}"
   }
 }

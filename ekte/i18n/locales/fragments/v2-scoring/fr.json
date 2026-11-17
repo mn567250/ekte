@@ -149,6 +149,15 @@
   "The stream succeeded but delivered no content to judge by; not scored.": "Le flux a réussi mais n'a livré aucun contenu à juger ; non noté.",
   "The model named the color of the test image.": "Le modèle a nommé la couleur de l'image de test.",
   "Vision is claimed but the model did not name the image's color.": "La vision est annoncée mais le modèle n'a pas nommé la couleur de l'image.",
-  "Vision is not claimed, so no image was sent.": "La vision n'est pas annoncée, donc aucune image n'a été envoyée."
+  "Vision is not claimed, so no image was sent.": "La vision n'est pas annoncée, donc aucune image n'a été envoyée.",
+  "The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points.": "La réponse s'est écartée du comportement natif alors que celle de la référence y correspondait : retire la part de poids de la sonde sur 100 points.",
+  "The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "La réponse s'est écartée, mais celle de la référence aussi : un problème de la base de connaissances, pas une preuve contre le relais ; aucune déduction.",
+  "The reported knowledge cutoff is within 6 months of the claimed model's.": "La date limite des connaissances annoncée est à 6 mois au plus de celle du modèle annoncé.",
+  "The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint.": "La date limite des connaissances annoncée précède de plus de 12 mois celle du modèle annoncé : retire sa part de poids sur 100 points comme une empreinte.",
+  "The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points.": "La date limite des connaissances annoncée précède de plus de 12 mois alors que celle de la référence est cohérente : retire sa part de poids sur 100 points.",
+  "The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction.": "La date limite des connaissances annoncée précède de plus de 12 mois, mais celle de la référence aussi : un problème de la base de connaissances, pas une preuve contre le relais ; aucune déduction.",
+  "The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged.": "La date limite des connaissances annoncée s'écarte de plus de 6 mois sans précéder de plus de 12 mois : consignée, non jugée.",
+  "No answer in the CUTOFF=YYYY-MM format to judge by.": "Aucune réponse au format CUTOFF=YYYY-MM à juger.",
+  "No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified.": "Aucune vérification n'a pu distinguer le modèle annoncé des autres modèles de son fournisseur et ni référence ni juge n'a été utilisé : le fournisseur est cohérent, le modèle précis n'a pas été vérifié."
  }
 }
