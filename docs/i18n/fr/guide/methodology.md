@@ -578,8 +578,15 @@ aux capacités du profil :
   modèle l'annonce et simplement notée (à titre indicatif) sinon. Ignoré sans
   profil.
 - **Sortie maximale :** une longue génération plafonnée à min(sortie maximale
-  annoncée, 2048) tokens ; atteindre le plafond ou une longueur plausible
-  réussit, s'arrêter sous le quart est signalé.
+  annoncée, `--max-output-probe-tokens`) tokens, 2048 par défaut. Une réponse
+  coupée avec `finish_reason: length` n'atteint le plafond que si au moins
+  80 % des tokens demandés sont revenus : les tokens de complétion déclarés,
+  sinon une estimation à partir du texte ; pour un modèle de raisonnement, les
+  tokens de raisonnement comptent comme fournis. Coupée en dessous, le relais
+  bride la sortie, ce qui échoue. Une longueur plausible réussit, s'arrêter
+  sous le quart est signalé. Quand les tokens de complétion déclarés et
+  l'estimation du texte d'un modèle sans raisonnement diffèrent de plus de
+  3 fois, la preuve le note (la facturation juge le décompte).
 
 Une observation sans annonce à vérifier — aucun appel d'outil ni objet JSON
 quand la fonction n'est pas annoncée, ou tout résultat du schéma strict quand le
@@ -623,6 +630,7 @@ n'annonce est noté mais non compté.
 |  | Rejeté avec un 4xx ; la capacité n'est pas annoncée. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.max_output` | La sortie a continué jusqu'au plafond de tokens demandé. | Réussi | 100 pts |
+|  | La sortie a été coupée avec finish_reason length bien en dessous de la limite demandée : le relais limite les tokens de sortie. | Échec · Moyenne | 0 pts |
 |  | La sortie s'est arrêtée avant le plafond, à une longueur plausible. | Réussi | 90 pts |
 |  | La sortie s'est arrêtée sous le quart de la longueur demandée. | Avertissement · Faible | 70 pts |
 |  | La sortie s'est arrêtée sous le quart de la demande malgré un maximum annoncé élevé. | Avertissement · Faible | 60 pts |

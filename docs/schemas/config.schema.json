@@ -216,6 +216,12 @@
           "minimum": 0,
           "default": 200000
         },
+        "max_output_probe_tokens": {
+          "type": "integer",
+          "description": "Cap for the max-output probe",
+          "minimum": 1,
+          "default": 2048
+        },
         "performance_requests": {
           "type": "integer",
           "description": "Performance probe requests per endpoint (0 disables)",

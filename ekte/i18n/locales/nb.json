@@ -350,6 +350,8 @@
   "Confirm the served engine actually supports function calling.": "Bekreft at motoren som leveres, faktisk støtter funksjonskall.",
   "Verify the served engine honors response_format=json_object.": "Kontroller at motoren som leveres, respekterer response_format=json_object.",
   "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "Reléet avviser en forespørselsparameter som den påståtte modellen støtter; be leverandøren videresende den, eller bruk et endepunkt som tilbyr funksjonen.",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "Reléet begrenser max_tokens under det som ble forespurt; lange svar blir avkortet. Be leverandøren videresende max_tokens, eller bruk et endepunkt som respekterer den.",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "Kuttet (finish_reason=length) ved ~{delivered_tokens} av de forespurte {requested_max_tokens} tokenene: reléet begrenser utdata-tokenene.",
   "Behavior is consistent with the claimed model.": "Atferden stemmer med den oppgitte modellen.",
   "Mostly consistent with the claimed model; minor concerns.": "Stort sett i samsvar med den oppgitte modellen; små forbehold.",
   "Some behavior diverges from the claimed model — investigate.": "Noe av atferden avviker fra den oppgitte modellen — undersøk.",

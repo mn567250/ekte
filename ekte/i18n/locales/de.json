@@ -350,6 +350,8 @@
   "Confirm the served engine actually supports function calling.": "Prüfen Sie, ob die bereitgestellte Engine Funktionsaufrufe wirklich unterstützt.",
   "Verify the served engine honors response_format=json_object.": "Prüfen Sie, ob die bereitgestellte Engine response_format=json_object einhält.",
   "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "Das Relay verweigert einen Anfrageparameter, den das angegebene Modell unterstützt; bitten Sie den Anbieter, ihn weiterzuleiten, oder nutzen Sie einen Endpunkt, der die Funktion bereitstellt.",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "Das Relay begrenzt max_tokens unter den angefragten Wert; lange Antworten werden abgeschnitten. Bitten Sie den Anbieter, max_tokens weiterzuleiten, oder nutzen Sie einen Endpunkt, der den Wert beachtet.",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "Bei ~{delivered_tokens} der angefragten {requested_max_tokens} Tokens abgeschnitten (finish_reason=length): Das Relay begrenzt die Ausgabe-Tokens.",
   "Overall health score {1}/100.": "Gesamt-Health-Score {1}/100.",
   "Findings: {1}.": "Befunde: {1}.",
   "No significant divergence findings.": "Keine wesentlichen Abweichungen festgestellt.",

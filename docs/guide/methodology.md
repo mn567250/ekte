@@ -540,9 +540,15 @@ profile's capability flags:
 - **Strict schema:** a strict `json_schema`; conformance is verified when the
   model claims it and noted (informational) when it does not. Skipped without a
   profile.
-- **Max output:** a long generation capped at min(declared max output, 2048)
-  tokens; reaching the cap or a plausible length passes, stopping below a
-  quarter of it is flagged.
+- **Max output:** a long generation capped at min(declared max output,
+  `--max-output-probe-tokens`) tokens, 2048 by default. An answer cut off with
+  `finish_reason: length` reaches the cap only when at least 80 % of the
+  requested tokens came back: the reported completion tokens, else an estimate
+  from the text, with a reasoning model's reasoning tokens counted as delivered.
+  Cut off below that, the relay clamps the output, which fails. A plausible
+  length passes, stopping below a quarter of it is flagged. When the reported
+  completion tokens and the text estimate of a non-reasoning model are more
+  than 3x apart, the evidence notes it (billing judges the count).
 
 An observation without a claim to verify — no tool call or JSON object when the
 feature is not claimed, or any strict-schema result when the profile says the
@@ -585,6 +591,7 @@ feature nobody claims is noted but not counted.
 |  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
+|  | The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens. | Fail · Medium | 0 pts |
 |  | Output stopped before the cap at a plausible length. | Pass | 90 pts |
 |  | Output stopped below a quarter of the requested length. | Warning · Low | 70 pts |
 |  | Output stopped below a quarter of the request despite a large claimed maximum. | Warning · Low | 60 pts |

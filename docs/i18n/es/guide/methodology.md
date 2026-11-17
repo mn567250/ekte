@@ -575,8 +575,16 @@ las capacidades del perfil:
   el modelo lo declara y solo se anota (informativo) si no. Se omite sin
   perfil.
 - **Salida máxima:** una generación larga limitada a min(salida máxima
-  declarada, 2048) tokens; llegar al límite o a una longitud plausible es
-  correcto, detenerse por debajo de una cuarta parte se señala.
+  declarada, `--max-output-probe-tokens`) tokens, 2048 por defecto. Una
+  respuesta cortada con `finish_reason: length` alcanza el límite solo si
+  volvió al menos el 80 % de los tokens solicitados: los tokens de completion
+  informados o, si faltan, una estimación a partir del texto; en un modelo de
+  razonamiento los tokens de razonamiento cuentan como entregados. Cortada por
+  debajo, el relay limita la salida, lo que es un fallo. Una longitud
+  plausible es correcta, detenerse por debajo de una cuarta parte se señala.
+  Si los tokens de completion informados y la estimación del texto de un
+  modelo sin razonamiento difieren más de 3 veces, la evidencia lo anota (la
+  facturación juzga el recuento).
 
 Una observación sin nada declarado que verificar —ninguna llamada a herramienta
 u objeto JSON cuando la función no se declara, o cualquier resultado del esquema
@@ -619,6 +627,7 @@ función que nadie declara se anota pero no computa.
 |  | Rechazado con un 4xx; la capacidad no se declara. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.max_output` | La salida continuó hasta el tope de tokens solicitado. | Correcto | 100 pts |
+|  | La salida se cortó con finish_reason length muy por debajo del límite solicitado: el relay limita los tokens de salida. | Fallo · Media | 0 pts |
 |  | La salida terminó antes del tope con una longitud plausible. | Correcto | 90 pts |
 |  | La salida terminó por debajo de un cuarto de la longitud pedida. | Advertencia · Baja | 70 pts |
 |  | La salida terminó por debajo de un cuarto de lo pedido pese a un máximo declarado grande. | Advertencia · Baja | 60 pts |

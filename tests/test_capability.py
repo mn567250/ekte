@@ -31,8 +31,9 @@ def _rejection(status: int = 400, message: str = "tools are not supported", **kw
 
 
 def _answer(spec: RequestSpec) -> CompletionOutcome:
-    # A long enough plain answer that stops at the cap: max_output passes.
-    return CompletionOutcome(ok=True, status_code=200, content="line\n" * 50, finish_reason="length")
+    # A plain answer that runs to the cap: max_output passes.
+    return CompletionOutcome(ok=True, status_code=200, content="line\n" * 50, finish_reason="length",
+                             usage={"completion_tokens": spec.max_tokens})
 
 
 class _Stub:
