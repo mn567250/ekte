@@ -20,6 +20,44 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Model identity: knowledge-cutoff probe, baseline fingerprints and honest vendor-only wording ([#251](https://github.com/mn567250/ekte/issues/251))
+
+A same-vendor downgrade (`gpt-4o` served by `gpt-4o-mini`) passed every brand
+check: 186 of 195 packaged chat profiles have no fingerprint of their own, the
+profiles' `knowledge_cutoff` was never compared with an answer, and compare
+mode sent only the self-identification to the baseline.
+
+- New check `model_identity.cutoff`: for every profile whose
+  `knowledge_cutoff` names a month, the model is asked for its cutoff as
+  `CUTOFF=YYYY-MM` (prompt `model_identity.cutoff` in `ekte/prompts/en.json`).
+  Within 6 months is a Pass; more than 12 months earlier is a Warning · Low
+  that deducts like a fingerprint of weight 1 and counts toward
+  `model_identity.fp_aggregate`; any other gap is Info; no parseable answer is
+  Inconclusive. Never HIGH on its own. Profiles with a vague cutoff ("~2025",
+  "not officially published") get no probe. This adds one request per audit
+  and, as one more weight in the fingerprint pool, slightly lowers the share
+  each diverging fingerprint deducts.
+- Compare mode sends every fingerprint probe and the cutoff probe to the
+  baseline as well. A divergence the baseline does not share is corroborated
+  (new outcome `corroborated`, Warning · Medium); one the baseline shares too
+  is a knowledge-base problem (new outcome `baseline_also_diverged`, Info, no
+  deduction). A rival brand stays HIGH either way.
+- The model's own fingerprints now run before the provider-wide ones, so the
+  six-probe limit never drops the only probes that can tell it from a
+  sibling. When none of them answered and neither a baseline nor a judge was
+  used, the new Info finding `model_identity.model_specific` (evidence
+  `model_specific_checks: 0`) says the vendor is consistent but the specific
+  model was not verified; every result records `model_specific_checks`.
+- Knowledge-base schema: a fingerprint can record which sibling models a
+  measurement showed it separates (`separates_from`) and when (`verified`,
+  required with `separates_from`); `docs/dev/knowledge-base.md` describes how
+  to add a verified model-specific fingerprint. A test pins, per provider, the
+  number of chat profiles without one and fails if it rises. No fingerprint
+  data was added: new fingerprints need measuring against the genuine models.
+- Scoring scale, methodology (all languages) and translations updated. The
+  identity score can now drop when a model reports a cutoff more than a year
+  before its profile's; the report schema is unchanged (#168).
+
 ### Model identity: the echoed `model` field is compared through the knowledge base ([#250](https://github.com/mn567250/ekte/issues/250))
 
 The echoed `model` field was compared with the requested id by tier words and
