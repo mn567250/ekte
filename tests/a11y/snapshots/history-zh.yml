@@ -301,7 +301,7 @@
             - term: 版本
             - definition:
               - code: ekte v<version>
-            - heading "逐项体检 1 / 10 个维度已运行" [level=3]
+            - heading "逐项体检 1 / 11 个维度已运行" [level=3]
             - button "协议兼容"
             - text: 接口是否规范？
             - meter "协议兼容 接口是否规范？"
