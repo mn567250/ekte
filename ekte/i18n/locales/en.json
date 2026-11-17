@@ -387,6 +387,7 @@
   "Request failed (HTTP {status_code}).": "Request failed (HTTP {status_code}).",
   "Request failed (type {error_type}).": "Request failed (type {error_type}).",
   "Overall health score {1}/100.": "Overall health score {1}/100.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.",
   "Findings: {1}.": "Findings: {1}.",
   "No significant divergence findings.": "No significant divergence findings.",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.",

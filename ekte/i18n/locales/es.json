@@ -387,6 +387,7 @@
   "Request failed (HTTP {status_code}).": "La petición falló (HTTP {status_code}).",
   "Request failed (type {error_type}).": "La petición falló (tipo {error_type}).",
   "Overall health score {1}/100.": "Puntuación de salud global {1}/100.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Puntuación limitada a {1} porque el nivel de riesgo es «{2}»; la media ponderada de las dimensiones es {3}.",
   "Findings: {1}.": "Hallazgos: {1}.",
   "No significant divergence findings.": "No se encontraron desviaciones significativas.",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "El modelo declarado no está en la base de conocimiento, así que las comprobaciones de identidad/capacidades son limitadas — use --declared-provider o añada un perfil a la KB.",

@@ -33,6 +33,7 @@
   "Medium": "中",
   "High": "高",
   "Overall health score {1}/100.": "综合健康分 {1}/100。",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "综合分上限为 {1}，因为风险等级为「{2}」；各维度加权平均分为 {3}。",
   "Findings: {1}.": "关注点：{1}。",
   ", ": "，",
   "critical": "严重",

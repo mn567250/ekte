@@ -313,7 +313,7 @@
   // went through EKTE_I18N.exportReport and came back via history/import).
   var SCORE_EN = "Overall health score {1}/100.";
   var DISC_EN = "ekte reports black-box evidence of divergence and risk, not proof of fraud.";
-  // the risk cap sentence (#247): the card shows the cap under the score tiles
+  // the risk cap sentence (issue 247): the card shows the cap under the score tiles
   var CAP_EN = "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.";
   function summaryRest(s) {
     s = String(s || "");

@@ -387,6 +387,7 @@
   "Request failed (HTTP {status_code}).": "Forespørselen mislyktes (HTTP {status_code}).",
   "Request failed (type {error_type}).": "Forespørselen mislyktes (type {error_type}).",
   "Overall health score {1}/100.": "Samlet helsescore {1}/100.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Scoren er begrenset til {1} fordi risikonivået er «{2}»; det vektede gjennomsnittet av dimensjonene er {3}.",
   "Findings: {1}.": "Funn: {1}.",
   "No significant divergence findings.": "Ingen vesentlige funn av avvik.",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "Den oppgitte modellen ble ikke funnet i kunnskapsbasen, så identitets- og egenskapskontrollene er begrenset — oppgi --declared-provider eller legg til en profil i kunnskapsbasen.",

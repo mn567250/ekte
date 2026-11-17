@@ -387,6 +387,7 @@
   "Request failed (HTTP {status_code}).": "Échec de la requête (HTTP {status_code}).",
   "Request failed (type {error_type}).": "Échec de la requête (type {error_type}).",
   "Overall health score {1}/100.": "Score de santé global {1}/100.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Score plafonné à {1} car le niveau de risque est « {2} » ; la moyenne pondérée des dimensions est de {3}.",
   "Findings: {1}.": "Constats : {1}.",
   "No significant divergence findings.": "Aucun écart significatif constaté.",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "Le modèle annoncé est absent de la base de connaissances : les contrôles d'identité/capacités sont limités — passez --declared-provider ou ajoutez un profil KB.",

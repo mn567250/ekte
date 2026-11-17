@@ -164,7 +164,6 @@
   "The model named the color of the test image.": "Das Modell nannte die Farbe des Testbilds.",
   "Vision is claimed but the model did not name the image's color.": "Vision wird angegeben, aber das Modell nannte die Farbe des Bildes nicht.",
   "Vision is not claimed, so no image was sent.": "Vision wird nicht angegeben, daher wurde kein Bild gesendet.",
-  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Score auf {1} begrenzt, weil die Risikostufe „{2}“ lautet; der gewichtete Mittelwert der Dimensionen beträgt {3}.",
   "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.": "Mittelwert {mean}, begrenzt auf {cap}, die Bewertung von {det}, durch dessen Befunde mit hohem oder kritischem Schweregrad: {list}. Eine Dimension wird nicht höher bewertet als ihr niedrigster Detektor mit einem solchen Befund.",
   "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.": "Score auf {cap} begrenzt, weil die Risikostufe „{risk}“ lautet (gewichteter Mittelwert der Dimensionen: {mean}). Befunde, die das Risiko bestimmen: {list}."
  }
