@@ -974,3 +974,42 @@ def test_a_smoke_run_against_an_honest_relay_has_full_coverage(monkeypatch):
     v = report.verdict
     assert v.coverage == 1.0 and v.not_judged == [] and v.rating_limit is None
     assert v.rating == rating(v.overall_score)
+
+
+# --------------------------------------------------------------------------- #
+# compare mode end to end: confidence follows the comparisons (#257)
+# --------------------------------------------------------------------------- #
+async def _compare_run(monkeypatch, dimensions: list[str]) -> AuditReport:
+    from ekte.clients import make_client as real
+    from ekte.config import AuditOptions
+    from ekte.models import TargetConfig
+    from ekte.runner import run_audit
+    from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
+
+    server = MockServer()
+    monkeypatch.setattr(
+        "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport)
+    )
+    return await run_audit(
+        TargetConfig(name="t", kind="target", base_url=BASE_URL, model=DEFAULT_MODEL),
+        AuditOptions(suite="custom", dimensions=dimensions),
+        baseline=TargetConfig(name="b", kind="baseline", base_url=BASE_URL, model=DEFAULT_MODEL),
+        mode="compare",
+    )
+
+
+async def test_compare_run_without_baseline_comparisons_is_medium(monkeypatch):
+    # Context window and capability pass on their own; neither asks the
+    # baseline, so the configured baseline proves nothing.
+    report = await _compare_run(monkeypatch, ["context_window", "capability"])
+    assert not any(d.baseline_compared for d in report.detectors)
+    assert report.verdict.confidence == "medium"
+
+
+async def test_compare_run_with_two_compared_core_dimensions_is_high(monkeypatch):
+    report = await _compare_run(
+        monkeypatch, ["model_identity", "billing", "context_window", "capability"]
+    )
+    compared = {d.dimension for d in report.detectors if d.baseline_compared}
+    assert {Dimension.MODEL_IDENTITY, Dimension.BILLING} <= compared
+    assert report.verdict.confidence == "high"
