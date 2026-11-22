@@ -23,6 +23,7 @@ from ekte.models import (
     Status,
     StatusOverride,
     Verdict,
+    VerdictRatingLimit,
     VerdictScoreCap,
 )
 
@@ -143,6 +144,19 @@ RISK_SCORE_CAPS: dict[RiskLevel, float] = {
     RiskLevel.MEDIUM: 69.0,
 }
 
+# Coverage limits the rating (#249): a dimension that ran but could not be
+# judged (its detectors inconclusive or crashed, no score) drops out of the
+# weighted mean, so the score alone would read as if it had passed. Coverage is
+# the judged share of the weight of the dimensions that ran; below
+# ``COVERAGE_UNRATED_BELOW`` there is no rating ("not rated: too little was
+# judged"), below ``COVERAGE_LIMITED_BELOW`` the rating is at most
+# ``COVERAGE_RATING_LIMIT``, and so it is when a core dimension (what the relay
+# advertises: model identity, context window, capability, billing) ran but could
+# not be judged. Dimensions not in the suite or not selected do not count.
+COVERAGE_UNRATED_BELOW = 0.5
+COVERAGE_LIMITED_BELOW = 0.8
+COVERAGE_RATING_LIMIT = "B"
+
 # Findings of these severities cap their dimension's score at the score of
 # their detector (advisory checks and the transport dimensions excepted, as
 # on the risk ladder), so one failed detector is not averaged away by its
@@ -155,6 +169,9 @@ _WEAK_MATCHES = frozenset({"fuzzy"})
 
 # Statuses that count as a dimension having produced a usable result.
 _USABLE_STATUSES = (Status.PASS, Status.WARN, Status.FAIL)
+# Detector statuses that do not make a dimension count for coverage: it was
+# skipped, or it only reported information (e.g. nothing claimed to check).
+_NOT_ATTEMPTED = (Status.NOT_RUN, Status.INFO)
 
 _SEVERITY_ORDER = [
     Severity.INFO,
@@ -340,6 +357,61 @@ def _dimension_cap(
     return DimensionScoreCap(detector=det.id, findings=ids, cap=cap, uncapped_score=score)
 
 
+def coverage(
+    dimensions: list[DimensionScore], *, selected: list[str] | None = None
+) -> tuple[float | None, list[Dimension]]:
+    """The judged share of the weight of the dimensions that ran, and the
+    dimensions that ran but were not judged (scoring order). A dimension ran
+    when it has a score or a detector that was neither skipped nor only
+    informational; it was judged when it has a score or its detectors reached
+    a usable status. Not selected / not in the suite does not count; the share
+    is None when no dimension ran."""
+    ran = judged = 0.0
+    missing: list[Dimension] = []
+    for d in dimensions:
+        if selected is not None and d.dimension.value not in selected:
+            continue
+        statuses = [c.status for c in d.breakdown.detectors] if d.breakdown else []
+        if d.score is None and all(st in _NOT_ATTEMPTED for st in statuses):
+            continue
+        ran += d.weight
+        detector_status = d.breakdown.detector_status if d.breakdown else d.status
+        if d.score is not None or detector_status in _USABLE_STATUSES:
+            judged += d.weight
+        else:
+            missing.append(d.dimension)
+    return (round(judged / ran, 4) if ran else None), missing
+
+
+def coverage_pct(share: float) -> int:
+    """A coverage share as a whole percentage, rounded down so that a share
+    below a threshold never reads as the threshold."""
+    return int(round(share * 100, 6) // 1)
+
+
+def _rating_limit(
+    unlimited: str | None, share: float | None, core_missing: bool
+) -> VerdictRatingLimit | None:
+    """The limit coverage puts on ``unlimited`` (None: none applies)."""
+    if unlimited is None or share is None:
+        return None
+    if share < COVERAGE_UNRATED_BELOW:
+        return VerdictRatingLimit(reason="low_coverage", limit=None, unlimited_rating=unlimited)
+    reason = (
+        "low_coverage" if share < COVERAGE_LIMITED_BELOW
+        else "core_not_judged" if core_missing else None
+    )
+    if reason is None or _grade_index(unlimited) <= _grade_index(COVERAGE_RATING_LIMIT):
+        return None
+    return VerdictRatingLimit(
+        reason=reason, limit=COVERAGE_RATING_LIMIT, unlimited_rating=unlimited
+    )
+
+
+def _grade_index(letter: str) -> int:
+    return GRADE_SCALE.index(letter) if letter in GRADE_SCALE else -1
+
+
 def overall_score(dimensions: list[DimensionScore]) -> float | None:
     scored = [d for d in dimensions if d.score is not None]
     if not scored:
@@ -459,6 +531,11 @@ def build_verdict(
             risk_level=risk, cap=limit, findings=list(dict.fromkeys(f.id for _, f in causes))
         )
 
+    # --- coverage limits the rating (#249) --------------------------------- #
+    share, missing = coverage(dimensions, selected=selected)
+    rating_limit = _rating_limit(rating(score), share, bool(set(missing) & core_dims))
+    final_rating = rating(score) if rating_limit is None else rating_limit.limit
+
     # --- confidence -------------------------------------------------------- #
     core_attempted = attempted & core_dims
     core_checked = checked & core_dims
@@ -490,13 +567,16 @@ def build_verdict(
         score_cap=score_cap,
         uncapped=uncapped,
         vendor_only=_vendor_only(detectors) and not used_baseline and not used_judge,
+        coverage=share,
+        not_judged=missing,
+        rating_limit=rating_limit,
     )
     # Substitution findings first; transport/reliability advisories after them.
     key = _titles([f for _, f in critical + high + medium] + advisories)[:6]
 
     return Verdict(
         overall_score=score,
-        rating=rating(score),
+        rating=final_rating,
         risk_level=risk,
         headline=headline,
         confidence=confidence,
@@ -506,6 +586,9 @@ def build_verdict(
         checked=[d.value for d in _in_order(checked)],
         uncapped_score=uncapped,
         score_cap=score_cap,
+        coverage=share,
+        not_judged=[d.value for d in missing],
+        rating_limit=rating_limit,
     )
 
 
@@ -578,6 +661,9 @@ def _summary(
     score_cap: VerdictScoreCap | None = None,
     uncapped: float | None = None,
     vendor_only: bool = False,
+    coverage: float | None = None,
+    not_judged: list[Dimension] | None = None,
+    rating_limit: VerdictRatingLimit | None = None,
 ) -> str:
     bits: list[str] = []
     if score is not None:
@@ -586,6 +672,23 @@ def _summary(
         bits.append(
             f"Score capped at {score_cap.cap:g} because the risk level is "
             f"{score_cap.risk_level.value}; the weighted mean of the dimensions is {uncapped}."
+        )
+    if coverage is not None and not_judged:
+        names = ", ".join(DIMENSION_NAMES[d] for d in not_judged)
+        bits.append(f"Coverage {coverage_pct(coverage)}%: {names} ran but could not be judged.")
+    if rating_limit is not None and rating_limit.limit is None:
+        bits.append(
+            "Not rated: too little was judged "
+            f"(coverage below {coverage_pct(COVERAGE_UNRATED_BELOW)}%)."
+        )
+    elif rating_limit is not None and rating_limit.reason == "low_coverage":
+        bits.append(
+            f"Rating limited to {rating_limit.limit} because coverage is below "
+            f"{coverage_pct(COVERAGE_LIMITED_BELOW)}%."
+        )
+    elif rating_limit is not None:
+        bits.append(
+            f"Rating limited to {rating_limit.limit} because a core dimension could not be judged."
         )
     if selected is not None:
         bits.append(f"Custom run: {scored} of {len(selected)} selected dimensions scored.")

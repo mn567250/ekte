@@ -1,0 +1,12 @@
+{
+ "strings": {
+  "Coverage {1}%: {2} ran but could not be judged.": "Coverage {1}%: {2} ran but could not be judged.",
+  "Not rated: too little was judged (coverage below {1}%).": "Not rated: too little was judged (coverage below {1}%).",
+  "Rating limited to {1} because coverage is below {2}%.": "Rating limited to {1} because coverage is below {2}%.",
+  "Rating limited to {1} because a core dimension could not be judged.": "Rating limited to {1} because a core dimension could not be judged.",
+  "Not rated: too little was judged": "Not rated: too little was judged",
+  "Rating at most {r}": "Rating at most {r}",
+  "Coverage": "Coverage",
+  "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score.": "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score."
+ }
+}

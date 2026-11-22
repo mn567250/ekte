@@ -88,6 +88,24 @@ resumen lo dice, `verdict.uncapped_score` conserva la media ponderada y
 `verdict.score_cap` registra el nivel de riesgo, el límite y los hallazgos que
 determinaron el riesgo; los informes lo muestran junto a la puntuación.
 
+Una dimensión que **se ejecutó pero no pudo evaluarse** (sus detectores no
+concluyentes o caídos, sin puntuación) también queda fuera de la media
+ponderada, de modo que la puntuación sola parecería que la superó. La
+**cobertura** dice cuánto se evaluó: la parte del peso de las dimensiones
+ejecutadas que dio una puntuación (`verdict.coverage`, 0–1; `verdict.not_judged`
+lista las demás). No cuentan las dimensiones que no están en la suite o no se
+seleccionaron, ni una dimensión cuyos detectores solo informaron (por ejemplo,
+sin ventana de contexto declarada). La cobertura **limita la calificación**
+(`COVERAGE_*` en `ekte/scoring.py`): por debajo del **50 %** no hay
+calificación («sin calificación: se evaluó demasiado poco»), por debajo del
+**80 %** es como máximo **B**, y también lo es cuando una dimensión central se
+ejecutó pero no pudo evaluarse (una sonda de ventana de contexto sin respuesta
+deja un 81 % de cobertura, pero la calificación sigue siendo como máximo B).
+`verdict.rating_limit` registra el motivo y la calificación que daría la
+puntuación sola; el resumen nombra las dimensiones no evaluadas y los informes
+muestran la cobertura junto a la puntuación. `--fail-under` también falla en
+una ejecución sin calificación.
+
 | Dimensión | Id | Peso | Papel |
 |---|---|---|---|
 | Identidad del modelo | `model_identity` | 21 | núcleo |

@@ -89,6 +89,24 @@ riepilogo lo dice, `verdict.uncapped_score` conserva la media ponderata e
 `verdict.score_cap` registra il livello di rischio, il limite e le rilevazioni
 che hanno determinato il rischio; i rapporti lo mostrano accanto al punteggio.
 
+Anche una dimensione **eseguita ma non valutabile** (rilevatori non
+conclusivi o andati in errore, nessun punteggio) esce dalla media ponderata,
+così il punteggio da solo sembrerebbe dire che è stata superata. La
+**copertura** dice quanto è stato valutato: la quota del peso delle dimensioni
+eseguite che ha prodotto un punteggio (`verdict.coverage`, 0–1;
+`verdict.not_judged` elenca le altre). Non contano le dimensioni fuori dalla
+suite o non selezionate, né una dimensione i cui rilevatori hanno solo dato
+informazioni (per esempio senza finestra di contesto dichiarata). La copertura
+**limita la valutazione** (`COVERAGE_*` in `ekte/scoring.py`): sotto il
+**50%** non c’è valutazione («nessuna valutazione: è stato valutato troppo
+poco»), sotto l’**80%** è al massimo **B**, e così anche quando una dimensione
+principale è stata eseguita ma non valutata (una sonda della finestra di
+contesto senza risposta lascia l’81% di copertura, ma la valutazione resta al
+massimo B). `verdict.rating_limit` registra il motivo e la valutazione che
+darebbe il solo punteggio; il riepilogo nomina le dimensioni non valutate e i
+report mostrano la copertura accanto al punteggio. `--fail-under` fallisce
+anche per un’esecuzione senza valutazione.
+
 | Dimensione | Id | Peso | Ruolo |
 |---|---|---|---|
 | Identità del modello | `model_identity` | 21 | centrale |

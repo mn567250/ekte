@@ -88,6 +88,23 @@ avalia a pontuação limitada. Quando o limite se aplica, o resumo indica-o,
 o nível de risco, o limite e as constatações que determinaram o risco; os
 relatórios mostram-no junto à pontuação.
 
+Uma dimensão que **foi executada mas não pôde ser avaliada** (detectores
+inconclusivos ou com falha, sem pontuação) também sai da média ponderada, e a
+pontuação sozinha pareceria dizer que passou. A **cobertura** diz quanto foi
+avaliado: a parcela do peso das dimensões executadas que produziu uma pontuação
+(`verdict.coverage`, 0–1; `verdict.not_judged` lista as outras). Não contam as
+dimensões fora da suíte ou não selecionadas, nem uma dimensão cujos detectores
+só informaram (por exemplo, sem janela de contexto declarada). A cobertura
+**limita a classificação** (`COVERAGE_*` em `ekte/scoring.py`): abaixo de
+**50%** não há classificação («sem classificação: foi avaliado muito pouco»),
+abaixo de **80%** é no máximo **B**, e o mesmo quando uma dimensão central foi
+executada mas não pôde ser avaliada (uma sonda de janela de contexto sem
+resposta deixa 81% de cobertura, mas a classificação continua no máximo B).
+`verdict.rating_limit` regista o motivo e a classificação que a pontuação
+sozinha daria; o resumo nomeia as dimensões não avaliadas e os relatórios
+mostram a cobertura ao lado da pontuação. `--fail-under` também falha numa
+execução sem classificação.
+
 | Dimensão | Id | Peso | Papel |
 |---|---|---|---|
 | Identidade do modelo | `model_identity` | 21 | núcleo |

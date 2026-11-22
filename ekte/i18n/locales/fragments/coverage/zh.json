@@ -1,0 +1,12 @@
+{
+ "strings": {
+  "Coverage {1}%: {2} ran but could not be judged.": "覆盖率 {1}%：{2} 已运行但无法判断。",
+  "Not rated: too little was judged (coverage below {1}%).": "未评级：可判断的内容太少（覆盖率低于 {1}%）。",
+  "Rating limited to {1} because coverage is below {2}%.": "评级上限为 {1}，因为覆盖率低于 {2}%。",
+  "Rating limited to {1} because a core dimension could not be judged.": "评级上限为 {1}，因为有核心维度无法判断。",
+  "Not rated: too little was judged": "未评级：可判断的内容太少",
+  "Rating at most {r}": "评级最高为 {r}",
+  "Coverage": "覆盖率",
+  "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score.": "运行过的维度中得出判断的权重占比；未能判断的维度不计入综合分。"
+ }
+}

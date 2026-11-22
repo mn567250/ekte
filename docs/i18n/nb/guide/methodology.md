@@ -86,6 +86,23 @@ begrensningen slår inn, sier sammendraget det, `verdict.uncapped_score` beholde
 det vektede gjennomsnittet og `verdict.score_cap` registrerer risikonivået,
 grensen og funnene som avgjorde risikoen; rapportene viser det ved scoren.
 
+En dimensjon som **ble kjørt, men ikke kunne vurderes** (detektorene
+uavklarte eller krasjet, ingen score), faller også ut av det vektede snittet,
+slik at scoren alene ville se ut som om den besto. **Dekningen** sier hvor mye
+som ble vurdert: andelen av vekten til dimensjonene som ble kjørt, som ga en
+score (`verdict.coverage`, 0–1; `verdict.not_judged` lister de andre).
+Dimensjoner som ikke er i suiten eller ikke er valgt, teller ikke, heller ikke
+en dimensjon der detektorene bare meldte informasjon (for eksempel uten oppgitt
+kontekstvindu). Dekningen **begrenser vurderingen** (`COVERAGE_*` i
+`ekte/scoring.py`): under **50 %** gis ingen vurdering («ingen vurdering: for lite
+ble vurdert»), under **80 %** er den høyst **B**, og det samme når en
+kjernedimensjon ble kjørt, men ikke kunne vurderes (en ubesvart
+kontekstvindu-probe gir 81 % dekning, men vurderingen er likevel høyst B).
+`verdict.rating_limit` registrerer grunnen og vurderingen scoren alene ville
+gitt; sammendraget nevner dimensjonene som ikke ble vurdert, og rapportene viser
+dekningen ved siden av scoren. `--fail-under` feiler også for en kjøring uten
+vurdering.
+
 | Dimensjon | ID | Vekt | Rolle |
 |---|---|---|---|
 | Modellidentitet | `model_identity` | 21 | kjerne |
