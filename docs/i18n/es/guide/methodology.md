@@ -166,9 +166,24 @@ identidad del modelo indica que la identidad del modelo no se verificó.
   dieron un resultado utilizable;
 - **Media** — al menos dos dimensiones núcleo dieron un resultado utilizable (o,
   en una ejecución sin dimensiones núcleo, al menos dos dimensiones);
-- **Alta** — se usó una referencia *y* cada dimensión núcleo que se ejecutó dio
-  un resultado utilizable, o la confianza era media y el juez LLM devolvió un
-  veredicto utilizable.
+- **Alta** — se usó una referencia, cada dimensión núcleo que se ejecutó dio
+  un resultado utilizable *y* al menos dos dimensiones núcleo tienen un
+  detector que comparó de verdad el objetivo con una respuesta utilizable de
+  la referencia (`baseline_compared` en el informe) y dio un resultado
+  utilizable. Configurar una referencia no basta: una referencia que falló, o
+  a la que ningún detector núcleo consultó, deja la confianza en media. Un
+  veredicto del juez por sí solo nunca eleva la confianza; un veredicto del
+  juez corroborado por la referencia cuenta como la comparación de la
+  identidad del modelo.
+
+Los detectores núcleo comparan con la referencia cuando esta responde:
+`model_identity` (una huella o la sonda de fecha de corte respondida por ambos
+lados), `quality_judge` (la referencia respondió a todas las sondas y se
+mostró al juez), `billing` (tokens de prompt contados por una referencia del
+mismo modelo en el mismo protocolo) y `capability` (la referencia respondió a
+una sonda que el objetivo rechazó). `context_window` nunca consulta la
+referencia. Fuera del núcleo, `integrity`, `protocol_request` y `performance`
+también registran `baseline_compared`, pero no cuenta para la confianza.
 
 ## Suites, detectores y modos
 
@@ -213,9 +228,12 @@ identidad del modelo indica que la identidad del modelo no se verificó.
   junto a la del objetivo y envía también cada huella y la sonda de fecha de
   corte a la referencia, `protocol_request` reenvía a la referencia los
   parámetros rechazados, `integrity` eleva a CRÍTICA una sustitución que la
-  referencia no hace, `quality_judge` muestra ambos lados al juez y
+  referencia no hace, `quality_judge` muestra ambos lados al juez, `billing`
+  compara los tokens de prompt, `capability` reenvía una sonda rechazada y
   `performance` sondea ambos endpoints de forma alterna. La confianza solo puede
-  ser alta con una referencia.
+  ser alta con una referencia, y solo cuando al menos dos dimensiones núcleo se
+  compararon de verdad con ella (ver
+  [Confianza del veredicto](#confianza-del-veredicto)).
 - **Base de conocimiento:** el perfil del modelo declarado
   (`ekte/knowledge/data/*.yaml` más tus propias entradas en `kb.db`) aporta la
   ventana de contexto declarada, la salida máxima, el tokenizer, las
@@ -1287,7 +1305,9 @@ Un relay puede detectar las
 pruebas: vuelve a ejecutar en otros momentos y prefiere el modo comparación
 contra una referencia de confianza del **snapshot exacto declarado** — es la
 forma más sólida de separar el comportamiento del modelo del del relay, y la
-única de alcanzar una confianza alta.
+única de alcanzar una confianza alta (al menos dos dimensiones núcleo
+comparadas con la referencia; ver
+[Confianza del veredicto](#confianza-del-veredicto)).
 
 **Divulgación responsable.** **No acuses públicamente a un proveedor**
 basándote en un informe de ekte. Antes de actuar: vuelve a ejecutar con más

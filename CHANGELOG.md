@@ -20,6 +20,44 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Compare mode: high confidence needs comparisons, not just a configured baseline ([#257](https://github.com/mn567250/ekte/issues/257))
+
+The verdict confidence became **high** as soon as a baseline was configured
+and every core dimension produced a usable result, although `context_window`
+never asks the baseline and the other core detectors only compare with it in
+some cases. A usable LLM judge verdict also lifted medium to high without any
+baseline, while the documentation said only a baseline can reach high.
+
+- **Evidence flag:** every detector result has a new field
+  `baseline_compared` (default false). It is true only when the detector
+  actually compared the target with a usable baseline answer:
+  `model_identity` (a fingerprint or the cutoff probe answered by both sides),
+  `quality_judge` (the baseline answered every probe and was shown to the
+  judge), `billing` (`billing.prompt-vs-baseline` ran), `capability` (the
+  baseline answered a probe the target rejected), `integrity`,
+  `protocol_request` and `performance`. The `model_identity` evidence key
+  `baseline_compared` now carries the same value instead of "a baseline was
+  configured"; the `quality_judge` evidence key of that name, which meant "the
+  baseline was asked", is renamed `baseline_asked`.
+- **Confidence:** **high** now needs a baseline, every core dimension that ran
+  with a usable result, *and* at least two core dimensions (model identity,
+  context window, capability, billing) with a detector that has
+  `baseline_compared` and a usable status. Otherwise it is at most
+  **medium**. A judge verdict alone no longer lifts the confidence; a
+  baseline-corroborated judge verdict counts as the model-identity
+  comparison.
+- **Documentation:** the methodology's "Verdict confidence" section, its
+  compare-mode notes and the suites guide (all eight languages) state this
+  rule.
+- Verdicts can change for the same evidence (see
+  [#168](https://github.com/mn567250/ekte/issues/168)): compare runs in which
+  fewer than two core dimensions were compared with the baseline, and judged
+  runs without a baseline, report **medium** instead of **high**. **Report
+  schema 1.6** (still unreleased) gains the optional
+  `DetectorResult.baseline_compared`.
+- Not in this change (possible follow-ups): `context_window` and `streaming`
+  still do not ask the baseline.
+
 ### Scoring: a failed stream is no substitution evidence; two HIGH findings need two detectors ([#255](https://github.com/mn567250/ekte/issues/255))
 
 `streaming.failed` was Fail · High with cap 0 after a single streaming request

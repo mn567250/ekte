@@ -171,9 +171,25 @@ Ergebnis zur Modellidentität sagt, dass die Modellidentität nicht geprüft wur
 - **Mittel** — mindestens zwei Kerndimensionen lieferten ein verwertbares
   Ergebnis (oder, in einem Lauf ohne Kerndimensionen, mindestens zwei
   Dimensionen);
-- **Hoch** — eine Referenz wurde genutzt *und* jede gelaufene Kerndimension
-  lieferte ein verwertbares Ergebnis, oder die Konfidenz war mittel und der
-  LLM-Richter gab ein verwertbares Urteil ab.
+- **Hoch** — eine Referenz wurde genutzt, jede gelaufene Kerndimension
+  lieferte ein verwertbares Ergebnis, *und* in mindestens zwei
+  Kerndimensionen hat ein Detektor das Ziel tatsächlich mit einer
+  verwertbaren Antwort der Referenz verglichen (`baseline_compared` im
+  Bericht) und ein verwertbares Ergebnis geliefert. Eine konfigurierte
+  Referenz allein genügt nicht: Eine Referenz, die mit Fehlern antwortete oder
+  die kein Kerndetektor befragte, lässt die Konfidenz bei mittel. Ein
+  Richterurteil allein hebt die Konfidenz nie an; ein Richterurteil, das die
+  Referenz bestätigt hat, zählt als Vergleich der Modellidentität.
+
+Kerndetektoren vergleichen mit der Referenz, wenn sie antwortet:
+`model_identity` (ein Fingerprint oder die Stichtagsprobe, von beiden Seiten
+beantwortet), `quality_judge` (die Referenz beantwortete jede Probe und wurde
+dem Richter gezeigt), `billing` (Prompt-Tokens, gezählt von einer Referenz
+desselben Modells über dasselbe Protokoll) und `capability` (die Referenz
+beantwortete eine Probe, die das Ziel abgelehnt hat). `context_window` befragt
+die Referenz nie. Außerhalb des Kerns erfassen auch `integrity`,
+`protocol_request` und `performance` `baseline_compared`, es zählt aber nicht
+für die Konfidenz.
 
 ## Suiten, Detektoren und Modi
 
@@ -217,9 +233,12 @@ Ergebnis zur Modellidentität sagt, dass die Modellidentität nicht geprüft wur
   der des Ziels fest und schickt jeden Fingerprint und die Stichtagsprobe auch an
   die Referenz, `protocol_request` sendet abgelehnte Parameter erneut an
   die Referenz, `integrity` stuft einen Austausch, den die Referenz nicht zeigt,
-  auf KRITISCH hoch, `quality_judge` zeigt dem Richter beide Seiten, und
-  `performance` misst beide Endpunkte abwechselnd. Hohe Konfidenz ist nur mit
-  Referenz erreichbar.
+  auf KRITISCH hoch, `quality_judge` zeigt dem Richter beide Seiten, `billing`
+  vergleicht Prompt-Tokens, `capability` sendet eine abgelehnte Probe erneut,
+  und `performance` misst beide Endpunkte abwechselnd. Hohe Konfidenz ist nur
+  mit Referenz erreichbar, und nur wenn mindestens zwei Kerndimensionen
+  tatsächlich mit ihr verglichen wurden (siehe
+  [Konfidenz des Urteils](#konfidenz-des-urteils)).
 - **Wissensbasis:** das Profil des angegebenen Modells
   (`ekte/knowledge/data/*.yaml` plus Ihre eigenen Einträge in `kb.db`) liefert
   das angegebene Kontextfenster, die maximale Ausgabe, den Tokenizer, die
@@ -1294,7 +1313,8 @@ Ein Relay kann Tests erkennen: zu anderen
 Zeiten erneut ausführen und den Vergleichsmodus gegen eine vertrauenswürdige
 Referenz **genau des angegebenen Snapshots** bevorzugen — der stärkste Weg,
 Modellverhalten von Relay-Verhalten zu trennen, und der einzige zu hoher
-Konfidenz.
+Konfidenz (mindestens zwei Kerndimensionen mit der Referenz verglichen; siehe
+[Konfidenz des Urteils](#konfidenz-des-urteils)).
 
 **Verantwortungsvolle Offenlegung.** **Beschuldigen Sie einen Anbieter nicht
 öffentlich** auf Grundlage eines ekte-Berichts. Bevor Sie handeln: mit mehr

@@ -62,5 +62,10 @@ affidabile** nell'interfaccia web) esegue le stesse sonde, nello stesso momento,
 contro un riferimento affidabile del modello dichiarato. È la via di conferma più
 forte: risposte d'identità, parametri di richiesta rifiutati, canary di
 manomissione e prestazioni vengono giudicati fianco a fianco, e solo un
-riferimento permette all'affidabilità del verdetto di essere *alta*. Senza
-`--judge-base-url`, la modalità di confronto usa il riferimento come giudice.
+riferimento permette all'affidabilità del verdetto di essere *alta*: almeno
+due dimensioni centrali (identità del modello, finestra di contesto, capacità
+dichiarate, fatturazione) devono essere state davvero confrontate con una
+risposta utilizzabile del riferimento; un giudice da solo non ci riesce mai
+(vedi [Affidabilità del verdetto](methodology.md#affidabilità-del-verdetto)).
+Senza `--judge-base-url`, la modalità di confronto usa il riferimento come
+giudice.
