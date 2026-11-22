@@ -68,6 +68,7 @@
   "Re-run once the endpoint reliably returns completions.": "待端点能稳定返回补全后再重跑。",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "请视为偏离信号而非证据；行动前先用指纹与身份检测佐证。",
   "Verify the relay supports stream=true for this model.": "确认该中转站对此模型支持 stream=true。",
+  "Re-run the audit; if it keeps failing, check the relay's status for this model.": "重新运行审计；如果仍然失败，请检查该中转站对此模型的服务状态。",
   "Verify the relay streams content deltas for this model.": "确认该中转站对此模型以流式返回内容增量。",
   "Run `ekte compare` against a trusted baseline to corroborate.": "用 `ekte compare` 对照可信基线加以佐证。",
   "A response naming a different vendor strongly suggests model substitution.": "回复中提到其他厂商，强烈暗示模型被替换。",
@@ -339,7 +340,11 @@
   ],
   "streaming.failed": [
    "流式请求失败",
-   "流式请求失败（HTTP {status_code}，类型 {error_type}）；请确认该模型支持 stream=true。"
+   "流式请求两次失败（HTTP {status_code}，类型 {error_type}）；无法评估流式输出，请重新运行审计。"
+  ],
+  "streaming.unsupported": [
+   "中转站不为该模型提供流式输出",
+   "中转站两次拒绝了流式请求（HTTP {status_code}，类型 {error_type}）；请确认它为该模型支持 stream=true。"
   ],
   "streaming.no_content": [
    "流式响应没有内容",

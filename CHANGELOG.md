@@ -39,6 +39,36 @@ ekte has three eras:
   byte-identical to the gated official file, or that a converted tokenizer
   matches the official tiktoken vocabulary and split pattern.
 
+### Scoring: a failed stream is no substitution evidence; two HIGH findings need two detectors ([#255](https://github.com/mn567250/ekte/issues/255))
+
+`streaming.failed` was Fail · High with cap 0 after a single streaming request
+that was not ok, and sat on the substitution ladder: one HTTP 503 on that call
+gave risk **medium** ("Some checks diverge from what is advertised"). And any
+two HIGH findings made the risk high, so a failed stream plus an echoed API key
+read "Strong evidence the relay does not deliver what it advertises", though
+neither says anything about what is served.
+
+- **Streaming:** a failed stream request is repeated once. A relay that refuses
+  to stream for the model (a 4xx naming streaming, or any other 4xx while the
+  same prompt without streaming succeeds) gives the new outcome
+  `streaming.unsupported`, Fail · Medium, cap 0 ("The relay does not stream
+  for this model."). Any other failure (5xx, timeout, rate limit, or a 4xx the
+  non-streamed prompt gets too) is `streaming.failed`, now Inconclusive · Low
+  and not scored, like the context-window probe's transport failures.
+- **Advisories:** both streaming failure checks are in `ADVISORY_CHECKS`: they
+  lower the streaming dimension and are listed as advisories, but never drive
+  the substitution risk (also for older reports that carry the HIGH
+  `streaming.failed`). The advisory note in the summary names them.
+- **Risk ladder:** "two or more HIGH findings" now needs the findings to come
+  from at least two different detectors, none of them advisory; HIGH findings
+  of a single detector outside the core dimensions give **medium**. A HIGH in a
+  core dimension and any CRITICAL still give **high**; `security.key_echo` plus
+  an integrity HIGH is still **high**.
+- Verdicts can change for the same evidence (see #168): runs with a failed
+  stream or with several HIGH findings of one non-core detector can get a
+  lower risk level (and so a higher score cap) than before. The report schema
+  is unchanged.
+
 ### Small detector consistency fixes ([#262](https://github.com/mn567250/ekte/issues/262))
 
 - **LLM judge:** a `consistent` verdict now scores 100 points instead of 95,

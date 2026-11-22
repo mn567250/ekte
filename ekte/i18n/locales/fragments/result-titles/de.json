@@ -26,6 +26,7 @@
     "Claimed tool calling rejected by the relay": "Angegebene Tool-Aufrufe vom Relay abgelehnt",
     "Claimed JSON mode rejected by the relay": "Angegebener JSON-Modus vom Relay abgelehnt",
     "Claimed strict JSON schema rejected by the relay": "Angegebenes striktes JSON-Schema vom Relay abgelehnt",
+    "Relay does not stream for this model": "Relay streamt für dieses Modell nicht",
     "Tool-calling probe rejected (not counted)": "Tool-Aufruf-Sonde abgelehnt (nicht gewertet)",
     "JSON-mode probe rejected (not counted)": "JSON-Modus-Sonde abgelehnt (nicht gewertet)",
     "JSON-schema probe rejected (not counted)": "JSON-Schema-Sonde abgelehnt (nicht gewertet)",

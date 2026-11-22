@@ -326,6 +326,7 @@
   "Re-run once the endpoint reliably returns completions.": "Relancez quand le point d'accès renverra des complétions de façon fiable.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "À traiter comme un signal d'écart, pas une preuve ; corroborez avec les détecteurs d'empreinte et d'identité avant d'agir.",
   "Verify the relay supports stream=true for this model.": "Vérifiez que le relais prend en charge stream=true pour ce modèle.",
+  "Re-run the audit; if it keeps failing, check the relay's status for this model.": "Relancez l'audit ; s'il échoue encore, vérifiez l'état du relais pour ce modèle.",
   "Verify the relay streams content deltas for this model.": "Vérifiez que le relais diffuse des deltas de contenu pour ce modèle.",
   "Run `ekte compare` against a trusted baseline to corroborate.": "Lancez `ekte compare` face à une référence de confiance pour corroborer.",
   "A response naming a different vendor strongly suggests model substitution.": "Une réponse citant un autre fournisseur suggère fortement une substitution de modèle.",
@@ -643,7 +644,11 @@
   ],
   "streaming.failed": [
    "Échec de la requête en streaming",
-   "La requête en streaming a échoué (HTTP {status_code}, type {error_type}) ; vérifiez que le modèle prend en charge stream=true."
+   "La requête en streaming a échoué deux fois (HTTP {status_code}, type {error_type}) ; le streaming n'a pas pu être évalué — relancez l'audit."
+  ],
+  "streaming.unsupported": [
+   "Le relais ne diffuse pas en streaming pour ce modèle",
+   "Le relais a refusé deux fois la requête en streaming (HTTP {status_code}, type {error_type}) ; vérifiez qu'il prend en charge stream=true pour ce modèle."
   ],
   "streaming.no_content": [
    "Le flux n'a livré aucun contenu",

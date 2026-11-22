@@ -162,6 +162,8 @@
   "Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering.": "Sent første token fra en resonnerende modell (den tenker før den svarer): til informasjon, telles ikke som bufring.",
   "No usage chunk in the stream: deducts 15 points when nothing is buffered.": "Ingen usage-bit i strømmen: trekker fra 15 poeng når ingenting er bufret.",
   "The streaming request failed.": "Strømmeforespørselen mislyktes.",
+  "The relay does not stream for this model.": "Reléet strømmer ikke for denne modellen.",
+  "The streaming request failed twice (5xx, timeout or another transport failure); not scored.": "Strømmeforespørselen mislyktes to ganger (5xx, tidsavbrudd eller en annen transportfeil); gir ikke score.",
   "The stream succeeded but delivered no content to judge by; not scored.": "Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score.",
   "The model named the color of the test image.": "Modellen nevnte fargen på testbildet.",
   "Vision is claimed but the model did not name the image's color.": "Syn er påstått, men modellen nevnte ikke fargen på bildet.",

@@ -26,6 +26,7 @@
   "Claimed tool calling rejected by the relay": "Påståtte verktøykall avvises av reléet",
   "Claimed JSON mode rejected by the relay": "Påstått JSON-modus avvises av reléet",
   "Claimed strict JSON schema rejected by the relay": "Påstått streng JSON-skjema avvises av reléet",
+  "Relay does not stream for this model": "Reléet strømmer ikke for denne modellen",
   "Tool-calling probe rejected (not counted)": "Verktøykall-proben ble avvist (telles ikke)",
   "JSON-mode probe rejected (not counted)": "JSON-modus-proben ble avvist (telles ikke)",
   "JSON-schema probe rejected (not counted)": "JSON-skjema-proben ble avvist (telles ikke)",

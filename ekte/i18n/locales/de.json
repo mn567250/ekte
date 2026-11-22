@@ -326,6 +326,7 @@
   "Re-run once the endpoint reliably returns completions.": "Erneut ausführen, sobald der Endpunkt zuverlässig Vervollständigungen liefert.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Als Abweichungssignal werten, nicht als Beweis; vor weiteren Schritten mit Fingerprint- und Identitätsdetektoren bestätigen.",
   "Verify the relay supports stream=true for this model.": "Prüfen Sie, ob das Relay stream=true für dieses Modell unterstützt.",
+  "Re-run the audit; if it keeps failing, check the relay's status for this model.": "Führen Sie die Prüfung erneut aus; schlägt sie weiter fehl, prüfen Sie den Status des Relays für dieses Modell.",
   "Verify the relay streams content deltas for this model.": "Prüfen Sie, ob das Relay für dieses Modell Inhalts-Deltas streamt.",
   "Run `ekte compare` against a trusted baseline to corroborate.": "Führen Sie `ekte compare` gegen eine vertrauenswürdige Referenz aus, um dies zu bestätigen.",
   "A response naming a different vendor strongly suggests model substitution.": "Eine Antwort, die einen anderen Anbieter nennt, deutet stark auf einen Modellaustausch hin.",
@@ -643,7 +644,11 @@
   ],
   "streaming.failed": [
    "Streaming-Anfrage fehlgeschlagen",
-   "Die Streaming-Anfrage ist fehlgeschlagen (HTTP {status_code}, Typ {error_type}); prüfen Sie, ob das Modell stream=true unterstützt."
+   "Die Streaming-Anfrage ist zweimal fehlgeschlagen (HTTP {status_code}, Typ {error_type}); das Streaming konnte nicht beurteilt werden – führen Sie die Prüfung erneut aus."
+  ],
+  "streaming.unsupported": [
+   "Relay streamt für dieses Modell nicht",
+   "Das Relay lehnte die Streaming-Anfrage zweimal ab (HTTP {status_code}, Typ {error_type}); prüfen Sie, ob es stream=true für dieses Modell unterstützt."
   ],
   "streaming.no_content": [
    "Stream lieferte keinen Inhalt",
