@@ -18,7 +18,12 @@ per-source median, rounded UP to two decimals (the probe divides by it, so
 rounding up keeps the real count within the rung). A source with
 ``same_as`` names a gated official repository: its ``tokenizer.json`` must
 have the same SHA-256 as the mirror's (read from the Hub's file metadata,
-which needs no access), or the source is skipped.
+which needs no access), or the source is skipped. A source with
+``tiktoken_of`` is a conversion of an official repository that publishes a
+tiktoken ``tiktoken.model`` instead of ``tokenizer.json``: its vocabulary must
+give every official token its official rank, and its split pattern must equal
+the official ``pat_str`` (read from ``tokenization_kimi.py`` as text, never
+executed), or the source is skipped.
 
 Not run in CI. It needs network access to huggingface.co and two packages that
 are not ekte dependencies; install them in a separate virtual environment
@@ -53,6 +58,9 @@ class Source:
     revision: str
     # A gated official repository whose tokenizer.json must be byte-identical.
     same_as: str = ""
+    # An official repository with tiktoken.model + tokenization_kimi.py that
+    # this tokenizer.json must be a faithful conversion of.
+    tiktoken_of: str = ""
 
 
 # Family -> sources (the repositories whose models the knowledge base lists
@@ -90,22 +98,42 @@ SOURCES: dict[str, list[Source]] = {
     "gemma": [
         Source("google/gemma-4-31b-it", "842da3794eaa0b77d5f08bae87a17459d91ff475"),
         Source("google/gemma-4-E4B-it", "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c"),
-        Source("unsloth/gemma-3-27b-it", "7a5a3053dbd5d1d58e48159e87b9df2fc545a49a", same_as="google/gemma-3-27b-it"),
+        Source(
+            "unsloth/gemma-3-27b-it",
+            "7a5a3053dbd5d1d58e48159e87b9df2fc545a49a",
+            same_as="google/gemma-3-27b-it",
+        ),
     ],
     "nemotron-3": [
-        Source("nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16", "2dc98e2afe4face0e4ce40972a915c45368bd34a"),
-        Source("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "bf77c3174f68ad409e1c2aa60daeb46e32d1c606"),
+        Source(
+            "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+            "2dc98e2afe4face0e4ce40972a915c45368bd34a",
+        ),
+        Source(
+            "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16", "bf77c3174f68ad409e1c2aa60daeb46e32d1c606"
+        ),
     ],
     "llama-3.3": [
         Source(
-            "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5", "420ba7d28211abf116b8b103ab700d92619daf98",
+            "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5",
+            "420ba7d28211abf116b8b103ab700d92619daf98",
             same_as="meta-llama/Llama-3.3-70B-Instruct",
         ),
     ],
     "cohere": [
         Source(
-            "mlx-community/c4ai-command-r7b-12-2024-bf16", "f111eceb4c3dba69b2a4f5dc9f57f293fb416b8a",
+            "mlx-community/c4ai-command-r7b-12-2024-bf16",
+            "f111eceb4c3dba69b2a4f5dc9f57f293fb416b8a",
             same_as="CohereLabs/c4ai-command-r7b-12-2024",
+        ),
+    ],
+    "moonshot-bpe": [
+        # Kimi K2/K2.5/K2.6/K2.7-Code/K3 publish the same tiktoken.model (SHA-256
+        # b6c497a7...0c5103); this is a conversion of it, checked by tiktoken_of.
+        Source(
+            "Xenova/Kimi-K3-tokenizer",
+            "4537b5bc42f0bd74b4409517ca647e8d723f4d0f",
+            tiktoken_of="moonshotai/Kimi-K3@1f5d44f794ef598de7b6f529ef7923729b7e5408",
         ),
     ],
 }
@@ -133,6 +161,61 @@ def _hub_sha256(api: Any, repo: str, revision: str | None = None) -> tuple[str, 
     return info.sha, None
 
 
+def _bytes_to_unicode() -> dict[int, str]:
+    """The byte-level alphabet of ``tokenizers``' ByteLevel (GPT-2's)."""
+    keep = [
+        *range(ord("!"), ord("~") + 1),
+        *range(ord("¡"), ord("¬") + 1),
+        *range(ord("®"), ord("ÿ") + 1),
+    ]
+    codes = keep[:]
+    extra = 0
+    for byte in range(256):
+        if byte not in keep:
+            keep.append(byte)
+            codes.append(256 + extra)
+            extra += 1
+    return dict(zip(keep, map(chr, codes), strict=True))
+
+
+def _tiktoken_mismatch(tokenizer_json: Path, official: str, cache_dir: Path) -> str:
+    """Why ``tokenizer_json`` is not a faithful conversion of ``official``'s
+    tiktoken files ("" when it is). Both official files are read as data."""
+    import base64
+    import re
+
+    from huggingface_hub import hf_hub_download
+
+    repo, _, revision = official.partition("@")
+    model = Path(
+        hf_hub_download(repo, "tiktoken.model", revision=revision or None, cache_dir=str(cache_dir))
+    )
+    code = Path(
+        hf_hub_download(
+            repo, "tokenization_kimi.py", revision=revision or None, cache_dir=str(cache_dir)
+        )
+    )
+    alphabet = _bytes_to_unicode()
+    ranks = {}
+    for line in model.read_bytes().splitlines():
+        if line.strip():
+            token, rank = line.split()
+            ranks["".join(alphabet[b] for b in base64.b64decode(token))] = int(rank)
+    data = json.loads(tokenizer_json.read_text(encoding="utf-8"))
+    vocab = data["model"]["vocab"]
+    wrong = sum(1 for token, rank in ranks.items() if vocab.get(token) != rank)
+    if wrong:
+        return f"{wrong} of {len(ranks)} official tokens have another id"
+    block = re.search(r'pat_str = "\|"\.join\(\[(.*?)\]\)', code.read_text(encoding="utf-8"), re.S)
+    if not block:
+        return "no pat_str in tokenization_kimi.py"
+    pattern = "|".join(re.findall(r'r"""(.*?)"""', block.group(1), re.S))
+    splits = [p for p in data["pre_tokenizer"].get("pretokenizers", []) if p.get("type") == "Split"]
+    if len(splits) != 1 or splits[0]["pattern"].get("Regex") != pattern:
+        return "split pattern differs from the official pat_str"
+    return ""
+
+
 def measure_source(family: str, source: Source, *, cache_dir: Path, latest: bool) -> dict[str, Any]:
     from huggingface_hub import HfApi, hf_hub_download
     from tokenizers import Tokenizer
@@ -143,7 +226,9 @@ def measure_source(family: str, source: Source, *, cache_dir: Path, latest: bool
     api = HfApi()
     revision, hub_sha = _hub_sha256(api, source.repo, None if latest else source.revision)
     row: dict[str, Any] = {"family": family, "repo": source.repo, "revision": revision}
-    path = Path(hf_hub_download(source.repo, "tokenizer.json", revision=revision, cache_dir=str(cache_dir)))
+    path = Path(
+        hf_hub_download(source.repo, "tokenizer.json", revision=revision, cache_dir=str(cache_dir))
+    )
     row["sha256"] = _sha256(path)
     if hub_sha and hub_sha != row["sha256"]:
         row["skipped"] = f"download sha256 {row['sha256']} != hub metadata {hub_sha}"
@@ -154,6 +239,12 @@ def measure_source(family: str, source: Source, *, cache_dir: Path, latest: bool
         if official != row["sha256"]:
             row["skipped"] = f"not identical to {source.same_as} ({official})"
             return row
+    if source.tiktoken_of:
+        row["tiktoken_of"] = source.tiktoken_of
+        reason = _tiktoken_mismatch(path, source.tiktoken_of, cache_dir)
+        if reason:
+            row["skipped"] = f"not a faithful conversion of {source.tiktoken_of}: {reason}"
+            return row
     tokenizer = Tokenizer.from_file(str(path))
     samples = []
     for size in SIZES:
@@ -161,7 +252,15 @@ def measure_source(family: str, source: Source, *, cache_dir: Path, latest: bool
             text = build_filler(size, tokenizer=family, nonce=nonce)
             heuristic = heuristic_token_count(text)
             real = len(tokenizer.encode(text, add_special_tokens=False).ids)
-            samples.append({"size": size, "nonce": nonce, "heuristic": heuristic, "real": real, "ratio": real / heuristic})
+            samples.append(
+                {
+                    "size": size,
+                    "nonce": nonce,
+                    "heuristic": heuristic,
+                    "real": real,
+                    "ratio": real / heuristic,
+                }
+            )
     ratios = [s["ratio"] for s in samples]
     row.update(
         samples=samples,
@@ -179,9 +278,15 @@ def factor(median: float) -> float:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--cache-dir", type=Path, required=True, help="download directory (its own, empty)")
-    parser.add_argument("--family", action="append", default=[], help="measure only this family (repeatable)")
-    parser.add_argument("--latest", action="store_true", help="measure the current revisions, not the pinned ones")
+    parser.add_argument(
+        "--cache-dir", type=Path, required=True, help="download directory (its own, empty)"
+    )
+    parser.add_argument(
+        "--family", action="append", default=[], help="measure only this family (repeatable)"
+    )
+    parser.add_argument(
+        "--latest", action="store_true", help="measure the current revisions, not the pinned ones"
+    )
     parser.add_argument("--json", type=Path, help="write every measurement to this file")
     args = parser.parse_args(argv)
 
@@ -208,7 +313,9 @@ def main(argv: list[str] | None = None) -> int:
             low = min(r["min"] for r in measured)
             high = max(r["max"] for r in measured)
             best = max(r["median"] for r in measured)
-            print(f'    "{family}": {factor(best):.2f},  # median {best:.4f}, spread {low:.4f}-{high:.4f}')
+            print(
+                f'    "{family}": {factor(best):.2f},  # median {best:.4f}, spread {low:.4f}-{high:.4f}'
+            )
     if args.json:
         args.json.write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
     return 0
