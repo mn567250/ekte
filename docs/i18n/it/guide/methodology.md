@@ -405,12 +405,16 @@ il modello deve restituirlo.
   mai rispetto alla parte di una finestra dichiarata più grande che sta oltre il
   limite.
 - **Le dimensioni sono token reali.** La stima dei token integrata in ekte
-  sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
-  rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
-  ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
-  resta entro N token reali. Una famiglia di tokenizer con un fattore misurato
-  offline userebbe il proprio fattore (`real_per_heuristic` nelle prove);
-  nessuno è ancora misurato, quindi ogni famiglia usa 1,2. Le dimensioni nelle
+  sottostima questo riempimento rispetto ai tokenizer reali, quindi ogni prompt
+  viene costruito a dimensione ÷ il fattore della famiglia di tokenizer secondo
+  la stima (ago e domanda inclusi): un gradino di dimensione N resta entro N
+  token reali. I fattori sono stati misurati offline con i tokenizer pubblicati
+  (issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Le famiglie il cui tokenizer non è pubblicato (`claude-bpe-*`, `gemini`,
+  `grok`) usano 1,2. Il fattore usato è `real_per_heuristic` nelle prove. Le dimensioni nelle
   prove (`size`, `effective_window`, `top_rung`) sono questi budget di token
   reali; le righe della scala riportano anche la stima con cui è stato
   costruito un prompt (`heuristic_tokens`) e i token di prompt che l'endpoint

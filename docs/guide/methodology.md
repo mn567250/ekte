@@ -379,11 +379,16 @@ marker is embedded in non-repetitive filler, and the model must return it.
   the top rung (90% of `upper`, below), never against the part of a larger
   declared window above the cap.
 - **Sizes are real tokens.** ekte's built-in token estimate under-counts this
-  filler by about 12% (o200k) to 15% (cl100k) against real tokenizers, so each
-  prompt is built at size ÷ 1.2 by the estimate (needle and question included):
-  a size-N rung stays within N real tokens. A tokenizer family with a factor
-  measured offline would use its own factor (`real_per_heuristic` in the
-  evidence); none is measured yet, so every family uses 1.2. Sizes in the
+  filler against real tokenizers, so each prompt is built at size ÷ the
+  tokenizer family's factor by the estimate (needle and question included): a
+  size-N rung stays within N real tokens. The factors were measured offline
+  with the published tokenizers (issue #261):
+  `o200k_base` / `o200k_harmony` 1.12, `moonshot-bpe` 1.14, `deepseek-bpe` 1.15,
+  `cl100k_base` / `llama-3.3` 1.16, `glm` 1.22, `nemotron-3` 1.38, `gemma` 1.39,
+  `cohere` 1.40, `qwen` 1.41.
+  Families whose tokenizer is not published (`claude-bpe-*`, `gemini`, `grok`)
+  use 1.2. The factor a run used is `real_per_heuristic` in the evidence.
+  Sizes in the
   evidence (`size`, `effective_window`, `top_rung`) are these real-token
   budgets; the ladder rows also carry the estimate a prompt was built at
   (`heuristic_tokens`) and the prompt tokens the endpoint reported for it

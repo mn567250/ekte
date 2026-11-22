@@ -20,6 +20,25 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Context window: measured token factors per tokenizer family ([#261](https://github.com/mn567250/ekte/issues/261))
+
+- `FILLER_REAL_PER_HEURISTIC` (`ekte/utils/tokenize.py`) now holds the real
+  tokens per heuristic token of the context-window filler, measured offline
+  with each family's published `tokenizer.json` (pinned Hugging Face
+  revisions, 20 filler texts each): `o200k_base` / `o200k_harmony` 1.12,
+  `moonshot-bpe` 1.14, `deepseek-bpe` 1.15, `cl100k_base` / `llama-3.3` 1.16,
+  `glm` 1.22, `nemotron-3` 1.38, `gemma` 1.39, `cohere` 1.40, `qwen` 1.41.
+  Families whose tokenizer is not published (`claude-bpe-*`, `gemini`, `grok`)
+  keep 1.2. Haystacks for the o200k, cl100k, DeepSeek, Kimi and Llama families
+  are now a little larger (closer to the rung), and those for Qwen, Gemma,
+  Command and Nemotron smaller, so these dense tokenizers no longer overshoot
+  the rung by 15-18%. Context-window probes, and therefore some scores, change;
+  see [#168](https://github.com/mn567250/ekte/issues/168).
+- `scripts/measure_tokenizer_factors.py` re-measures the table (not run in CI;
+  see `docs/dev/knowledge-base.md`). It checks that an ungated mirror is
+  byte-identical to the gated official file, or that a converted tokenizer
+  matches the official tiktoken vocabulary and split pattern.
+
 ### Small detector consistency fixes ([#262](https://github.com/mn567250/ekte/issues/262))
 
 - **LLM judge:** a `consistent` verdict now scores 100 points instead of 95,
