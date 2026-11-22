@@ -274,3 +274,78 @@ async def test_rejected_findings_are_localized_with_the_relay_error(knowledge_ba
     assert "(HTTP 400)" in limit["summary"] and "Grenze" in limit["summary"]
     assert "nicht angegeben" in unclaimed["summary"] and "tools are not supported" in unclaimed["summary"]
     assert all("tools are not supported" in x["summary"] and "400" in x["summary"] for x in out["zh"])
+
+
+# --------------------------------------------------------------------------- #
+# One sample does not decide a MEDIUM tools / JSON-mode finding (#262)
+# --------------------------------------------------------------------------- #
+_TOOL_CALL = [{"id": "c1", "type": "function",
+               "function": {"name": "get_weather", "arguments": '{"city": "Paris"}'}}]
+
+
+class _SkipOnceStub:
+    """Answers the first tools / JSON-mode request in text; ``forced`` decides
+    how a repeat (tool_choice required, or the JSON-mode repeat) is answered."""
+
+    def __init__(self, forced: str):
+        self.forced = forced
+        self.specs: list[RequestSpec] = []
+        self.seen: dict[str, int] = {}
+
+    async def complete(self, spec: RequestSpec) -> CompletionOutcome:
+        self.specs.append(spec)
+        kind = "tools" if spec.tools else "json" if spec.response_format == {"type": "json_object"} else None
+        if kind is None:
+            return _answer(spec)
+        n = self.seen[kind] = self.seen.get(kind, 0) + 1
+        if n == 1 or self.forced == "text":
+            return CompletionOutcome(ok=True, status_code=200, content="It is sunny.", finish_reason="stop")
+        if self.forced == "reject":
+            return _rejection(message="tool_choice required is not supported")
+        if kind == "tools":
+            return CompletionOutcome(ok=True, status_code=200, tool_calls=_TOOL_CALL,
+                                     finish_reason="tool_calls")
+        return CompletionOutcome(ok=True, status_code=200, content='{"value": 7429}', finish_reason="stop")
+
+
+async def test_a_skipped_tool_call_is_repeated_with_tool_choice_required(knowledge_base):
+    stub = _SkipOnceStub("deliver")
+    result = await CapabilityDetector().run(_ctx(knowledge_base, stub))
+    _check(result)
+    tool_specs = [s for s in stub.specs if s.tools]
+    assert [s.tool_choice for s in tool_specs] == ["auto", "required"]
+    f = next(f for f in result.findings if f.scale_check == "capability.tools")
+    assert f.outcome == "delivered" and f.evidence["needed_required"] is True
+    j = next(f for f in result.findings if f.scale_check == "capability.json_mode")
+    assert j.outcome == "delivered" and j.evidence["needed_repeat"] is True
+
+
+async def test_a_rejected_forced_tool_call_falls_back_to_the_first_answer(knowledge_base):
+    result = await CapabilityDetector().run(_ctx(knowledge_base, _SkipOnceStub("reject")))
+    _check(result)
+    f = next(f for f in result.findings if f.scale_check == "capability.tools")
+    # the 4xx on tool_choice required is not a "rejected" finding
+    assert f.outcome == "not_delivered"
+    assert f.evidence["required_retry"] == "rejected (HTTP 400)"
+
+
+async def test_two_text_answers_are_not_delivered(knowledge_base):
+    result = await CapabilityDetector().run(_ctx(knowledge_base, _SkipOnceStub("text")))
+    _check(result)
+    out = _outcomes(result)
+    assert out["capability.tools"] == "not_delivered"
+    assert out["capability.json_mode"] == "not_delivered"
+
+
+async def test_no_repeat_for_an_unclaimed_tool_call(knowledge_base):
+    stub = _SkipOnceStub("deliver")
+    result = await CapabilityDetector().run(_ctx(knowledge_base, stub, model=None))
+    assert [s.tool_choice for s in stub.specs if s.tools] == ["auto"]
+    assert _outcomes(result)["capability.tools"] == "not_claimed"
+
+
+def test_anthropic_maps_tool_choice_required_to_any():
+    from ekte.clients.anthropic import AnthropicClient
+
+    assert AnthropicClient._translate_tool_choice("required") == {"type": "any"}
+    assert AnthropicClient._translate_tool_choice("auto") == {"type": "auto"}

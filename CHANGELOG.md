@@ -50,6 +50,51 @@ neither says anything about what is served.
   lower risk level (and so a higher score cap) than before. The report schema
   is unchanged.
 
+### Small detector consistency fixes ([#262](https://github.com/mn567250/ekte/issues/262))
+
+- **LLM judge:** a `consistent` verdict now scores 100 points instead of 95,
+  so enabling `--judge` no longer lowers a perfect model-identity dimension
+  (100 + 95 averaged to 97.5). Scores of judged runs change; see
+  [#168](https://github.com/mn567250/ekte/issues/168).
+- **One reasoning rule:** `ekte.detectors.helpers.is_reasoning(ctx, *outcomes)`
+  treats the endpoint as a reasoning model when the profile says so, when the
+  client has learned it (a short probe needed the reasoning repeat), or when a
+  response reports reasoning tokens. `billing`, `determinism`, the maximum
+  output check and the request/response attribute probes use it, so an
+  unprofiled reasoning model no longer gets a `determinism.temp1_variability:
+  identical` or `billing.usage-inflation-completion` finding for its hidden
+  thinking.
+- **Capability: one sample no longer decides a MEDIUM finding.** A claimed
+  tool call that does not come back with `tool_choice: "auto"` is asked for
+  once more with `tool_choice: "required"` (Anthropic `{"type": "any"}`); a
+  call on the repeat is `delivered` with evidence `needed_required: true`, and
+  a 4xx on the forced request alone falls back to the first answer instead of
+  failing the check. A claimed JSON mode that does not deliver is repeated once
+  as well (`needed_repeat: true`).
+- **Reliability slow tail can trigger:** `reliability.latency: slow` used a
+  fixed p95 above 30 s for 8-token requests, which no working relay reached. It
+  now fires when the p95 is above five times the median of the same burst
+  **and** above 5 s. The finding stays an advisory Warning · Low (15% of the
+  remaining score).
+- **Fingerprints: forbidden terms match whole words.** `expect_not_contains`
+  used substring matching, so a fingerprint forbidding `meta` fired on
+  "metadata". It now uses `helpers.contains_term`: whole words at ASCII
+  letter/digit edges, a version may follow (`qwen` matches `Qwen2.5`, `gpt-4`
+  matches `GPT-4o`), and CJK and token-like terms (`通义`, `<|User|>`) keep
+  matching inside text. `expect_contains` / `expect_contains_any` stay
+  substring matches. Every packaged `expect_not_contains` term is tested.
+- **Methodology:** the performance caveats now say that
+  `performance.reference` runs only in compare mode or for a profile with a
+  `performance.decode_tps` range (few packaged profiles have one).
+
+### Knowledge-base import: deep nesting is refused the same way with PyYAML 6.0.4
+
+PyYAML 6.0.4's libyaml refuses deeply nested YAML on its own while scanning
+ahead ("exceeded maximum nesting depth"), before the importer's own count of
+32 levels is reached, so `ekte kb-import --check` reported libyaml's message
+instead of "nested more than 32 levels deep", and differently from the
+pure-Python loader. That refusal is now reported as the importer's own.
+
 ### Scoring: coverage limits the rating ([#249](https://github.com/mn567250/ekte/issues/249))
 
 A dimension that ran but could not be judged (its detectors inconclusive or

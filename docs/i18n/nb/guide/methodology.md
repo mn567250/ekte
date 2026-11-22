@@ -238,6 +238,10 @@ at modellidentiteten ikke ble verifisert.
   (profilen sier `reasoning: true`, eller etter den første slike gjentakelsen),
   sendes korte prober med grensen på 4 096 tokens fra starten i stedet for to
   ganger.
+  Kontrollene som behandler en resonnerende modell annerledes (fakturering,
+  determinisme, maksimal utdata, forespørselsattributter) gjenkjenner den alle
+  på samme måte: profilen sier det, klienten har lært det av en slik
+  gjentakelse, eller et svar rapporterer resonneringstokens.
 - **Forespørselsparametere:** resonnerende modeller avviser noen parametere: på
   Chat Completions `max_tokens` (de tar `max_completion_tokens`), og på alle
   protokoller samplingsparametere som `temperature`. Klienten utelater
@@ -498,7 +502,8 @@ ofte felles.
 2. **Atferdsfingeravtrykk** fra kunnskapsbasen (kunnskapsgrense, særegenheter i
    tokenizeren, formatering, språkbundne prober, …): opptil seks prober i ren kode,
    hver kontrollert med `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` eller `expect_regex`; utdata begrenset til 512 tokens. En
+   `expect_not_contains` eller `expect_regex`; utdata begrenset til 512 tokens. Ord under `expect_not_contains` gjelder bare som hele ord (`meta` finnes
+   ikke i `metadata`; en versjon kan følge, som i `Qwen2.5`). En
    probe som trenger mer utdata (som en kontroll av maks utdata), hoppes over,
    oppføres som Info, og en annen probe tar plassen. Et avvikende fingeravtrykk
    trekker fra sin vektandel av 100 poeng (høyst 25); ett alene forblir LOW, to
@@ -590,7 +595,7 @@ ubesvart.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
-| `quality_judge.verdict` (LLM-dommerens konklusjon) | Dommeren fant svarene i samsvar med den oppgitte modellen. | Bestått | 95 poeng |
+| `quality_judge.verdict` (LLM-dommerens konklusjon) | Dommeren fant svarene i samsvar med den oppgitte modellen. | Bestått | 100 poeng |
 |  | Dommeren fant svarene ulike den oppgitte modellen (lav, middels eller ingen oppgitt sikkerhet). | Advarsel · Middels | 50 poeng |
 |  | Dommeren er sikker på at svarene er ulike den oppgitte modellen (ingen brukbar referanse). | Advarsel · Middels | 25 poeng |
 |  | Dommeren er sikker, og en pålitelig referanse bekreftet forskjellen. | Ikke bestått · Høy | 25 poeng |
@@ -626,6 +631,13 @@ egenskapsflagg:
   som ikke er OpenAI.
 - **JSON-modus:** `response_format: json_object` må returnere et objekt som kan
   tolkes, med den forespurte verdien.
+- **Gjentakelse:** et oppgitt verktøykall eller JSON-objekt som ikke kommer
+  tilbake, etterspørres én gang til før det regnes som ikke levert:
+  verktøyforespørselen med `tool_choice: "required"` (Anthropic:
+  `{"type": "any"}`), JSON-modus-forespørselen uendret. Et verktøykall i
+  gjentakelsen regnes som levert (bevis `needed_required: true`); en 4xx bare på
+  den tvungne forespørselen (noen modeller avviser tvungen verktøybruk) faller
+  tilbake til det første svaret.
 - **Strengt skjema:** et strengt `json_schema`; samsvar verifiseres når modellen
   påstår det, og noteres (til informasjon) når den ikke gjør det. Hoppes over uten
   profil.
@@ -829,7 +841,7 @@ ved moderat parallellitet.
 (`--reliability-requests`, standard 8) med avgrenset samtidighet
 (`--concurrency`, standard 3). Suksessraten beregnes over forespørslene som
 faktisk ble forsøkt: HTTP 429 er ærlig struping og telles for seg. Scoren trekker
-fra den mislykkede andelen; en p95-forsinkelse over 30 s beholder 85 % av det som
+fra den mislykkede andelen; en p95-forsinkelse over fem ganger medianen i samme støt og over 5 s beholder 85 % av det som
 er igjen. Én mislykket forespørsel (altså én forbigående 5xx av standardens 8),
 eller høyst 10 % av et større støt, er en Advarsel så lenge minst 80 % lyktes;
 flere er Ikke bestått. Detektorstatusen er den verste av funnene. Disse funnene er
@@ -842,7 +854,7 @@ transportråd: de hever aldri risikokonklusjonen.
 |  | Flere forespørsler enn det mislyktes; trekker fra den mislykkede andelen. | Ikke bestått · Middels | opptil −100 poeng |
 |  | Alle forespørsler ble strupet (HTTP 429): gir ikke score. | Uavklart · Lav | Ingen fradrag |
 |  | Ingen forespørsel nådde reléet (feilet i ekte eller på nettverksveien): ikke vurdert. | Uavklart · Lav | Ingen fradrag |
-| `reliability.latency` | p95-forsinkelse over 30 s under last; trekker fra 15 % av gjenværende score. | Advarsel · Lav | opptil −15 poeng |
+| `reliability.latency` | p95-forsinkelse over fem ganger medianen i støtet og over 5 s under last; trekker fra 15 % av gjenværende score. | Advarsel · Lav | opptil −15 poeng |
 | `reliability.rate_limited` | Deler av støtet ble strupet: ærlig struping, telles ikke. | Info | Ingen fradrag |
 | `reliability.skipped` | Pålitelighetsproben var slått av. | Info | Ingen fradrag |
 
@@ -1079,6 +1091,9 @@ per endepunkt, så jevnheten vurderes i testsettene deep, full og custom.
 kunnskapsbasen er bevisst brede medianer fra de egne API-ene, og et tregere mål
 noteres, gis aldri score. Alle funn har høyst LOW-alvorlighet, så denne
 dimensjonen flytter scoren, aldri risikokonklusjonen.
+Referansesammenligningen (`performance.reference`) kjører bare i
+sammenligningsmodus eller for en profil med et `performance.decode_tps`-område,
+som få medfølgende profiler har; for alle andre modeller vises den ikke.
 
 ---
 

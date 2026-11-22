@@ -248,6 +248,11 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
   Dès qu'un endpoint est connu pour raisonner (son profil indique
   `reasoning: true`, ou après sa première répétition de ce type), les sondes
   courtes partent d'emblée avec la limite de 4 096 tokens au lieu de deux fois.
+  Les vérifications qui traitent un modèle de raisonnement autrement
+  (facturation, déterminisme, sortie maximale, attributs de requête) le
+  reconnaissent toutes de la même façon : le profil l'indique, le client l'a
+  appris d'une telle répétition, ou une réponse signale des tokens de
+  raisonnement.
 - **Paramètres de requête :** les modèles de raisonnement refusent certains
   paramètres : sur Chat Completions `max_tokens` (ils prennent
   `max_completion_tokens`) et, quel que soit le protocole, les paramètres
@@ -527,7 +532,9 @@ limite est souvent partagée.
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
    `expect_contains`, `expect_contains_any`, `expect_not_contains` ou
-   `expect_regex` ; sortie limitée à 512 tokens. Une sonde qui
+   `expect_regex` ; sortie limitée à 512 tokens. Les termes de `expect_not_contains` ne comptent que comme mots entiers
+   (`meta` n'est pas trouvé dans `metadata` ; une version peut suivre, comme
+   dans `Qwen2.5`). Une sonde qui
    demande plus de sortie (un test de sortie maximale, par exemple) est
    ignorée, signalée en Info, et une autre sonde prend sa place. Une
    empreinte qui s'écarte
@@ -621,7 +628,7 @@ des sondes sans réponse.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
-| `quality_judge.verdict` (Verdict du juge LLM) | Le juge a trouvé les réponses cohérentes avec le modèle annoncé. | Réussi | 95 pts |
+| `quality_judge.verdict` (Verdict du juge LLM) | Le juge a trouvé les réponses cohérentes avec le modèle annoncé. | Réussi | 100 pts |
 |  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible, moyenne ou non indiquée). | Avertissement · Moyenne | 50 pts |
 |  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence exploitable). | Avertissement · Moyenne | 25 pts |
 |  | Le juge est confiant et une référence de confiance a confirmé la différence. | Échec · Élevée | 25 pts |
@@ -659,6 +666,13 @@ aux capacités du profil :
   un moteur non OpenAI.
 - **Mode JSON :** `response_format: json_object` doit renvoyer un objet
   analysable portant la valeur demandée.
+- **Répétition :** un appel d'outil ou un objet JSON annoncés qui ne reviennent
+  pas sont redemandés une fois avant de compter comme non livrés : la requête
+  d'outil avec `tool_choice: "required"` (Anthropic : `{"type": "any"}`), la
+  requête en mode JSON inchangée. Un appel d'outil à la répétition est livré
+  (preuve `needed_required: true`) ; un 4xx sur la seule requête forcée
+  (certains modèles refusent l'usage forcé d'outils) revient à la première
+  réponse.
 - **Schéma strict :** un `json_schema` strict ; la conformité est vérifiée si le
   modèle l'annonce et simplement notée (à titre indicatif) sinon. Ignoré sans
   profil.
@@ -868,7 +882,7 @@ ou se traîne sous un parallélisme modeste.
 (`--reliability-requests`, 8 par défaut) à concurrence limitée
 (`--concurrency`, 3 par défaut). Le taux de succès porte sur les requêtes
 réellement tentées : un HTTP 429 est une limitation honnête, comptée à part. Le
-score retire la part d'échecs ; une latence p95 au-delà de 30 s garde 85 % du
+score retire la part d'échecs ; une latence p95 au-delà de cinq fois la médiane de la même rafale et de 5 s garde 85 % du
 reste. Une requête échouée (soit un 5xx passager sur les 8 par défaut), ou au plus
 10 % d'une salve plus grande, est un Avertissement tant qu'au moins 80 % ont
 réussi ; au-delà c'est un Échec. Le statut du détecteur est le pire de ses
@@ -882,7 +896,7 @@ le verdict de risque.
 |  | Davantage de requêtes ont échoué ; retire la part échouée. | Échec · Moyenne | jusqu'à −100 pts |
 |  | Toutes les requêtes ont été limitées (HTTP 429) : non noté. | Non concluant · Faible | Aucune déduction |
 |  | Aucune requête n’a atteint le relais (échec dans ekte ou sur le chemin réseau) : non noté. | Non concluant · Faible | Aucune déduction |
-| `reliability.latency` | Latence p95 au-delà de 30 s sous charge ; retire 15 % du score restant. | Avertissement · Faible | jusqu'à −15 pts |
+| `reliability.latency` | Latence p95 au-delà de cinq fois la médiane de la rafale et de 5 s sous charge ; retire 15 % du score restant. | Avertissement · Faible | jusqu'à −15 pts |
 | `reliability.rate_limited` | Une partie de la rafale a été limitée : limitation honnête, non comptée. | Info | Aucune déduction |
 | `reliability.skipped` | La sonde de fiabilité était désactivée. | Info | Aucune déduction |
 
@@ -1135,6 +1149,9 @@ moment. Les plages de la base de connaissances sont des médianes volontairement
 larges des API natives, et une cible plus lente est notée, jamais comptée. Tous les
 constats sont au plus de gravité FAIBLE : cette dimension fait bouger le score,
 jamais le verdict de risque.
+La comparaison à la référence (`performance.reference`) ne s'exécute qu'en
+mode comparaison ou pour un profil doté d'une plage `performance.decode_tps`,
+ce que peu de profils fournis ont ; pour les autres modèles, elle n'apparaît pas.
 
 ## Surface d'embedding
 

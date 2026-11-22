@@ -235,6 +235,10 @@ result says that model identity was not verified.
   repeated. Once an endpoint is known to reason (its profile says
   `reasoning: true`, or after its first such repeat), short probes are sent
   with the 4,096-token limit from the start instead of twice.
+  The checks that treat a reasoning model differently (billing, determinism,
+  maximum output, request attributes) all recognise one the same way: the
+  profile says so, the client has learned it from such a repeat, or a
+  response reports reasoning tokens.
 - **Request parameters:** reasoning models refuse some parameters: on Chat
   Completions `max_tokens` (they take `max_completion_tokens`), and on every
   protocol sampling parameters such as `temperature`. The client leaves out the
@@ -492,7 +496,8 @@ hold for every model of the vendor, and a same-vendor cutoff is often shared.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` or `expect_regex`; output capped at 512 tokens. A
+   `expect_not_contains` or `expect_regex`; output capped at 512 tokens. Terms under `expect_not_contains` match whole words (`meta` is not found in
+   `metadata`; a version may follow, as in `Qwen2.5`). A
    probe that needs more output (such as a max-output check) is skipped,
    listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
@@ -580,7 +585,7 @@ baseline that errored or left probes unanswered.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
-| `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 95 pts |
+| `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 100 pts |
 |  | The judge found the answers unlike the claimed model (low, medium or no stated confidence). | Warning · Medium | 50 pts |
 |  | The judge is confident the answers are unlike the claimed model (no usable baseline). | Warning · Medium | 25 pts |
 |  | The judge is confident, and a trusted baseline corroborated the difference. | Fail · High | 25 pts |
@@ -615,6 +620,12 @@ profile's capability flags:
   than the JSON string OpenAI returns are flagged as a non-OpenAI engine.
 - **JSON mode:** `response_format: json_object` must return a parseable object
   carrying the requested value.
+- **Repeat:** a claimed tool call or JSON object that does not come back is
+  asked for once more before it counts as not delivered: the tool request with
+  `tool_choice: "required"` (Anthropic: `{"type": "any"}`), the JSON-mode
+  request unchanged. A tool call on the repeat is delivered (evidence
+  `needed_required: true`); a 4xx on the forced request alone (some models
+  refuse forced tool use) falls back to the first answer.
 - **Strict schema:** a strict `json_schema`; conformance is verified when the
   model claims it and noted (informational) when it does not. Skipped without a
   profile.
@@ -817,7 +828,7 @@ crawls under modest parallelism.
 default 8) at bounded concurrency (`--concurrency`, default 3). The success rate
 is computed over the requests genuinely attempted: HTTP 429 is honest
 throttling and is bucketed separately. The score deducts the failed share; a p95
-latency above 30 s keeps 85% of what is left. One failed request (so one
+latency above five times the burst's median and above 5 s keeps 85% of what is left. One failed request (so one
 transient 5xx of the default 8), or at most 10% of a larger burst, is a
 Warning as long as at least 80% succeeded; more is a Fail. The detector status
 is the worst of its findings. These findings are transport advisories: they
@@ -830,7 +841,7 @@ never raise the risk verdict.
 |  | More requests than that failed; deducts the failed share. | Fail · Medium | up to −100 pts |
 |  | Every request was rate-limited (HTTP 429): not scored. | Inconclusive · Low | No deduction |
 |  | No request reached the relay (failed in ekte or on the network path): not scored. | Inconclusive · Low | No deduction |
-| `reliability.latency` | p95 latency above 30 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
+| `reliability.latency` | p95 latency above five times the burst's median and above 5 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
 | `reliability.rate_limited` | Part of the burst was rate-limited: honest throttling, not counted. | Info | No deduction |
 | `reliability.skipped` | The reliability probe was disabled. | Info | No deduction |
 
@@ -1058,6 +1069,9 @@ that moment; repeat a poor consistency result at another time. The
 knowledge-base ranges are deliberately wide medians of native APIs, and a
 slower target is noted, never scored. All findings are at most LOW severity, so
 this dimension moves the score, never the risk verdict.
+The reference check (`performance.reference`) runs only in compare mode or
+for a profile with a `performance.decode_tps` range, which few packaged
+profiles have; for every other model it is not shown.
 
 ---
 

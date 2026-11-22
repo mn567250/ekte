@@ -13,6 +13,7 @@ from functools import lru_cache
 from typing import Any
 
 from ekte import prompts
+from ekte.perf.recorder import usage_tokens
 from ekte.utils.tokenize import estimate_tokens
 
 # The filler's pool of natural-ish sentences (ekte/prompts/en.json). Varied so it
@@ -139,6 +140,41 @@ def contains_word(text: str, word: str) -> bool:
     return re.search(pattern, text or "", re.IGNORECASE) is not None
 
 
+def contains_term(text: str, term: str) -> bool:
+    """Case-insensitive whole-word match for a term a fingerprint forbids
+    (``expect_not_contains``, #262).
+
+    Like :func:`contains_word`, ``"meta"`` does not match ``"metadata"`` and
+    ``"gpt"`` does not match ``"ChatGPT"``. Two differences keep the knowledge
+    base's terms working:
+
+    - a boundary is only required at an edge of the term that is an ASCII
+      letter or digit, so ``"<|User|>"`` matches inside ``"x<|User|>"`` and CJK
+      terms (``"通义"``) match as substrings, as before;
+    - a term ending in a letter may be followed by a digit (a version:
+      ``"qwen"`` matches ``"Qwen2.5"``, ``"gpt"`` matches ``"gpt4o"``), and one
+      ending in a digit by a letter (``"gpt-4"`` matches ``"GPT-4o"``), but a
+      year or number is not matched inside a longer number (``"2021"`` in
+      ``"20210"``).
+    """
+    term = (term or "").strip()
+    if not term:
+        return False
+    first, last = term[0], term[-1]
+    lead = r"(?<![A-Za-z0-9])" if first.isascii() and first.isalnum() else ""
+    if last.isascii() and last.isalpha():
+        trail = r"(?![A-Za-z])"
+    elif last.isascii() and last.isdigit():
+        trail = r"(?![0-9])"
+    else:
+        trail = ""
+    return re.search(lead + re.escape(term) + trail, text or "", re.IGNORECASE) is not None
+
+
+def contains_term_any(text: str, terms: list[str]) -> bool:
+    return any(contains_term(text, t) for t in terms)
+
+
 def contains_word_any(text: str, words: list[str]) -> bool:
     return any(contains_word(text, w) for w in words)
 
@@ -146,6 +182,29 @@ def contains_word_any(text: str, words: list[str]) -> bool:
 def words_present(text: str, words: list[str]) -> list[str]:
     """Return the subset of ``words`` present in ``text`` as whole words."""
     return [w for w in (words or []) if contains_word(text, w)]
+
+
+def is_reasoning(ctx: Any, *outcomes: Any) -> bool:
+    """Whether the endpoint under test is a reasoning model, decided the same
+    way by every detector (#262).
+
+    True when the claimed profile says ``reasoning: true``, when the client
+    has learned that the endpoint reasons (``reasoning_room``: a short probe
+    already needed the reasoning repeat, see "Reasoning models" in the
+    methodology), or when any of ``outcomes`` reports reasoning tokens. An
+    unprofiled reasoning model is therefore recognised by what it does, not
+    only by its knowledge-base entry.
+    """
+    profile = getattr(ctx, "profile", None)
+    if profile is not None and getattr(profile.model, "reasoning", False) is True:
+        return True
+    if getattr(getattr(ctx, "client", None), "reasoning_room", False) is True:
+        return True
+    return any(
+        (usage_tokens(getattr(o, "usage", None))["reasoning"] or 0) > 0
+        for o in outcomes
+        if o is not None
+    )
 
 
 def first_json_object(text: str) -> dict[str, Any] | None:
