@@ -248,7 +248,7 @@ models:
   family: gemini-3
   context_window_tokens: 1048576
   max_output_tokens: 65536
-  knowledge_cutoff: '2026-03'
+  knowledge_cutoff: ~2026-03 (third-party report)
   tokenizer: gemini
   modalities:
   - text
@@ -287,7 +287,7 @@ models:
   family: gemini-3
   context_window_tokens: 1048576
   max_output_tokens: 65536
-  knowledge_cutoff: '2026-03'
+  knowledge_cutoff: null
   tokenizer: gemini
   modalities:
   - text
@@ -442,7 +442,7 @@ models:
   family: gemini-3
   context_window_tokens: 1048576
   max_output_tokens: 65536
-  knowledge_cutoff: '2026-03'
+  knowledge_cutoff: null
   tokenizer: gemini
   modalities:
   - text

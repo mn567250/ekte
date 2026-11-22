@@ -20,17 +20,18 @@ ekte has three eras:
 
 ## [Unreleased]
 
-### Knowledge base: documented cutoff months for 33 more chat profiles ([#251](https://github.com/mn567250/ekte/issues/251))
+### Knowledge base: documented cutoff months for 30 more chat profiles ([#251](https://github.com/mn567250/ekte/issues/251))
 
-- **Knowledge cutoff:** 33 chat profiles whose `knowledge_cutoff` was missing,
+- **Knowledge cutoff:** 30 chat profiles whose `knowledge_cutoff` was missing,
   year-only or an estimate now carry the month (or date) the vendor's own model
   card or model documentation states, so the identity cutoff probe runs for them:
-  Phi-4 (7), Olmo 3 / 3.1 (5), Gemini 4 Argon, Gemini 3.8 / 3.6 Flash, Gemini 3.5
-  Flash-Lite, Gemma 4 (3) and Gemma 3n, Nemotron 3 Nano and Super, GPT-6 Sol and
+  Phi-4 (7), Olmo 3 / 3.1 (5), Gemini 4 Argon, Gemma 4 (3) and Gemma 3n, Nemotron 3 Nano and Super, GPT-6 Sol and
   Luna, Grok 4.7 / 4.6 / 4.5, Command A+ and the Command A family (4) and Command
   R7B. Each source is listed in the provider file. Profiles whose vendor gives no
-  month (or contradicts itself) are unchanged; 91 chat profiles still have no
-  cutoff month.
+  month (or contradicts itself) are unchanged; 94 chat profiles still have no
+  cutoff month. Gemini 3.8 / 3.6 Flash and 3.5 Flash-Lite stay without one:
+  their cards give March 2026 but say knowledge may be limited to January 2025
+  in some domains, so an honest answer could trip the probe.
 
 ### Small detector consistency fixes ([#262](https://github.com/mn567250/ekte/issues/262))
 
