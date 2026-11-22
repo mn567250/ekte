@@ -409,12 +409,17 @@ ihn zurückgeben.
   der obersten Stufe (90 % von `upper`, siehe unten) gemessen, nie an dem Teil
   eines größeren angegebenen Fensters oberhalb der Obergrenze.
 - **Größen sind echte Token.** Die eingebaute Token-Schätzung von ekte zählt
-  diesen Fülltext gegenüber echten Tokenizern etwa 12 % (o200k) bis 15 %
-  (cl100k) zu niedrig; daher wird jeder Prompt laut Schätzung mit Größe ÷ 1,2
-  gebaut (Nadel und Frage eingerechnet): eine Stufe der Größe N bleibt innerhalb
-  von N echten Token. Eine Tokenizer-Familie mit offline gemessenem Faktor
-  nutzt ihren eigenen Faktor (`real_per_heuristic` in den Belegen); bisher ist
-  keiner gemessen, also nutzt jede Familie 1,2. Größen in den Belegen (`size`,
+  diesen Fülltext gegenüber echten Tokenizern zu niedrig; daher wird jeder
+  Prompt laut Schätzung mit Größe ÷ Faktor der Tokenizer-Familie gebaut (Nadel
+  und Frage eingerechnet): eine Stufe der Größe N bleibt innerhalb von N echten
+  Token. Die Faktoren wurden offline mit den veröffentlichten Tokenizern
+  gemessen (Issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Familien ohne veröffentlichten Tokenizer (`claude-bpe-*`, `gemini`, `grok`)
+  nutzen 1,2. Den verwendeten Faktor nennt `real_per_heuristic` in den Belegen.
+  Größen in den Belegen (`size`,
   `effective_window`, `top_rung`) sind diese Budgets an echten Token; die
   Leiterzeilen enthalten zusätzlich die Schätzung, mit der ein Prompt gebaut
   wurde (`heuristic_tokens`), und die vom Endpunkt dafür gemeldeten

@@ -400,12 +400,17 @@ debe devolverlo.
   juzga frente al peldaño superior (el 90 % de `upper`, abajo), nunca frente a
   la parte de una ventana declarada mayor que quede por encima del tope.
 - **Los tamaños son tokens reales.** La estimación de tokens integrada en ekte
-  cuenta este relleno entre un 12 % (o200k) y un 15 % (cl100k) por debajo de
-  los tokenizadores reales, así que cada prompt se construye a tamaño ÷ 1,2
-  según la estimación (aguja y pregunta incluidas): un peldaño de tamaño N cabe
-  en N tokens reales. Una familia de tokenizadores con un factor medido sin
-  conexión usaría su propio factor (`real_per_heuristic` en la evidencia); aún
-  no se ha medido ninguno, así que todas usan 1,2. Los tamaños de la evidencia
+  cuenta este relleno por debajo de los tokenizadores reales, así que cada
+  prompt se construye a tamaño ÷ el factor de la familia de tokenizadores según
+  la estimación (aguja y pregunta incluidas): un peldaño de tamaño N cabe en N
+  tokens reales. Los factores se midieron sin conexión con los tokenizadores
+  publicados (issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Las familias cuyo tokenizador no está publicado (`claude-bpe-*`, `gemini`,
+  `grok`) usan 1,2. El factor usado figura como `real_per_heuristic` en la
+  evidencia. Los tamaños de la evidencia
   (`size`, `effective_window`, `top_rung`) son esos presupuestos de tokens
   reales; las filas de la escalera incluyen además la estimación con que se
   construyó cada prompt (`heuristic_tokens`) y los tokens de prompt que el

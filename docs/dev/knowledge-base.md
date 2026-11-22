@@ -87,6 +87,35 @@ In compare mode every fingerprint also goes to the trusted baseline. A probe
 that the baseline misses too is reported as `baseline_also_diverged` (Info, no
 deduction): that is a knowledge-base bug, so fix or remove the probe.
 
+## Tokenizer factors
+
+The context-window probe sizes its haystacks in real tokens, but ekte only
+has a stdlib heuristic count. `FILLER_REAL_PER_HEURISTIC` in
+`ekte/utils/tokenize.py` holds, per `tokenizer:` value of the profiles, how
+many real tokens the probe's filler counts per heuristic token; a family
+without an entry uses 1.2. The entries are data measured offline, never a
+run-time tokenizer import. When you add a tokenizer family whose tokenizer is
+published on Hugging Face, or a family's tokenizer changes, add its sources
+(repository and pinned revision) to `SOURCES` in
+`scripts/measure_tokenizer_factors.py` and run it in a separate virtual
+environment (it needs `tokenizers` and `huggingface_hub`, which are not ekte
+dependencies, and network access to huggingface.co):
+
+```bash
+python -m venv /tmp/tokvenv
+/tmp/tokvenv/bin/pip install -e . tokenizers huggingface_hub
+/tmp/tokvenv/bin/python scripts/measure_tokenizer_factors.py --cache-dir /tmp/tok-cache
+```
+
+It only loads `tokenizer.json` with the `tokenizers` library (no repository
+code). A gated official repository is measured through an ungated mirror whose
+file must have the same SHA-256 (`same_as`); a tokenizer published only as
+tiktoken files is measured through a conversion that must match the official
+vocabulary and split pattern (`tiktoken_of`). Copy the printed factor and
+spread into the table with a comment naming the sources and revisions, and
+list the change in `CHANGELOG.md`: it changes probe sizes. The script is not
+run in CI. `--latest` re-measures the repositories' current revisions.
+
 ## Keeping the knowledge base current
 
 Provider and model data ages quickly, and every verdict depends on it, so ekte
