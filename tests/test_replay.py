@@ -167,6 +167,7 @@ def saved(tmp_path, monkeypatch):
 
 
 def test_a_rescored_run_shares_its_original_file(saved):
+    # a re-score saved as a separate run, as ekte did before #168: such rows stay
     from ekte.web import history
 
     rid, path = saved
@@ -194,6 +195,7 @@ def test_api_queues_a_rescore_as_a_job(saved):
         events = [json.loads(x[5:]) for x in r.text.splitlines() if x.startswith("data:")]
         ev = next(e for e in events if e["type"] == "report")
         assert ev["report"]["rescored_from"]["report_id"] == rid
+        assert ev["report_id"] == rid  # the run is replaced in place (#168)
         assert history.get(ev["report_id"])["rescored_from"]["missing"] == {}
         assert client.post("/api/v1/history/999/rescore").status_code == 404
         plain = history.save({**history.get(rid), "evidence": None})
@@ -210,8 +212,8 @@ def test_cli_rescores_a_saved_run_or_a_report_file(saved, tmp_path):
     res = CliRunner().invoke(app, ["rescore", str(rid)])
     assert res.exit_code == 0, res.output
     out = unwrapped(res.output)  # one long line, wrapped by Rich
-    assert "requests replayed" in out and "saved as run" in out
-    assert history.recent(1)[0]["id"] != rid
+    assert "requests replayed" in out and f"saved run {rid} replaced" in out
+    assert history.recent(1)[0]["id"] == rid  # replaced in place, no new run (#168)
 
     report_file = tmp_path / "report.json"
     report_file.write_text(json.dumps(history.get(rid)), encoding="utf-8")

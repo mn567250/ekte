@@ -126,17 +126,23 @@ def regressed(current: dict[str, Any], previous: dict[str, Any] | None) -> bool:
 
 
 def _delta_line(
-    current: dict[str, Any], previous: dict[str, Any] | None, lang: str | None = i18n.DEFAULT
+    current: dict[str, Any],
+    previous: dict[str, Any] | None,
+    lang: str | None = i18n.DEFAULT,
+    rescored: bool = False,
 ) -> str | None:
-    """A "since last run" line describing the risk change, or ``None`` if no previous."""
+    """A "since last run" line describing the risk change, or ``None`` if no
+    previous. For a re-score, ``previous`` is the run before the re-score."""
     if previous is None:
         return None
     cur = _risk_value(current)
     prev = _risk_value(previous)
     if cur == prev:
-        return _t(lang, "Since last run: risk unchanged ({1})", _risk_label(prev, lang))
+        template = "Before the re-score: risk unchanged ({1})" if rescored else "Since last run: risk unchanged ({1})"
+        return _t(lang, template, _risk_label(prev, lang))
     direction = _t(lang, "worse ⬆️" if _risk_rank(cur) > _risk_rank(prev) else "better ⬇️")
-    return _t(lang, "Since last run: {1} → {2} ({3})", _risk_label(prev, lang), _risk_label(cur, lang), direction)
+    template = "Before the re-score: {1} → {2} ({3})" if rescored else "Since last run: {1} → {2} ({3})"
+    return _t(lang, template, _risk_label(prev, lang), _risk_label(cur, lang), direction)
 
 
 # --------------------------------------------------------------------------- #
@@ -187,7 +193,7 @@ def build_text(
             report.get("tool_version") or "?", audit_version(report) or "?",
         ))
 
-    delta = _delta_line(report, previous, lang)
+    delta = _delta_line(report, previous, lang, rescored)
     if delta:
         lines.append(delta)
 

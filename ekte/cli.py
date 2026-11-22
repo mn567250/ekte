@@ -952,11 +952,18 @@ def kb_export_command(
     print(export_yaml(provider), end="")
 
 
+def _verdict_text(report: dict | None) -> str:
+    v = (report or {}).get("verdict") or {}
+    score = v.get("overall_score")
+    return f"{v.get('risk_level', '?')} · {score if score is not None else '—'}"
+
+
 @app.command("rescore")
 def rescore_command(
-    source: Annotated[str, typer.Argument(help="The id of a saved run in the history, or a report JSON file (then also --evidence).")],
+    source: Annotated[str | None, typer.Argument(help="The id of a saved run in the history, or a report JSON file (then also --evidence). Leave out with --all.")] = None,
     evidence_file: Annotated[Path | None, typer.Option("--evidence", help="The evidence file of a report JSON file given as SOURCE.")] = None,
-    save: Annotated[bool, typer.Option("--save/--no-save", help="Save the re-scored report to the history as a new run (a saved run only).")] = True,
+    save: Annotated[bool, typer.Option("--save/--no-save", help="Replace the saved run with the re-scored report (same id, time and monitor; a saved run only). --no-save only prints it.")] = True,
+    all_runs: Annotated[bool, typer.Option("--all", help="Re-score every saved run scored by another ekte version, one after another, and replace each; runs without a usable evidence file are skipped with the reason.")] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Print the re-scored report as JSON to stdout.")] = False,
 ) -> None:
     """Re-score a recorded run with this ekte version, from its evidence file.
@@ -965,10 +972,20 @@ def rescore_command(
     recorded timing) instead of contacting the relay, so improved checks can
     judge an old run again. A check that now asks something the recorded run
     never asked reads inconclusive. Takes about as long as the original run's
-    requests did.
+    requests did. A saved run is replaced in place: it keeps its id, time and
+    monitor, and its monitor follows the new verdict.
     """
     from ekte import replay
 
+    if all_runs:
+        if source is not None or evidence_file is not None or as_json or not save:
+            err_console.print("[red]--all takes no SOURCE, --evidence, --json or --no-save.[/red]")
+            raise typer.Exit(code=2)
+        _rescore_all()
+        return
+    if source is None:
+        err_console.print("[red]Give a saved run id or a report JSON file, or --all.[/red]")
+        raise typer.Exit(code=2)
     report: dict | None
     report_id: int | None = None
     if source.isdigit() and not Path(source).is_file():
@@ -1002,17 +1019,21 @@ def rescore_command(
     except ValueError as exc:
         err_console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
-    new_id = None
-    if save:
-        from ekte.web import history
+    replaced = False
+    if save and report_id is not None:
+        from ekte.web import rescore
 
-        new_id = history.save(json.loads(new.model_dump_json()))
+        try:
+            _run_async(rescore.store(report_id, report, json.loads(new.model_dump_json())))
+            replaced = True
+        except Exception as exc:
+            err_console.print(f"[red]Could not replace saved run {report_id}: {exc}[/red]")
+            raise typer.Exit(code=1) from exc
     if as_json:
         print(new.model_dump_json(indent=2))
         return
     _print_summary(new, [])
     r = new.rescored_from
-    old = (report.get("verdict") or {})
     if r is not None:
         missing = sum(r.missing.values())
         console.print(
@@ -1021,10 +1042,31 @@ def rescore_command(
             f"({', '.join(sorted(r.missing)) or 'none'}), {r.unused} recorded exchanges unused."
         )
     console.print(
-        f"Before: {old.get('risk_level', '?')} · {old.get('overall_score', '—')}   "
+        f"Before: {_verdict_text(report)}   "
         f"Now: {new.verdict.risk_level.value} · {new.verdict.overall_score if new.verdict.overall_score is not None else '—'}"
-        + (f"   (saved as run {new_id})" if new_id and new_id > 0 else "")
+        + (f"   (saved run {report_id} replaced)" if replaced else "")
     )
+
+
+def _rescore_all() -> None:
+    """``ekte rescore --all``: every saved run scored by another version."""
+    from ekte import __version__
+    from ekte.web import rescore
+
+    def on_run(rid: int, old: dict | None, new: dict | None, refusal: str | None) -> None:
+        if new is None:
+            console.print(f"Run {rid}: skipped: {refusal}")
+            return
+        was = (old or {}).get("tool_version") or "?"
+        console.print(f"Run {rid}: {_verdict_text(old)} (ekte {was}) -> {_verdict_text(new)} (ekte {__version__})")
+
+    counts = _run_async(rescore.rescore_all(on_run))
+    console.print(
+        f"Re-scored {counts['rescored']} run(s) with ekte {__version__}; "
+        f"{counts['skipped']} skipped, {counts['failed']} failed."
+    )
+    if counts["failed"]:
+        raise typer.Exit(code=1)
 
 
 @app.command("evidence-export")
