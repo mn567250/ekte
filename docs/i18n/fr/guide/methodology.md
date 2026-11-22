@@ -136,8 +136,8 @@ Le niveau de risque dépend de la **gravité des constats**, pas du score. Les
 constats de la dimension connectivité sont exclus : un relais injoignable ou
 limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle répond.
 Les **avertissements de transport** sont exclus aussi (`ADVISORY_CHECKS` dans
-`ekte/scoring.py` : `security.tls`, `reliability.success_rate`, `reliability.latency`) : le HTTP en clair, les échecs ou
-la lenteur sous charge disent comment le relais est joint, pas quel modèle il
+`ekte/scoring.py` : `security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`) : le HTTP en clair, les échecs ou
+la lenteur sous charge, une requête en streaming qui a échoué deux fois ou un relais qui ne diffuse pas en streaming pour le modèle disent comment le relais est joint, pas quel modèle il
 sert. Ils abaissent toujours le score et le statut de leur dimension, figurent
 après les constats de substitution parmi les constats clés, et le résumé les
 signale comme avertissements (à partir de la gravité Moyenne). Une clé API renvoyée fait toujours monter le risque, de même que les constats de la dimension Intégrité des réponses (falsification, prompt système injecté, cache de réponses) : ce n'est pas une dimension cœur, seule leur gravité fixe le risque.
@@ -145,8 +145,8 @@ signale comme avertissements (à partir de la gravité Moyenne). Une clé API re
 | Risque | Libellé dans l'interface | Quand |
 |---|---|---|
 | `inconclusive` | Signal insuffisant | Rien d'exploitable pour juger : si une dimension de profil a tourné, aucune n'a produit de résultat exploitable (Réussi, Avertissement ou Échec) — relais injoignable ou modèle sans profil ; sinon, aucune dimension autre que la connectivité n'en a produit |
-| `high` | Probablement substitué | Un constat CRITIQUE, un constat ÉLEVÉ/CRITIQUE dans une dimension cœur, ou au moins deux constats ÉLEVÉS |
-| `medium` | Écarts détectés | Exactement un constat ÉLEVÉ hors des dimensions cœur, ou un constat MOYEN dans une dimension cœur |
+| `high` | Probablement substitué | Un constat CRITIQUE, un constat ÉLEVÉ/CRITIQUE dans une dimension cœur, ou des constats ÉLEVÉS d'au moins deux détecteurs différents |
+| `medium` | Écarts détectés | Des constats ÉLEVÉS hors des dimensions cœur venant d'un seul détecteur, ou un constat MOYEN dans une dimension cœur |
 | `low` | Globalement conforme | Tout autre constat MOYEN |
 | `clean` | Conforme | Aucun des cas ci-dessus |
 
@@ -777,6 +777,7 @@ son usage), qui réfléchit avant de répondre, un premier token tardif est donc
 seulement noté et non compté comme mise en tampon ; les signaux peu de fragments
 et écarts uniformes comptent toujours. Un flux qui réussit mais ne livre aucun
 contenu n'est pas concluant et n'est pas noté.
+Une requête en streaming en échec est répétée une fois. Si elle échoue à nouveau avec un 4xx qui mentionne le streaming, ou avec un autre 4xx alors que le même prompt sans streaming réussit, le relais ne diffuse pas en streaming pour ce modèle (`streaming.unsupported`, score 0). Tout autre échec (un 5xx, un délai dépassé, une limite de débit ou un 4xx que reçoit aussi le prompt sans streaming) est une défaillance de transport : `streaming.failed`, non concluant et non noté. Les deux sont des avertissements de transport (voir [Verdict de risque](#verdict-de-risque)) : ils abaissent cette dimension, jamais le risque de substitution.
 Si le modèle diffuse son raisonnement (deltas de raisonnement, blocs de thinking, événements de raisonnement de l'API Responses), c'est le premier token de l'un ou l'autre type qui est chronométré : un vrai flux commence tôt à raisonner, donc un flux dont le raisonnement et la réponse arrivent tous deux à la toute fin est mis en tampon, même pour un modèle de raisonnement.
 
 | Contrôle | Résultat | Statut | Effet |
@@ -788,10 +789,11 @@ Si le modèle diffuse son raisonnement (deltas de raisonnement, blocs de thinkin
 | `streaming.uniform_gaps` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.no_usage` | Aucun fragment d'usage dans le flux : retire 15 points si rien n'est mis en tampon. | Avertissement · Faible | jusqu'à −15 pts |
 | `streaming.no_content` | Le flux a réussi mais n'a livré aucun contenu à juger ; non noté. | Non concluant · Faible | Non compté |
-| `streaming.failed` | La requête en streaming a échoué. | Échec · Élevée | plafond 0 |
+| `streaming.unsupported` | Le relais ne diffuse pas en streaming pour ce modèle. | Échec · Moyenne | plafond 0 |
+| `streaming.failed` | La requête en streaming a échoué deux fois (5xx, délai dépassé ou autre défaillance de transport) ; non noté. | Non concluant · Faible | Non compté |
 
 Soit : authentique 100 · usage absent 85 · un signal de mise en tampon 60 ·
-deux ou plus 40 · échec 0 · aucun contenu : pas de note.
+deux ou plus 40 · non pris en charge 0 · deux échecs ou aucun contenu : pas de note.
 
 **Mises en garde.** Des sorties courtes, un petit modèle rapide ou la gigue
 réseau peuvent ressembler à une rafale. Un amont qui ne gère pas le streaming

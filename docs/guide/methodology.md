@@ -129,16 +129,18 @@ the connectivity dimension are left out of the ladder: a relay that is down or
 throttled could not be assessed, which is not evidence of a different model.
 The **transport advisories** are left out too (`ADVISORY_CHECKS` in
 `ekte/scoring.py`: `security.tls`, `reliability.success_rate`,
-`reliability.latency`): plain HTTP, failures or slowness under load say how the
-relay is reached, not which model it serves. They still lower their dimension's
+`reliability.latency`, `streaming.failed`, `streaming.unsupported`): plain HTTP,
+failures or slowness under load, a stream request that failed twice or a relay
+that does not stream for the model say how the relay is reached, not which
+model it serves. They still lower their dimension's
 score and status, are listed after the substitution findings in the key
 findings and are noted in the summary as advisories when Medium or higher. An echoed API key still escalates, and so do the findings of the response integrity dimension (tampering, an injected system prompt, a response cache): it is not a core dimension, so their severity alone sets the risk.
 
 | Risk | Label in the UI | When |
 |---|---|---|
 | `inconclusive` | Insufficient signal | Nothing usable to judge by: when a profile dimension ran, none of them produced a usable result (Pass, Warning or Fail) — the relay is unreachable or the model is unprofiled; otherwise no dimension other than connectivity produced one |
-| `high` | Likely substituted | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or two or more HIGH findings |
-| `medium` | Deviations found | Exactly one HIGH finding outside the core dimensions, or a MEDIUM finding in a core dimension |
+| `high` | Likely substituted | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or HIGH findings from two or more different detectors |
+| `medium` | Deviations found | HIGH findings outside the core dimensions from a single detector, or a MEDIUM finding in a core dimension |
 | `low` | Mostly consistent | Any other MEDIUM finding |
 | `clean` | Consistent | None of the above |
 
@@ -721,6 +723,14 @@ first token is only noted and not counted as buffering; its few-chunks and
 uniform-gaps signals still count. A stream without a usage chunk is flagged
 separately. A stream that succeeds but delivers no content is inconclusive and
 not scored.
+A failed stream request is repeated once. If it fails again with a 4xx that
+names streaming, or with any other 4xx while the same prompt without streaming
+succeeds, the relay does not stream for this model (`streaming.unsupported`,
+score 0). Any other failure (a 5xx, a timeout, a rate limit, or a 4xx that the
+non-streamed prompt gets too) is a transport failure: `streaming.failed`,
+inconclusive and not scored. Both are transport advisories (see
+[Risk verdict](#risk-verdict)): they lower this dimension but never the
+substitution risk.
 When the model streams its reasoning (reasoning deltas, thinking blocks, Responses reasoning events), the first token of either kind is timed instead: a genuine stream starts reasoning early, so a stream whose reasoning and answer both arrive at the very end is buffering even for a reasoning model.
 
 | Check | Outcome | Status | Effect |
@@ -732,10 +742,11 @@ When the model streams its reasoning (reasoning deltas, thinking blocks, Respons
 | `streaming.uniform_gaps` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.no_usage` | No usage chunk in the stream: deducts 15 points when nothing is buffered. | Warning · Low | up to −15 pts |
 | `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | Not counted |
-| `streaming.failed` | The streaming request failed. | Fail · High | cap 0 |
+| `streaming.unsupported` | The relay does not stream for this model. | Fail · Medium | cap 0 |
+| `streaming.failed` | The streaming request failed twice (5xx, timeout or another transport failure); not scored. | Inconclusive · Low | Not counted |
 
 So: genuine 100 · usage missing 85 · one buffering signal 60 · two or more 40 ·
-failed 0 · no content: no score.
+not supported 0 · failed twice or no content: no score.
 
 **Caveats.** Short outputs, a fast small model or network jitter can resemble a
 burst. An upstream that cannot stream forces the relay to buffer legitimately;

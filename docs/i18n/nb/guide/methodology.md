@@ -132,8 +132,8 @@ Risikonivået styres av **funnenes alvorlighet**, ikke av scoren. Funn i
 tilkoblingsdimensjonen holdes utenfor stigen: et relé som er nede eller strupes,
 kunne ikke vurderes, og det er ikke bevis på en annen modell.
 **Transportrådene** holdes også utenfor (`ADVISORY_CHECKS` i `ekte/scoring.py`:
-`security.tls`, `reliability.success_rate`, `reliability.latency`): ren HTTP,
-feil eller treghet under last sier hvordan reléet nås, ikke hvilken modell det
+`security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`): ren HTTP,
+feil eller treghet under last, en strømmeforespørsel som mislyktes to ganger eller et relé som ikke strømmer for modellen, sier hvordan reléet nås, ikke hvilken modell det
 leverer. De senker fortsatt score og status i dimensjonen sin, vises etter
 funnene om bytte blant de viktigste funnene og nevnes i sammendraget som råd når
 de er Middels eller høyere. En gjengitt API-nøkkel trapper fortsatt opp, og det gjør også funnene i dimensjonen Svarintegritet (manipulering, injisert systemprompt, svarbuffer): den er ikke en kjernedimensjon, så alvorligheten alene bestemmer risikoen.
@@ -141,8 +141,8 @@ de er Middels eller høyere. En gjengitt API-nøkkel trapper fortsatt opp, og de
 | Risiko | Etikett i grensesnittet | Når |
 |---|---|---|
 | `inconclusive` | For lite grunnlag | Ingenting brukbart å vurdere etter: når en profildimensjon kjørte, ga ingen av dem et brukbart resultat (Bestått, Advarsel eller Ikke bestått) — reléet kan ikke nås eller modellen har ingen profil; ellers ga ingen annen dimensjon enn tilkobling et slikt resultat |
-| `high` | Trolig byttet ut | Et CRITICAL-funn, et HIGH/CRITICAL-funn i en kjernedimensjon, eller to eller flere HIGH-funn |
-| `medium` | Avvik funnet | Nøyaktig ett HIGH-funn utenfor kjernedimensjonene, eller et MEDIUM-funn i en kjernedimensjon |
+| `high` | Trolig byttet ut | Et CRITICAL-funn, et HIGH/CRITICAL-funn i en kjernedimensjon, eller HIGH-funn fra to eller flere ulike detektorer |
+| `medium` | Avvik funnet | HIGH-funn utenfor kjernedimensjonene fra én enkelt detektor, eller et MEDIUM-funn i en kjernedimensjon |
 | `low` | Stort sett konsistent | Alle andre MEDIUM-funn |
 | `clean` | Konsistent | Ingen av delene over |
 
@@ -737,6 +737,7 @@ som rapporterer resonneringstokens i usage), som tenker før den svarer, noteres
 sent første token bare og telles ikke som bufring; signalene få biter og jevne
 opphold teller fortsatt. En strøm uten usage-bit flagges for seg. En strøm som
 lykkes, men ikke leverer noe innhold, er uavklart og gir ikke score.
+En strømmeforespørsel som mislykkes, gjentas én gang. Mislykkes den igjen med en 4xx som nevner strømming, eller med en annen 4xx mens den samme prompten uten strømming lykkes, strømmer ikke reléet for denne modellen (`streaming.unsupported`, score 0). Enhver annen feil (en 5xx, et tidsavbrudd, en hastighetsgrense eller en 4xx som også prompten uten strømming får) er en transportfeil: `streaming.failed`, uavklart og uten score. Begge er transportråd (se [Risikokonklusjon](#risikokonklusjon)): de senker denne dimensjonen, men aldri risikoen for bytte.
 Når modellen strømmer resonneringen sin (resonneringsdeltaer, tenkeblokker,
 resonneringshendelser i Responses), måles i stedet det første tokenet av begge
 slag: en ekte strøm begynner å resonnere tidlig, så en strøm der både
@@ -752,10 +753,11 @@ resonnerende modell.
 | `streaming.uniform_gaps` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.no_usage` | Ingen usage-bit i strømmen: trekker fra 15 poeng når ingenting er bufret. | Advarsel · Lav | opptil −15 poeng |
 | `streaming.no_content` | Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score. | Uavklart · Lav | Telles ikke |
-| `streaming.failed` | Strømmeforespørselen mislyktes. | Ikke bestått · Høy | tak 0 |
+| `streaming.unsupported` | Reléet strømmer ikke for denne modellen. | Ikke bestått · Middels | tak 0 |
+| `streaming.failed` | Strømmeforespørselen mislyktes to ganger (5xx, tidsavbrudd eller en annen transportfeil); gir ikke score. | Uavklart · Lav | Telles ikke |
 
 Altså: ekte 100 · usage mangler 85 · ett signal på bufring 60 · to eller flere 40
-· mislyktes 0 · ikke noe innhold: ingen score.
+· ikke støttet 0 · mislyktes to ganger eller ikke noe innhold: ingen score.
 
 **Forbehold.** Korte utdata, en rask liten modell eller variasjon i nettverket kan
 likne et støt. Et oppstrøms endepunkt som ikke kan strømme, tvinger reléet til å
