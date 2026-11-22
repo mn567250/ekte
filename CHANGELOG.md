@@ -53,6 +53,9 @@ ekte has three eras:
   matches `GPT-4o`), and CJK and token-like terms (`通义`, `<|User|>`) keep
   matching inside text. `expect_contains` / `expect_contains_any` stay
   substring matches. Every packaged `expect_not_contains` term is tested.
+- **Methodology:** the performance caveats now say that
+  `performance.reference` runs only in compare mode or for a profile with a
+  `performance.decode_tps` range (few packaged profiles have one).
 
 ### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
 

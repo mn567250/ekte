@@ -1116,6 +1116,9 @@ momento. Los rangos de la base de conocimiento son medianas deliberadamente
 amplias de las API nativas, y un objetivo más lento solo se anota, nunca computa. Todos
 los hallazgos son como mucho de gravedad BAJA: esta dimensión mueve la
 puntuación, nunca el veredicto de riesgo.
+La comprobación de referencia (`performance.reference`) solo se ejecuta en
+modo comparación o para un perfil con un rango `performance.decode_tps`, que
+tienen pocos perfiles incluidos; para los demás modelos no aparece.
 
 ## Superficie de embeddings
 

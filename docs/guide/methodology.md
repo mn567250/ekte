@@ -1042,6 +1042,9 @@ that moment; repeat a poor consistency result at another time. The
 knowledge-base ranges are deliberately wide medians of native APIs, and a
 slower target is noted, never scored. All findings are at most LOW severity, so
 this dimension moves the score, never the risk verdict.
+The reference check (`performance.reference`) runs only in compare mode or
+for a profile with a `performance.decode_tps` range, which few packaged
+profiles have; for every other model it is not shown.
 
 ---
 

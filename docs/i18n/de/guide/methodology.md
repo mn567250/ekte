@@ -1124,6 +1124,9 @@ einer anderen Zeit. Die Bereiche der Wissensbasis sind bewusst weit gefasste
 Mediane nativer APIs, und ein langsameres Ziel wird nur vermerkt, nie gewertet. Alle
 Befunde haben höchstens Schweregrad NIEDRIG; diese Dimension bewegt also die
 Bewertung, nie das Risikourteil.
+Der Referenzvergleich (`performance.reference`) läuft nur im Vergleichsmodus
+oder für ein Profil mit einem Bereich `performance.decode_tps`, den nur
+wenige mitgelieferte Profile haben; für alle anderen Modelle entfällt er.
 
 ## Embedding-Surface
 

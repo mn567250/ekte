@@ -1121,6 +1121,10 @@ momento. Gli intervalli della base di conoscenza sono mediane volutamente ampie
 delle API native, e un obiettivo più lento viene annotato, mai conteggiato. Tutte le
 rilevazioni sono al massimo di gravità BASSA: questa dimensione muove il
 punteggio, mai il verdetto di rischio.
+Il confronto con il riferimento (`performance.reference`) viene eseguito solo
+in modalità confronto o per un profilo con un intervallo
+`performance.decode_tps`, che pochi profili inclusi hanno; per gli altri
+modelli non compare.
 
 ## Superficie di embedding
 

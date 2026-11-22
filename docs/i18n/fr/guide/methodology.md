@@ -1130,6 +1130,9 @@ moment. Les plages de la base de connaissances sont des médianes volontairement
 larges des API natives, et une cible plus lente est notée, jamais comptée. Tous les
 constats sont au plus de gravité FAIBLE : cette dimension fait bouger le score,
 jamais le verdict de risque.
+La comparaison à la référence (`performance.reference`) ne s'exécute qu'en
+mode comparaison ou pour un profil doté d'une plage `performance.decode_tps`,
+ce que peu de profils fournis ont ; pour les autres modèles, elle n'apparaît pas.
 
 ## Surface d'embedding
 

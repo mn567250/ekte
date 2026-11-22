@@ -1110,6 +1110,9 @@ intervalos da base de conhecimento são medianas deliberadamente largas das API
 nativas, e um alvo mais lento é registado, nunca contabilizado. Todas as constatações são no
 máximo de gravidade BAIXA: esta dimensão mexe na pontuação, nunca no veredito de
 risco.
+A comparação com a referência (`performance.reference`) só corre em modo de
+comparação ou para um perfil com um intervalo `performance.decode_tps`, que
+poucos perfis incluídos têm; para os restantes modelos não aparece.
 
 ## Superfície de embeddings
 

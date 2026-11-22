@@ -1072,6 +1072,9 @@ per endepunkt, så jevnheten vurderes i testsettene deep, full og custom.
 kunnskapsbasen er bevisst brede medianer fra de egne API-ene, og et tregere mål
 noteres, gis aldri score. Alle funn har høyst LOW-alvorlighet, så denne
 dimensjonen flytter scoren, aldri risikokonklusjonen.
+Referansesammenligningen (`performance.reference`) kjører bare i
+sammenligningsmodus eller for en profil med et `performance.decode_tps`-område,
+som få medfølgende profiler har; for alle andre modeller vises den ikke.
 
 ---
 
