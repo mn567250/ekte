@@ -405,12 +405,15 @@ den.
   øverste trinn (90 % av `upper`, se under), aldri mot delen av et større
   oppgitt vindu over taket.
 - **Størrelsene er ekte tokens.** ektes innebygde tokenanslag teller denne
-  fyllteksten omtrent 12 % (o200k) til 15 % (cl100k) for lavt sammenlignet med
-  ekte tokenizere, så hver prompt bygges med størrelse ÷ 1,2 etter anslaget (nål
-  og spørsmål inkludert): et trinn på størrelse N holder seg innenfor N ekte
-  tokens. En tokenizer-familie med en faktor målt offline ville bruke sin egen
-  faktor (`real_per_heuristic` i bevisene); ingen er målt ennå, så alle familier
-  bruker 1,2. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
+  fyllteksten for lavt sammenlignet med ekte tokenizere, så hver prompt bygges
+  med størrelse ÷ tokenizer-familiens faktor etter anslaget (nål og spørsmål
+  inkludert): et trinn på størrelse N holder seg innenfor N ekte tokens.
+  Faktorene er målt offline med de publiserte tokenizerne (issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Familier uten publisert tokenizer (`claude-bpe-*`, `gemini`, `grok`) bruker
+  1,2. Faktoren som ble brukt, står som `real_per_heuristic` i bevisene. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
   disse budsjettene i ekte tokens; radene i stigen har også anslaget en prompt ble
   bygget etter (`heuristic_tokens`) og prompttokenene endepunktet rapporterte for
   den (`prompt_tokens`).

@@ -311,10 +311,14 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
 - **探测窗口。** 探测最多到 `upper` = 声称窗口，并受 `--max-context-tokens`（默认
   200K）约束。所有结论都以最高一级（`upper` 的 90%，见下文）为准，绝不拿上限以上的那部分
   更大的声称窗口来评判。
-- **长度按真实 token 计。** ekte 内置的 token 估算对这段填充文本比真实分词器少算约
-  12%（o200k）到 15%（cl100k），因此每个提示按估算值“长度 ÷ 1.2”构建（针和问题计入
-  在内）：长度为 N 的一级不会超过 N 个真实 token。离线测得系数的分词器系列会改用自己的
-  系数（证据中的 `real_per_heuristic`）；目前尚未测得任何系数，所以所有系列都用 1.2。
+- **长度按真实 token 计。** ekte 内置的 token 估算对这段填充文本比真实分词器少算，
+  因此每个提示按估算值“长度 ÷ 该分词器系列的系数”构建（针和问题计入在内）：长度为 N
+  的一级不会超过 N 个真实 token。这些系数已离线用公开发布的分词器测得（issue #261）：
+  `o200k_base` / `o200k_harmony` 1.12，`moonshot-bpe` 1.14，`deepseek-bpe` 1.15，
+  `cl100k_base` / `llama-3.3` 1.16，`glm` 1.22，`nemotron-3` 1.38，`gemma` 1.39，
+  `cohere` 1.40，`qwen` 1.41。
+  分词器未公开的系列（`claude-bpe-*`、`gemini`、`grok`）使用 1.2。本次运行所用的系数
+  即证据中的 `real_per_heuristic`。
   证据中的长度（`size`、`effective_window`、`top_rung`）都是这种真实 token 预算；阶梯
   每一行另外记录提示构建时的估算值（`heuristic_tokens`）以及端点为它上报的 prompt token
   数（`prompt_tokens`）。

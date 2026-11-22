@@ -425,12 +425,17 @@ répétitif, et le modèle doit le restituer.
   par rapport à la part d'une fenêtre annoncée plus grande située au-delà du
   plafond.
 - **Les tailles sont des tokens réels.** L'estimation de tokens intégrée à ekte
-  sous-compte ce remplissage d'environ 12 % (o200k) à 15 % (cl100k) par rapport
-  aux vrais tokenizers ; chaque prompt est donc construit à taille ÷ 1,2 selon
+  sous-compte ce remplissage par rapport aux vrais tokenizers ; chaque prompt
+  est donc construit à taille ÷ le facteur de la famille de tokenizers selon
   l'estimation (aiguille et question comprises) : un échelon de taille N tient
-  dans N tokens réels. Une famille de tokenizers dotée d'un facteur mesuré hors
-  ligne utiliserait son propre facteur (`real_per_heuristic` dans les preuves) ;
-  aucun n'est encore mesuré, toutes les familles utilisent donc 1,2. Les tailles
+  dans N tokens réels. Les facteurs ont été mesurés hors ligne avec les
+  tokenizers publiés (issue #261) :
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Les familles dont le tokenizer n'est pas publié (`claude-bpe-*`, `gemini`,
+  `grok`) utilisent 1,2. Le facteur utilisé figure dans `real_per_heuristic`
+  des preuves. Les tailles
   des preuves (`size`, `effective_window`, `top_rung`) sont ces budgets de
   tokens réels ; les lignes de l'échelle portent aussi l'estimation à laquelle
   un prompt a été construit (`heuristic_tokens`) et les tokens de prompt que le

@@ -12,7 +12,7 @@ import pytest
 
 from ekte.detectors.context_window import ContextWindowDetector, _build_haystack
 from ekte.models import CompletionOutcome, Status
-from ekte.utils.tokenize import estimate_tokens
+from ekte.utils.tokenize import estimate_tokens, filler_real_per_heuristic
 
 
 def _outcome(status_code, message, *, needle="EKTE-ABC", content="", ok=False):
@@ -198,8 +198,12 @@ async def test_front_truncated_size_takes_three_calls_with_a_fresh_start_needle(
 # --------------------------------------------------------------------------- #
 # Ladder, margin, cap and error handling
 # --------------------------------------------------------------------------- #
-# Real tokenizers count the filler up to ~15% higher than ekte's heuristic.
-_REAL_PER_HEURISTIC = 1.15
+# The fixture model (gpt-4o) is in the o200k_base family; the haystack is sized
+# by that family's measured factor (ekte.utils.tokenize.FILLER_REAL_PER_HEURISTIC).
+_FIXTURE_FACTOR = filler_real_per_heuristic("o200k_base")
+# The mock endpoint's tokenizer counts the filler a little below that factor, as
+# the measured tokenizer does (the factor is its median ratio rounded up).
+_REAL_PER_HEURISTIC = _FIXTURE_FACTOR - 0.02
 
 
 def _window_server(audit_context, *, window: int | None, middle_misses: int = 0,
@@ -259,7 +263,7 @@ def test_haystack_real_tokens_stay_within_the_rung():
     for size in (460, 1_843, 7_372, 57_600, 115_200):
         prompt = _build_haystack(size, needle="EKTE-0123456789", depth=0.5, tokenizer=None)
         assert "EKTE-0123456789" in prompt
-        assert estimate_tokens(prompt) * _REAL_PER_HEURISTIC <= size
+        assert estimate_tokens(prompt) * filler_real_per_heuristic(None) <= size
 
 
 @pytest.mark.parametrize("declared", [2_048, 8_192, 32_768, 131_072, 200_000])
@@ -376,7 +380,9 @@ async def test_a_dense_tokenizer_overshooting_the_top_rung_is_not_short(
 
 async def test_overshoot_needs_more_than_five_percent(audit_context):
     # The tokenizer the factor was built for: no overshoot, a genuine short window.
-    _window_server(audit_context, window=100_000, real_per_heuristic=1.2, miss_above=True)
+    _window_server(
+        audit_context, window=100_000, real_per_heuristic=_FIXTURE_FACTOR, miss_above=True
+    )
     result = await ContextWindowDetector().run(audit_context)
     verdict = next(f for f in result.findings if f.check == "context_window.window")
     assert verdict.id == "context_window.short"
@@ -400,7 +406,7 @@ async def test_ladder_evidence_carries_the_reported_prompt_tokens(audit_context)
     assert recalled and all(0 < row["prompt_tokens"] <= row["size"] for row in recalled)
     # A size rejection carries no usage.
     assert all(row["prompt_tokens"] is None for row in ladder if row["rejected"])
-    assert result.evidence["real_per_heuristic"] == 1.2
+    assert result.evidence["real_per_heuristic"] == _FIXTURE_FACTOR
 
 
 async def test_ladder_evidence_without_usage_has_no_prompt_tokens(audit_context):
@@ -413,13 +419,51 @@ def test_a_measured_tokenizer_factor_shrinks_the_haystack(monkeypatch):
     from ekte.detectors import context_window as cw
     from ekte.utils import tokenize
 
-    assert cw._heuristic_size(12_000, "o200k_base") == 10_000  # the 1.2 default
+    assert cw._heuristic_size(12_000, "claude-bpe-v2") == 10_000  # unmeasured: the 1.2 default
     monkeypatch.setitem(tokenize.FILLER_REAL_PER_HEURISTIC, "dense-bpe", 1.5)
     assert cw._heuristic_size(12_000, "dense-bpe") == 8_000
     assert cw._heuristic_size(12_000, None) == 10_000
     dense = _build_haystack(12_000, needle="EKTE-0123456789", depth=0.5, tokenizer="dense-bpe")
     default = _build_haystack(12_000, needle="EKTE-0123456789", depth=0.5, tokenizer=None)
     assert estimate_tokens(dense) <= 8_000 < estimate_tokens(default) <= 10_000
+
+
+@pytest.mark.parametrize("tokenizer", ["qwen", "o200k_base", "claude-bpe-v2", None])
+async def test_the_ladder_budget_uses_the_tokenizer_table(audit_context, monkeypatch, tokenizer):
+    # Every rung's haystack is built at size / the family's table factor (1.2 for
+    # a family without a measured entry), and the evidence names that factor.
+    from ekte.utils import tokenize
+
+    factor = tokenize.FILLER_REAL_PER_HEURISTIC.get(tokenizer or "", 1.2)
+    assert filler_real_per_heuristic(tokenizer) == factor
+    monkeypatch.setattr(audit_context, "tokenizer_hint", lambda: tokenizer)
+    monkeypatch.setattr(audit_context, "declared_context_window", lambda: 80_000)
+    sent = []
+    _window_server(audit_context, window=80_000, real_per_heuristic=factor - 0.02)
+    honest = audit_context.client.complete
+
+    async def complete(spec):
+        sent.append(estimate_tokens(spec.messages[0]["content"]))
+        return await honest(spec)
+
+    audit_context.client.complete = complete
+    result = await ContextWindowDetector().run(audit_context)
+    assert result.evidence["real_per_heuristic"] == factor
+    ladder = result.evidence["ladder"]
+    assert ladder and all(row["heuristic_tokens"] == int(row["size"] / factor) for row in ladder)
+    assert max(sent) <= int(max(row["size"] for row in ladder) / factor)
+    assert not [f for f in result.findings if f.severity.value in ("medium", "high")]
+
+
+def test_the_measured_factors_are_in_the_table():
+    from ekte.utils import tokenize
+
+    # issue #261: measured with scripts/measure_tokenizer_factors.py.
+    assert tokenize.FILLER_REAL_PER_HEURISTIC["o200k_base"] == 1.12
+    assert tokenize.FILLER_REAL_PER_HEURISTIC["qwen"] == 1.41
+    for closed in ("claude-bpe-legacy", "claude-bpe-v1", "claude-bpe-v2", "gemini", "grok"):
+        assert closed not in tokenize.FILLER_REAL_PER_HEURISTIC
+        assert filler_real_per_heuristic(closed) == tokenize.DEFAULT_FILLER_REAL_PER_HEURISTIC
 
 
 def test_measured_tokenizer_factors_name_known_tokenizers():

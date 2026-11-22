@@ -416,12 +416,15 @@ tem de o devolver.
   degrau superior (90% de `upper`, abaixo), nunca face à parte de uma janela
   declarada maior que fica acima do limite.
 - **Os tamanhos são tokens reais.** A estimativa de tokens embutida no ekte
-  conta este enchimento cerca de 12% (o200k) a 15% (cl100k) abaixo dos
-  tokenizers reais, por isso cada prompt é construído a tamanho ÷ 1,2 segundo a
-  estimativa (agulha e pergunta incluídas): um degrau de tamanho N cabe em N
-  tokens reais. Uma família de tokenizers com um fator medido offline usaria o
-  seu próprio fator (`real_per_heuristic` nas evidências); ainda nenhum foi
-  medido, por isso todas as famílias usam 1,2. Os tamanhos nas evidências
+  conta este enchimento abaixo dos tokenizers reais, por isso cada prompt é
+  construído a tamanho ÷ o fator da família de tokenizers segundo a estimativa
+  (agulha e pergunta incluídas): um degrau de tamanho N cabe em N tokens reais.
+  Os fatores foram medidos offline com os tokenizers publicados (issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  As famílias cujo tokenizer não é publicado (`claude-bpe-*`, `gemini`, `grok`)
+  usam 1,2. O fator usado aparece como `real_per_heuristic` nas evidências. Os tamanhos nas evidências
   (`size`, `effective_window`, `top_rung`) são esses orçamentos de tokens reais;
   as linhas da escada trazem também a estimativa com que um prompt foi
   construído (`heuristic_tokens`) e os tokens de prompt que o endpoint reportou

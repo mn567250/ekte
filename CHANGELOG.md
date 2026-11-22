@@ -58,6 +58,38 @@ baseline, while the documentation said only a baseline can reach high.
 - Not in this change (possible follow-ups): `context_window` and `streaming`
   still do not ask the baseline.
 
+### Context window: measured token factors per tokenizer family ([#261](https://github.com/mn567250/ekte/issues/261))
+
+- `FILLER_REAL_PER_HEURISTIC` (`ekte/utils/tokenize.py`) now holds the real
+  tokens per heuristic token of the context-window filler, measured offline
+  with each family's published `tokenizer.json` (pinned Hugging Face
+  revisions, 20 filler texts each): `o200k_base` / `o200k_harmony` 1.12,
+  `moonshot-bpe` 1.14, `deepseek-bpe` 1.15, `cl100k_base` / `llama-3.3` 1.16,
+  `glm` 1.22, `nemotron-3` 1.38, `gemma` 1.39, `cohere` 1.40, `qwen` 1.41.
+  Families whose tokenizer is not published (`claude-bpe-*`, `gemini`, `grok`)
+  keep 1.2. Haystacks for the o200k, cl100k, DeepSeek, Kimi and Llama families
+  are now a little larger (closer to the rung), and those for Qwen, Gemma,
+  Command and Nemotron smaller, so these dense tokenizers no longer overshoot
+  the rung by 15-18%. Context-window probes, and therefore some scores, change;
+  see [#168](https://github.com/mn567250/ekte/issues/168).
+- `scripts/measure_tokenizer_factors.py` re-measures the table (not run in CI;
+  see `docs/dev/knowledge-base.md`). It checks that an ungated mirror is
+  byte-identical to the gated official file, or that a converted tokenizer
+  matches the official tiktoken vocabulary and split pattern.
+
+### Knowledge base: documented cutoff months for 30 more chat profiles ([#251](https://github.com/mn567250/ekte/issues/251))
+
+- **Knowledge cutoff:** 30 chat profiles whose `knowledge_cutoff` was missing,
+  year-only or an estimate now carry the month (or date) the vendor's own model
+  card or model documentation states, so the identity cutoff probe runs for them:
+  Phi-4 (7), Olmo 3 / 3.1 (5), Gemini 4 Argon, Gemma 4 (3) and Gemma 3n, Nemotron 3 Nano and Super, GPT-6 Sol and
+  Luna, Grok 4.7 / 4.6 / 4.5, Command A+ and the Command A family (4) and Command
+  R7B. Each source is listed in the provider file. Profiles whose vendor gives no
+  month (or contradicts itself) are unchanged; 94 chat profiles still have no
+  cutoff month. Gemini 3.8 / 3.6 Flash and 3.5 Flash-Lite stay without one:
+  their cards give March 2026 but say knowledge may be limited to January 2025
+  in some domains, so an honest answer could trip the probe.
+
 ### Streaming: a burst signal that fires, and a comparison with the same prompt without streaming ([#259](https://github.com/mn567250/ekte/issues/259))
 
 A buffered answer replayed as 40 chunks in a burst after a 3 s wait was caught

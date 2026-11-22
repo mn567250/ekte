@@ -16,6 +16,7 @@ models:
   family: olmo-3
   context_window_tokens: 65536
   max_output_tokens: -1
+  knowledge_cutoff: '2024-12'
   modalities:
   - text
   reasoning: false
@@ -52,6 +53,7 @@ models:
   family: olmo-3
   context_window_tokens: 65536
   max_output_tokens: -1
+  knowledge_cutoff: '2024-12'
   modalities:
   - text
   reasoning: true
@@ -88,6 +90,7 @@ models:
   family: olmo-3
   context_window_tokens: 65536
   max_output_tokens: -1
+  knowledge_cutoff: '2024-12'
   modalities:
   - text
   reasoning: true
@@ -124,6 +127,7 @@ models:
   family: olmo-3.1
   context_window_tokens: 65536
   max_output_tokens: -1
+  knowledge_cutoff: '2024-12'
   modalities:
   - text
   reasoning: false
@@ -160,6 +164,7 @@ models:
   family: olmo-3.1
   context_window_tokens: 65536
   max_output_tokens: -1
+  knowledge_cutoff: '2024-12'
   modalities:
   - text
   reasoning: true
@@ -241,3 +246,6 @@ sources:
 - https://docs.vultr.com/models/allen-ai-olmo-31/olmo-3.1-32b-instruct/nvidia
 - https://www.typingmind.com/guide/openrouter/molmo-7b-d
 - https://www.typingmind.com/guide/openrouter/olmo-3.1-32b-think
+- https://huggingface.co/allenai/Olmo-3-7B-Think
+- https://huggingface.co/allenai/Olmo-3-32B-Think
+- https://huggingface.co/allenai/Olmo-3.1-32B-Think
