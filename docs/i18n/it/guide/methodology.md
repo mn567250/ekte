@@ -644,6 +644,13 @@ alle capacità del profilo:
   OpenAI vengono segnalati come motore non OpenAI.
 - **Modalità JSON:** `response_format: json_object` deve restituire un oggetto
   analizzabile con il valore richiesto.
+- **Ripetizione:** una chiamata a strumento o un oggetto JSON dichiarati che non
+  tornano vengono richiesti ancora una volta prima di contare come non
+  consegnati: la richiesta dello strumento con `tool_choice: "required"`
+  (Anthropic: `{"type": "any"}`), la richiesta in modalità JSON invariata. Una
+  chiamata a strumento nella ripetizione è consegnata (evidenza
+  `needed_required: true`); un 4xx sulla sola richiesta forzata (alcuni modelli
+  rifiutano l'uso forzato degli strumenti) ripiega sulla prima risposta.
 - **Schema rigoroso:** un `json_schema` rigoroso; la conformità viene verificata
   se il modello la dichiara e solo annotata (informativa) se no. Saltato senza
   profilo.

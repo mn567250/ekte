@@ -613,6 +613,13 @@ egenskapsflagg:
   som ikke er OpenAI.
 - **JSON-modus:** `response_format: json_object` må returnere et objekt som kan
   tolkes, med den forespurte verdien.
+- **Gjentakelse:** et oppgitt verktøykall eller JSON-objekt som ikke kommer
+  tilbake, etterspørres én gang til før det regnes som ikke levert:
+  verktøyforespørselen med `tool_choice: "required"` (Anthropic:
+  `{"type": "any"}`), JSON-modus-forespørselen uendret. Et verktøykall i
+  gjentakelsen regnes som levert (bevis `needed_required: true`); en 4xx bare på
+  den tvungne forespørselen (noen modeller avviser tvungen verktøybruk) faller
+  tilbake til det første svaret.
 - **Strengt skjema:** et strengt `json_schema`; samsvar verifiseres når modellen
   påstår det, og noteres (til informasjon) når den ikke gjør det. Hoppes over uten
   profil.

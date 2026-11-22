@@ -636,6 +636,13 @@ capacidades do perfil:
   são assinalados como um motor que não é da OpenAI.
 - **Modo JSON:** `response_format: json_object` tem de devolver um objeto
   analisável com o valor pedido.
+- **Repetição:** uma chamada de ferramenta ou um objeto JSON declarados que não
+  voltam são pedidos mais uma vez antes de contarem como não entregues: o pedido
+  de ferramenta com `tool_choice: "required"` (Anthropic: `{"type": "any"}`),
+  o pedido em modo JSON sem alterações. Uma chamada de ferramenta na repetição
+  conta como entregue (evidência `needed_required: true`); um 4xx apenas no
+  pedido forçado (alguns modelos recusam o uso forçado de ferramentas) volta à
+  primeira resposta.
 - **Esquema estrito:** um `json_schema` estrito; a conformidade é verificada se
   o modelo a declara e apenas registada (informativo) se não. É omitida sem
   perfil.

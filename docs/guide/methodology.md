@@ -601,6 +601,12 @@ profile's capability flags:
   than the JSON string OpenAI returns are flagged as a non-OpenAI engine.
 - **JSON mode:** `response_format: json_object` must return a parseable object
   carrying the requested value.
+- **Repeat:** a claimed tool call or JSON object that does not come back is
+  asked for once more before it counts as not delivered: the tool request with
+  `tool_choice: "required"` (Anthropic: `{"type": "any"}`), the JSON-mode
+  request unchanged. A tool call on the repeat is delivered (evidence
+  `needed_required: true`); a 4xx on the forced request alone (some models
+  refuse forced tool use) falls back to the first answer.
 - **Strict schema:** a strict `json_schema`; conformance is verified when the
   model claims it and noted (informational) when it does not. Skipped without a
   profile.

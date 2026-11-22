@@ -648,6 +648,13 @@ des Profils gemessen:
   eine Nicht-OpenAI-Engine markiert.
 - **JSON-Modus:** `response_format: json_object` muss ein parsebares Objekt mit
   dem angeforderten Wert liefern.
+- **Wiederholung:** ein beanspruchter Tool-Call oder ein JSON-Objekt, das nicht
+  zurückkommt, wird noch einmal angefragt, bevor es als nicht geliefert gilt:
+  die Tool-Anfrage mit `tool_choice: "required"` (Anthropic:
+  `{"type": "any"}`), die JSON-Modus-Anfrage unverändert. Ein Tool-Call in der
+  Wiederholung gilt als geliefert (Beleg `needed_required: true`); ein 4xx nur
+  auf die erzwungene Anfrage (manche Modelle lehnen erzwungene Tool-Nutzung ab)
+  fällt auf die erste Antwort zurück.
 - **Striktes Schema:** ein striktes `json_schema`; die Einhaltung wird geprüft,
   wenn das Modell es angibt, und nur vermerkt (informativ), wenn nicht. Ohne
   Profil entfällt diese Prüfung.

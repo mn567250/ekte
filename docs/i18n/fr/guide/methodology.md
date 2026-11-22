@@ -233,7 +233,7 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
   courtes partent d'emblée avec la limite de 4 096 tokens au lieu de deux fois.
   Les vérifications qui traitent un modèle de raisonnement autrement
   (facturation, déterminisme, sortie maximale, attributs de requête) le
-  reconnaissent toutes de la même façon : le profil l'indique, le client l'a
+  reconnaissent toutes de la même façon : le profil l'indique, le client l'a
   appris d'une telle répétition, ou une réponse signale des tokens de
   raisonnement.
 - **Paramètres de requête :** les modèles de raisonnement refusent certains
@@ -647,6 +647,13 @@ aux capacités du profil :
   un moteur non OpenAI.
 - **Mode JSON :** `response_format: json_object` doit renvoyer un objet
   analysable portant la valeur demandée.
+- **Répétition :** un appel d'outil ou un objet JSON annoncés qui ne reviennent
+  pas sont redemandés une fois avant de compter comme non livrés : la requête
+  d'outil avec `tool_choice: "required"` (Anthropic : `{"type": "any"}`), la
+  requête en mode JSON inchangée. Un appel d'outil à la répétition est livré
+  (preuve `needed_required: true`) ; un 4xx sur la seule requête forcée
+  (certains modèles refusent l'usage forcé d'outils) revient à la première
+  réponse.
 - **Schéma strict :** un `json_schema` strict ; la conformité est vérifiée si le
   modèle l'annonce et simplement notée (à titre indicatif) sinon. Ignoré sans
   profil.

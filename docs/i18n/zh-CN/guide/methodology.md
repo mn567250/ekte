@@ -476,6 +476,10 @@ schema、输出长度或视觉，实际却没兑现——或“过度兑现”�
 - **工具调用**：以 `tool_choice: "auto"` 提供一个工具并明确要求使用，必须返回工具调用。
   参数以对象而不是 OpenAI 返回的 JSON 字符串形式出现时，标记为非 OpenAI 引擎。
 - **JSON 模式**：`response_format: json_object` 必须返回可解析、且带有所要求值的对象。
+- **重试**：声称支持的工具调用或 JSON 对象没有返回时，在判为未交付之前再请求一次：
+  工具请求改用 `tool_choice: "required"`（Anthropic：`{"type": "any"}`），JSON 模式请求保持不变。
+  重试返回工具调用即判为已交付（证据 `needed_required: true`）；仅强制请求返回 4xx
+  （部分模型拒绝强制使用工具）时，回退到第一次的回答。
 - **严格 schema**：严格的 `json_schema`；模型声称支持时核验是否符合，不支持时仅作
   记录（仅供参考）。没有画像时跳过。
 - **最大输出**：一次长生成，上限为 min(声称的最大输出, `--max-output-probe-tokens`)

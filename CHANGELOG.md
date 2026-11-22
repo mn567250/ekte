@@ -34,6 +34,13 @@ ekte has three eras:
   unprofiled reasoning model no longer gets a `determinism.temp1_variability:
   identical` or `billing.usage-inflation-completion` finding for its hidden
   thinking.
+- **Capability: one sample no longer decides a MEDIUM finding.** A claimed
+  tool call that does not come back with `tool_choice: "auto"` is asked for
+  once more with `tool_choice: "required"` (Anthropic `{"type": "any"}`); a
+  call on the repeat is `delivered` with evidence `needed_required: true`, and
+  a 4xx on the forced request alone falls back to the first answer instead of
+  failing the check. A claimed JSON mode that does not deliver is repeated once
+  as well (`needed_repeat: true`).
 
 ### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
 
