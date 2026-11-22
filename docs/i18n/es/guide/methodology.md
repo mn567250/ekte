@@ -544,9 +544,7 @@ ser compartida.
    añadida, «Step-2»); en las respuestas de huella nunca cuentan, así que
    «let me think step by step» no es una marca rival. Un proveedor dueño de
    una de esas palabras la conserva como propia.
-2. **Huellas de comportamiento** de la base de conocimiento (fecha de corte del
-   conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
-   idioma, …): hasta seis sondas de código puro, comprobadas con
+2. **Huellas de comportamiento** de la base de conocimiento: hasta seis sondas de código puro, comprobadas con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
    `expect_regex`; salida limitada a 512 tokens. Los términos de `expect_not_contains` se buscan como palabras completas
    (`meta` no se encuentra en `metadata`; puede seguir una versión, como en
@@ -561,6 +559,13 @@ ser compartida.
    referencia comparte es un problema de la base de conocimiento, no una prueba
    contra el relay, y se registra como Info sin deducción (evidencia
    `baseline_also_diverged`). Una marca rival sigue siendo ALTA en todo caso.
+   Lo que se ejecuta depende de la base de conocimiento: solo unos pocos perfiles
+   incluidos tienen sondas de código puro propias; la mayoría solo tiene las de
+   su proveedor, casi siempre un segundo mensaje de autoidentificación, un hecho
+   fechado o un artefacto del tokenizer que todos los modelos del proveedor
+   responden igual, y alrededor de un tercio no tiene ninguna. Por eso los
+   modelos de un mismo proveedor no suelen distinguirse sin un juez o una
+   referencia (véase `model_identity.model_specific` más abajo).
 3. **Fecha de corte del conocimiento** (`model_identity.cutoff`), cuando el
    `knowledge_cutoff` del perfil es `YYYY-MM` o `YYYY-MM-DD`: se pregunta al
    modelo su fecha de corte como `CUTOFF=YYYY-MM`. A 6 meses o menos de la del
@@ -822,12 +827,15 @@ Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de think
 | `streaming.ttft_vs_total` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.uniform_gaps` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.no_usage` | No hay fragmento de uso en el stream: resta 15 puntos si nada está en búfer. | Advertencia · Baja | hasta −15 pts |
-| `streaming.no_content` | El stream tuvo éxito pero no entregó contenido para juzgar; sin puntuación. | No concluyente · Baja | No computa |
+| `streaming.no_content` | El stream tuvo éxito pero no entregó contenido para juzgar; sin puntuación. | No concluyente · Baja | Sin deducción |
 | `streaming.unsupported` | El relay no hace streaming para este modelo. | Fallo · Media | tope 0 |
-| `streaming.failed` | La solicitud en streaming falló dos veces (5xx, tiempo de espera agotado u otro fallo de transporte); sin puntuación. | No concluyente · Baja | No computa |
+| `streaming.failed` | La solicitud en streaming falló dos veces (5xx, tiempo de espera agotado u otro fallo de transporte); sin puntuación. | No concluyente · Baja | Sin deducción |
 
 Es decir: auténtico 100 · falta el uso 85 · una señal de búfer 60 · dos o más
 40 · sin soporte 0 · dos fallos o sin contenido: sin puntuación.
+«Sin deducción» en las filas `streaming.no_content` y `streaming.failed` es la
+redacción de la escala de deducciones; en ambos casos el detector deja su
+resultado sin puntuación, así que no cuenta para la dimensión.
 
 **Advertencias.** Salidas cortas, un modelo pequeño y rápido o la fluctuación de
 la red pueden parecer una ráfaga. Un upstream que no sabe hacer streaming
@@ -897,7 +905,13 @@ estimación) es informativo (no perjudica al comprador).
 Una petición de sonda fallida deja el detector sin puntuación.
 
 **Advertencias.** Las plantillas de chat y los tokens especiales añaden un
-pequeño desfase fijo; no se espera una coincidencia exacta. Si el modelo servido
+pequeño desfase fijo; no se espera una coincidencia exacta. Sin referencia, la tolerancia deja pasar
+una inflación moderada: una inflación proporcional que mantiene la pendiente en
+1,35 o menos (alrededor de una quinta parte por encima del recuento real, dado
+que la heurística cuenta de menos) no se señala, ni tampoco, en la vía de
+respaldo de una sola petición, unos tokens de prompt por debajo de 2,5× la
+estimación. El modo de comparación con una referencia del mismo modelo detecta
+más de un 3 %. Si el modelo servido
 difiere del declarado, el tokenizer «correcto» es desconocido. Los tokens de
 razonamiento ocultos no pueden contarse desde fuera. Tres tamaños de hasta unos
 2.400 tokens separan un factor proporcional de una sobrecarga fija; un
@@ -1185,15 +1199,22 @@ tienen pocos perfiles incluidos; para los demás modelos no aparece.
 La **superficie** de una auditoría (`chat` por defecto, o `embedding`) elige los
 detectores; la suite sigue fijando la profundidad. Una auditoría de embeddings
 solo envía peticiones `POST /embeddings` y reutiliza las dimensiones de chat y la
-puntuación común 0–100 y nota A–F, con pesos por superficie. Una dimensión que no
+puntuación común 0–100 y nota A–F, con sus propios pesos (`SURFACE_WEIGHTS` en `ekte/scoring.py`). Una dimensión que no
 coincide (identidad del modelo, ALTA) eleva el riesgo a ALTO, como un modelo
 sustituido en chat.
 
-| Comprobación | Id | Dimensión | Qué comprueba |
+| Dimensión | Id | Peso | Papel |
+|---|---|---|---|
+| Identidad del modelo | `model_identity` | 40 | núcleo |
+| Rendimiento | `performance` | 20 |  |
+| Capacidades declaradas | `capability` | 15 |  |
+| Integridad de las respuestas | `integrity` | 15 |  |
+| Conectividad | `connectivity` | 10 |  |
+
+| Detector | Id | Dimensión | Qué comprueba |
 |---|---|---|---|
 | Conectividad | `embed.connectivity` | Conectividad | el endpoint devuelve vectores bien formados |
-| Dimensión del vector | `embed.dimension` | Identidad del modelo | longitud devuelta frente a la dimensión nativa del modelo declarado (base de conocimiento o `claimed_dimensions`) |
-| Modelo devuelto | `embed.model_field` | Identidad del modelo | el campo `model` de la respuesta nombra el modelo declarado |
+| Identidad del modelo | `embed.identity` | Identidad del modelo | `embed.dimension`: longitud devuelta frente a la dimensión nativa del modelo declarado (base de conocimiento o `claimed_dimensions`); `embed.model_field`: el campo `model` de la respuesta nombra el modelo declarado |
 | Deriva de vectores | `embed.drift` | Identidad del modelo | el vector de la entrada fija de la sonda frente a la ejecución guardada anterior |
 | Determinismo | `embed.determinism` | Integridad de las respuestas | la misma entrada dos veces da coseno ≥ 0,9999 |
 | Distinción | `embed.distinctness` | Capacidades declaradas | entradas no relacionadas dan coseno inferior a 0,98 |
@@ -1223,21 +1244,108 @@ partir de 0,6x el lote se divide o se serializa (lineal, WARN BAJA). No hay
 referencia de velocidad en la base de conocimiento; la velocidad bruta solo cuenta
 frente a una referencia.
 
+**Escalas de puntuación** de los detectores de embeddings (`SCALE` en `ekte/detectors/embed_*.py`). Cada detector puntúa con la media de sus comprobaciones computadas.
+
+### `embed.connectivity` — Conectividad del endpoint de embeddings
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `embed.connectivity` | El endpoint de embeddings devolvió vectores. | Correcto | 100 pts |
+|  | El endpoint de embeddings respondió sin un vector por entrada. | Fallo · Alta | 0 pts |
+|  | La solicitud de embeddings falló. | Fallo · Alta | 0 pts |
+
+### `embed.identity` — Identidad del modelo de embeddings
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `embed.dimension` | La longitud de los vectores coincide con el modelo declarado. | Correcto | 100 pts |
+|  | La longitud de los vectores difiere de la del modelo declarado (se sirve otro modelo). | Fallo · Alta | 0 pts |
+|  | Se desconoce la longitud de los vectores del modelo declarado; se registra la longitud observada. | Info | No computa |
+|  | No se devolvió ningún vector que medir. | No concluyente | No computa |
+| `embed.model_field` | El relay devuelve el modelo solicitado. | Correcto | 100 pts |
+|  | El relay devuelve un modelo distinto del solicitado. | Advertencia · Media | 50 pts |
+|  | El relay devuelve otro id de modelo que ekte no puede identificar: se registra, no se juzga. | Info | No computa |
+|  | El relay no devuelve ningún campo model. | Info | No computa |
+
+### `embed.drift` — Deriva de vectores de embeddings
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `embed.drift` | El vector de la entrada fija coincide con la ejecución anterior. | Correcto | 100 pts |
+|  | El vector de la entrada fija se ha desplazado desde la ejecución anterior (coseno de 0,95 a 0,995). | Advertencia · Media | 60 pts |
+|  | El vector de la entrada fija ha cambiado desde la ejecución anterior (coseno inferior a 0,95, u otra longitud): se ha sustituido el modelo. | Fallo · Alta | 0 pts |
+|  | No hay ejecución anterior con la que comparar; el vector de esta ejecución es la referencia. | Info | No computa |
+|  | No se devolvió ningún vector para la entrada fija. | No concluyente | No computa |
+
+### `embed.determinism` — Determinismo de los embeddings
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `embed.determinism` | La misma entrada dos veces da el mismo vector. | Correcto | 100 pts |
+|  | La misma entrada dos veces da vectores distintos. | Advertencia · Media | 50 pts |
+|  | No se devolvieron vectores que comparar. | No concluyente | No computa |
+
+### `embed.distinctness` — Distinción de los embeddings
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `embed.distinctness` | Entradas sin relación dan vectores claramente distintos. | Correcto | 100 pts |
+|  | Entradas sin relación dan vectores casi idénticos (un backend degenerado o de prueba). | Advertencia · Alta | 30 pts |
+|  | No se devolvieron vectores que comparar. | No concluyente | No computa |
+
+### `performance.embed` — Medición de rendimiento de embeddings
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `performance.summary` | Se midieron la latencia y el rendimiento de los embeddings. | Info | No computa |
+|  | Ninguna de las solicitudes de sondeo tuvo éxito. | No concluyente | No computa |
+| `performance.latency_consistency` | La latencia es constante (ratio de cola como máximo 1,3). | Correcto | 100 pts |
+|  | La latencia es estable (ratio de cola como máximo 1,75). | Correcto | 85 pts |
+|  | La latencia varía notablemente (ratio de cola como máximo 2,5). | Advertencia · Baja | 65 pts |
+|  | La latencia es errática (ratio de cola superior a 2,5). | Fallo · Baja | 40 pts |
+|  | Muy pocas muestras para juzgar la constancia de la latencia. | Info | No computa |
+| `performance.throughput_consistency` | El rendimiento es constante (ratio de cola como máximo 1,3). | Correcto | 100 pts |
+|  | El rendimiento es estable (ratio de cola como máximo 1,75). | Correcto | 85 pts |
+|  | El rendimiento varía notablemente (ratio de cola como máximo 2,5). | Advertencia · Baja | 65 pts |
+|  | El rendimiento es errático (ratio de cola superior a 2,5). | Fallo · Baja | 40 pts |
+|  | Muy pocas muestras para juzgar la constancia del rendimiento. | Info | No computa |
+| `performance.errors` | Falló como máximo el 2 % de las peticiones de la sonda. | Correcto | 100 pts |
+|  | Hasta el 10 % de las peticiones de la sonda fallaron o agotaron el tiempo. | Advertencia · Baja | 80 pts |
+|  | Muchas peticiones de la sonda fallaron o agotaron el tiempo. | Fallo · Baja | 50 pts |
+| `performance.load_stability` | La latencia se mantiene bajo carga concurrente (como máximo 1,5x). | Correcto | 100 pts |
+|  | La latencia aumenta bajo carga concurrente (hasta 3x). | Advertencia · Baja | 80 pts |
+|  | La latencia se degrada mucho bajo carga concurrente (más de 3x). | Fallo · Baja | 55 pts |
+| `performance.batch_scaling` | Un lote de 16 entradas cuesta mucho menos por entrada que las solicitudes individuales. | Correcto | 100 pts |
+|  | Un lote de 16 entradas cuesta por entrada casi lo mismo que las solicitudes individuales (coherente con un relay que divide o serializa los lotes). | Advertencia · Baja | 60 pts |
+|  | Muy pocas muestras de lotes para juzgar cómo escala la latencia con el tamaño del lote. | Info | No computa |
+| `performance.cache_hit` | Entradas de medición únicas devolvieron vectores repetidos (excluidas de las estadísticas). | Advertencia · Baja | 60 pts |
+|  | La referencia devolvió vectores repetidos para entradas de medición únicas (no puntúa). | Info | No computa |
+| `performance.relay_overhead` | Latencia comparada con la referencia de confianza (solo informativo). | Info | No computa |
+| `performance.skipped` | La sonda de rendimiento estaba desactivada. | Info | No computa |
+
 ---
 
 ## Superficie de rerank
 
 Una auditoría de rerank (`surface` `rerank`) solo envía peticiones `POST /rerank`
-y se puntúa en la escala común 0–100 y nota A–F con sus propios pesos: identidad
-del modelo 30, capacidades declaradas 30, rendimiento 20, integridad de las respuestas 10, conectividad 10. Fallar la clasificación de respuesta conocida
+y se puntúa en la escala común 0–100 y nota A–F con sus propios pesos
+(`SURFACE_WEIGHTS` en `ekte/scoring.py`). Fallar la clasificación de respuesta conocida
 (capacidades declaradas, ALTA) o un modelo sustituido (identidad del modelo,
 ALTA) eleva el riesgo a ALTO.
 
-| Comprobación | Id | Dimensión | Qué comprueba |
+| Dimensión | Id | Peso | Papel |
+|---|---|---|---|
+| Identidad del modelo | `model_identity` | 30 | núcleo |
+| Capacidades declaradas | `capability` | 30 | núcleo |
+| Rendimiento | `performance` | 20 |  |
+| Integridad de las respuestas | `integrity` | 10 |  |
+| Conectividad | `connectivity` | 10 |  |
+
+| Detector | Id | Dimensión | Qué comprueba |
 |---|---|---|---|
 | Conectividad | `rerank.connectivity` | Conectividad | el endpoint devuelve una clasificación bien formada |
 | Respuesta conocida | `rerank.known_answer` | Capacidades declaradas | una sonda con un documento obviamente relevante lo coloca primero |
-| Modelo devuelto | `rerank.identity` | Identidad del modelo | el campo `model` de la respuesta nombra el modelo declarado |
+| Modelo devuelto | `rerank.identity` | Identidad del modelo | `rerank.model_field`: el campo `model` de la respuesta nombra el modelo declarado |
 | Deriva de la clasificación | `rerank.drift` | Identidad del modelo | la clasificación y las puntuaciones de la sonda fija frente a la ejecución guardada anterior |
 | Determinismo | `rerank.determinism` | Integridad de las respuestas | la misma consulta dos veces da la misma clasificación y las mismas puntuaciones |
 | Sonda de rendimiento | `performance.rerank` | Rendimiento | latencia, arranque en frío, documentos/s, escalado con el número de documentos |
@@ -1264,6 +1372,82 @@ el relay divide o serializa los documentos (lineal, WARN BAJA). No hay referenci
 de velocidad en la base de conocimiento; la velocidad bruta solo cuenta frente a
 una referencia.
 
+**Escalas de puntuación** de los detectores de rerank (`SCALE` en `ekte/detectors/rerank_*.py`). Cada detector puntúa con la media de sus comprobaciones computadas.
+
+### `rerank.connectivity` — Conectividad del endpoint de rerank
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `rerank.connectivity` | El endpoint de rerank devolvió una clasificación. | Correcto | 100 pts |
+|  | El endpoint de rerank respondió sin una puntuación por documento. | Fallo · Alta | 0 pts |
+|  | La solicitud de rerank falló. | Fallo · Alta | 0 pts |
+
+### `rerank.identity` — Identidad del modelo de rerank
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `rerank.model_field` | El relay devuelve el modelo solicitado. | Correcto | 100 pts |
+|  | El relay devuelve un modelo distinto del solicitado. | Advertencia · Media | 50 pts |
+|  | El relay devuelve otro id de modelo que ekte no puede identificar: se registra, no se juzga. | Info | No computa |
+|  | El relay no devuelve ningún campo model. | Info | No computa |
+|  | La solicitud de rerank falló; no hay campo de modelo que comprobar. | No concluyente | No computa |
+
+### `rerank.drift` — Deriva del rerank
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `rerank.drift` | La clasificación y las puntuaciones de la sonda fija coinciden con la ejecución anterior. | Correcto | 100 pts |
+|  | Las puntuaciones de la sonda fija han cambiado desde la ejecución anterior (entre 0,01 y 0,1 en la escala de puntuación), con la misma clasificación. | Advertencia · Media | 60 pts |
+|  | La clasificación de la sonda fija ha cambiado desde la ejecución anterior, o sus puntuaciones se han movido más de 0,1 en la escala de puntuación: se ha sustituido el modelo. | Fallo · Alta | 0 pts |
+|  | No hay ejecución anterior con la que comparar; la clasificación de esta ejecución es la referencia. | Info | No computa |
+|  | No se devolvió ninguna clasificación para la sonda fija. | No concluyente | No computa |
+
+### `rerank.determinism` — Determinismo del rerank
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `rerank.determinism` | La misma consulta dos veces da la misma clasificación y las mismas puntuaciones. | Correcto | 100 pts |
+|  | La misma consulta dos veces da una clasificación o puntuaciones distintas. | Advertencia · Media | 50 pts |
+|  | No se devolvieron clasificaciones que comparar. | No concluyente | No computa |
+
+### `rerank.known_answer` — Sonda de rerank de respuesta conocida
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `rerank.known_answer` | El documento claramente relevante queda en primer lugar. | Correcto | 100 pts |
+|  | Otro documento queda por delante del claramente relevante. | Fallo · Alta | 0 pts |
+|  | No se devolvió ninguna clasificación que comprobar. | No concluyente | No computa |
+
+### `performance.rerank` — Prueba de rendimiento de reranking
+
+| Comprobación | Resultado | Estado | Efecto |
+|---|---|---|---|
+| `performance.summary` | Se midieron la latencia y el rendimiento del reranking. | Info | No computa |
+|  | Ninguna de las solicitudes de sondeo tuvo éxito. | No concluyente | No computa |
+| `performance.latency_consistency` | La latencia es constante (ratio de cola como máximo 1,3). | Correcto | 100 pts |
+|  | La latencia es estable (ratio de cola como máximo 1,75). | Correcto | 85 pts |
+|  | La latencia varía notablemente (ratio de cola como máximo 2,5). | Advertencia · Baja | 65 pts |
+|  | La latencia es errática (ratio de cola superior a 2,5). | Fallo · Baja | 40 pts |
+|  | Muy pocas muestras para juzgar la constancia de la latencia. | Info | No computa |
+| `performance.throughput_consistency` | El rendimiento es constante (ratio de cola como máximo 1,3). | Correcto | 100 pts |
+|  | El rendimiento es estable (ratio de cola como máximo 1,75). | Correcto | 85 pts |
+|  | El rendimiento varía notablemente (ratio de cola como máximo 2,5). | Advertencia · Baja | 65 pts |
+|  | El rendimiento es errático (ratio de cola superior a 2,5). | Fallo · Baja | 40 pts |
+|  | Muy pocas muestras para juzgar la constancia del rendimiento. | Info | No computa |
+| `performance.errors` | Falló como máximo el 2 % de las peticiones de la sonda. | Correcto | 100 pts |
+|  | Hasta el 10 % de las peticiones de la sonda fallaron o agotaron el tiempo. | Advertencia · Baja | 80 pts |
+|  | Muchas peticiones de la sonda fallaron o agotaron el tiempo. | Fallo · Baja | 50 pts |
+| `performance.load_stability` | La latencia se mantiene bajo carga concurrente (como máximo 1,5x). | Correcto | 100 pts |
+|  | La latencia aumenta bajo carga concurrente (hasta 3x). | Advertencia · Baja | 80 pts |
+|  | La latencia se degrada mucho bajo carga concurrente (más de 3x). | Fallo · Baja | 55 pts |
+| `performance.document_scaling` | Una consulta sobre 32 documentos cuesta mucho menos por documento que una sobre 4. | Correcto | 100 pts |
+|  | Una consulta sobre 32 documentos cuesta por documento casi lo mismo que una sobre 4 (compatible con un relay que divide o serializa los documentos). | Advertencia · Baja | 60 pts |
+|  | Muy pocas muestras para juzgar cómo escala la latencia con el número de documentos. | Info | No computa |
+| `performance.cache_hit` | Consultas de prueba únicas devolvieron puntuaciones repetidas (excluidas de las estadísticas). | Advertencia · Baja | 60 pts |
+|  | La línea base devolvió puntuaciones repetidas para consultas de prueba únicas (sin puntuar). | Info | No computa |
+| `performance.relay_overhead` | Latencia comparada con la referencia de confianza (solo informativo). | Info | No computa |
+| `performance.skipped` | La sonda de rendimiento estaba desactivada. | Info | No computa |
+
 ---
 
 ## Correspondencia truco → detector
@@ -1287,7 +1471,7 @@ Los 16 trucos de relay de la investigación se reparten así en ekte.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | sobrecarga fija de tokens de entrada (dos tamaños) + sonda de filtración |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | tasa de éxito (429 aparte), latencia de cola, estabilidad bajo carga; la medición a lo largo del tiempo está en la hoja de ruta |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | herramientas, modo JSON, esquema estricto, parámetros; una sonda cada uno, no tasas |
-| 16 | `integrity.response-tampering` | critical | `integrity` | canarios de respuesta conocida (URL de instalación sintéticas y conocidas, paquetes con versión fijada, una línea `git clone`, una dirección de cartera derivada por endpoint) en salida normal, en streaming y en argumentos de herramientas; ALTA cuando una repetición vuelve a sustituir, CRÍTICA cuando una referencia lo corrobora |
+| 16 | `integrity.response-tampering` | critical | `integrity` | canarios de respuesta conocida (URL de instalación sintéticas y conocidas, paquetes con versión fijada, una línea `git clone`, una dirección de cartera derivada por endpoint) en salida normal, en streaming y en argumentos de herramientas; MEDIA para una sola sustitución que no confirman ni una referencia ni una repetición, ALTA cuando una repetición vuelve a sustituir, CRÍTICA cuando una referencia lo corrobora |
 
 ---
 

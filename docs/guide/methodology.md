@@ -515,8 +515,7 @@ hold for every model of the vendor, and a same-vendor cutoff is often shared.
    "Step-2"); fingerprint answers never
    count them, so "let me think step by step" is not a rival brand. A vendor
    that owns such a word keeps it as its own.
-2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
-   tokenizer quirks, formatting, language-bound probes, …): up to six
+2. **Behavioral fingerprints** from the knowledge base: up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
    `expect_not_contains` or `expect_regex`; output capped at 512 tokens. Terms under `expect_not_contains` match whole words (`meta` is not found in
    `metadata`; a version may follow, as in `Qwen2.5`). A
@@ -528,6 +527,12 @@ hold for every model of the vendor, and a same-vendor cutoff is often shared.
    share is corroborated (MEDIUM); one the baseline shares is a knowledge-base
    problem, not relay evidence, and is recorded as Info without deduction
    (evidence `baseline_also_diverged`). A rival brand stays HIGH either way.
+   What runs depends on the knowledge base: only a few packaged profiles have
+   pure-code probes of their own; most have only their provider's, most often
+   a second self-identification prompt, a dated fact or a tokenizer artifact
+   that every model of the vendor answers alike, and about a third have none.
+   Models of one vendor are therefore usually not told apart without a judge
+   or a baseline (see `model_identity.model_specific` below).
 3. **Knowledge cutoff** (`model_identity.cutoff`), when the profile's
    `knowledge_cutoff` is `YYYY-MM` or `YYYY-MM-DD`: the model is asked for its
    training cutoff as `CUTOFF=YYYY-MM`. Within 6 months of the profile's it is
@@ -779,12 +784,15 @@ When the model streams its reasoning (reasoning deltas, thinking blocks, Respons
 | `streaming.ttft_vs_total` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.uniform_gaps` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.no_usage` | No usage chunk in the stream: deducts 15 points when nothing is buffered. | Warning · Low | up to −15 pts |
-| `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | Not counted |
+| `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | No deduction |
 | `streaming.unsupported` | The relay does not stream for this model. | Fail · Medium | cap 0 |
-| `streaming.failed` | The streaming request failed twice (5xx, timeout or another transport failure); not scored. | Inconclusive · Low | Not counted |
+| `streaming.failed` | The streaming request failed twice (5xx, timeout or another transport failure); not scored. | Inconclusive · Low | No deduction |
 
 So: genuine 100 · usage missing 85 · one buffering signal 60 · two or more 40 ·
-not supported 0 · failed twice or no content: no score.
+not supported 0 · failed twice or no content: no score. "No deduction" in the
+`streaming.no_content` and `streaming.failed` rows is the wording of the
+deduction scale; the detector leaves its result unscored in both cases, so it
+does not count toward the dimension.
 
 **Caveats.** Short outputs, a fast small model or network jitter can resemble a
 burst. An upstream that cannot stream forces the relay to buffer legitimately;
@@ -849,7 +857,12 @@ undercount (below half the estimate) is informational (not buyer-harmful).
 A failed probe request leaves the detector unscored.
 
 **Caveats.** Chat templates and special tokens add a small fixed offset, so an
-exact match is not expected. If the served model differs from the claimed one,
+exact match is not expected. Without a baseline the tolerance lets moderate
+inflation pass: a proportional inflation that keeps the slope at or below
+1.35 (about a fifth above the real count, given the heuristic's under-count)
+is not flagged, nor, in the single-request fallback, prompt tokens below 2.5×
+the estimate. Compare mode with a baseline of the same model catches more
+than 3%. If the served model differs from the claimed one,
 the "right" tokenizer is unknown. Hidden reasoning tokens cannot be counted
 from outside. Three sizes up to about 2,400 tokens separate a proportional
 factor from a fixed overhead; a multiplier that only sets in on much larger
@@ -1118,14 +1131,22 @@ profiles have; for every other model it is not shown.
 An audit's **surface** (`chat` by default, or `embedding`) selects the
 detectors; the suite still sets the depth. An embedding audit sends only
 `POST /embeddings` requests and reuses the chat dimensions and the shared
-0–100 score and A–F grade, with per-surface weights. A dimension mismatch
-(MODEL_IDENTITY, HIGH) makes the risk HIGH, as a swapped model does on chat.
+0–100 score and A–F grade, with its own weights (`SURFACE_WEIGHTS` in
+`ekte/scoring.py`). A dimension mismatch (MODEL_IDENTITY, HIGH) makes the risk
+HIGH, as a swapped model does on chat.
 
-| Check | Id | Dimension | What it tests |
+| Dimension | Id | Weight | Role |
+|---|---|---|---|
+| Model identity | `model_identity` | 40 | core |
+| Performance | `performance` | 20 |  |
+| Capability claims | `capability` | 15 |  |
+| Response integrity | `integrity` | 15 |  |
+| Connectivity | `connectivity` | 10 |  |
+
+| Detector | Id | Dimension | What it tests |
 |---|---|---|---|
 | Connectivity | `embed.connectivity` | Connectivity | the endpoint returns well-formed vectors |
-| Vector dimension | `embed.dimension` | Model identity | returned length vs the claimed model's native dimension (KB, or `claimed_dimensions`) |
-| Echoed model | `embed.model_field` | Model identity | the response's `model` field names the claimed model |
+| Model identity | `embed.identity` | Model identity | `embed.dimension`: the returned length vs the claimed model's native dimension (KB, or `claimed_dimensions`); `embed.model_field`: the response's `model` field names the claimed model |
 | Vector drift | `embed.drift` | Model identity | the pinned probe input's vector vs the previous saved run |
 | Determinism | `embed.determinism` | Response integrity | the same input twice gives cosine ≥ 0.9999 |
 | Distinctness | `embed.distinctness` | Capability claims | unrelated inputs give cosine below 0.98 |
@@ -1164,21 +1185,108 @@ load stability. **Document-count scaling** compares the per-document latency
 of 32 documents with that of 4: at 0.6x or more the documents are split or
 serialized (linear, WARN LOW).
 
+**Scoring scales** of the embedding detectors (`SCALE` in `ekte/detectors/embed_*.py`). Each detector scores the mean of its counted checks.
+
+### `embed.connectivity` — Embedding endpoint connectivity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.connectivity` | The embeddings endpoint returned vectors. | Pass | 100 pts |
+|  | The embeddings endpoint answered without one vector per input. | Fail · High | 0 pts |
+|  | The embeddings request failed. | Fail · High | 0 pts |
+
+### `embed.identity` — Embedding model identity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.dimension` | The vector length matches the claimed model. | Pass | 100 pts |
+|  | The vector length differs from the claimed model's (another model is served). | Fail · High | 0 pts |
+|  | The claimed model's vector length is unknown; the observed length is recorded. | Info | Not counted |
+|  | No vector was returned to measure. | Inconclusive | Not counted |
+| `embed.model_field` | The relay echoes the requested model. | Pass | 100 pts |
+|  | The relay echoes a different model than the one requested. | Warning · Medium | 50 pts |
+|  | The relay echoes a different model id that ekte cannot place: recorded, not judged. | Info | Not counted |
+|  | The relay echoes no model field. | Info | Not counted |
+
+### `embed.drift` — Embedding vector drift
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.drift` | The pinned input's vector matches the previous run. | Pass | 100 pts |
+|  | The pinned input's vector moved since the previous run (cosine 0.95 to 0.995). | Warning · Medium | 60 pts |
+|  | The pinned input's vector changed since the previous run (cosine below 0.95, or another length): the model was swapped. | Fail · High | 0 pts |
+|  | No previous run to compare with; this run's vector is the baseline. | Info | Not counted |
+|  | No vector was returned for the pinned input. | Inconclusive | Not counted |
+
+### `embed.determinism` — Embedding determinism
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.determinism` | The same input twice gives the same vector. | Pass | 100 pts |
+|  | The same input twice gives different vectors. | Warning · Medium | 50 pts |
+|  | No vectors were returned to compare. | Inconclusive | Not counted |
+
+### `embed.distinctness` — Embedding distinctness
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.distinctness` | Unrelated inputs give clearly different vectors. | Pass | 100 pts |
+|  | Unrelated inputs give near-identical vectors (a degenerate or stub backend). | Warning · High | 30 pts |
+|  | No vectors were returned to compare. | Inconclusive | Not counted |
+
+### `performance.embed` — Embedding performance probe
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `performance.summary` | Embedding latency and throughput were measured. | Info | Not counted |
+|  | None of the probe requests succeeded. | Inconclusive | Not counted |
+| `performance.latency_consistency` | Latency is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Latency is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Latency varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Latency is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent latency is. | Info | Not counted |
+| `performance.throughput_consistency` | Throughput is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Throughput is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Throughput varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Throughput is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent throughput is. | Info | Not counted |
+| `performance.errors` | At most 2% of the probe requests failed. | Pass | 100 pts |
+|  | Up to 10% of the probe requests failed or timed out. | Warning · Low | 80 pts |
+|  | Many probe requests failed or timed out. | Fail · Low | 50 pts |
+| `performance.load_stability` | Latency holds up under concurrent load (at most 1.5x). | Pass | 100 pts |
+|  | Latency rises under concurrent load (up to 3x). | Warning · Low | 80 pts |
+|  | Latency degrades sharply under concurrent load (above 3x). | Fail · Low | 55 pts |
+| `performance.batch_scaling` | A batch of 16 inputs costs far less per input than single requests. | Pass | 100 pts |
+|  | A batch of 16 inputs costs about as much per input as single requests (consistent with a relay that splits or serialises batches). | Warning · Low | 60 pts |
+|  | Too few batch samples to judge how latency scales with batch size. | Info | Not counted |
+| `performance.cache_hit` | Unique probe inputs came back with repeated vectors (left out of the statistics). | Warning · Low | 60 pts |
+|  | The baseline returned repeated vectors for unique probe inputs (not scored). | Info | Not counted |
+| `performance.relay_overhead` | Latency compared with the trusted baseline (informational). | Info | Not counted |
+| `performance.skipped` | The performance probe was disabled. | Info | Not counted |
+
 ---
 
 ## Rerank surface
 
 A rerank audit (`surface` `rerank`) sends only `POST /rerank` requests and is
-scored on the shared 0–100 scale and A–F grade with its own weights: model
-identity 30, capability claims 30, performance 20, response integrity 10,
-connectivity 10. A failed known-answer ranking (capability claims, HIGH) or a
-swapped model (model identity, HIGH) makes the risk HIGH.
+scored on the shared 0–100 scale and A–F grade with its own weights
+(`SURFACE_WEIGHTS` in `ekte/scoring.py`). A failed known-answer ranking
+(capability claims, HIGH) or a swapped model (model identity, HIGH) makes the
+risk HIGH.
 
-| Check | Id | Dimension | What it tests |
+| Dimension | Id | Weight | Role |
+|---|---|---|---|
+| Model identity | `model_identity` | 30 | core |
+| Capability claims | `capability` | 30 | core |
+| Performance | `performance` | 20 |  |
+| Response integrity | `integrity` | 10 |  |
+| Connectivity | `connectivity` | 10 |  |
+
+| Detector | Id | Dimension | What it tests |
 |---|---|---|---|
 | Connectivity | `rerank.connectivity` | Connectivity | the endpoint returns a well-formed ranking |
 | Known answer | `rerank.known_answer` | Capability claims | a probe with one obviously relevant document ranks it first |
-| Echoed model | `rerank.identity` | Model identity | the response's `model` field names the claimed model |
+| Echoed model | `rerank.identity` | Model identity | `rerank.model_field`: the response's `model` field names the claimed model |
 | Ranking drift | `rerank.drift` | Model identity | the pinned probe's ranking and scores vs the previous saved run |
 | Determinism | `rerank.determinism` | Response integrity | the same query twice gives the same ranking and scores |
 | Performance probe | `performance.rerank` | Performance | latency, cold start, documents/s, document-count scaling |
@@ -1196,6 +1304,82 @@ a baseline), 4 vs 32 documents per query, nonce-varied queries for cache
 detection, and a response that leaves documents unscored counts as a failed
 request. There is no knowledge-base speed reference; raw speed only counts
 against a baseline.
+
+**Scoring scales** of the rerank detectors (`SCALE` in `ekte/detectors/rerank_*.py`). Each detector scores the mean of its counted checks.
+
+### `rerank.connectivity` — Rerank endpoint connectivity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.connectivity` | The rerank endpoint returned a ranking. | Pass | 100 pts |
+|  | The rerank endpoint answered without one score per document. | Fail · High | 0 pts |
+|  | The rerank request failed. | Fail · High | 0 pts |
+
+### `rerank.identity` — Rerank model identity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.model_field` | The relay echoes the requested model. | Pass | 100 pts |
+|  | The relay echoes a different model than the one requested. | Warning · Medium | 50 pts |
+|  | The relay echoes a different model id that ekte cannot place: recorded, not judged. | Info | Not counted |
+|  | The relay echoes no model field. | Info | Not counted |
+|  | The rerank request failed; there is no model field to check. | Inconclusive | Not counted |
+
+### `rerank.drift` — Rerank drift
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.drift` | The pinned probe's ranking and scores match the previous run. | Pass | 100 pts |
+|  | The pinned probe's scores moved since the previous run (by 0.01 to 0.1 on the score scale), with the same ranking. | Warning · Medium | 60 pts |
+|  | The pinned probe's ranking changed since the previous run, or its scores moved by more than 0.1 on the score scale: the model was swapped. | Fail · High | 0 pts |
+|  | No previous run to compare with; this run's ranking is the baseline. | Info | Not counted |
+|  | No ranking was returned for the pinned probe. | Inconclusive | Not counted |
+
+### `rerank.determinism` — Rerank determinism
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.determinism` | The same query twice gives the same ranking and scores. | Pass | 100 pts |
+|  | The same query twice gives a different ranking or scores. | Warning · Medium | 50 pts |
+|  | No rankings were returned to compare. | Inconclusive | Not counted |
+
+### `rerank.known_answer` — Rerank known-answer probe
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.known_answer` | The obviously relevant document is ranked first. | Pass | 100 pts |
+|  | Another document is ranked above the obviously relevant one. | Fail · High | 0 pts |
+|  | No ranking was returned to check. | Inconclusive | Not counted |
+
+### `performance.rerank` — Rerank performance probe
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `performance.summary` | Rerank latency and throughput were measured. | Info | Not counted |
+|  | None of the probe requests succeeded. | Inconclusive | Not counted |
+| `performance.latency_consistency` | Latency is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Latency is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Latency varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Latency is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent latency is. | Info | Not counted |
+| `performance.throughput_consistency` | Throughput is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Throughput is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Throughput varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Throughput is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent throughput is. | Info | Not counted |
+| `performance.errors` | At most 2% of the probe requests failed. | Pass | 100 pts |
+|  | Up to 10% of the probe requests failed or timed out. | Warning · Low | 80 pts |
+|  | Many probe requests failed or timed out. | Fail · Low | 50 pts |
+| `performance.load_stability` | Latency holds up under concurrent load (at most 1.5x). | Pass | 100 pts |
+|  | Latency rises under concurrent load (up to 3x). | Warning · Low | 80 pts |
+|  | Latency degrades sharply under concurrent load (above 3x). | Fail · Low | 55 pts |
+| `performance.document_scaling` | A query over 32 documents costs far less per document than one over 4. | Pass | 100 pts |
+|  | A query over 32 documents costs about as much per document as one over 4 (consistent with a relay that splits or serialises the documents). | Warning · Low | 60 pts |
+|  | Too few samples to judge how latency scales with the number of documents. | Info | Not counted |
+| `performance.cache_hit` | Unique probe queries came back with repeated scores (left out of the statistics). | Warning · Low | 60 pts |
+|  | The baseline returned repeated scores for unique probe queries (not scored). | Info | Not counted |
+| `performance.relay_overhead` | Latency compared with the trusted baseline (informational). | Info | Not counted |
+| `performance.skipped` | The performance probe was disabled. | Info | Not counted |
 
 ---
 
@@ -1220,7 +1404,7 @@ The 16 relay tricks from the research map onto ekte as follows.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | fixed input-token overhead (two sizes) + leak probe |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | success rate (429 separate), tail latency, load stability; longitudinal probing is roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | tools, JSON mode, strict schema, parameters; one probe each, not rates |
-| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer canaries (synthetic and well-known install URLs, pinned packages, a `git clone` line, a wallet address derived per endpoint) in plain, streamed and tool-argument output; HIGH when a repeat substitutes again, CRITICAL when a baseline corroborates |
+| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer canaries (synthetic and well-known install URLs, pinned packages, a `git clone` line, a wallet address derived per endpoint) in plain, streamed and tool-argument output; MEDIUM for a single substitution that neither a baseline nor a repeat confirms, HIGH when a repeat substitutes again, CRITICAL when a baseline corroborates |
 
 ---
 

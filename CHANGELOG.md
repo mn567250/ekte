@@ -20,6 +20,44 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Docs: the methodology matches the code, and a test keeps it so ([#263](https://github.com/mn567250/ekte/issues/263))
+
+The methodology said every scoring table in it was the detector's published
+scale, but the embedding and rerank scales were missing, the embedding weights
+were not listed, and some cells and claims had drifted from the code.
+Documentation only; no score or verdict changes.
+
+- **Embedding and rerank scales:** the methodology now has a scoring-scale
+  table (check · outcome · status · effect, the labels verbatim from `SCALE`)
+  for every embedding detector (`embed.connectivity`, `embed.identity`,
+  `embed.drift`, `embed.determinism`, `embed.distinctness`,
+  `performance.embed`) and every rerank detector (`rerank.connectivity`,
+  `rerank.identity`, `rerank.drift`, `rerank.determinism`,
+  `rerank.known_answer`, `performance.rerank`), in all eight languages with
+  the UI's wording.
+- **Weights:** the embedding and rerank sections list their weights as a table
+  like the chat one (embedding: model identity 40, performance 20, capability
+  claims 15, response integrity 15, connectivity 10).
+- **Ids:** both surface tables list detector ids; the embedding identity row
+  is `embed.identity` and names its checks `embed.dimension` and
+  `embed.model_field`, the rerank one names `rerank.model_field`.
+- **`streaming.no_content` and `streaming.failed`** show "No deduction", as the
+  web UI's scoring scale does, with a note that the detector leaves the result
+  unscored.
+- **Model identity:** the fingerprint description no longer lists probe kinds
+  most profiles do not have; it says that few profiles have probes of their
+  own and that models of one vendor are usually not told apart without a
+  judge or a baseline.
+- **Trick map #16** states that a single unconfirmed substitution is MEDIUM.
+- **Billing caveats** state the inflation the tolerance lets pass without a
+  baseline (a slope up to 1.35, or below 2.5× in the single-request fallback).
+- **README:** the capability row says the output probe asks for at most 2,048
+  tokens, instead of promising to catch an undelivered max output.
+- **`tests/test_methodology_scales.py`** compares every scale row of every
+  registered detector with the methodology in both directions (label, status,
+  severity, effect), checks that the seven translations carry the same rows,
+  and that the weight tables equal `SURFACE_WEIGHTS` and the core dimensions.
+
 ### Compare mode: high confidence needs comparisons, not just a configured baseline ([#257](https://github.com/mn567250/ekte/issues/257))
 
 The verdict confidence became **high** as soon as a baseline was configured

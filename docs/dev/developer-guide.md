@@ -150,7 +150,9 @@ project's [Apache-2.0](../../LICENSE) license.
    relay in `tests/conftest.py`.
 6. Translate new finding titles and summaries (see [Translations](translations.md#translations))
    and document the detector and its scale in every
-   [Methodology](../guide/methodology.md) file.
+   [Methodology](../guide/methodology.md) file, under a heading that names the
+   detector id in backticks; `tests/test_methodology_scales.py` checks the
+   tables against the `SCALE`.
 
 ### Changing probe prompts
 
