@@ -78,6 +78,8 @@
     "Incomplete usage breakdown": "用量明细不完整",
     "Integrity canaries inconclusive": "完整性金丝雀结果不确定",
     "Inter-chunk gaps are uniform and near-zero": "分片间隔均匀且接近零",
+    "Chunks arrived in a burst": "分片集中突发到达",
+    "First token only after a whole non-streamed answer's time": "首 token 要等到一次完整非流式回答的时长之后才到达",
     "JSON mode delivered": "JSON 模式已兑现",
     "JSON mode observed without strong claim": "观察到 JSON 模式，但并无明确声称",
     "JSON-mode probe failed to complete": "JSON 模式探测未能完成",

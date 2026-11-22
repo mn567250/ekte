@@ -666,9 +666,13 @@
    "Spätes erstes Token eines Reasoning-Modells",
    "Erstes sichtbares Token nach {ttft_ms} ms von {duration_ms} ms Gesamtdauer; das Modell denkt vor der Antwort nach, daher nicht als Pufferung gezählt."
   ],
+  "streaming.ttft_vs_total": [
+   "Erstes Token erst nach der Dauer einer ganzen Antwort ohne Streaming",
+   "Das erste gestreamte Token kam nach {ttft_ms} ms, bei ~{ttft_vs_total} der {non_stream_ms} ms, die derselbe Prompt ohne Streaming braucht: Die Antwort war fertig, bevor der erste Chunk gesendet wurde."
+  ],
   "streaming.uniform_gaps": [
-   "Gleichmäßige, nahezu leere Chunk-Abstände",
-   "{chunk_count} Chunks, mittlerer Abstand ~{mean_delta_ms} ms, CV {delta_cv} — die Chunks wirken auf einmal ausgeschüttet."
+   "Chunks kamen in einem Schwall",
+   "{burst_gaps} von {gaps} Abständen zwischen {chunk_count} Chunks liegen unter 2 ms: Die Chunks wurden auf einmal ausgeschüttet."
   ],
   "streaming.no_usage": [
    "Kein usage-Chunk im Stream",

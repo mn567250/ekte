@@ -661,9 +661,13 @@
    "Sent første token fra en resonnerende modell",
    "Første synlige token etter {ttft_ms} ms av {duration_ms} ms total varighet; modellen tenker før den svarer, så det telles ikke som bufring."
   ],
+  "streaming.ttft_vs_total": [
+   "Første token først etter tiden et helt svar uten strømming tar",
+   "Det første strømmede tokenet kom etter {ttft_ms} ms, ~{ttft_vs_total} av de {non_stream_ms} ms samme prompt tar uten strømming: svaret var ferdig før den første biten ble sendt."
+  ],
   "streaming.uniform_gaps": [
-   "Jevne opphold mellom bitene, nær null",
-   "{chunk_count} biter, gjennomsnittlig opphold ~{mean_delta_ms} ms, CV {delta_cv} — bitene ser ut til å være sluppet ut på én gang."
+   "Bitene kom i en støt",
+   "{burst_gaps} av {gaps} opphold mellom {chunk_count} biter er under 2 ms: bitene ble sluppet ut på én gang."
   ],
   "streaming.no_usage": [
    "Ingen usage-bit i strømmen",
