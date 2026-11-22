@@ -369,6 +369,7 @@
           - button "Slett"
           - button "Avbryt"
   - text: Viser 15 av 15 revisjoner
+  - button "Vurder alle på nytt med denne versjonen"
   - button "Tøm historikken"
   - status
 - contentinfo:

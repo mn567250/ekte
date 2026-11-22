@@ -369,6 +369,7 @@
           - button "删除"
           - button "取消"
   - text: 显示 15 / 15 条记录
+  - button "用当前版本重新评分全部"
   - button "清空历史"
   - status
 - contentinfo:

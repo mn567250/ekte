@@ -369,6 +369,7 @@
           - button "Löschen"
           - button "Abbrechen"
   - text: 15 von 15 Prüfungen
+  - button "Alle mit dieser Version neu bewerten"
   - button "Verlauf löschen"
   - status
 - contentinfo:
