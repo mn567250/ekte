@@ -60,6 +60,27 @@ REJECTED_ADVICE = (
     "to forward it, or use an endpoint that serves the feature."
 )
 
+
+
+def _tool_call(outcome: CompletionOutcome) -> tuple[dict[str, Any] | None, str | None]:
+    """The first tool call's ``function`` object and name, if any."""
+    call = outcome.tool_calls[0] if outcome.ok and outcome.tool_calls else None
+    fn = call.get("function") if isinstance(call, dict) else None
+    if not isinstance(fn, dict):
+        return None, None
+    name = fn.get("name")
+    return fn, name if isinstance(name, str) and name else None
+
+
+def _retry_result(retry: CompletionOutcome) -> str:
+    """How a repeat that did not deliver ended, for the finding's evidence."""
+    if retry.ok:
+        return "not_delivered"
+    if retry.status_code is not None and 400 <= retry.status_code < 500:
+        return f"rejected (HTTP {retry.status_code})"
+    return "failed"
+
+
 SCALE = Scale(
     outcome("capability.tools", "delivered", 100.0, Status.PASS,
             label="A tool call came back for an explicit tool-use request."),
@@ -215,12 +236,25 @@ class CapabilityDetector(Detector):
             return
 
         self._relay_answers = True
-        call = outcome.tool_calls[0] if outcome.tool_calls else None
-        fn = call.get("function") if isinstance(call, dict) else None
-        fn_name = fn.get("name") if isinstance(fn, dict) else None
-        has_call = bool(fn_name)
+        fn, fn_name = _tool_call(outcome)
+        calls = [outcome]
+        retry_evidence: dict[str, Any] = {}
+        if not fn_name and claimed:
+            # Genuine models occasionally answer in text with tool_choice auto:
+            # one sample must not decide a MEDIUM finding. Repeat once with the
+            # tool forced (Anthropic: {"type": "any"}); a model that rejects
+            # forced tool use (4xx) falls back to the first answer.
+            forced = spec.model_copy(update={"tool_choice": "required"})
+            retry = await ctx.client.complete(forced)
+            calls.append(retry)
+            r_fn, r_name = _tool_call(retry)
+            if retry.ok and r_name:
+                outcome, fn, fn_name = retry, r_fn, r_name
+                retry_evidence = {"needed_required": True}
+            else:
+                retry_evidence = {"required_retry": _retry_result(retry)}
 
-        if has_call:
+        if fn_name:
             # Native OpenAI returns function.arguments as a JSON *string*. A dict
             # here suggests a non-OpenAI engine behind an OpenAI-shaped relay.
             args = fn.get("arguments") if isinstance(fn, dict) else None
@@ -234,10 +268,15 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.tools",
                     "delivered",
-                    calls=[outcome],
+                    calls=calls,
                     title="Tool calling delivered",
-                    summary=f"Returned a tool call to '{fn_name}'.",
-                    evidence=evidence,
+                    summary=f"Returned a tool call to '{fn_name}'."
+                    + (
+                        " The first request (tool_choice auto) got a text answer; the "
+                        "repeat with tool_choice required got the call."
+                        if retry_evidence else ""
+                    ),
+                    evidence={**evidence, **retry_evidence},
                 )
             )
             if non_openai_encoding:
@@ -260,13 +299,18 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.tools",
                     "not_delivered",
-                    calls=[outcome],
+                    calls=calls,
                     title="Claimed tool-calling not delivered",
                     summary=(
                         "Profile claims tool-calling support but the relay returned no tool "
-                        "call for an explicit tool-use request."
+                        "call for an explicit tool-use request, nor for its repeat with "
+                        "tool_choice required."
                     ),
-                    evidence={"finish_reason": outcome.finish_reason, "had_content": outcome.has_content()},
+                    evidence={
+                        "finish_reason": outcome.finish_reason,
+                        "had_content": outcome.has_content(),
+                        **retry_evidence,
+                    },
                     recommendation="Confirm the served engine actually supports function calling.",
                 )
             )
@@ -318,16 +362,30 @@ class CapabilityDetector(Detector):
         self._relay_answers = True
         parsed = first_json_object(outcome.content)
         value_ok = parsed is not None and parsed.get("value") == 7429
+        calls = [outcome]
+        retry_evidence: dict[str, Any] = {}
+        if not value_ok and claimed:
+            # One sample must not decide a MEDIUM finding: repeat once. A repeat
+            # that fails to complete falls back to the first answer.
+            retry = await ctx.client.complete(spec)
+            calls.append(retry)
+            r_parsed = first_json_object(retry.content) if retry.ok else None
+            if r_parsed is not None and r_parsed.get("value") == 7429:
+                outcome, parsed, value_ok = retry, r_parsed, True
+                retry_evidence = {"needed_repeat": True}
+            else:
+                retry_evidence = {"repeat": _retry_result(retry)}
 
         if parsed is not None and value_ok:
             result.findings.append(
                 SCALE.finding(
                     "capability.json_mode",
                     "delivered",
-                    calls=[outcome],
+                    calls=calls,
                     title="JSON mode delivered",
-                    summary="response_format=json_object produced a parseable object with the requested value.",
-                    evidence={"parsed_keys": sorted(parsed.keys())},
+                    summary="response_format=json_object produced a parseable object with the requested value."
+                    + (" The first answer did not; its repeat did." if retry_evidence else ""),
+                    evidence={"parsed_keys": sorted(parsed.keys()), **retry_evidence},
                 )
             )
         elif claimed:
@@ -335,13 +393,13 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_mode",
                     "not_delivered",
-                    calls=[outcome],
+                    calls=calls,
                     title="Claimed JSON mode not delivered",
                     summary=(
                         "Profile claims JSON-mode support but the relay did not return a valid "
-                        "JSON object carrying the requested value."
+                        "JSON object carrying the requested value, twice."
                     ),
-                    evidence={"parsed": parsed is not None, "value_matched": value_ok},
+                    evidence={"parsed": parsed is not None, "value_matched": value_ok, **retry_evidence},
                     recommendation="Verify the served engine honors response_format=json_object.",
                 )
             )
