@@ -229,6 +229,7 @@ async def test_ten_percent_more_than_the_baseline_fails_high():
     assert len(base.specs) == 3 and [s.messages for s in base.specs] == [s.messages for s in target.specs]
     assert "billing.prompt-slope" not in found  # the baseline replaces the heuristic verdict
     assert result.status == Status.FAIL and result.score == 55.0
+    assert result.baseline_compared is True  # #257
 
 
 async def test_matching_the_baseline_passes_even_with_a_dense_tokenizer():
@@ -251,6 +252,7 @@ async def test_baseline_of_another_protocol_or_model_is_not_compared():
         result = await BillingDetector().run(_ctx(_UsageStub(factor=1.1), baseline_client=base, **kw))
         assert base.specs == [] and "billing.prompt-vs-baseline" not in _by_id(result)
         assert _by_id(result)["billing.prompt-slope"].outcome == "proportional"
+        assert result.baseline_compared is False
 
 
 # --------------------------------------------------------------------------- #

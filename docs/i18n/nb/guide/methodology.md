@@ -162,9 +162,23 @@ at modellidentiteten ikke ble verifisert.
   ga et brukbart resultat;
 - **middels** — minst to kjernedimensjoner ga et brukbart resultat (eller, i en
   kjøring uten kjernedimensjoner, minst to dimensjoner gjorde det);
-- **høy** — en referanse ble brukt, *og* hver kjernedimensjon som kjørte, ga et
-  brukbart resultat, eller sikkerheten var middels og LLM-dommeren returnerte en
-  brukbar konklusjon.
+- **høy** — en referanse ble brukt, hver kjernedimensjon som kjørte, ga et
+  brukbart resultat, *og* minst to kjernedimensjoner har en detektor som
+  faktisk sammenlignet målet med et brukbart svar fra referansen
+  (`baseline_compared` i rapporten) og ga et brukbart resultat. Det er ikke
+  nok å konfigurere en referanse: en referanse som feilet, eller som ingen
+  kjernedetektor spurte, lar sikkerheten bli på middels. En dommerkonklusjon
+  alene løfter aldri sikkerheten; en dommerkonklusjon som referansen
+  bekreftet, teller som sammenligningen av modellidentiteten.
+
+Kjernedetektorene sammenligner med referansen når den svarer:
+`model_identity` (et fingeravtrykk eller kunnskapsgrense-proben besvart av
+begge sider), `quality_judge` (referansen besvarte hver probe og ble vist til
+dommeren), `billing` (prompt-tokener talt av en referanse for samme modell på
+samme protokoll) og `capability` (referansen besvarte en probe som målet
+avviste). `context_window` spør aldri referansen. Utenfor kjernen registrerer
+også `integrity`, `protocol_request` og `performance` `baseline_compared`, men
+det teller ikke for sikkerheten.
 
 ## Testsett, detektorer og moduser
 
@@ -208,8 +222,12 @@ at modellidentiteten ikke ble verifisert.
   målets og sender også hvert fingeravtrykk og kunnskapsgrense-proben til
   referansen, `protocol_request` sender avviste parametere på nytt til referansen,
   `integrity` trapper et bytte som referansen ikke gjør, opp til CRITICAL,
-  `quality_judge` viser dommeren begge sider, og `performance` prober begge
-  endepunktene vekselvis. Sikkerheten kan bare nå høy med en referanse.
+  `quality_judge` viser dommeren begge sider, `billing` sammenligner
+  prompt-tokener, `capability` sender en avvist probe på nytt, og
+  `performance` prober begge endepunktene vekselvis. Sikkerheten kan bare nå
+  høy med en referanse, og bare når minst to kjernedimensjoner faktisk ble
+  sammenlignet med den (se
+  [Sikkerhet i konklusjonen](#sikkerhet-i-konklusjonen)).
 - **Kunnskapsbase:** den oppgitte modellens profil (`ekte/knowledge/data/*.yaml`
   pluss dine egne oppføringer i `kb.db`) leverer det oppgitte kontekstvinduet,
   maks utdata, tokenizer, egenskapsflagg, identitetsnøkkelord og
@@ -1261,7 +1279,9 @@ prompt), er faste.
 Et relé kan være testbevisst: kjør på nytt på andre tidspunkter, og
 foretrekk sammenligningsmodus mot en pålitelig referanse for **nøyaktig det
 oppgitte snapshotet** — det er den sterkeste måten å skille modellens atferd fra
-reléets atferd på, og den eneste måten å nå høy sikkerhet.
+reléets atferd på, og den eneste måten å nå høy sikkerhet (minst to
+kjernedimensjoner sammenlignet med referansen; se
+[Sikkerhet i konklusjonen](#sikkerhet-i-konklusjonen)).
 
 **Ansvarlig varsling.** **Ikke** anklag en leverandør offentlig på grunnlag av en
 ekte-rapport. Før du handler, kjør på nytt med flere prøver og på andre

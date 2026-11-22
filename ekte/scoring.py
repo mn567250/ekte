@@ -173,6 +173,10 @@ _WEAK_MATCHES = frozenset({"fuzzy"})
 
 # Statuses that count as a dimension having produced a usable result.
 _USABLE_STATUSES = (Status.PASS, Status.WARN, Status.FAIL)
+# Confidence "high" needs this many core dimensions whose detectors compared
+# the target with the trusted baseline (fewer on a surface with fewer core
+# dimensions) (#257).
+HIGH_CONFIDENCE_COMPARED_DIMENSIONS = 2
 # Detector statuses that do not make a dimension count for coverage: it was
 # skipped, or it only reported information (e.g. nothing claimed to check).
 _NOT_ATTEMPTED = (Status.NOT_RUN, Status.INFO)
@@ -496,9 +500,6 @@ def build_verdict(
         if d.dimension not in infra_dims and d.status in _USABLE_STATUSES
     }
     profile_dims = _dims_for(_SURFACE_PROFILE_DIMENSIONS, surface)
-    judge_effective = any(
-        d.id == "quality_judge" and d.status in _USABLE_STATUSES for d in detectors
-    )
 
     # --- risk classification: driven by FINDING SEVERITY, not score alone --- #
     # ekte only reaches HIGH on hard, high-severity evidence — a single soft
@@ -546,19 +547,29 @@ def build_verdict(
     # --- confidence -------------------------------------------------------- #
     core_attempted = attempted & core_dims
     core_checked = checked & core_dims
+    # Core dimensions with evidence measured against the trusted baseline: a
+    # detector that actually compared with a usable baseline answer and has a
+    # usable status (#257). Configuring a baseline, or a judge on its own, is
+    # not evidence; a judge verdict the baseline corroborated counts for model
+    # identity through ``quality_judge.baseline_compared``.
+    core_compared = {
+        d.dimension
+        for d in detectors
+        if d.dimension in core_dims and d.baseline_compared and d.status in _USABLE_STATUSES
+    }
     if attempted & profile_dims and (not profile_matched or weak_match):
         # Unprofiled, or a fuzzy match whose profile may not be the model's.
         confidence = "low"
-    elif used_baseline and core_checked and core_checked == core_attempted:
+    elif (
+        used_baseline
+        and core_checked == core_attempted
+        and len(core_compared) >= min(HIGH_CONFIDENCE_COMPARED_DIMENSIONS, len(core_dims))
+    ):
         confidence = "high"
     elif len(core_checked) >= 2 or (not core_attempted and len(checked) >= 2):
         confidence = "medium"
     else:
         confidence = "low"
-    # Only let an *effective* judge (one that produced a usable verdict, not merely a
-    # constructed client) lift confidence.
-    if judge_effective and confidence == "medium":
-        confidence = "high"
 
     identity_checked = Dimension.MODEL_IDENTITY in checked
     headline = _headline(risk, confidence, drivers, identity_checked=identity_checked)

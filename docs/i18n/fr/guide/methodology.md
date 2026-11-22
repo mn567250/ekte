@@ -167,9 +167,25 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
 - **Moyenne** — au moins deux dimensions cœur ont produit un résultat
   exploitable (ou, dans une exécution sans dimension cœur, au moins deux
   dimensions en ont produit un) ;
-- **Élevée** — une référence a été utilisée *et* chaque dimension cœur exécutée
-  a produit un résultat exploitable, ou la confiance était moyenne et le juge LLM
-  a rendu un verdict exploitable.
+- **Élevée** — une référence a été utilisée, chaque dimension cœur exécutée a
+  produit un résultat exploitable, *et* au moins deux dimensions cœur ont un
+  détecteur qui a réellement comparé la cible à une réponse exploitable de la
+  référence (`baseline_compared` dans le rapport) et produit un résultat
+  exploitable. Configurer une référence ne suffit pas : une référence en
+  erreur, ou qu'aucun détecteur cœur n'a interrogée, laisse la confiance à
+  moyenne. Un verdict du juge seul n'élève jamais la confiance ; un verdict du
+  juge corroboré par la référence compte comme la comparaison de l'identité du
+  modèle.
+
+Les détecteurs cœur comparent à la référence quand elle répond :
+`model_identity` (une empreinte ou la sonde de date limite à laquelle les deux
+côtés ont répondu), `quality_judge` (la référence a répondu à chaque sonde et
+a été montrée au juge), `billing` (tokens de prompt comptés par une référence
+du même modèle sur le même protocole) et `capability` (la référence a répondu
+à une sonde que la cible a rejetée). `context_window` n'interroge jamais la
+référence. Hors du cœur, `integrity`, `protocol_request` et `performance`
+enregistrent aussi `baseline_compared`, mais cela ne compte pas pour la
+confiance.
 
 ## Suites, détecteurs et modes
 
@@ -214,9 +230,12 @@ du modèle indique que l'identité du modèle n'a pas été vérifiée.
   côté de celle de la cible et envoie aussi chaque empreinte et la sonde de date
   limite à la référence, `protocol_request` renvoie les paramètres rejetés
   à la référence, `integrity` porte à CRITIQUE une substitution que la référence
-  ne fait pas, `quality_judge` montre les deux côtés au juge, et `performance`
-  sonde les deux endpoints en alternance. La confiance ne peut être élevée
-  qu'avec une référence.
+  ne fait pas, `quality_judge` montre les deux côtés au juge, `billing` compare
+  les tokens de prompt, `capability` renvoie une sonde rejetée, et
+  `performance` sonde les deux endpoints en alternance. La confiance ne peut
+  être élevée qu'avec une référence, et seulement si au moins deux dimensions
+  cœur ont réellement été comparées à elle (voir
+  [Confiance du verdict](#confiance-du-verdict)).
 - **Base de connaissances :** le profil du modèle annoncé
   (`ekte/knowledge/data/*.yaml` et vos propres entrées dans `kb.db`) fournit la
   fenêtre de contexte annoncée, la sortie maximale, le tokenizer, les capacités,
@@ -1322,7 +1341,8 @@ Un relais peut détecter les tests :
 relancez à d'autres moments et préférez le mode comparaison contre une
 référence de confiance de **l'instantané exact annoncé** — c'est le meilleur
 moyen de séparer le comportement du modèle de celui du relais, et le seul
-d'atteindre une confiance élevée.
+d'atteindre une confiance élevée (au moins deux dimensions cœur comparées à
+la référence ; voir [Confiance du verdict](#confiance-du-verdict)).
 
 **Divulgation responsable.** **N'accusez pas publiquement un fournisseur** sur
 la base d'un rapport ekte. Avant d'agir : relancez avec plus d'échantillons et à

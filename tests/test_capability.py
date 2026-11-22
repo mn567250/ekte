@@ -181,6 +181,7 @@ async def test_baseline_rejecting_too_is_a_model_limit(knowledge_base):
     assert all(f.status == Status.INFO for f in result.findings if f.scale_check in _FEATURES)
     assert result.score == 100.0
     assert len(baseline.specs) == 3
+    assert result.baseline_compared is True  # #257: the baseline answered
     # a model limit needs no control request
     assert len(client.specs) == 4
 

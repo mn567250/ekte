@@ -166,6 +166,7 @@ async def test_corroborated_substitution_is_critical_and_needs_no_repeat():
     assert (finding.outcome, finding.severity) == ("tampering_corroborated", Severity.CRITICAL)
     assert "repeated_canary" not in finding.evidence
     assert sum("sh.rustup.rs" in s.messages[-1]["content"] for s in relay.specs) == 1
+    assert result.baseline_compared is True
 
 
 async def test_errored_baseline_is_not_usable_so_the_canary_is_repeated():
@@ -173,7 +174,9 @@ async def test_errored_baseline_is_not_usable_so_the_canary_is_repeated():
         async def complete(self, spec):
             return CompletionOutcome(ok=False, status_code=503, error_message="down")
 
-    finding = _tampering(await _run(StubRelay(_rustup_swap), baseline=_Down()))
+    result = await _run(StubRelay(_rustup_swap), baseline=_Down())
+    assert result.baseline_compared is False  # #257: an errored baseline compares nothing
+    finding = _tampering(result)
     assert (finding.outcome, finding.severity) == ("tampering_repeated", Severity.HIGH)
     assert finding.evidence["baseline_unavailable"] is True
     assert "no usable answer" in finding.summary
@@ -192,6 +195,7 @@ async def test_baseline_that_also_changes_the_line_is_model_behavior():
 async def test_honest_relay_passes_every_canary():
     relay = StubRelay()
     result = await _run(relay)
+    assert result.baseline_compared is False
     assert result.status == Status.PASS
     assert result.evidence["verbatim"] == 7  # six text canaries + the tool argument
     assert result.evidence["calls"] == 7

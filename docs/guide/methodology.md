@@ -160,9 +160,23 @@ result says that model identity was not verified.
   result;
 - **medium** — at least two core dimensions produced a usable result (or, in
   a run without core dimensions, at least two dimensions did);
-- **high** — a baseline was used *and* every core dimension that ran produced
-  a usable result, or the confidence was medium and the LLM judge returned a
-  usable verdict.
+- **high** — a baseline was used, every core dimension that ran produced a
+  usable result, *and* at least two core dimensions have a detector that
+  actually compared the target with a usable baseline answer
+  (`baseline_compared` in the report) and a usable result. Configuring a
+  baseline is not enough: a baseline that errored, or that no core detector
+  asked, leaves the confidence at medium. A judge verdict alone never lifts
+  the confidence; a judge verdict the baseline corroborated counts as the
+  model-identity comparison.
+
+Core detectors compare with the baseline when it answers: `model_identity`
+(a fingerprint or the knowledge-cutoff probe answered by both sides),
+`quality_judge` (the baseline answered every probe and was shown to the
+judge), `billing` (prompt tokens counted by a baseline of the same model on
+the same protocol) and `capability` (the baseline answered a probe the target
+rejected). `context_window` never asks the baseline. Outside the core,
+`integrity`, `protocol_request` and `performance` also record
+`baseline_compared`, but it does not count for the confidence.
 
 ## Suites, detectors and modes
 
@@ -206,8 +220,11 @@ result says that model identity was not verified.
   target's and sends every fingerprint and the cutoff probe to the baseline
   too, `protocol_request` re-sends rejected parameters to the baseline,
   `integrity` escalates a substitution the baseline does not make to CRITICAL,
-  `quality_judge` shows the judge both sides, and `performance` probes both
-  endpoints alternately. Confidence can only reach high with a baseline.
+  `quality_judge` shows the judge both sides, `billing` compares prompt
+  tokens, `capability` re-sends a rejected probe, and `performance` probes both
+  endpoints alternately. Confidence can only reach high with a baseline, and
+  only when at least two core dimensions were actually compared with it (see
+  [Verdict confidence](#verdict-confidence)).
 - **Knowledge base:** the claimed model's profile (`ekte/knowledge/data/*.yaml`
   plus your own entries in `kb.db`) supplies the declared context window, max
   output, tokenizer, capability flags, identity keywords and behavioral
@@ -1238,7 +1255,9 @@ run stays consistent, a re-score reuses the recorded value, and
 A relay may be
 test-aware: re-run at other times, and prefer compare mode against a trusted
 baseline of the **exact claimed snapshot** — it is the strongest way to separate
-model behavior from relay behavior and the only way to reach high confidence.
+model behavior from relay behavior and the only way to reach high confidence
+(at least two core dimensions compared with the baseline; see
+[Verdict confidence](#verdict-confidence)).
 
 **Responsible disclosure.** Do **not** publicly accuse a vendor on the basis of
 an ekte report. Before acting, re-run with more samples and at other times,

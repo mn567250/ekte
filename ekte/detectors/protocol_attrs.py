@@ -196,6 +196,8 @@ class ProtocolRequestDetector(Detector):
                 *(send(ctx.baseline_client, p.spec) for p in rejected)
             )
             baseline = {p.name: o for p, o in zip(rejected, base_outs, strict=True)}
+            # Only an answer classify_param can use (accepted or rejected) compares.
+            result.baseline_compared = any(o.ok or is_rejection(o) for o in base_outs)
 
         unsupported = set(model.unsupported_params) if model else set()
         table: dict[str, str] = {}

@@ -312,6 +312,7 @@ class IntegrityDetector(Detector):
             bases = await asyncio.gather(*(ask(c, baseline=True) for c, _ in substituted))
         else:
             bases = [None] * len(substituted)
+        result.baseline_compared = any(base is not None for base in bases)
         for (canary, sub), base in zip(substituted, bases, strict=True):
             if base is not None and not contains_ci(base, canary.expected):
                 # Baseline also failed to echo it — likely model behavior, not tampering.

@@ -167,6 +167,7 @@ async def test_compare_mode_corroborated_fingerprint_is_medium():
     assert f.deduction and f.deduction > 0
     assert f.evidence["baseline_diverged"] is False
     assert FP_PROMPT in baseline.prompts and CUTOFF_PROMPT in baseline.prompts
+    assert result.baseline_compared is True and result.evidence["baseline_compared"] is True
 
 
 async def test_compare_mode_fingerprint_the_baseline_also_misses_is_info():
@@ -194,6 +195,8 @@ async def test_baseline_without_usable_answer_keeps_the_low_divergence():
 
     result = await _run(_profile(shared=[_fp()]), _Relay(fp_answer="five"), _Down())
     assert _finding(result, "model_identity.fp.arith").outcome == "diverged"
+    # #257: a configured baseline that never answered is no comparison
+    assert result.baseline_compared is False and result.evidence["baseline_compared"] is False
 
 
 # --------------------------------------------------------------------------- #

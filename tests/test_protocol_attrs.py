@@ -328,6 +328,7 @@ async def test_a_baseline_tells_a_dropping_relay_from_a_model_limit():
     keys = result.evidence["attributes"]
     assert keys["seed"] == "dropped_by_relay" and keys["user"] == "model_limit"
     assert len(base_seen) == 2  # only the rejected params go to the baseline
+    assert result.baseline_compared is True
     seed = next(f for f in result.findings if f.subject == "seed")
     assert (seed.score, seed.status) == (15.0, Status.FAIL)
 
