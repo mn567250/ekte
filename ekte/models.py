@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
 REPORT_SCHEMA_VERSION = "1.6"
-WEBHOOK_SCHEMA_VERSION = "1.0"
+WEBHOOK_SCHEMA_VERSION = "1.1"
 # Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
 EVIDENCE_SCHEMA_VERSION = "1.2"
 
@@ -806,19 +806,36 @@ class EvidenceRef(BaseModel):
     complete: bool = True
 
 
+class RescoredVerdict(BaseModel):
+    """The verdict a re-scored report had before its latest re-score."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    risk_level: str | None = None
+    overall_score: float | None = None
+    rating: str | None = None
+
+
 class RescoreRef(BaseModel):
     """What a re-scored report was replayed from (see :mod:`ekte.replay`)."""
 
     model_config = ConfigDict(extra="forbid")
 
     # The recorded run: its evidence file's run id and hash, and the ekte
-    # version and time of the original report.
+    # version and time of the original recording. A report re-scored again
+    # keeps these from its first re-score: they always name the audit itself,
+    # never an earlier scoring.
     run_id: str
     evidence_sha256: str
     tool_version: str | None = None
     generated_at: str | None = None
-    # The original report's history id, when it was re-scored from history.
+    # The history id of the run, when it was re-scored from history (a
+    # re-score replaces that run in place, so this is its own id).
     report_id: int | None = None
+    # When this scoring was made (the report's own generated_at), and the
+    # verdict the report had before it (report schema 1.6).
+    rescored_at: str | None = None
+    previous_verdict: RescoredVerdict | None = None
     # Requests answered from the file, requests nothing in the file answered
     # (per detector; such a detector reads inconclusive), recorded exchanges
     # no request asked for.

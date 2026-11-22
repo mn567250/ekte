@@ -23,7 +23,10 @@ fixed probes it sent.
 The re-scored report keeps the recorded run's request ``seq``\\ s (each record
 takes the ``seq`` of the exchange that answered it), so its findings point
 into the same, unchanged evidence file; its ``rescored_from`` says what was
-replayed and what was missing.
+replayed and what was missing, the ekte version and time of the recorded
+audit (carried forward when the report is itself a re-score), when this
+scoring was made and the verdict before it. A run re-scored from History
+replaces the stored report in place (:func:`ekte.web.history.replace`).
 """
 
 from __future__ import annotations
@@ -49,6 +52,7 @@ from ekte.models import (
     EvidenceRef,
     Finding,
     KnowledgeUsage,
+    RescoredVerdict,
     RescoreRef,
     Severity,
     Status,
@@ -159,8 +163,14 @@ class Replay:
         report_id: int | None = None,
         retried: Iterable[int] = (),
         run_nonce: str = "",
+        run_id: str | None = None,
+        previous_verdict: RescoredVerdict | None = None,
     ) -> None:
         self.evidence = ref
+        # the recorded run's id (an earlier re-score's, carried forward), and
+        # the verdict the report had before this re-score
+        self._run_id = run_id or ref.run_id
+        self._previous_verdict = previous_verdict
         # the recorded run's nonce: the replayed audit derives the same probes
         self.run_nonce = run_nonce
         # the seq of every recorded attempt that was repeated (a local or
@@ -230,7 +240,7 @@ class Replay:
 
     def summary(self) -> RescoreRef:
         return RescoreRef(
-            run_id=self.evidence.run_id,
+            run_id=self._run_id,
             evidence_sha256=self.evidence.sha256,
             tool_version=self._tool_version,
             generated_at=self._generated_at,
@@ -238,6 +248,7 @@ class Replay:
             replayed=self.replayed,
             missing=dict(self.missing),
             unused=self.total - self.replayed,
+            previous_verdict=self._previous_verdict,
         )
 
 
@@ -353,6 +364,21 @@ def recorded_nonce(report: dict[str, Any], head: dict[str, Any]) -> str:
     return ""
 
 
+def previous_verdict(report: dict[str, Any]) -> RescoredVerdict | None:
+    """The verdict ``report`` has (risk level, score, grade), as a re-score
+    of it records it."""
+    v = report.get("verdict")
+    if not isinstance(v, dict):
+        return None
+    score = v.get("overall_score")
+    risk, rating = v.get("risk_level"), v.get("rating")
+    return RescoredVerdict(
+        risk_level=risk if isinstance(risk, str) else None,
+        overall_score=float(score) if isinstance(score, int | float) and not isinstance(score, bool) else None,
+        rating=rating if isinstance(rating, str) else None,
+    )
+
+
 async def rescore(
     report: dict[str, Any],
     path: Path,
@@ -384,6 +410,11 @@ async def rescore(
     )
     perf = report.get("performance")
     records = perf.get("requests") if isinstance(perf, dict) else None
+    # A report that is itself a re-score names the recorded run in its
+    # rescored_from: carried forward, so "recorded with" always means the
+    # audit, never the previous scorer.
+    prior = report.get("rescored_from")
+    prior = prior if isinstance(prior, dict) else {}
     replay = Replay(
         [x for x in lines if x.get("type") == "exchange"],
         retried=[
@@ -391,10 +422,12 @@ async def rescore(
             if isinstance(r, dict) and r.get("retried") and isinstance(r.get("seq"), int)
         ],
         ref=ref,
-        tool_version=report.get("tool_version"),
-        generated_at=report.get("generated_at"),
+        tool_version=prior.get("tool_version") if prior else report.get("tool_version"),
+        generated_at=prior.get("generated_at") if prior else report.get("generated_at"),
+        run_id=prior.get("run_id") if isinstance(prior.get("run_id"), str) else None,
         report_id=report_id,
         run_nonce=recorded_nonce(report, head),
+        previous_verdict=previous_verdict(report),
     )
     new = await run_audit(
         target,
@@ -407,6 +440,8 @@ async def rescore(
         on_event=on_event,
         replay=replay,
     )
+    if new.rescored_from is not None:
+        new.rescored_from.rescored_at = new.generated_at
     if new.knowledge is not None and pinned is not None:
         # the original run's profile: pinned as that run had it (by a monitor or not)
         new.knowledge.pinned = bool(knowledge.get("pinned")) if isinstance(knowledge, dict) else False

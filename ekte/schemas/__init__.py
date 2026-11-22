@@ -72,6 +72,11 @@ class WebhookPayload(BaseModel):
     key_findings: list[str]
     previous_risk_level: str | None = None
     regressed: bool
+    # 1.1: an alert about a stored run that was re-scored, and the ekte
+    # versions the audit ran and was scored with
+    rescored: bool = False
+    audit_tool_version: str | None = None
+    scoring_tool_version: str | None = None
 
 
 def _relax(node: Any) -> None:
