@@ -56,7 +56,12 @@ language, and to the English file where there is no translation.
 The English files are the reference. When you change one, change every
 translation in the same pull request, and use the UI's own wording in each
 language (look the term up in `ekte/i18n/locales/`). The methodology quotes the
-scoring scales with the wording the UI shows under **Scoring scale**. A new
+scoring scales with the wording the UI shows under **Scoring scale**;
+`tests/test_methodology_scales.py` fails when a scale row of any detector
+(chat, embedding or rerank) is missing from the English methodology or differs
+in label, status, severity or effect, when a translation lacks a row or shows
+another status, severity or effect, and when a weight table differs from
+`SURFACE_WEIGHTS`. A new
 user guide page needs a translation in every language and a row in the
 README's documentation table.
 
