@@ -748,6 +748,9 @@ class CapabilityDetector(Detector):
         if base is not None:
             evidence["baseline_status_code"] = base.status_code
             calls.append(base)
+            # An answer or a feature rejection is a usable comparison.
+            if base.ok or is_feature_rejection(base):
+                result.baseline_compared = True
             if is_feature_rejection(base):
                 result.findings.append(
                     SCALE.finding(

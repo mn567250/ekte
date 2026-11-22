@@ -67,6 +67,11 @@
     "DetectorResult": {
       "description": "The result of running one detector.",
       "properties": {
+        "baseline_compared": {
+          "default": false,
+          "title": "Baseline Compared",
+          "type": "boolean"
+        },
         "dimension": {
           "$ref": "#/$defs/Dimension"
         },

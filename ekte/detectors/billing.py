@@ -287,6 +287,7 @@ class BillingDetector(Detector):
         # (one usable size) the single-request margin.
         baseline = await self._baseline_counts(ctx, with_prompt)
         if baseline:
+            result.baseline_compared = True
             worsen(self._baseline_verdict(result, with_prompt, baseline))
         elif fit is not None:
             worsen(self._slope_verdict(result, with_prompt, fit))

@@ -45,14 +45,17 @@ def _result(
     score: float | None,
     status: Status,
     findings: list[Finding] | None = None,
+    compared: bool = False,
+    detector_id: str | None = None,
 ) -> DetectorResult:
     return DetectorResult(
-        id=f"{dimension.value}-det",
+        id=detector_id or f"{dimension.value}-det",
         name=dimension.value,
         dimension=dimension,
         score=score,
         status=status,
         findings=findings or [],
+        baseline_compared=compared,
     )
 
 
@@ -60,12 +63,16 @@ def _info(dim_id: str) -> Finding:
     return Finding(id=f"{dim_id}.ok", title="All good", status=Status.PASS, severity=Severity.INFO)
 
 
-def _clean_core_detectors() -> list[DetectorResult]:
-    """One passing detector for each core (substitution-revealing) dimension."""
+def _clean_core_detectors(*compared: Dimension) -> list[DetectorResult]:
+    """One passing detector for each core (substitution-revealing) dimension;
+    those in ``compared`` compared the target with the baseline."""
     return [
-        _result(Dimension.MODEL_IDENTITY, score=95.0, status=Status.PASS, findings=[_info("identity")]),
-        _result(Dimension.CONTEXT_WINDOW, score=92.0, status=Status.PASS, findings=[_info("context")]),
-        _result(Dimension.CAPABILITY, score=90.0, status=Status.PASS, findings=[_info("capability")]),
+        _result(d, score=s, status=Status.PASS, findings=[_info(d.value)], compared=d in compared)
+        for d, s in (
+            (Dimension.MODEL_IDENTITY, 95.0),
+            (Dimension.CONTEXT_WINDOW, 92.0),
+            (Dimension.CAPABILITY, 90.0),
+        )
     ]
 
 
@@ -239,8 +246,8 @@ def test_verdict_confidence_low_when_profile_unmatched():
     assert verdict.confidence == "low"
 
 
-def test_verdict_confidence_high_with_baseline_and_full_core():
-    detectors = _clean_core_detectors()
+def test_verdict_confidence_high_with_two_baseline_compared_core_dimensions():
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY, Dimension.CAPABILITY)
     dims = build_dimensions(detectors, reliability=None)
     verdict = build_verdict(
         detectors, dims, profile_matched=True, used_judge=False, used_baseline=True
@@ -248,10 +255,77 @@ def test_verdict_confidence_high_with_baseline_and_full_core():
     assert verdict.confidence == "high"
 
 
+def test_verdict_baseline_without_comparisons_stays_medium():
+    # #257: a configured baseline that no core detector compared against is no
+    # evidence: the confidence describes the evidence, not the configuration.
+    detectors = _clean_core_detectors()
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=True
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_one_baseline_compared_core_dimension_stays_medium():
+    # Two detectors of the same dimension are one dimension; a non-core
+    # dimension (integrity, performance) does not count either.
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY) + [
+        _result(Dimension.MODEL_IDENTITY, score=100.0, status=Status.PASS, compared=True,
+                detector_id="quality_judge"),
+        _result(Dimension.INTEGRITY, score=100.0, status=Status.PASS, compared=True),
+        _result(Dimension.PERFORMANCE, score=100.0, status=Status.PASS, compared=True),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=True, used_baseline=True
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_compared_detector_without_usable_status_does_not_count():
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY) + [
+        _result(Dimension.BILLING, score=None, status=Status.INCONCLUSIVE, compared=True),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=True
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_judge_only_does_not_lift_confidence():
+    # #257: a usable judge verdict without a baseline no longer lifts medium to
+    # high; only a baseline can (the documented rule).
+    detectors = _clean_core_detectors() + [
+        _result(Dimension.MODEL_IDENTITY, score=100.0, status=Status.PASS,
+                detector_id="quality_judge"),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=True, used_baseline=False
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_baseline_corroborated_judge_counts_for_model_identity():
+    # The judge's baseline-corroborated verdict is the model-identity
+    # comparison; with billing compared too that makes two core dimensions.
+    detectors = _clean_core_detectors() + [
+        _result(Dimension.MODEL_IDENTITY, score=100.0, status=Status.PASS, compared=True,
+                detector_id="quality_judge"),
+        _result(Dimension.BILLING, score=100.0, status=Status.PASS, compared=True),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=True, used_baseline=True
+    )
+    assert verdict.confidence == "high"
+
+
 def test_verdict_fuzzy_kb_match_caps_confidence_at_low():
     # Baseline + full core would be "high", but a fuzzy profile may not be the
     # model's own: confidence stays low and the summary says why.
-    detectors = _clean_core_detectors()
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY, Dimension.CAPABILITY)
     dims = build_dimensions(detectors, reliability=None)
     exact = build_verdict(
         detectors, dims, profile_matched=True, used_judge=False, used_baseline=True,

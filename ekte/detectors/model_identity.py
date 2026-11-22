@@ -431,7 +431,8 @@ class ModelIdentityDetector(Detector):
         # sibling (its own fingerprints; see model_specific_fingerprints).
         result.evidence["model_specific_checks"] = model_specific
         result.evidence["cutoff_checked"] = claimed_cutoff is not None
-        result.evidence["baseline_compared"] = ctx.has_baseline
+        # Whether a usable baseline answer was compared (not merely configured).
+        result.evidence["baseline_compared"] = result.baseline_compared
         result.evidence["match_confidence"] = ctx.profile.match_confidence
         return result
 
@@ -499,6 +500,7 @@ class ModelIdentityDetector(Detector):
             evidence["separates_from"] = fp.separates_from
             evidence["verified"] = fp.verified
         if base_text is not None:
+            result.baseline_compared = True
             evidence["baseline_observed"] = base_text[:400 if is_violation else 200]
             evidence["baseline_diverged"] = base_violated
 
@@ -607,6 +609,8 @@ class ModelIdentityDetector(Detector):
             base_answer = parse_cutoff(base.content)
             base_key = _cutoff_verdict(base_answer, claimed)
             evidence["baseline_cutoff"] = _ym(base_answer) if base_answer else None
+            if answer is not None and base_answer is not None:
+                result.baseline_compared = True
 
         if key == "inconclusive":
             result.findings.append(

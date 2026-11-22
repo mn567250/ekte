@@ -288,6 +288,10 @@ class DetectorResult(BaseModel):
     error: str | None = None
     # True when this detector required an LLM judge to produce its verdict.
     used_judge: bool = False
+    # True when this detector actually compared the target with a usable answer
+    # of the trusted baseline (compare mode). Configuring a baseline is not
+    # enough: only these comparisons let the verdict confidence reach "high".
+    baseline_compared: bool = False
     # How ``score`` was derived; None for detectors that do not publish it yet.
     scoring: DetectorScoring | None = None
 
