@@ -81,7 +81,7 @@ web y los informes.
 |---|---|---|
 | **Identidad del modelo** | `model_identity` | Degradación o sustitución silenciosa del modelo |
 | **Ventana de contexto** | `context_window` | Recorte silencioso del contexto y «lost in the middle» |
-| **Capacidades declaradas** | `capability` | Llamadas a herramientas, modo JSON, salida máxima o visión declarados pero no entregados, o una salida que el relay recorta |
+| **Capacidades declaradas** | `capability` | Llamadas a herramientas, modo JSON o visión declarados pero no entregados, o una salida cortada antes de tiempo o recortada por el relay (se prueba hasta 2.048 tokens) |
 | **Conformidad del protocolo** | `protocol` | Parámetros de petición y atributos de respuesta descartados o ignorados |
 | **Facturación y uso** | `billing` | Uso de tokens inflado o ausente |
 | **Conectividad** | `connectivity` | Accesibilidad del endpoint y la lista de modelos anunciada |

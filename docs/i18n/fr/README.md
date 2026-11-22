@@ -82,7 +82,7 @@ l'interface web et des rapports.
 |---|---|---|
 | **Identité du modèle** | `model_identity` | Déclassement ou substitution silencieuse du modèle |
 | **Fenêtre de contexte** | `context_window` | Troncature silencieuse du contexte et « lost in the middle » |
-| **Capacités annoncées** | `capability` | Appel d'outils, mode JSON, sortie maximale ou vision annoncés mais non fournis, ou une sortie que le relais bride |
+| **Capacités annoncées** | `capability` | Appel d'outils, mode JSON ou vision annoncés mais non fournis, ou une sortie coupée trop tôt ou bridée par le relais (testée jusqu'à 2 048 tokens) |
 | **Conformité du protocole** | `protocol` | Paramètres de requête et attributs de réponse supprimés ou ignorés |
 | **Facturation et consommation** | `billing` | Consommation de tokens gonflée ou absente |
 | **Connectivité** | `connectivity` | Joignabilité de l'endpoint et la liste de modèles annoncée |

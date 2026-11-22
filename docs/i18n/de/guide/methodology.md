@@ -530,8 +530,7 @@ Stichtag teilen sich Modelle eines Anbieters oft.
    in Fingerprint-Antworten zählen sie nie, „let me think step by step“ ist
    also keine Konkurrenzmarke. Ein Hersteller, dem ein solches Wort gehört,
    behält es als eigene Marke.
-2. **Verhaltens-Fingerprints** aus der Wissensbasis (Wissensstichtag,
-   Tokenizer-Eigenheiten, Formatierung, sprachgebundene Tests, …): bis zu sechs
+2. **Verhaltens-Fingerprints** aus der Wissensbasis: bis zu sechs
    Tests in reinem Code, geprüft mit `expect_contains`, `expect_contains_any`,
    `expect_not_contains` oder `expect_regex`; Ausgabe auf 512 Token begrenzt. Begriffe unter `expect_not_contains` zählen nur als ganze Wörter (`meta`
    wird in `metadata` nicht gefunden; eine Version darf folgen, wie in `Qwen2.5`).
@@ -546,6 +545,13 @@ Stichtag teilen sich Modelle eines Anbieters oft.
    ist ein Problem der Wissensbasis, kein Beleg gegen das Relay, und wird als
    Info ohne Abzug festgehalten (Beleg `baseline_also_diverged`). Eine
    Konkurrenzmarke bleibt in jedem Fall HOCH.
+   Was läuft, hängt von der Wissensbasis ab: nur wenige mitgelieferte Profile
+   haben eigene Tests in reinem Code; die meisten haben nur die ihres Anbieters,
+   meist eine zweite Selbstidentifikation, eine datierte Tatsache oder ein
+   Tokenizer-Artefakt, die jedes Modell des Anbieters gleich beantwortet, und
+   etwa ein Drittel hat keine. Modelle eines Anbieters werden daher ohne Richter
+   oder Referenz meist nicht unterschieden (siehe `model_identity.model_specific`
+   unten).
 3. **Wissensstichtag** (`model_identity.cutoff`), wenn `knowledge_cutoff` im
    Profil `YYYY-MM` oder `YYYY-MM-DD` ist: Das Modell wird nach seinem
    Trainingsstichtag als `CUTOFF=YYYY-MM` gefragt. Höchstens 6 Monate neben dem
@@ -808,12 +814,15 @@ Streamt das Modell sein Reasoning (Reasoning-Deltas, Thinking-Blöcke, Reasoning
 | `streaming.ttft_vs_total` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.uniform_gaps` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.no_usage` | Kein Usage-Chunk im Stream: zieht 15 Punkte ab, wenn nichts gepuffert ist. | Warnung · Niedrig | bis zu −15 Pkt. |
-| `streaming.no_content` | Der Stream war erfolgreich, lieferte aber keinen Inhalt zur Beurteilung; nicht bewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
+| `streaming.no_content` | Der Stream war erfolgreich, lieferte aber keinen Inhalt zur Beurteilung; nicht bewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `streaming.unsupported` | Das Relay streamt für dieses Modell nicht. | Fehlgeschlagen · Mittel | Obergrenze 0 |
-| `streaming.failed` | Die Streaming-Anfrage schlug zweimal fehl (5xx, Zeitüberschreitung oder ein anderer Transportfehler); nicht bewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
+| `streaming.failed` | Die Streaming-Anfrage schlug zweimal fehl (5xx, Zeitüberschreitung oder ein anderer Transportfehler); nicht bewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
 
 Also: echt 100 · Usage fehlt 85 · ein Puffersignal 60 · zwei oder mehr 40 ·
 nicht unterstützt 0 · zweimal fehlgeschlagen oder kein Inhalt: keine Bewertung.
+Das „Kein Abzug“ in den Zeilen `streaming.no_content` und
+`streaming.failed` ist die Formulierung der Abzugsskala; der Detektor lässt sein
+Ergebnis in beiden Fällen unbewertet, es zählt also nicht zur Dimension.
 
 **Einschränkungen.** Kurze Ausgaben, ein schnelles kleines Modell oder
 Netzwerk-Jitter können einem Burst ähneln. Ein Upstream, der nicht streamen
@@ -883,7 +892,12 @@ Hälfte der Schätzung) dient nur zur Information (schadet dem Käufer nicht).
 Eine fehlgeschlagene Testanfrage lässt den Detektor unbewertet.
 
 **Einschränkungen.** Chat-Vorlagen und Sondertoken fügen einen kleinen festen
-Versatz hinzu; exakte Übereinstimmung ist nicht zu erwarten. Weicht das
+Versatz hinzu; exakte Übereinstimmung ist nicht zu erwarten. Ohne Referenz lässt die
+Toleranz mäßige Aufblähung durch: eine proportionale Aufblähung, die die
+Steigung bei höchstens 1,35 hält (etwa ein Fünftel über der echten Zahl, da die
+Heuristik zu wenig zählt), wird nicht gemeldet, ebenso wenig im Ersatzweg mit
+nur einer Anfrage Prompt-Token unter dem 2,5-Fachen der Schätzung. Der
+Vergleichsmodus mit einer Referenz desselben Modells erkennt schon mehr als 3 %. Weicht das
 gelieferte Modell vom angegebenen ab, ist der „richtige“ Tokenizer unbekannt.
 Versteckte Reasoning-Token lassen sich von außen nicht zählen. Drei Größen bis
 etwa 2.400 Token trennen einen proportionalen Faktor von einem festen Overhead;
@@ -1171,14 +1185,21 @@ wenige mitgelieferte Profile haben; für alle anderen Modelle entfällt er.
 Die **Surface** einer Prüfung (standardmäßig `chat`, oder `embedding`) wählt die
 Detektoren; die Suite bestimmt weiter die Tiefe. Eine Embedding-Prüfung sendet nur
 Anfragen an `POST /embeddings` und nutzt die Chat-Dimensionen sowie die gemeinsame
-Bewertung 0–100 und Note A–F, mit Gewichten je Surface. Eine abweichende Dimension
+Bewertung 0–100 und Note A–F, mit eigenen Gewichten (`SURFACE_WEIGHTS` in `ekte/scoring.py`). Eine abweichende Dimension
 (Modellidentität, HOCH) macht das Risiko HOCH, wie ein ausgetauschtes Modell im Chat.
 
-| Prüfung | Id | Dimension | Was sie prüft |
+| Dimension | Kennung | Gewicht | Rolle |
+|---|---|---|---|
+| Modellidentität | `model_identity` | 40 | Kern |
+| Leistung | `performance` | 20 |  |
+| Angegebene Fähigkeiten | `capability` | 15 |  |
+| Antwortintegrität | `integrity` | 15 |  |
+| Konnektivität | `connectivity` | 10 |  |
+
+| Detektor | Id | Dimension | Was sie prüft |
 |---|---|---|---|
 | Konnektivität | `embed.connectivity` | Konnektivität | der Endpunkt liefert wohlgeformte Vektoren |
-| Vektordimension | `embed.dimension` | Modellidentität | zurückgegebene Länge gegenüber der nativen Dimension des angegebenen Modells (Wissensbasis oder `claimed_dimensions`) |
-| Zurückgegebenes Modell | `embed.model_field` | Modellidentität | das Feld `model` der Antwort nennt das angegebene Modell |
+| Modellidentität | `embed.identity` | Modellidentität | `embed.dimension`: zurückgegebene Länge gegenüber der nativen Dimension des angegebenen Modells (Wissensbasis oder `claimed_dimensions`); `embed.model_field`: das Feld `model` der Antwort nennt das angegebene Modell |
 | Vektordrift | `embed.drift` | Modellidentität | der Vektor der fixierten Testeingabe gegenüber dem vorigen gespeicherten Lauf |
 | Determinismus | `embed.determinism` | Antwortintegrität | dieselbe Eingabe zweimal ergibt Kosinus ≥ 0,9999 |
 | Unterscheidbarkeit | `embed.distinctness` | Fähigkeitsangaben | unzusammenhängende Eingaben ergeben Kosinus unter 0,98 |
@@ -1208,21 +1229,108 @@ vergleicht die Latenz je Eingabe eines Batches mit der einer Einzelanfrage: ab
 NIEDRIG). Es gibt keine Geschwindigkeitsreferenz in der Wissensbasis; die reine
 Geschwindigkeit zählt nur gegenüber einer Referenz.
 
+**Bewertungsskalen** der Embedding-Detektoren (`SCALE` in `ekte/detectors/embed_*.py`). Jeder Detektor bewertet mit dem Mittel seiner gewerteten Prüfungen.
+
+### `embed.connectivity` — Erreichbarkeit des Embedding-Endpunkts
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `embed.connectivity` | Der Embeddings-Endpunkt hat Vektoren geliefert. | Bestanden | 100 Pkt. |
+|  | Der Embeddings-Endpunkt hat geantwortet, aber nicht einen Vektor pro Eingabe geliefert. | Fehlgeschlagen · Hoch | 0 Pkt. |
+|  | Die Embeddings-Anfrage ist fehlgeschlagen. | Fehlgeschlagen · Hoch | 0 Pkt. |
+
+### `embed.identity` — Identität des Embedding-Modells
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `embed.dimension` | Die Vektorlänge passt zum angegebenen Modell. | Bestanden | 100 Pkt. |
+|  | Die Vektorlänge weicht von der des angegebenen Modells ab (ein anderes Modell wird bereitgestellt). | Fehlgeschlagen · Hoch | 0 Pkt. |
+|  | Die Vektorlänge des angegebenen Modells ist unbekannt; die beobachtete Länge wird festgehalten. | Info | Nicht gewertet |
+|  | Es wurde kein Vektor zum Messen geliefert. | Nicht eindeutig | Nicht gewertet |
+| `embed.model_field` | Das Relay gibt das angefragte Modell zurück. | Bestanden | 100 Pkt. |
+|  | Das Relay gibt ein anderes Modell zurück als das angefragte. | Warnung · Mittel | 50 Pkt. |
+|  | Das Relay gibt eine andere Modell-ID zurück, die ekte nicht zuordnen kann: festgehalten, nicht beurteilt. | Info | Nicht gewertet |
+|  | Das Relay gibt kein Modellfeld zurück. | Info | Nicht gewertet |
+
+### `embed.drift` — Embedding-Vektordrift
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `embed.drift` | Der Vektor der festen Eingabe stimmt mit dem vorigen Lauf überein. | Bestanden | 100 Pkt. |
+|  | Der Vektor der festen Eingabe hat sich seit dem vorigen Lauf verschoben (Kosinus 0,95 bis 0,995). | Warnung · Mittel | 60 Pkt. |
+|  | Der Vektor der festen Eingabe hat sich seit dem vorigen Lauf geändert (Kosinus unter 0,95 oder andere Länge): das Modell wurde ausgetauscht. | Fehlgeschlagen · Hoch | 0 Pkt. |
+|  | Kein voriger Lauf zum Vergleich; der Vektor dieses Laufs ist die Referenz. | Info | Nicht gewertet |
+|  | Für die feste Eingabe wurde kein Vektor geliefert. | Nicht eindeutig | Nicht gewertet |
+
+### `embed.determinism` — Embedding-Determinismus
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `embed.determinism` | Dieselbe Eingabe ergibt zweimal denselben Vektor. | Bestanden | 100 Pkt. |
+|  | Dieselbe Eingabe ergibt zweimal unterschiedliche Vektoren. | Warnung · Mittel | 50 Pkt. |
+|  | Es wurden keine Vektoren zum Vergleichen geliefert. | Nicht eindeutig | Nicht gewertet |
+
+### `embed.distinctness` — Embedding-Unterscheidbarkeit
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `embed.distinctness` | Unzusammenhängende Eingaben ergeben deutlich verschiedene Vektoren. | Bestanden | 100 Pkt. |
+|  | Unzusammenhängende Eingaben ergeben fast identische Vektoren (ein entartetes oder Platzhalter-Backend). | Warnung · Hoch | 30 Pkt. |
+|  | Es wurden keine Vektoren zum Vergleichen geliefert. | Nicht eindeutig | Nicht gewertet |
+
+### `performance.embed` — Embedding-Leistungsmessung
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `performance.summary` | Latenz und Durchsatz der Embeddings wurden gemessen. | Info | Nicht gewertet |
+|  | Keine der Probe-Anfragen war erfolgreich. | Nicht eindeutig | Nicht gewertet |
+| `performance.latency_consistency` | Die Latenz ist gleichmäßig (Tail-Verhältnis höchstens 1,3). | Bestanden | 100 Pkt. |
+|  | Die Latenz ist stabil (Tail-Verhältnis höchstens 1,75). | Bestanden | 85 Pkt. |
+|  | Die Latenz schwankt merklich (Tail-Verhältnis höchstens 2,5). | Warnung · Niedrig | 65 Pkt. |
+|  | Die Latenz ist sprunghaft (Tail-Verhältnis über 2,5). | Fehlgeschlagen · Niedrig | 40 Pkt. |
+|  | Zu wenige Messwerte, um die Gleichmäßigkeit der Latenz zu beurteilen. | Info | Nicht gewertet |
+| `performance.throughput_consistency` | Der Durchsatz ist gleichmäßig (Tail-Verhältnis höchstens 1,3). | Bestanden | 100 Pkt. |
+|  | Der Durchsatz ist stabil (Tail-Verhältnis höchstens 1,75). | Bestanden | 85 Pkt. |
+|  | Der Durchsatz schwankt merklich (Tail-Verhältnis höchstens 2,5). | Warnung · Niedrig | 65 Pkt. |
+|  | Der Durchsatz ist sprunghaft (Tail-Verhältnis über 2,5). | Fehlgeschlagen · Niedrig | 40 Pkt. |
+|  | Zu wenige Messwerte, um die Gleichmäßigkeit des Durchsatzes zu beurteilen. | Info | Nicht gewertet |
+| `performance.errors` | Höchstens 2 % der Messanfragen schlugen fehl. | Bestanden | 100 Pkt. |
+|  | Bis zu 10 % der Messanfragen schlugen fehl oder liefen in eine Zeitüberschreitung. | Warnung · Niedrig | 80 Pkt. |
+|  | Viele Messanfragen schlugen fehl oder liefen in eine Zeitüberschreitung. | Fehlgeschlagen · Niedrig | 50 Pkt. |
+| `performance.load_stability` | Die Latenz hält unter paralleler Last stand (höchstens 1,5x). | Bestanden | 100 Pkt. |
+|  | Die Latenz steigt unter paralleler Last (bis 3x). | Warnung · Niedrig | 80 Pkt. |
+|  | Die Latenz verschlechtert sich unter paralleler Last stark (über 3x). | Fehlgeschlagen · Niedrig | 55 Pkt. |
+| `performance.batch_scaling` | Ein Stapel mit 16 Eingaben kostet pro Eingabe weit weniger als einzelne Anfragen. | Bestanden | 100 Pkt. |
+|  | Ein Stapel mit 16 Eingaben kostet pro Eingabe etwa so viel wie einzelne Anfragen (passt zu einem Relay, das Stapel aufteilt oder nacheinander abarbeitet). | Warnung · Niedrig | 60 Pkt. |
+|  | Zu wenige Stapel-Messungen, um zu beurteilen, wie die Latenz mit der Stapelgröße wächst. | Info | Nicht gewertet |
+| `performance.cache_hit` | Eindeutige Messeingaben lieferten wiederholte Vektoren (aus der Statistik ausgeschlossen). | Warnung · Niedrig | 60 Pkt. |
+|  | Die Referenz lieferte wiederholte Vektoren für eindeutige Messeingaben (nicht bewertet). | Info | Nicht gewertet |
+| `performance.relay_overhead` | Latenz mit der vertrauenswürdigen Baseline verglichen (nur zur Information). | Info | Nicht gewertet |
+| `performance.skipped` | Die Performance-Probe war deaktiviert. | Info | Nicht gewertet |
+
 ---
 
 ## Rerank-Surface
 
 Eine Rerank-Prüfung (`surface` `rerank`) sendet nur Anfragen an `POST /rerank` und
-wird auf der gemeinsamen Skala 0–100 und Note A–F mit eigenen Gewichten bewertet:
-Modellidentität 30, Fähigkeitsangaben 30, Leistung 20, Antwortintegrität 10, Konnektivität 10. Eine verfehlte Rangfolge beim Test mit
+wird auf der gemeinsamen Skala 0–100 und Note A–F mit eigenen Gewichten bewertet
+(`SURFACE_WEIGHTS` in `ekte/scoring.py`). Eine verfehlte Rangfolge beim Test mit
 bekannter Antwort (Fähigkeitsangaben, HOCH) oder ein ausgetauschtes Modell
 (Modellidentität, HOCH) macht das Risiko HOCH.
 
-| Prüfung | Id | Dimension | Was sie prüft |
+| Dimension | Kennung | Gewicht | Rolle |
+|---|---|---|---|
+| Modellidentität | `model_identity` | 30 | Kern |
+| Angegebene Fähigkeiten | `capability` | 30 | Kern |
+| Leistung | `performance` | 20 |  |
+| Antwortintegrität | `integrity` | 10 |  |
+| Konnektivität | `connectivity` | 10 |  |
+
+| Detektor | Id | Dimension | Was sie prüft |
 |---|---|---|---|
 | Konnektivität | `rerank.connectivity` | Konnektivität | der Endpunkt liefert eine wohlgeformte Rangfolge |
 | Bekannte Antwort | `rerank.known_answer` | Fähigkeitsangaben | ein Test mit einem offensichtlich relevanten Dokument stellt es an die erste Stelle |
-| Zurückgegebenes Modell | `rerank.identity` | Modellidentität | das Feld `model` der Antwort nennt das angegebene Modell |
+| Zurückgegebenes Modell | `rerank.identity` | Modellidentität | `rerank.model_field`: das Feld `model` der Antwort nennt das angegebene Modell |
 | Rangfolge-Drift | `rerank.drift` | Modellidentität | Rangfolge und Scores des fixierten Tests gegenüber dem vorigen gespeicherten Lauf |
 | Determinismus | `rerank.determinism` | Antwortintegrität | dieselbe Anfrage zweimal ergibt dieselbe Rangfolge und dieselben Scores |
 | Leistungsmessung | `performance.rerank` | Leistung | Latenz, Kaltstart, Dokumente/s, Skalierung mit der Dokumentenzahl |
@@ -1248,6 +1356,82 @@ Relay die Dokumente auf oder verarbeitet sie nacheinander (linear, WARN NIEDRIG)
 Es gibt keine Geschwindigkeitsreferenz in der Wissensbasis; die reine
 Geschwindigkeit zählt nur gegenüber einer Referenz.
 
+**Bewertungsskalen** der Rerank-Detektoren (`SCALE` in `ekte/detectors/rerank_*.py`). Jeder Detektor bewertet mit dem Mittel seiner gewerteten Prüfungen.
+
+### `rerank.connectivity` — Erreichbarkeit des Rerank-Endpunkts
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `rerank.connectivity` | Der Rerank-Endpunkt hat ein Ranking geliefert. | Bestanden | 100 Pkt. |
+|  | Der Rerank-Endpunkt hat geantwortet, aber nicht eine Bewertung pro Dokument geliefert. | Fehlgeschlagen · Hoch | 0 Pkt. |
+|  | Die Rerank-Anfrage ist fehlgeschlagen. | Fehlgeschlagen · Hoch | 0 Pkt. |
+
+### `rerank.identity` — Identität des Rerank-Modells
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `rerank.model_field` | Das Relay gibt das angefragte Modell zurück. | Bestanden | 100 Pkt. |
+|  | Das Relay gibt ein anderes Modell zurück als das angefragte. | Warnung · Mittel | 50 Pkt. |
+|  | Das Relay gibt eine andere Modell-ID zurück, die ekte nicht zuordnen kann: festgehalten, nicht beurteilt. | Info | Nicht gewertet |
+|  | Das Relay gibt kein Modellfeld zurück. | Info | Nicht gewertet |
+|  | Die Rerank-Anfrage ist fehlgeschlagen; es gibt kein Modellfeld zum Prüfen. | Nicht eindeutig | Nicht gewertet |
+
+### `rerank.drift` — Rerank-Drift
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `rerank.drift` | Ranking und Bewertungen der festen Probe stimmen mit dem vorigen Lauf überein. | Bestanden | 100 Pkt. |
+|  | Die Bewertungen der festen Probe haben sich seit dem vorigen Lauf verschoben (um 0,01 bis 0,1 auf der Bewertungsskala), bei gleichem Ranking. | Warnung · Mittel | 60 Pkt. |
+|  | Das Ranking der festen Probe hat sich seit dem vorigen Lauf geändert oder ihre Bewertungen haben sich um mehr als 0,1 auf der Bewertungsskala verschoben: das Modell wurde ausgetauscht. | Fehlgeschlagen · Hoch | 0 Pkt. |
+|  | Kein voriger Lauf zum Vergleich; das Ranking dieses Laufs ist die Referenz. | Info | Nicht gewertet |
+|  | Für die feste Probe wurde kein Ranking geliefert. | Nicht eindeutig | Nicht gewertet |
+
+### `rerank.determinism` — Rerank-Determinismus
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `rerank.determinism` | Dieselbe Anfrage ergibt zweimal dasselbe Ranking und dieselben Bewertungen. | Bestanden | 100 Pkt. |
+|  | Dieselbe Anfrage ergibt zweimal ein anderes Ranking oder andere Bewertungen. | Warnung · Mittel | 50 Pkt. |
+|  | Es wurden keine Rankings zum Vergleichen geliefert. | Nicht eindeutig | Nicht gewertet |
+
+### `rerank.known_answer` — Rerank-Probe mit bekannter Antwort
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `rerank.known_answer` | Das offensichtlich relevante Dokument steht an erster Stelle. | Bestanden | 100 Pkt. |
+|  | Ein anderes Dokument steht vor dem offensichtlich relevanten. | Fehlgeschlagen · Hoch | 0 Pkt. |
+|  | Es wurde kein Ranking zum Prüfen geliefert. | Nicht eindeutig | Nicht gewertet |
+
+### `performance.rerank` — Reranking-Leistungsmessung
+
+| Prüfung | Ergebnis | Status | Wirkung |
+|---|---|---|---|
+| `performance.summary` | Latenz und Durchsatz des Rerankings wurden gemessen. | Info | Nicht gewertet |
+|  | Keine der Probe-Anfragen war erfolgreich. | Nicht eindeutig | Nicht gewertet |
+| `performance.latency_consistency` | Die Latenz ist gleichmäßig (Tail-Verhältnis höchstens 1,3). | Bestanden | 100 Pkt. |
+|  | Die Latenz ist stabil (Tail-Verhältnis höchstens 1,75). | Bestanden | 85 Pkt. |
+|  | Die Latenz schwankt merklich (Tail-Verhältnis höchstens 2,5). | Warnung · Niedrig | 65 Pkt. |
+|  | Die Latenz ist sprunghaft (Tail-Verhältnis über 2,5). | Fehlgeschlagen · Niedrig | 40 Pkt. |
+|  | Zu wenige Messwerte, um die Gleichmäßigkeit der Latenz zu beurteilen. | Info | Nicht gewertet |
+| `performance.throughput_consistency` | Der Durchsatz ist gleichmäßig (Tail-Verhältnis höchstens 1,3). | Bestanden | 100 Pkt. |
+|  | Der Durchsatz ist stabil (Tail-Verhältnis höchstens 1,75). | Bestanden | 85 Pkt. |
+|  | Der Durchsatz schwankt merklich (Tail-Verhältnis höchstens 2,5). | Warnung · Niedrig | 65 Pkt. |
+|  | Der Durchsatz ist sprunghaft (Tail-Verhältnis über 2,5). | Fehlgeschlagen · Niedrig | 40 Pkt. |
+|  | Zu wenige Messwerte, um die Gleichmäßigkeit des Durchsatzes zu beurteilen. | Info | Nicht gewertet |
+| `performance.errors` | Höchstens 2 % der Messanfragen schlugen fehl. | Bestanden | 100 Pkt. |
+|  | Bis zu 10 % der Messanfragen schlugen fehl oder liefen in eine Zeitüberschreitung. | Warnung · Niedrig | 80 Pkt. |
+|  | Viele Messanfragen schlugen fehl oder liefen in eine Zeitüberschreitung. | Fehlgeschlagen · Niedrig | 50 Pkt. |
+| `performance.load_stability` | Die Latenz hält unter paralleler Last stand (höchstens 1,5x). | Bestanden | 100 Pkt. |
+|  | Die Latenz steigt unter paralleler Last (bis 3x). | Warnung · Niedrig | 80 Pkt. |
+|  | Die Latenz verschlechtert sich unter paralleler Last stark (über 3x). | Fehlgeschlagen · Niedrig | 55 Pkt. |
+| `performance.document_scaling` | Eine Anfrage über 32 Dokumente kostet pro Dokument weit weniger als eine über 4. | Bestanden | 100 Pkt. |
+|  | Eine Anfrage über 32 Dokumente kostet pro Dokument etwa so viel wie eine über 4 (passt zu einem Relay, das die Dokumente aufteilt oder nacheinander verarbeitet). | Warnung · Niedrig | 60 Pkt. |
+|  | Zu wenige Messungen, um zu beurteilen, wie die Latenz mit der Zahl der Dokumente wächst. | Info | Nicht gewertet |
+| `performance.cache_hit` | Eindeutige Testanfragen lieferten wiederholte Scores (aus der Statistik herausgenommen). | Warnung · Niedrig | 60 Pkt. |
+|  | Die Baseline lieferte wiederholte Scores für eindeutige Testanfragen (nicht bewertet). | Info | Nicht gewertet |
+| `performance.relay_overhead` | Latenz mit der vertrauenswürdigen Baseline verglichen (nur zur Information). | Info | Nicht gewertet |
+| `performance.skipped` | Die Performance-Probe war deaktiviert. | Info | Nicht gewertet |
+
 ---
 
 ## Zuordnung Trick → Detektor
@@ -1271,7 +1455,7 @@ Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf ekte.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | fester Mehraufwand an Eingabe-Token (zwei Größen) + Leck-Test |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | Erfolgsquote (429 gesondert), Tail-Latenz, Stabilität unter Last; Langzeitmessung ist Roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | Tools, JSON-Modus, striktes Schema, Parameter; je ein Test, keine Quoten |
-| 16 | `integrity.response-tampering` | critical | `integrity` | Canaries mit bekannter Antwort (synthetische und bekannte Installations-URLs, Pakete mit fester Version, eine `git clone`-Zeile, eine pro Endpunkt abgeleitete Wallet-Adresse) in normaler, gestreamter Ausgabe und in Tool-Argumenten; HOCH, wenn eine Wiederholung erneut ersetzt, KRITISCH, wenn eine Referenz es bestätigt |
+| 16 | `integrity.response-tampering` | critical | `integrity` | Canaries mit bekannter Antwort (synthetische und bekannte Installations-URLs, Pakete mit fester Version, eine `git clone`-Zeile, eine pro Endpunkt abgeleitete Wallet-Adresse) in normaler, gestreamter Ausgabe und in Tool-Argumenten; MITTEL bei einer einzelnen Ersetzung, die weder eine Referenz noch eine Wiederholung bestätigt, HOCH, wenn eine Wiederholung erneut ersetzt, KRITISCH, wenn eine Referenz es bestätigt |
 
 ---
 

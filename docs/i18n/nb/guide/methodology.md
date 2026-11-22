@@ -499,8 +499,7 @@ ofte felles.
    eller et listepunkt bare med en versjon, «Step-2»); fingeravtrykkssvar teller
    dem aldri, så «let me think step by step» er ikke et konkurrerende merke. En
    leverandør som eier et slikt ord, beholder det som sitt eget.
-2. **Atferdsfingeravtrykk** fra kunnskapsbasen (kunnskapsgrense, særegenheter i
-   tokenizeren, formatering, språkbundne prober, …): opptil seks prober i ren kode,
+2. **Atferdsfingeravtrykk** fra kunnskapsbasen: opptil seks prober i ren kode,
    hver kontrollert med `expect_contains`, `expect_contains_any`,
    `expect_not_contains` eller `expect_regex`; utdata begrenset til 512 tokens. Ord under `expect_not_contains` gjelder bare som hele ord (`meta` finnes
    ikke i `metadata`; en versjon kan følge, som i `Qwen2.5`). En
@@ -513,6 +512,12 @@ ofte felles.
    problem i kunnskapsbasen, ikke bevis mot reléet, og registreres som Info uten
    fradrag (bevis `baseline_also_diverged`). Et konkurrerende merke forblir HIGH
    uansett.
+   Hva som kjører, avhenger av kunnskapsbasen: bare noen få medfølgende profiler
+   har egne prober i ren kode; de fleste har bare leverandørens, oftest en ny
+   selvidentifisering, et datert faktum eller en tokenizer-artefakt som alle
+   leverandørens modeller svarer likt på, og omtrent en tredjedel har ingen.
+   Modeller fra samme leverandør skilles derfor vanligvis ikke fra hverandre uten
+   en dommer eller en referanse (se `model_identity.model_specific` nedenfor).
 3. **Kunnskapsgrense** (`model_identity.cutoff`), når profilens
    `knowledge_cutoff` er `YYYY-MM` eller `YYYY-MM-DD`: modellen blir spurt om
    treningsgrensen sin som `CUTOFF=YYYY-MM`. Innenfor 6 måneder fra profilens
@@ -768,12 +773,15 @@ resonnerende modell.
 | `streaming.ttft_vs_total` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.uniform_gaps` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.no_usage` | Ingen usage-bit i strømmen: trekker fra 15 poeng når ingenting er bufret. | Advarsel · Lav | opptil −15 poeng |
-| `streaming.no_content` | Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score. | Uavklart · Lav | Telles ikke |
+| `streaming.no_content` | Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score. | Uavklart · Lav | Ingen fradrag |
 | `streaming.unsupported` | Reléet strømmer ikke for denne modellen. | Ikke bestått · Middels | tak 0 |
-| `streaming.failed` | Strømmeforespørselen mislyktes to ganger (5xx, tidsavbrudd eller en annen transportfeil); gir ikke score. | Uavklart · Lav | Telles ikke |
+| `streaming.failed` | Strømmeforespørselen mislyktes to ganger (5xx, tidsavbrudd eller en annen transportfeil); gir ikke score. | Uavklart · Lav | Ingen fradrag |
 
 Altså: ekte 100 · usage mangler 85 · ett signal på bufring 60 · to eller flere 40
 · ikke støttet 0 · mislyktes to ganger eller ikke noe innhold: ingen score.
+«Ingen fradrag» i radene `streaming.no_content` og `streaming.failed` er
+ordlyden i fradragsskalaen; detektoren lar resultatet stå uten score i begge
+tilfeller, så det teller ikke for dimensjonen.
 
 **Forbehold.** Korte utdata, en rask liten modell eller variasjon i nettverket kan
 likne et støt. Et oppstrøms endepunkt som ikke kan strømme, tvinger reléet til å
@@ -840,7 +848,12 @@ flagges. En undertelling (under halvparten av anslaget) er til informasjon
 En mislykket probeforespørsel etterlater detektoren uten score.
 
 **Forbehold.** Chat-maler og spesialtokens legger til en liten fast forskyvning,
-så et nøyaktig samsvar forventes ikke. Hvis den leverte modellen er en annen enn
+så et nøyaktig samsvar forventes ikke. Uten referanse slipper toleransen
+gjennom moderat oppblåsing: en proporsjonal oppblåsing som holder stigningen på
+1,35 eller lavere (omtrent en femtedel over det reelle tallet, siden
+heuristikken teller for lavt), flagges ikke, og heller ikke, i reserveløsningen
+med én forespørsel, prompt-tokens under 2,5× estimatet. Sammenligningsmodus med
+en referanse av samme modell fanger mer enn 3 %. Hvis den leverte modellen er en annen enn
 den oppgitte, er den «riktige» tokenizeren ukjent. Skjulte resonneringstokens kan
 ikke telles utenfra. Tre størrelser opptil omtrent 2 400 tokens skiller en
 proporsjonal faktor fra en fast overhead; en multiplikator som først slår inn
@@ -1118,14 +1131,21 @@ som få medfølgende profiler har; for alle andre modeller vises den ikke.
 En revisjons **overflate** (`chat` som standard, eller `embedding`) velger
 detektorene; testsettet bestemmer fortsatt dybden. En embedding-revisjon sender
 bare `POST /embeddings`-forespørsler og gjenbruker chat-dimensjonene og den felles
-scoren 0–100 og karakteren A–F, med vekter per overflate. Et dimensjonsavvik
+scoren 0–100 og karakteren A–F, med egne vekter (`SURFACE_WEIGHTS` i `ekte/scoring.py`). Et dimensjonsavvik
 (MODEL_IDENTITY, HIGH) gjør risikoen HIGH, slik en byttet modell gjør i chat.
 
-| Kontroll | ID | Dimensjon | Hva den tester |
+| Dimensjon | ID | Vekt | Rolle |
+|---|---|---|---|
+| Modellidentitet | `model_identity` | 40 | kjerne |
+| Ytelse | `performance` | 20 |  |
+| Påståtte egenskaper | `capability` | 15 |  |
+| Svarintegritet | `integrity` | 15 |  |
+| Tilkobling | `connectivity` | 10 |  |
+
+| Detektor | ID | Dimensjon | Hva den tester |
 |---|---|---|---|
 | Tilkobling | `embed.connectivity` | Tilkobling | endepunktet returnerer velformede vektorer |
-| Vektordimensjon | `embed.dimension` | Modellidentitet | returnert lengde mot den oppgitte modellens egen dimensjon (kunnskapsbasen, eller `claimed_dimensions`) |
-| Gjengitt modell | `embed.model_field` | Modellidentitet | svarets `model`-felt nevner den oppgitte modellen |
+| Modellidentitet | `embed.identity` | Modellidentitet | `embed.dimension`: returnert lengde mot den oppgitte modellens egen dimensjon (kunnskapsbasen, eller `claimed_dimensions`); `embed.model_field`: svarets `model`-felt nevner den oppgitte modellen |
 | Vektordrift | `embed.drift` | Modellidentitet | vektoren for den faste probeinndataen mot forrige lagrede kjøring |
 | Determinisme | `embed.determinism` | Svarintegritet | samme inndata to ganger gir cosinus ≥ 0,9999 |
 | Atskillelse | `embed.distinctness` | Påståtte egenskaper | urelaterte inndata gir cosinus under 0,98 |
@@ -1165,21 +1185,108 @@ stabilitet under last. **Skalering med antall dokumenter** sammenligner
 forsinkelsen per dokument for 32 dokumenter med den for 4: ved 0,6x eller mer
 deles dokumentene opp eller serialiseres (lineært, WARN LOW).
 
+**Scoreskalaer** for embedding-detektorene (`SCALE` i `ekte/detectors/embed_*.py`). Hver detektor gir snittet av kontrollene som telles.
+
+### `embed.connectivity` — Tilkobling til embedding-endepunktet
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.connectivity` | Embeddings-endepunktet returnerte vektorer. | Bestått | 100 poeng |
+|  | Embeddings-endepunktet svarte uten én vektor per inndata. | Ikke bestått · Høy | 0 poeng |
+|  | Embeddings-forespørselen mislyktes. | Ikke bestått · Høy | 0 poeng |
+
+### `embed.identity` — Identitet for embedding-modellen
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.dimension` | Vektorlengden stemmer med den oppgitte modellen. | Bestått | 100 poeng |
+|  | Vektorlengden avviker fra den oppgitte modellens (en annen modell leveres). | Ikke bestått · Høy | 0 poeng |
+|  | Den oppgitte modellens vektorlengde er ukjent; den observerte lengden er registrert. | Info | Telles ikke |
+|  | Ingen vektor ble returnert å måle. | Uavklart | Telles ikke |
+| `embed.model_field` | Reléet gjengir den forespurte modellen. | Bestått | 100 poeng |
+|  | Reléet gjengir en annen modell enn den som ble forespurt. | Advarsel · Middels | 50 poeng |
+|  | Reléet gjengir en annen modell-ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Telles ikke |
+|  | Reléet gjengir ikke noe model-felt. | Info | Telles ikke |
+
+### `embed.drift` — Vektordrift for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.drift` | Vektoren for den faste inndataen stemmer med forrige kjøring. | Bestått | 100 poeng |
+|  | Vektoren for den faste inndataen har flyttet seg siden forrige kjøring (cosinus 0,95 til 0,995). | Advarsel · Middels | 60 poeng |
+|  | Vektoren for den faste inndataen er endret siden forrige kjøring (cosinus under 0,95, eller en annen lengde): modellen er byttet. | Ikke bestått · Høy | 0 poeng |
+|  | Ingen tidligere kjøring å sammenligne med; vektoren fra denne kjøringen er referansen. | Info | Telles ikke |
+|  | Ingen vektor ble returnert for den faste inndataen. | Uavklart | Telles ikke |
+
+### `embed.determinism` — Determinisme for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.determinism` | Samme inndata to ganger gir samme vektor. | Bestått | 100 poeng |
+|  | Samme inndata to ganger gir forskjellige vektorer. | Advarsel · Middels | 50 poeng |
+|  | Ingen vektorer ble returnert å sammenligne. | Uavklart | Telles ikke |
+
+### `embed.distinctness` — Atskillelse for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.distinctness` | Urelaterte inndata gir tydelig forskjellige vektorer. | Bestått | 100 poeng |
+|  | Urelaterte inndata gir nesten identiske vektorer (en degenerert eller falsk bakende). | Advarsel · Høy | 30 poeng |
+|  | Ingen vektorer ble returnert å sammenligne. | Uavklart | Telles ikke |
+
+### `performance.embed` — Ytelsesprobe for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `performance.summary` | Forsinkelse og gjennomstrømning for embeddinger ble målt. | Info | Telles ikke |
+|  | Ingen av probeforespørslene lyktes. | Uavklart | Telles ikke |
+| `performance.latency_consistency` | Forsinkelsen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Forsinkelsen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Forsinkelsen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Forsinkelsen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn forsinkelsen er. | Info | Telles ikke |
+| `performance.throughput_consistency` | Gjennomstrømningen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Gjennomstrømningen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Gjennomstrømningen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Gjennomstrømningen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn gjennomstrømningen er. | Info | Telles ikke |
+| `performance.errors` | Høyst 2 % av probeforespørslene mislyktes. | Bestått | 100 poeng |
+|  | Opptil 10 % av probeforespørslene mislyktes eller fikk tidsavbrudd. | Advarsel · Lav | 80 poeng |
+|  | Mange probeforespørsler mislyktes eller fikk tidsavbrudd. | Ikke bestått · Lav | 50 poeng |
+| `performance.load_stability` | Forsinkelsen holder seg under samtidig last (høyst 1,5x). | Bestått | 100 poeng |
+|  | Forsinkelsen øker under samtidig last (opptil 3x). | Advarsel · Lav | 80 poeng |
+|  | Forsinkelsen forverres kraftig under samtidig last (over 3x). | Ikke bestått · Lav | 55 poeng |
+| `performance.batch_scaling` | En batch med 16 inndata koster langt mindre per inndata enn enkeltforespørsler. | Bestått | 100 poeng |
+|  | En batch med 16 inndata koster omtrent like mye per inndata som enkeltforespørsler (forenlig med et relé som deler opp eller serialiserer batcher). | Advarsel · Lav | 60 poeng |
+|  | For få batchprøver til å vurdere hvordan forsinkelsen skalerer med batchstørrelsen. | Info | Telles ikke |
+| `performance.cache_hit` | Unike probeinndata kom tilbake med gjentatte vektorer (holdt utenfor statistikken). | Advarsel · Lav | 60 poeng |
+|  | Referansen returnerte gjentatte vektorer for unike probeinndata (gir ikke score). | Info | Telles ikke |
+| `performance.relay_overhead` | Forsinkelse sammenlignet med den pålitelige referansen (til informasjon). | Info | Telles ikke |
+| `performance.skipped` | Ytelsesproben var slått av. | Info | Telles ikke |
+
 ---
 
 ## Rerank-overflaten
 
 En rerank-revisjon (`surface` `rerank`) sender bare `POST /rerank`-forespørsler og
-gis score på den felles skalaen 0–100 og karakteren A–F med egne vekter:
-modellidentitet 30, påståtte egenskaper 30, ytelse 20, svarintegritet 10, tilkobling 10. En mislykket rangering med kjent svar (påståtte
+gis score på den felles skalaen 0–100 og karakteren A–F med egne vekter
+(`SURFACE_WEIGHTS` i `ekte/scoring.py`). En mislykket rangering med kjent svar (påståtte
 egenskaper, HIGH) eller en byttet modell (modellidentitet, HIGH) gjør risikoen
 HIGH.
 
-| Kontroll | ID | Dimensjon | Hva den tester |
+| Dimensjon | ID | Vekt | Rolle |
+|---|---|---|---|
+| Modellidentitet | `model_identity` | 30 | kjerne |
+| Påståtte egenskaper | `capability` | 30 | kjerne |
+| Ytelse | `performance` | 20 |  |
+| Svarintegritet | `integrity` | 10 |  |
+| Tilkobling | `connectivity` | 10 |  |
+
+| Detektor | ID | Dimensjon | Hva den tester |
 |---|---|---|---|
 | Tilkobling | `rerank.connectivity` | Tilkobling | endepunktet returnerer en velformet rangering |
 | Kjent svar | `rerank.known_answer` | Påståtte egenskaper | en probe med ett åpenbart relevant dokument rangerer det først |
-| Gjengitt modell | `rerank.identity` | Modellidentitet | svarets `model`-felt nevner den oppgitte modellen |
+| Gjengitt modell | `rerank.identity` | Modellidentitet | `rerank.model_field`: svarets `model`-felt nevner den oppgitte modellen |
 | Rangeringsdrift | `rerank.drift` | Modellidentitet | den faste probens rangering og scorer mot forrige lagrede kjøring |
 | Determinisme | `rerank.determinism` | Svarintegritet | samme spørring to ganger gir samme rangering og scorer |
 | Ytelsesprobe | `performance.rerank` | Ytelse | forsinkelse, kaldstart, dokumenter/s, skalering med antall dokumenter |
@@ -1198,6 +1305,82 @@ referanse), 4 mot 32 dokumenter per spørring, spørringer variert med nonce for
 oppdage bufring, og et svar som lar dokumenter stå uten score, regnes som en
 mislykket forespørsel. Det finnes ingen hastighetsreferanse i kunnskapsbasen; rå
 hastighet teller bare mot en referanse.
+
+**Scoreskalaer** for rerank-detektorene (`SCALE` i `ekte/detectors/rerank_*.py`). Hver detektor gir snittet av kontrollene som telles.
+
+### `rerank.connectivity` — Tilkobling til rerank-endepunktet
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.connectivity` | Rerank-endepunktet returnerte en rangering. | Bestått | 100 poeng |
+|  | Rerank-endepunktet svarte uten én score per dokument. | Ikke bestått · Høy | 0 poeng |
+|  | Rerank-forespørselen mislyktes. | Ikke bestått · Høy | 0 poeng |
+
+### `rerank.identity` — Identitet for rerank-modellen
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.model_field` | Reléet gjengir den forespurte modellen. | Bestått | 100 poeng |
+|  | Reléet gjengir en annen modell enn den som ble forespurt. | Advarsel · Middels | 50 poeng |
+|  | Reléet gjengir en annen modell-ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Telles ikke |
+|  | Reléet gjengir ikke noe model-felt. | Info | Telles ikke |
+|  | Rerank-forespørselen mislyktes; det finnes ikke noe model-felt å kontrollere. | Uavklart | Telles ikke |
+
+### `rerank.drift` — Drift for rerank
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.drift` | Den faste probens rangering og scorer stemmer med forrige kjøring. | Bestått | 100 poeng |
+|  | Den faste probens scorer har flyttet seg siden forrige kjøring (med 0,01 til 0,1 på scoreskalaen), med samme rangering. | Advarsel · Middels | 60 poeng |
+|  | Den faste probens rangering er endret siden forrige kjøring, eller scorene har flyttet seg med mer enn 0,1 på scoreskalaen: modellen er byttet. | Ikke bestått · Høy | 0 poeng |
+|  | Ingen tidligere kjøring å sammenligne med; rangeringen fra denne kjøringen er referansen. | Info | Telles ikke |
+|  | Ingen rangering ble returnert for den faste proben. | Uavklart | Telles ikke |
+
+### `rerank.determinism` — Determinisme for rerank
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.determinism` | Samme spørring to ganger gir samme rangering og scorer. | Bestått | 100 poeng |
+|  | Samme spørring to ganger gir en annen rangering eller andre scorer. | Advarsel · Middels | 50 poeng |
+|  | Ingen rangeringer ble returnert å sammenligne. | Uavklart | Telles ikke |
+
+### `rerank.known_answer` — Rerank-probe med kjent svar
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.known_answer` | Det åpenbart relevante dokumentet er rangert først. | Bestått | 100 poeng |
+|  | Et annet dokument er rangert over det åpenbart relevante. | Ikke bestått · Høy | 0 poeng |
+|  | Ingen rangering ble returnert å kontrollere. | Uavklart | Telles ikke |
+
+### `performance.rerank` — Ytelsesprobe for rerank
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `performance.summary` | Forsinkelse og gjennomstrømning for rerank ble målt. | Info | Telles ikke |
+|  | Ingen av probeforespørslene lyktes. | Uavklart | Telles ikke |
+| `performance.latency_consistency` | Forsinkelsen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Forsinkelsen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Forsinkelsen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Forsinkelsen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn forsinkelsen er. | Info | Telles ikke |
+| `performance.throughput_consistency` | Gjennomstrømningen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Gjennomstrømningen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Gjennomstrømningen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Gjennomstrømningen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn gjennomstrømningen er. | Info | Telles ikke |
+| `performance.errors` | Høyst 2 % av probeforespørslene mislyktes. | Bestått | 100 poeng |
+|  | Opptil 10 % av probeforespørslene mislyktes eller fikk tidsavbrudd. | Advarsel · Lav | 80 poeng |
+|  | Mange probeforespørsler mislyktes eller fikk tidsavbrudd. | Ikke bestått · Lav | 50 poeng |
+| `performance.load_stability` | Forsinkelsen holder seg under samtidig last (høyst 1,5x). | Bestått | 100 poeng |
+|  | Forsinkelsen øker under samtidig last (opptil 3x). | Advarsel · Lav | 80 poeng |
+|  | Forsinkelsen forverres kraftig under samtidig last (over 3x). | Ikke bestått · Lav | 55 poeng |
+| `performance.document_scaling` | En spørring over 32 dokumenter koster langt mindre per dokument enn en over 4. | Bestått | 100 poeng |
+|  | En spørring over 32 dokumenter koster omtrent like mye per dokument som en over 4 (forenlig med et relé som deler opp eller serialiserer dokumentene). | Advarsel · Lav | 60 poeng |
+|  | For få prøver til å vurdere hvordan forsinkelsen skalerer med antall dokumenter. | Info | Telles ikke |
+| `performance.cache_hit` | Unike probespørringer kom tilbake med gjentatte scorer (holdt utenfor statistikken). | Advarsel · Lav | 60 poeng |
+|  | Referansen returnerte gjentatte scorer for unike probespørringer (gir ikke score). | Info | Telles ikke |
+| `performance.relay_overhead` | Forsinkelse sammenlignet med den pålitelige referansen (til informasjon). | Info | Telles ikke |
+| `performance.skipped` | Ytelsesproben var slått av. | Info | Telles ikke |
 
 ---
 
@@ -1222,7 +1405,7 @@ De 16 relétriksene fra undersøkelsen fordeler seg slik på ekte.
 | 13 | `prompt.injected-system-prompt` | middels | `injected_prompt`, `billing` | fast overhead i inndatatokens (to størrelser) + lekkasjeprobe |
 | 14 | `throttle.rate-limit-quality` | middels | `reliability`, `performance` | suksessrate (429 for seg), haleforsinkelse, stabilitet under last; prober over tid står på veikartet |
 | 15 | `capability.json-tool-fakery` | middels | `capability`, `protocol_request` | verktøy, JSON-modus, strengt skjema, parametere; én probe hver, ikke rater |
-| 16 | `integrity.response-tampering` | kritisk | `integrity` | kanarier med kjent svar (syntetiske og kjente installasjons-URL-er, pakker med fast versjon, en `git clone`-linje, en lommebokadresse utledet per endepunkt) i vanlig og strømmet utdata og i verktøyargumenter; HIGH når en gjentakelse bytter ut igjen, CRITICAL når en referanse bekrefter |
+| 16 | `integrity.response-tampering` | kritisk | `integrity` | kanarier med kjent svar (syntetiske og kjente installasjons-URL-er, pakker med fast versjon, en `git clone`-linje, en lommebokadresse utledet per endepunkt) i vanlig og strømmet utdata og i verktøyargumenter; MEDIUM for én utskifting som verken en referanse eller en gjentakelse bekrefter, HIGH når en gjentakelse bytter ut igjen, CRITICAL når en referanse bekrefter |
 
 ---
 

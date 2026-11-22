@@ -82,7 +82,7 @@ dos relatórios.
 |---|---|---|
 | **Identidade do modelo** | `model_identity` | Despromoção ou substituição silenciosa do modelo |
 | **Janela de contexto** | `context_window` | Truncagem silenciosa do contexto e «lost in the middle» |
-| **Capacidades declaradas** | `capability` | Chamadas de ferramentas, modo JSON, saída máxima ou visão declarados mas não entregues, ou uma saída que o relay limita |
+| **Capacidades declaradas** | `capability` | Chamadas de ferramentas, modo JSON ou visão declarados mas não entregues, ou uma saída cortada cedo demais ou limitada pelo relay (testada até 2048 tokens) |
 | **Conformidade do protocolo** | `protocol` | Parâmetros do pedido e atributos da resposta descartados ou ignorados |
 | **Faturação e utilização** | `billing` | Utilização de tokens inflacionada ou ausente |
 | **Conectividade** | `connectivity` | Acessibilidade do endpoint e a lista de modelos anunciada |

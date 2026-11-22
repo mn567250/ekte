@@ -78,7 +78,7 @@ bait-and-switch. The names are the ones the web UI and reports use.
 |---|---|---|
 | **Model identity** | `model_identity` | Silent model downgrade or substitution |
 | **Context window** | `context_window` | Silent context truncation and lost-in-the-middle |
-| **Capability claims** | `capability` | Tool calling, JSON mode, max output or vision that isn't delivered, or output the relay clamps |
+| **Capability claims** | `capability` | Tool calling, JSON mode or vision that isn't delivered, or output cut off early or clamped by the relay (probed up to 2,048 tokens) |
 | **Protocol compliance** | `protocol` | Request parameters and response attributes that are dropped or ignored |
 | **Billing & usage** | `billing` | Inflated or missing token usage |
 | **Connectivity** | `connectivity` | Endpoint reachability and the advertised model list |

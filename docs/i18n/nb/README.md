@@ -81,7 +81,7 @@ direkte en falsk vare. Navnene er de nettgrensesnittet og rapportene bruker.
 |---|---|---|
 | **Modellidentitet** | `model_identity` | Stille nedgradering eller bytte av modell |
 | **Kontekstvindu** | `context_window` | Stille avkorting av kontekst og lost-in-the-middle |
-| **Påståtte egenskaper** | `capability` | Verktøykall, JSON-modus, maks utdata eller syn som ikke innfris, eller utdata som reléet begrenser |
+| **Påståtte egenskaper** | `capability` | Verktøykall, JSON-modus eller syn som ikke innfris, eller utdata som kuttes for tidlig eller begrenses av reléet (testet opptil 2 048 tokens) |
 | **Protokollsamsvar** | `protocol` | Forespørselsparametere og svarattributter som droppes eller ignoreres |
 | **Fakturering og forbruk** | `billing` | Oppblåst eller manglende tokenforbruk |
 | **Tilkobling** | `connectivity` | Om endepunktet kan nås, og den annonserte modellisten |

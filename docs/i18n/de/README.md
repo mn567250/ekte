@@ -84,7 +84,7 @@ Weboberfläche und der Berichte.
 |---|---|---|
 | **Modellidentität** | `model_identity` | Stillschweigende Herabstufung oder Austausch des Modells |
 | **Kontextfenster** | `context_window` | Stillschweigende Kontextkürzung und „Lost in the Middle“ |
-| **Angegebene Fähigkeiten** | `capability` | Tool-Calling, JSON-Modus, maximale Ausgabe oder Vision, die nicht geliefert werden, oder eine vom Relay gekappte Ausgabe |
+| **Angegebene Fähigkeiten** | `capability` | Tool-Calling, JSON-Modus oder Vision, die nicht geliefert werden, oder eine zu früh abgebrochene oder vom Relay gekappte Ausgabe (geprüft bis 2.048 Token) |
 | **Protokollkonformität** | `protocol` | Anfrageparameter und Antwortattribute, die verworfen oder ignoriert werden |
 | **Abrechnung & Verbrauch** | `billing` | Aufgeblähter oder fehlender Token-Verbrauch |
 | **Konnektivität** | `connectivity` | Erreichbarkeit des Endpunkts und die beworbene Modellliste |
