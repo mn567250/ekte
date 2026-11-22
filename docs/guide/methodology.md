@@ -236,8 +236,8 @@ result says that model identity was not verified.
   `reasoning: true`, or after its first such repeat), short probes are sent
   with the 4,096-token limit from the start instead of twice.
   The checks that treat a reasoning model differently (billing, determinism,
-  maximum output, request attributes) all recognise one the same way: the
-  profile says so, the client has learned it from such a repeat, or a
+  maximum output, request attributes, streaming) all recognise one the same
+  way: the profile says so, the client has learned it from such a repeat, or a
   response reports reasoning tokens.
 - **Request parameters:** reasoning models refuse some parameters: on Chat
   Completions `max_tokens` (they take `max_completion_tokens`), and on every
@@ -717,17 +717,32 @@ ceiling. One image is suggestive, not proof.
 answer and replays it as one or a few chunks, losing the latency benefit.
 
 **How it works.** One streamed request (`max_tokens` 256,
-`stream_options.include_usage`) with chunk arrival times recorded. Three
-buffering signals: **few chunks** (two or fewer) and **late first token** (TTFT
-above 90% of the total duration), both judged only once at least 220 characters
-came back, and **uniform gaps** (four or more chunks whose gaps are almost
-equal, CV < 0.1, and under 2 ms: dumped together). TTFT is the first visible
-content token, so for a reasoning model (claimed by the knowledge base, or
-reporting reasoning tokens in its usage), which thinks before answering, a late
-first token is only noted and not counted as buffering; its few-chunks and
-uniform-gaps signals still count. A stream without a usage chunk is flagged
+`stream_options.include_usage`) with chunk arrival times recorded, then the same
+prompt once without streaming (same `max_tokens`, temperature 0). Four buffering
+signals, all judged only once at least 220 characters came back:
+
+- **few chunks**: two or fewer;
+- **late first token**: TTFT above 90% of the stream's duration, or above 75%
+  when the next signal fires too;
+- **first token after the whole answer's time** (`streaming.ttft_vs_total`): the
+  streamed TTFT is at least 80% of the time the request without streaming took,
+  so the answer was complete before the first chunk left. This catches a
+  buffered answer replayed chunk by chunk with a "typing" delay, which shows
+  many chunks and spread-out gaps. Not compared when either call failed or the
+  answer without streaming took under a second (two calls' timings are then
+  mostly network noise);
+- **burst** (`streaming.uniform_gaps`, the id stored reports carry): four or more
+  chunks with at least 80% of the gaps between them under 2 ms, dumped together.
+
+TTFT is the first visible content token, so for a reasoning model (the profile
+says so, the client has learned it, or a response reports reasoning tokens),
+which thinks before answering, a late first token is only noted and not counted
+as buffering, and the comparison without streaming is skipped; its few-chunks
+and burst signals still count. A stream without a usage chunk is flagged
 separately. A stream that succeeds but delivers no content is inconclusive and
-not scored.
+not scored. In compare mode the baseline's streamed TTFT and its time without
+streaming for the same prompt are recorded in the evidence (`baseline`), not
+scored.
 A failed stream request is repeated once. If it fails again with a 4xx that
 names streaming, or with any other 4xx while the same prompt without streaming
 succeeds, the relay does not stream for this model (`streaming.unsupported`,
@@ -744,6 +759,7 @@ When the model streams its reasoning (reasoning deltas, thinking blocks, Respons
 | `streaming.few_chunks` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.late_ttft` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.reasoning_ttft` | Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering. | Info | No deduction |
+| `streaming.ttft_vs_total` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.uniform_gaps` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.no_usage` | No usage chunk in the stream: deducts 15 points when nothing is buffered. | Warning · Low | up to −15 pts |
 | `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | Not counted |

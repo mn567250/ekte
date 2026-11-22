@@ -78,6 +78,8 @@
     "Incomplete usage breakdown": "Incomplete usage breakdown",
     "Integrity canaries inconclusive": "Integrity canaries inconclusive",
     "Inter-chunk gaps are uniform and near-zero": "Inter-chunk gaps are uniform and near-zero",
+    "Chunks arrived in a burst": "Chunks arrived in a burst",
+    "First token only after a whole non-streamed answer's time": "First token only after a whole non-streamed answer's time",
     "JSON mode delivered": "JSON mode delivered",
     "JSON mode observed without strong claim": "JSON mode observed without strong claim",
     "JSON-mode probe failed to complete": "JSON-mode probe failed to complete",

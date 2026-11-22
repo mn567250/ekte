@@ -246,7 +246,7 @@ identidad del modelo indica que la identidad del modelo no se verificó.
   tipo), las sondas cortas se envían desde el principio con el límite de 4.096
   tokens en lugar de dos veces.
   Las comprobaciones que tratan de otra forma a un modelo de razonamiento
-  (facturación, determinismo, salida máxima, atributos de la petición) lo
+  (facturación, determinismo, salida máxima, atributos de la petición, streaming) lo
   reconocen todas igual: lo dice el perfil, el cliente lo ha aprendido de una
   repetición así, o una respuesta informa tokens de razonamiento.
 - **Parámetros de la petición:** los modelos de razonamiento rechazan algunos
@@ -764,18 +764,34 @@ ventaja de latencia.
 
 **Cómo funciona.** Una petición en streaming (`max_tokens` 256,
 `stream_options.include_usage`) de la que se registra la hora de llegada de cada
-fragmento. Tres señales de búfer: **pocos fragmentos** (dos o menos) y **primer
-token tardío** (TTFT por encima del 90 % de la duración total), evaluadas solo
-cuando llegaron al menos 220 caracteres, e **intervalos uniformes** (cuatro o
-más fragmentos con intervalos casi iguales, CV < 0,1, y por debajo de 2 ms:
-volcados de golpe). Un flujo sin fragmento de uso se señala aparte.
+fragmento, y después el mismo prompt una vez sin streaming (mismo `max_tokens`,
+temperatura 0). Cuatro señales de búfer, todas evaluadas solo cuando llegaron al
+menos 220 caracteres:
+
+- **pocos fragmentos**: dos o menos;
+- **primer token tardío**: TTFT por encima del 90 % de la duración del stream, o
+  del 75 % cuando también salta la señal siguiente;
+- **primer token tras el tiempo de la respuesta completa**
+  (`streaming.ttft_vs_total`): el TTFT en streaming es al menos el 80 % del tiempo
+  que tardó la petición sin streaming, así que la respuesta estaba completa antes
+  de que saliera el primer fragmento. Detecta una respuesta en búfer reproducida
+  fragmento a fragmento con un retardo de «tecleo», que muestra muchos
+  fragmentos e intervalos repartidos. No se compara si alguna de las dos
+  llamadas falló o si la respuesta sin streaming tardó menos de un segundo (los
+  tiempos de dos llamadas son entonces sobre todo ruido de red);
+- **ráfaga** (`streaming.uniform_gaps`, el id que llevan los informes
+  guardados): cuatro o más fragmentos con al menos el 80 % de sus intervalos por
+  debajo de 2 ms: volcados de golpe.
 
 El TTFT es el primer token de contenido visible. Para un modelo de razonamiento
-(según la base de conocimiento, o que informa tokens de razonamiento en su
-usage), que piensa antes de responder, un primer token tardío solo se anota y no
-cuenta como búfer; las señales de pocos fragmentos e intervalos uniformes siguen
-contando. Un stream que tiene éxito pero no entrega contenido no es concluyente
-y no se puntúa.
+(lo dice el perfil, el cliente lo ha aprendido o una respuesta informa tokens de
+razonamiento), que piensa antes de responder, un primer token tardío solo se
+anota y no cuenta como búfer, y se omite la comparación sin streaming; las
+señales de pocos fragmentos y ráfaga siguen contando. Un flujo sin fragmento de
+uso se señala aparte. Un stream que tiene éxito pero no entrega contenido no es
+concluyente y no se puntúa. En el modo de comparación, el TTFT en streaming de
+la referencia y su tiempo sin streaming para el mismo prompt se registran en la
+evidencia (`baseline`), sin puntuar.
 Una petición en streaming fallida se repite una vez. Si vuelve a fallar con un 4xx que menciona el streaming, o con cualquier otro 4xx mientras el mismo prompt sin streaming tiene éxito, el relay no hace streaming para este modelo (`streaming.unsupported`, puntuación 0). Cualquier otro fallo (un 5xx, un tiempo de espera agotado, un límite de tasa o un 4xx que también recibe el prompt sin streaming) es un fallo de transporte: `streaming.failed`, no concluyente y sin puntuación. Ambos son avisos de transporte (véase [Veredicto de riesgo](#veredicto-de-riesgo)): bajan esta dimensión, pero nunca el riesgo de sustitución.
 Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de thinking, eventos de razonamiento de la API Responses), se mide en su lugar el primer token de cualquier tipo: un stream genuino empieza a razonar pronto, así que un stream cuyo razonamiento y respuesta llegan ambos al final es un búfer incluso para un modelo de razonamiento.
 
@@ -785,6 +801,7 @@ Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de think
 | `streaming.few_chunks` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.late_ttft` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.reasoning_ttft` | Primer token tardío de un modelo de razonamiento (piensa antes de responder): informativo, no cuenta como búfer. | Info | Sin deducción |
+| `streaming.ttft_vs_total` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.uniform_gaps` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.no_usage` | No hay fragmento de uso en el stream: resta 15 puntos si nada está en búfer. | Advertencia · Baja | hasta −15 pts |
 | `streaming.no_content` | El stream tuvo éxito pero no entregó contenido para juzgar; sin puntuación. | No concluyente · Baja | No computa |

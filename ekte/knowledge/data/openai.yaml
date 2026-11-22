@@ -365,7 +365,7 @@ models:
   family: gpt-6
   context_window_tokens: 1050000
   max_output_tokens: 128000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2026-04-20'
   tokenizer: o200k_base
   modalities:
   - text
@@ -400,7 +400,7 @@ models:
   family: gpt-6
   context_window_tokens: 1050000
   max_output_tokens: 128000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2026-05-18'
   tokenizer: o200k_base
   modalities:
   - text
@@ -1539,3 +1539,5 @@ sources:
 - https://openrouter.ai/openai/gpt-oss-120b
 - https://openrouter.ai/openai/gpt-oss-safeguard-20b
 - https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-oss-safeguard-120b.html
+- https://developers.openai.com/api/docs/models/gpt-6-sol
+- https://developers.openai.com/api/docs/models/gpt-6-luna

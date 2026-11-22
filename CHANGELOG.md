@@ -39,6 +39,53 @@ ekte has three eras:
   byte-identical to the gated official file, or that a converted tokenizer
   matches the official tiktoken vocabulary and split pattern.
 
+### Knowledge base: documented cutoff months for 30 more chat profiles ([#251](https://github.com/mn567250/ekte/issues/251))
+
+- **Knowledge cutoff:** 30 chat profiles whose `knowledge_cutoff` was missing,
+  year-only or an estimate now carry the month (or date) the vendor's own model
+  card or model documentation states, so the identity cutoff probe runs for them:
+  Phi-4 (7), Olmo 3 / 3.1 (5), Gemini 4 Argon, Gemma 4 (3) and Gemma 3n, Nemotron 3 Nano and Super, GPT-6 Sol and
+  Luna, Grok 4.7 / 4.6 / 4.5, Command A+ and the Command A family (4) and Command
+  R7B. Each source is listed in the provider file. Profiles whose vendor gives no
+  month (or contradicts itself) are unchanged; 94 chat profiles still have no
+  cutoff month. Gemini 3.8 / 3.6 Flash and 3.5 Flash-Lite stay without one:
+  their cards give March 2026 but say knowledge may be limited to January 2025
+  in some domains, so an honest answer could trip the probe.
+
+### Streaming: a burst signal that fires, and a comparison with the same prompt without streaming ([#259](https://github.com/mn567250/ekte/issues/259))
+
+A buffered answer replayed as 40 chunks in a burst after a 3 s wait was caught
+by the late first token alone: the "uniform gaps" signal required a
+coefficient of variation below 0.1, which jittery burst gaps (0.05–0.45 ms)
+never have. A relay that buffered the whole answer and replayed it with a
+30 ms delay per chunk (a "typing" effect) passed as genuine streaming, score
+100.
+
+- **Burst:** `streaming.uniform_gaps` (the id is kept for stored reports and
+  translations) now fires when at least four chunks arrive with at least 80%
+  of the gaps between them under 2 ms, once the answer has at least 220
+  characters; there is no CV condition any more. Title "Chunks arrived in a
+  burst".
+- **New signal `streaming.ttft_vs_total`**, Warn · Medium, same deduction
+  ladder as the other buffering signals: the same prompt is sent once without
+  streaming (same `max_tokens`, temperature 0); when the streamed first token
+  (reasoning or content) comes at or after 80% of that request's duration, the
+  answer was complete before the first chunk left. Not compared when either
+  call fails, when the non-streamed answer takes under a second (two calls'
+  timings are then mostly network noise) or for a reasoning model whose
+  thinking is hidden. One extra request: the streaming check's `cost_hint` is
+  now 2.
+- **Late first token:** the bar drops from 90% to 75% of the stream's duration
+  only when `streaming.ttft_vs_total` fires too; alone it stays at 90%.
+- **Compare mode:** the baseline's streamed first token and its time without
+  streaming for the same prompt are recorded in the evidence (`baseline`), not
+  scored.
+- **Reasoning models** are recognised with the shared
+  `ekte.detectors.helpers.is_reasoning` (#262), so an endpoint the client has
+  learned to reason is treated as one here too.
+- Scores can change for the same relay (see #168): a paced replay now scores
+  60 instead of 100. The report schema is unchanged.
+
 ### Scoring: a failed stream is no substitution evidence; two HIGH findings need two detectors ([#255](https://github.com/mn567250/ekte/issues/255))
 
 `streaming.failed` was Fail · High with cap 0 after a single streaming request
