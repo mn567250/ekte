@@ -57,6 +57,7 @@ _KEEP_FINISHED_MAX = 20
 
 Emit = Callable[[dict[str, Any]], None]
 Runner = Callable[[Emit], Awaitable[dict[str, Any]]]
+Saver = Callable[[dict[str, Any]], Awaitable[int | None]]
 
 # The events that change what /api/jobs (or a monitor card) shows: a job was
 # queued behind another audit, started running, or ended ("done" follows every
@@ -319,14 +320,24 @@ class JobManager:
         self._prune()
         return sorted(self._jobs.values(), key=lambda j: j.created)
 
-    def submit(self, summary: dict[str, Any], urls: Iterable[str | None], run: Runner) -> Job:
-        """Queue an audit; it starts as soon as its relays (and a slot) are free."""
+    def submit(
+        self,
+        summary: dict[str, Any],
+        urls: Iterable[str | None],
+        run: Runner,
+        *,
+        save: Saver | None = None,
+    ) -> Job:
+        """Queue an audit; it starts as soon as its relays (and a slot) are free.
+
+        ``save`` stores the finished report and returns its history id
+        (default: saved as a new run; a re-score replaces its run instead)."""
         self._prune()
         keys = frozenset(relay_key(u) for u in urls if u)
         job = Job(summary, keys)
         self._jobs[job.id] = job
         bump_live()  # a new job in the list, queued
-        job.task = asyncio.create_task(self._drive(job, run))
+        job.task = asyncio.create_task(self._drive(job, run, save))
         return job
 
     def cancel(self, job_id: str) -> bool:
@@ -347,7 +358,7 @@ class JobManager:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _drive(self, job: Job, run: Runner) -> None:
+    async def _drive(self, job: Job, run: Runner, save: Saver | None = None) -> None:
         try:
             if self.gate.would_wait(job.keys):
                 job.waiting_for = self.gate.busy_with(job.keys)
@@ -360,7 +371,7 @@ class JobManager:
                 report = await run(job.emit)
                 # The audit is over: store and report it as one step, even if
                 # a cancel arrives while the save runs (off the loop).
-                await settle(self._finish(job, report))
+                await settle(self._finish(job, report, save))
         except asyncio.CancelledError:
             if job.status != "done":  # else the save finished first (shutdown)
                 job.status = "cancelled"
@@ -381,9 +392,12 @@ class JobManager:
             job._subscribers.clear()
 
     @staticmethod
-    async def _finish(job: Job, report: dict[str, Any]) -> None:
+    async def _finish(job: Job, report: dict[str, Any], save: Saver | None = None) -> None:
         job.finishing = True
-        job.report_id = await asyncio.to_thread(_save, report)
+        if save is None:
+            job.report_id = await asyncio.to_thread(_save, report)
+        else:
+            job.report_id = await save(report)
         perf = report.get("performance")
         if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
             attach_trends(perf["requests"])  # the chart's trend line (after saving: never stored)

@@ -31,7 +31,8 @@ Evidence (schema version 5): a run that kept its raw request/response pairs
 names its file (``report.evidence.file``, see :mod:`ekte.evidence`) in the
 ``evidence_file`` column. The file lives in the data directory's ``evidence``
 folder; deleting the last row that names it deletes it (a re-scored run,
-:mod:`ekte.replay`, names its original's file), and :func:`sweep_evidence`
+:mod:`ekte.replay`, saved as a separate run by an ekte before 0.36, names its
+original's file), and :func:`sweep_evidence`
 removes files no row names.
 
 Data version (schema version 8): ``meta`` holds ``data_version``, a counter
@@ -70,6 +71,18 @@ sorts runs by is a number on the run's ``history_metrics`` row (start time
 in Unix seconds, score, grade, risk, model / URL / facet ids; kept by
 triggers, see :mod:`ekte.web.run_row`), so aggregations never read
 ``history``.
+
+Re-scoring (schema version 17): a run re-scored from its evidence
+(:mod:`ekte.replay`) is replaced in place by :func:`replace`: it keeps its id,
+start time, monitor and evidence file, and its report, verdict columns,
+request records and analytics rows are those of the new scoring.
+``history_rescore`` records, per run, why a bulk re-score by an ekte version
+(``ekte rescore --all``, History's "Re-score all with this version", the
+automatic re-score after an upgrade, :mod:`ekte.web.rescore`) could not
+re-score it (:func:`ekte.replay.refusal`'s text), so History can say so;
+``meta`` key ``rescore_version`` holds the ekte version the automatic
+re-score after an upgrade finished for. Step 18 is reserved for the
+analytics' ``audit_tool_version`` (#168).
 
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
@@ -316,6 +329,19 @@ def _v16(conn: sqlite3.Connection) -> None:
     run_row.ensure_run_columns(conn)
 
 
+def _v17(conn: sqlite3.Connection) -> None:
+    """Why a run could not be re-scored (``history_rescore``: the ekte
+    version that tried, the reason, when). Empty until a bulk re-score runs."""
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS history_rescore (
+               history_id INTEGER PRIMARY KEY,
+               version    TEXT,
+               refusal    TEXT,
+               ts         REAL
+           )"""
+    )
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -333,6 +359,7 @@ MIGRATIONS = (
     dbmigrate.Migration(14, _v14),
     dbmigrate.Migration(15, _v15),
     dbmigrate.Migration(16, _v16),
+    dbmigrate.Migration(17, _v17),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
@@ -570,6 +597,168 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
         return -1
 
 
+def replace(rid: int, report: dict[str, Any]) -> bool:
+    """Replace the stored report of run ``rid`` with ``report``, its re-score
+    (:mod:`ekte.replay`); True when the run exists and was replaced.
+
+    One transaction updates the report, the verdict columns (risk level,
+    score, grade), the knowledge-base snapshot link, the request records and
+    the analytics rows (metrics, dimension and outcome rows, extracted as
+    :func:`save` does). The run keeps its id, its time (``ts``, and the
+    analytics start time: a re-score's ``generated_at`` is the re-score's own
+    time, which would move the run in every trend), its monitor
+    (``watch_id``), its evidence file, URL, claimed model and surface. A
+    recorded reason it could not be re-scored is dropped.
+
+    Unlike :func:`save`, errors are raised: the caller reports them.
+    """
+    rid = int(rid)
+    report = json.loads(json.dumps(dict(report or {}), ensure_ascii=False, default=str))
+    verdict = report.get("verdict") or {}
+    score = verdict.get("overall_score")
+    knowledge = report.get("knowledge")
+    if not isinstance(knowledge, dict):
+        knowledge = {}
+    snap = knowledge.get("profile")
+    if isinstance(snap, dict):
+        report["knowledge"] = {**knowledge, "profile": None}
+    metrics: tuple[Any, ...] | None = None
+    stored, records, split = report, None, None
+    try:
+        metrics = analytics_store.extract_metrics(report)
+        stored, records = analytics_store.split_requests(report)
+        split = 1 if records is not None else 0
+    except Exception:
+        # Left unmarked with its records inline: the backfill retries it.
+        metrics, stored, records, split = None, report, None, None
+    report_json = json.dumps(stored, ensure_ascii=False)
+    target = report.get("target") or {}
+    api_auto = target.get("api_auto")
+    with _connect() as conn:
+        old = conn.execute(
+            "SELECT h.id, m.started_at, m.started_at_estimated FROM history h"
+            " LEFT JOIN history_metrics m ON m.history_id = h.id WHERE h.id = ?",
+            (rid,),
+        ).fetchone()
+        if old is None:
+            return False
+        if metrics is not None and old["started_at"] is not None:
+            # the run stays where it was in every trend
+            metrics[0]["started_at"] = old["started_at"]
+            metrics[0]["started_at_estimated"] = old["started_at_estimated"]
+        snapshot_id = kb_snapshot.put(conn, snap) if isinstance(snap, dict) else None
+        conn.execute(
+            f"""UPDATE history SET model = ?, mode = ?, suite = ?, risk_level = ?, score = ?,
+                   rating = ?, report_json = ?, kb_snapshot_id = ?, kb_match = ?, api = ?,
+                   api_auto = ?, stream_mode = ?, {_SPLIT} = ?
+               WHERE id = ?""",
+            (
+                target.get("model"),
+                report.get("mode"),
+                report.get("suite"),
+                verdict.get("risk_level"),
+                float(score) if isinstance(score, (int, float)) else None,
+                verdict.get("rating"),
+                report_json,
+                snapshot_id,
+                knowledge.get("match_confidence"),
+                target.get("api"),
+                int(api_auto) if isinstance(api_auto, bool) else None,
+                report.get("stream_mode"),
+                split,
+                rid,
+            ),
+        )
+        if records is not None:
+            analytics_store.put_requests(conn, rid, records)
+        else:
+            conn.execute("DELETE FROM history_requests WHERE history_id = ?", (rid,))
+        if metrics is not None:
+            analytics_store.put_metrics(conn, rid, *metrics)
+        conn.execute("DELETE FROM history_rescore WHERE history_id = ?", (rid,))
+        kb_snapshot.prune(conn, "history")
+        _bump(conn)
+    return True
+
+
+def record_refusal(rid: int, version: str, reason: str) -> None:
+    """Record that ekte ``version`` could not re-score run ``rid``, and why
+    (one of :func:`ekte.replay.refusal`'s texts)."""
+    with _connect() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO history_rescore (history_id, version, refusal, ts)"
+            " SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM history WHERE id = ?)",
+            (int(rid), version, reason, time.time(), int(rid)),
+        )
+        _bump(conn)
+
+
+def refusals(ids: list[int] | None = None) -> dict[int, dict[str, Any]]:
+    """Run id -> ``{"version", "refusal", "ts"}`` for the runs a bulk
+    re-score could not re-score (of ``ids``, or all)."""
+    sql = "SELECT history_id, version, refusal, ts FROM history_rescore"
+    args: list[Any] = []
+    if ids is not None:
+        if not ids:
+            return {}
+        sql += f" WHERE history_id IN ({', '.join('?' * len(ids))})"
+        args = [int(i) for i in ids]
+    with _connect() as conn:
+        rows = conn.execute(sql, args).fetchall()
+    return {
+        int(r["history_id"]): {"version": r["version"], "refusal": r["refusal"], "ts": r["ts"]}
+        for r in rows
+    }
+
+
+def rescore_candidates(version: str) -> list[tuple[int, str | None]]:
+    """The runs a bulk re-score by ekte ``version`` has left to look at,
+    oldest first: scored by another version (their metrics'
+    ``tool_version``; a run without extracted metrics counts), and not
+    already found impossible to re-score by this version; ``(id, scoring
+    version)`` pairs."""
+    _ensure_extracted(_read())
+    with _connect() as conn:
+        rows = conn.execute(
+            """SELECT h.id, m.tool_version FROM history h
+               LEFT JOIN history_metrics m ON m.history_id = h.id
+               LEFT JOIN history_rescore r ON r.history_id = h.id
+               WHERE (m.tool_version IS NULL OR m.tool_version != ?)
+                 AND (r.version IS NULL OR r.version != ?)
+               ORDER BY h.id""",
+            (version, version),
+        ).fetchall()
+    return [(int(r["id"]), r["tool_version"]) for r in rows]
+
+
+def get_meta(key: str) -> str | None:
+    """A text value of the ``meta`` table (None when unset)."""
+    with _connect() as conn:
+        row = conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+    return None if row is None or row[0] is None else str(row[0])
+
+
+def set_meta(key: str, value: str) -> None:
+    """Set a text value of the ``meta`` table (never ``data_version``)."""
+    if key == "data_version":
+        raise ValueError("data_version is bumped, not set")
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO meta (key, value) VALUES (?, ?)"
+            " ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            (key, value),
+        )
+
+
+def newest_of_watch(wid: int) -> int | None:
+    """The id of the newest saved run of monitor ``wid`` (None: it has none)."""
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT MAX(id) FROM history WHERE watch_id = ?", (int(wid),)
+        ).fetchone()
+    return int(row[0]) if row and row[0] is not None else None
+
+
 # The performance headline of the list (GET /api/v1/history?perf=1), read
 # from the run's extracted metrics.
 PERF_HEADLINE = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50")
@@ -721,6 +910,7 @@ def delete(rid: int) -> None:
     with _connect() as conn:
         row = conn.execute("SELECT evidence_file FROM history WHERE id = ?", (int(rid),)).fetchone()
         conn.execute("DELETE FROM history WHERE id = ?", (int(rid),))
+        conn.execute("DELETE FROM history_rescore WHERE history_id = ?", (int(rid),))
         analytics_store.delete_for(conn, int(rid))
         kb_snapshot.prune(conn, "history")
         if row is not None:
@@ -739,6 +929,7 @@ def clear() -> None:
         names = [r["evidence_file"] for r in conn.execute(
             "SELECT evidence_file FROM history WHERE evidence_file IS NOT NULL")]
         conn.execute("DELETE FROM history")
+        conn.execute("DELETE FROM history_rescore")
         analytics_store.delete_for(conn)
         kb_snapshot.prune(conn, "history")
         _bump(conn)
