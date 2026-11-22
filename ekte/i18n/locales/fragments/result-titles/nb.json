@@ -78,6 +78,8 @@
   "Incomplete usage breakdown": "Ufullstendig fordeling i usage",
   "Integrity canaries inconclusive": "Integritetskanarier uavklart",
   "Inter-chunk gaps are uniform and near-zero": "Opphold mellom bitene er jevne og nær null",
+  "Chunks arrived in a burst": "Bitene kom i en støt",
+  "First token only after a whole non-streamed answer's time": "Første token først etter tiden et helt svar uten strømming tar",
   "JSON mode delivered": "JSON-modus levert",
   "JSON mode observed without strong claim": "JSON-modus observert uten sterk påstand",
   "JSON-mode probe failed to complete": "JSON-modus-proben ble ikke fullført",

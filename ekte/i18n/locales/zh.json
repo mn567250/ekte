@@ -362,9 +362,13 @@
    "推理模型的首 token 较晚",
    "首个可见 token 在第 {ttft_ms} ms 到达（总时长 {duration_ms} ms）；该模型会先推理再回答，因此不计为缓冲。"
   ],
+  "streaming.ttft_vs_total": [
+   "首 token 要等到一次完整非流式回答的时长之后才到达",
+   "首个流式 token 在 {ttft_ms} ms 后才到达，约为同一提示非流式耗时 {non_stream_ms} ms 的 {ttft_vs_total}：首个分片发出前回答就已完整生成。"
+  ],
   "streaming.uniform_gaps": [
-   "分片间隔均匀且接近零",
-   "{chunk_count} 个分片，平均间隔 ~{mean_delta_ms} ms、CV {delta_cv} —— 分片像是被一次性倾倒。"
+   "分片集中突发到达",
+   "{chunk_count} 个分片之间的 {gaps} 个间隔中有 {burst_gaps} 个低于 2 ms：分片是被一次性倾倒的。"
   ],
   "streaming.no_usage": [
    "流中没有 usage 分片",
