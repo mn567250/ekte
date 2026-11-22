@@ -57,6 +57,14 @@ ekte has three eras:
   `performance.reference` runs only in compare mode or for a profile with a
   `performance.decode_tps` range (few packaged profiles have one).
 
+### Knowledge-base import: deep nesting is refused the same way with PyYAML 6.0.4
+
+PyYAML 6.0.4's libyaml refuses deeply nested YAML on its own while scanning
+ahead ("exceeded maximum nesting depth"), before the importer's own count of
+32 levels is reached, so `ekte kb-import --check` reported libyaml's message
+instead of "nested more than 32 levels deep", and differently from the
+pure-Python loader. That refusal is now reported as the importer's own.
+
 ### Scoring: coverage limits the rating ([#249](https://github.com/mn567250/ekte/issues/249))
 
 A dimension that ran but could not be judged (its detectors inconclusive or
