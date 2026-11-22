@@ -98,14 +98,13 @@ _MIN_RUNG = 256
 # ekte's stdlib heuristic (ekte/utils/tokenize.py) under-counts this filler
 # against real tokenizers, so a haystack sized by the heuristic alone would
 # overshoot its rung. Each haystack is built at size / factor heuristic tokens,
-# the factor being the tokenizer family's measured ratio, else 1.2 (the measured
-# ~12% (o200k) to ~15% (cl100k) under-count); see
-# ``ekte.utils.tokenize.FILLER_REAL_PER_HEURISTIC``.
+# the factor being the tokenizer family's measured ratio (1.12 for o200k up to
+# 1.41 for Qwen 3.5+), else 1.2; see ``ekte.utils.tokenize.FILLER_REAL_PER_HEURISTIC``.
 # What "tokens" means in this detector's sizes and evidence.
 _TOKEN_UNIT = (
     "rung sizes are budgets of real prompt tokens; each haystack is built at "
     "size / real_per_heuristic by ekte's heuristic count (1.2 unless the tokenizer "
-    "family has a measured factor), which under-counts real tokenizers by ~12-15%"
+    "family has a measured factor), which under-counts real tokenizers by ~12-41%"
 )
 # The largest recalled rung's reported prompt tokens above this share of its
 # budget: the real tokenizer counts more than the factor allows, so a failure at
