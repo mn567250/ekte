@@ -113,14 +113,18 @@ def test_repeated_rescores_keep_the_recorded_version(data, monkeypatch):
     assert second["rescored_at"] == history.get(rid)["generated_at"]
 
 
-def test_the_api_job_replaces_the_run_and_reports_its_id(data, monkeypatch):
+@pytest.mark.parametrize("url", ["/api/v1/history/{rid}/rescore?replace=true",
+                                 "/api/history/{rid}/rescore"])
+def test_the_api_job_replaces_the_run_and_reports_its_id(data, monkeypatch, url):
     from ekte.web import history
     from ekte.web.server import create_app
 
     rid, _ = _saved(monkeypatch)
     n = _count()
     with TestClient(create_app(), base_url="http://localhost") as client:
-        job = client.post(f"/api/v1/history/{rid}/rescore").json()
+        created = client.post(url.format(rid=rid))
+        assert "deprecation" not in created.headers
+        job = created.json()
         r = client.get(f"/api/v1/jobs/{job['id']}/events")
         events = [json.loads(x[5:]) for x in r.text.splitlines() if x.startswith("data:")]
         ev = next(e for e in events if e["type"] == "report")
@@ -138,9 +142,9 @@ def test_cli_save_replaces_the_run(data, monkeypatch):
 
     rid, _ = _saved(monkeypatch)
     n = _count()
-    res = CliRunner().invoke(app, ["rescore", str(rid)])
+    res = CliRunner().invoke(app, ["rescore", str(rid), "--replace"])
     assert res.exit_code == 0, res.output
-    assert "replaced" in res.output
+    assert "replaced" in res.output and "Deprecated" not in res.output
     assert _count() == n and history.get(rid)["tool_version"] == __version__
 
 

@@ -1603,14 +1603,22 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/history/{rid}/rescore")
     @app.post("/api/history/{rid}/rescore")
-    async def history_rescore(rid: int) -> Any:
+    async def history_rescore(request: Request, rid: int, replace: bool | None = None) -> Any:
         """Re-score a saved run with this ekte version from its evidence file
         (ekte.replay): queued as a background job like an audit. The new
         report replaces the run in place (same id; the job reports it as
         ``report_id``) and its monitor follows the new verdict
-        (ekte.web.rescore). The relay is never contacted."""
+        (ekte.web.rescore). The relay is never contacted.
+
+        On ``/api/v1/`` the stability policy keeps the documented behavior
+        for a deprecation period: without ``replace=true`` the re-score is
+        saved as a new run (deprecated; logged, ``Deprecation`` header).
+        ``replace=false`` asks for that explicitly (deprecated as well)."""
         from ekte import replay
         from ekte.web import rescore
+
+        v1 = request.url.path.startswith("/api/v1/")
+        in_place = bool(replace) if v1 else replace is not False
 
         path, report = await asyncio.to_thread(_evidence_of, rid)
         if report is None:
@@ -1621,7 +1629,11 @@ def create_app() -> FastAPI:
         if reason is not None:
             return JSONResponse({"error": reason}, status_code=409)
         # no relay is contacted: the job waits for no relay gate
-        return JSONResponse(rescore.submit_job(rid, report, path).info())
+        job = rescore.submit_job(rid, report, path, replace=in_place)
+        if in_place:
+            return JSONResponse(job.info())
+        _log.warning("POST %s: %s", request.url.path, rescore.NEW_RUN_DEPRECATED)
+        return JSONResponse(job.info(), headers={"Deprecation": "true"})
 
     @app.get("/api/rescore")
     def history_rescore_progress() -> Any:

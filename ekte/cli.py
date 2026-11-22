@@ -962,7 +962,8 @@ def _verdict_text(report: dict | None) -> str:
 def rescore_command(
     source: Annotated[str | None, typer.Argument(help="The id of a saved run in the history, or a report JSON file (then also --evidence). Leave out with --all.")] = None,
     evidence_file: Annotated[Path | None, typer.Option("--evidence", help="The evidence file of a report JSON file given as SOURCE.")] = None,
-    save: Annotated[bool, typer.Option("--save/--no-save", help="Replace the saved run with the re-scored report (same id, time and monitor; a saved run only). --no-save only prints it.")] = True,
+    save: Annotated[bool, typer.Option("--save/--no-save", help="Save the re-scored report to the history (a saved run only): with --replace in place of the run, else as a new run (deprecated: a later ekte replaces by default). --no-save only prints it.")] = True,
+    replace: Annotated[bool, typer.Option("--replace", help="Replace the saved run with the re-scored report: it keeps its id, time and monitor, and its monitor follows the new verdict.")] = False,
     all_runs: Annotated[bool, typer.Option("--all", help="Re-score every saved run scored by another ekte version, one after another, and replace each; runs without a usable evidence file are skipped with the reason.")] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Print the re-scored report as JSON to stdout.")] = False,
 ) -> None:
@@ -972,14 +973,16 @@ def rescore_command(
     recorded timing) instead of contacting the relay, so improved checks can
     judge an old run again. A check that now asks something the recorded run
     never asked reads inconclusive. Takes about as long as the original run's
-    requests did. A saved run is replaced in place: it keeps its id, time and
-    monitor, and its monitor follows the new verdict.
+    requests did. With --replace (and with --all) a saved run is replaced in
+    place: it keeps its id, time and monitor, and its monitor follows the new
+    verdict.
     """
     from ekte import replay
 
     if all_runs:
         if source is not None or evidence_file is not None or as_json or not save:
-            err_console.print("[red]--all takes no SOURCE, --evidence, --json or --no-save.[/red]")
+            err_console.print("[red]--all takes no SOURCE, --evidence, --json or --no-save "
+                              "(it always replaces each run).[/red]")
             raise typer.Exit(code=2)
         _rescore_all()
         return
@@ -1020,15 +1023,22 @@ def rescore_command(
         err_console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
     replaced = False
+    new_id = None
     if save and report_id is not None:
         from ekte.web import rescore
 
-        try:
-            _run_async(rescore.store(report_id, report, json.loads(new.model_dump_json())))
-            replaced = True
-        except Exception as exc:
-            err_console.print(f"[red]Could not replace saved run {report_id}: {exc}[/red]")
-            raise typer.Exit(code=1) from exc
+        if replace:
+            try:
+                _run_async(rescore.store(report_id, report, json.loads(new.model_dump_json())))
+                replaced = True
+            except Exception as exc:
+                err_console.print(f"[red]Could not replace saved run {report_id}: {exc}[/red]")
+                raise typer.Exit(code=1) from exc
+        else:
+            from ekte.web import history
+
+            err_console.print(f"[yellow]Deprecated: {rescore.NEW_RUN_DEPRECATED}.[/yellow]")
+            new_id = history.save(json.loads(new.model_dump_json()))
     if as_json:
         print(new.model_dump_json(indent=2))
         return
@@ -1045,6 +1055,7 @@ def rescore_command(
         f"Before: {_verdict_text(report)}   "
         f"Now: {new.verdict.risk_level.value} · {new.verdict.overall_score if new.verdict.overall_score is not None else '—'}"
         + (f"   (saved run {report_id} replaced)" if replaced else "")
+        + (f"   (saved as run {new_id})" if new_id and new_id > 0 else "")
     )
 
 

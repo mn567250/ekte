@@ -319,7 +319,8 @@ Re-score a recorded run with this ekte version, from its evidence file.
 |---|---|---|---|
 | `SOURCE` (optional) | argument | | The id of a saved run in the history, or a report JSON file (then also --evidence). Leave out with --all. |
 | `--evidence` | path |  | The evidence file of a report JSON file given as SOURCE. |
-| `--save`, `--no-save` | flag |  | Replace the saved run with the re-scored report (same id, time and monitor; a saved run only). --no-save only prints it. |
+| `--save`, `--no-save` | flag |  | Save the re-scored report to the history (a saved run only): with --replace in place of the run, else as a new run (deprecated: a later ekte replaces by default). --no-save only prints it. |
+| `--replace` | flag |  | Replace the saved run with the re-scored report: it keeps its id, time and monitor, and its monitor follows the new verdict. |
 | `--all` | flag |  | Re-score every saved run scored by another ekte version, one after another, and replace each; runs without a usable evidence file are skipped with the reason. |
 | `--json` | flag |  | Print the re-scored report as JSON to stdout. |
 

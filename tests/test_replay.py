@@ -195,7 +195,8 @@ def test_api_queues_a_rescore_as_a_job(saved):
         events = [json.loads(x[5:]) for x in r.text.splitlines() if x.startswith("data:")]
         ev = next(e for e in events if e["type"] == "report")
         assert ev["report"]["rescored_from"]["report_id"] == rid
-        assert ev["report_id"] == rid  # the run is replaced in place (#168)
+        # v1 without replace=true: a new run, as documented (deprecated, #168)
+        assert ev["report_id"] != rid and created.headers["deprecation"] == "true"
         assert history.get(ev["report_id"])["rescored_from"]["missing"] == {}
         assert client.post("/api/v1/history/999/rescore").status_code == 404
         plain = history.save({**history.get(rid), "evidence": None})
@@ -212,8 +213,9 @@ def test_cli_rescores_a_saved_run_or_a_report_file(saved, tmp_path):
     res = CliRunner().invoke(app, ["rescore", str(rid)])
     assert res.exit_code == 0, res.output
     out = unwrapped(res.output)  # one long line, wrapped by Rich
-    assert "requests replayed" in out and f"saved run {rid} replaced" in out
-    assert history.recent(1)[0]["id"] == rid  # replaced in place, no new run (#168)
+    assert "requests replayed" in out and "saved as run" in out
+    assert "Deprecated" in out  # a new run without --replace (#168)
+    assert history.recent(1)[0]["id"] != rid
 
     report_file = tmp_path / "report.json"
     report_file.write_text(json.dumps(history.get(rid)), encoding="utf-8")

@@ -193,10 +193,20 @@ def job_summary(rid: int, report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def submit_job(rid: int, report: dict[str, Any], path: Path) -> Any:
+# The deprecated behavior of ``POST /api/v1/history/{id}/rescore`` without
+# ``replace`` and of ``ekte rescore --save`` without ``--replace``.
+NEW_RUN_DEPRECATED = (
+    "saving a re-score as a new run is deprecated; a later ekte (0.37.0 at the "
+    "earliest) replaces the saved run in place by default. Replace it now with "
+    "--replace (CLI) or replace=true (POST /api/v1/history/{id}/rescore)"
+)
+
+
+def submit_job(rid: int, report: dict[str, Any], path: Path, *, replace: bool = True) -> Any:
     """Queue the re-score of run ``rid`` as a background job (no relay gate:
     nothing is contacted); the job's report replaces the run, and the job
-    reports ``report_id`` = ``rid``."""
+    reports ``report_id`` = ``rid``. ``replace=False`` saves it as a new run
+    instead (deprecated, see :data:`NEW_RUN_DEPRECATED`)."""
     from ekte import replay
     from ekte.web import jobs
 
@@ -207,7 +217,7 @@ def submit_job(rid: int, report: dict[str, Any], path: Path) -> Any:
     async def save(new: dict[str, Any]) -> int:
         return await store(rid, report, new)
 
-    return jobs.manager.submit(job_summary(rid, report), [], run, save=save)
+    return jobs.manager.submit(job_summary(rid, report), [], run, save=save if replace else None)
 
 
 # --------------------------------------------------------------------------- #
