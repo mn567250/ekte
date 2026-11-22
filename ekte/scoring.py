@@ -123,15 +123,19 @@ def _dims_for(table: dict[str, tuple[Dimension, ...]], surface: str | None) -> s
 
 # Transport/advisory checks (by finding check id): how the relay is reached and
 # how it holds up under load, not WHICH model it serves. Plain HTTP, a flaky
-# burst or a slow tail lower their dimension's score and status and are listed
-# as advisories in the verdict, but never escalate the substitution risk ladder
-# — a self-hosted ``http://localhost`` endpoint must not read as "diverges from
-# the claimed model". An echoed API key (the other SECURITY check) and the
-# INTEGRITY findings (tampering, an injected prompt, a cache) still escalate.
+# burst, a slow tail, a stream request that failed twice or a relay that does
+# not stream for this model (#255) lower their dimension's score and status and
+# are listed as advisories in the verdict, but never escalate the substitution
+# risk ladder — a self-hosted ``http://localhost`` endpoint must not read as
+# "diverges from the claimed model". An echoed API key (the other SECURITY
+# check) and the INTEGRITY findings (tampering, an injected prompt, a cache)
+# still escalate.
 ADVISORY_CHECKS = frozenset({
     "security.tls",
     "reliability.success_rate",
     "reliability.latency",
+    "streaming.failed",
+    "streaming.unsupported",
 })
 
 # The highest overall score each risk level allows (#247): a relay with strong
@@ -507,10 +511,13 @@ def build_verdict(
         # Peripheral findings are still carried in the report as advisories.
         risk = RiskLevel.INCONCLUSIVE
         causes: list[tuple[DetectorResult, Finding]] = []
-    elif critical or core_high or len(high) >= 2:
+    elif critical or core_high or len({d.id for d, _ in high}) >= 2:
+        # Two HIGH findings outside the core make the risk high only when they
+        # come from two different detectors (#255): one detector repeating
+        # itself is one piece of evidence. Advisories never reach ``high``.
         risk = RiskLevel.HIGH
         causes = critical + core_high or high
-    elif high or core_medium:  # exactly one high-severity finding outside the core dimensions
+    elif high or core_medium:  # high-severity findings of one detector outside the core
         risk = RiskLevel.MEDIUM
         causes = high + core_medium
     elif medium:
@@ -722,8 +729,9 @@ def _summary(
         bits.append(VENDOR_ONLY_NOTE)
     if advisories:
         bits.append(
-            "Transport and reliability findings (plain HTTP, failures or slowness under "
-            "load) are advisories: they lower the score but not the substitution risk."
+            "Transport, reliability and streaming-support findings (plain HTTP, failures "
+            "or slowness under load, a stream that failed or is not supported) are "
+            "advisories: they lower the score but not the substitution risk."
         )
     if not used_baseline and risk in (RiskLevel.MEDIUM, RiskLevel.HIGH):
         bits.append("Run `ekte compare` against a trusted baseline to strengthen the verdict.")

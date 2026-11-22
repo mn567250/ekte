@@ -8,7 +8,15 @@ inter-chunk gaps; a buffered fake collapses all of that into a single dump.
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
 at 100; the first buffering signal deducts 40 points and a second one 20 more
 (the score never drops below 40 for buffering alone); a missing usage chunk
-deducts 15 only when nothing is buffered; a failed stream caps the score at 0.
+deducts 15 only when nothing is buffered.
+
+A failed stream request is repeated once (issue #255). A relay that refuses to
+stream for this model (a 4xx naming streaming, or any other 4xx while the same
+prompt without streaming succeeds) is ``streaming.unsupported`` and caps the
+score at 0; any other failure (5xx, timeout, a rate limit) is a transport
+failure, ``streaming.failed``, inconclusive and not scored. Both are advisories
+(``ekte.scoring.ADVISORY_CHECKS``): they say how the relay is reached, not which
+model it serves, so they never raise the substitution risk.
 
 A reasoning model (claimed by the knowledge base, or reporting reasoning tokens
 in its usage) may think for seconds before its first visible token and then
@@ -25,7 +33,14 @@ from ekte import prompts
 from ekte.context import AuditContext
 from ekte.detectors.base import Detector, register
 from ekte.detectors.scale import DeductionScale, outcome
-from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.models import (
+    CompletionOutcome,
+    DetectorResult,
+    Dimension,
+    RequestSpec,
+    Severity,
+    Status,
+)
 from ekte.perf.recorder import usage_tokens
 from ekte.utils import stats
 
@@ -58,9 +73,25 @@ SCALE = DeductionScale(
             label="No usage chunk in the stream: deducts 15 points when nothing is buffered."),
     outcome("streaming.no_content", "no_content", None, Status.INCONCLUSIVE, Severity.LOW,
             label="The stream succeeded but delivered no content to judge by; not scored."),
-    outcome("streaming.failed", "failed", None, Status.FAIL, Severity.HIGH, cap=0.0,
-            label="The streaming request failed."),
+    outcome("streaming.unsupported", "unsupported", None, Status.FAIL, Severity.MEDIUM, cap=0.0,
+            label="The relay does not stream for this model."),
+    outcome("streaming.failed", "failed", None, Status.INCONCLUSIVE, Severity.LOW,
+            label="The streaming request failed twice (5xx, timeout or another transport "
+            "failure); not scored."),
 )
+
+# 4xx statuses that are transient, not a refusal to stream: a timeout or a rate limit.
+_TRANSIENT_4XX = frozenset({408, 429})
+
+
+def _refuses_streaming(out: CompletionOutcome) -> bool | None:
+    """True when a failed stream is a 4xx naming streaming, False when it is no
+    4xx refusal at all (5xx, timeout, rate limit), None for another 4xx (decided
+    by whether the same prompt succeeds without streaming)."""
+    code = out.status_code
+    if code is None or not 400 <= code < 500 or code in _TRANSIENT_4XX:
+        return False
+    return True if "stream" in (out.error_message or "").lower() else None
 
 
 def _signal_deduction(signals: list[str]) -> float:
@@ -92,22 +123,65 @@ class StreamingDetector(Detector):
             stream=True,
         )
         out = await ctx.client.complete(spec)
-
-        # Total failure — can't assess streaming at all.
+        # One failed request is no evidence about streaming: repeat it once.
+        calls = [out]
         if not out.ok:
-            result.findings.append(
-                SCALE.finding(
-                    "streaming.failed",
-                    "failed",
-                    calls=[out],
-                    title="Streaming request failed",
-                    summary=out.error_message or f"HTTP {out.status_code}",
-                    evidence={"status_code": out.status_code, "error_type": out.error_type},
-                    recommendation="Verify the relay supports stream=true for this model.",
+            out = await ctx.client.complete(spec)
+            calls.append(out)
+
+        if not out.ok:
+            refuses = _refuses_streaming(out)
+            plain_ok: bool | None = None
+            if refuses is None:
+                # Another 4xx: a refusal to stream only if the same prompt works without it.
+                plain = await ctx.client.complete(spec.model_copy(update={"stream": False}))
+                calls.append(plain)
+                plain_ok = plain.ok
+                refuses = plain.ok
+            evidence = {
+                "status_code": out.status_code,
+                "error_type": out.error_type,
+                "attempts": 2,
+                "non_stream_ok": plain_ok,
+            }
+            if refuses:
+                result.findings.append(
+                    SCALE.finding(
+                        "streaming.unsupported",
+                        "unsupported",
+                        calls=calls,
+                        title="Relay does not stream for this model",
+                        summary=(
+                            f"The streaming request was refused twice (HTTP {out.status_code})"
+                            + (", while the same prompt without streaming succeeded"
+                               if plain_ok else "")
+                            + ": " + (out.error_message or "no error message") + "."
+                        ),
+                        evidence=evidence,
+                        recommendation="Verify the relay supports stream=true for this model.",
+                    )
                 )
-            )
-            result.status = Status.FAIL
-            result.score = SCALE.total(result.findings)
+                result.status = Status.FAIL
+                result.score = SCALE.total(result.findings)
+            else:
+                result.findings.append(
+                    SCALE.finding(
+                        "streaming.failed",
+                        "failed",
+                        calls=calls,
+                        title="Streaming request failed",
+                        summary=(
+                            "The streaming request failed twice ("
+                            + (out.error_message or f"HTTP {out.status_code}")
+                            + "); streaming could not be assessed."
+                        ),
+                        evidence=evidence,
+                        recommendation="Re-run the audit; if it keeps failing, check the "
+                        "relay's status for this model.",
+                    )
+                )
+                result.status = Status.INCONCLUSIVE
+                result.score = None
             return result
 
         # A successful stream without any content: nothing to judge streaming by.

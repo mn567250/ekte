@@ -138,8 +138,8 @@ Il livello di rischio dipende dalla **gravità delle rilevazioni**, non dal
 punteggio. Le rilevazioni della dimensione connettività sono escluse: un relay
 irraggiungibile o limitato non ha potuto essere valutato, e questo non prova che
 risponda un altro modello. Sono esclusi anche gli **avvisi di trasporto** (`ADVISORY_CHECKS` in
-`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): HTTP in chiaro, errori o lentezza
-sotto carico dicono come si raggiunge il relay, non quale modello serve.
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`): HTTP in chiaro, errori o lentezza
+sotto carico, una richiesta in streaming non riuscita due volte o un relay che non fa streaming per il modello dicono come si raggiunge il relay, non quale modello serve.
 Abbassano comunque punteggio e stato della loro dimensione, compaiono dopo le
 rilevazioni di sostituzione tra quelle principali e il riepilogo li indica come
 avvisi (da gravità Media in su). Una chiave API restituita continua ad alzare il rischio, così come le rilevazioni della dimensione Integrità delle risposte (manomissione, prompt di sistema iniettato, cache delle risposte): non è una dimensione centrale, quindi è la sola gravità a determinare il rischio.
@@ -147,8 +147,8 @@ avvisi (da gravità Media in su). Una chiave API restituita continua ad alzare i
 | Rischio | Etichetta nell'interfaccia | Quando |
 |---|---|---|
 | `inconclusive` | Segnale insufficiente | Niente di utilizzabile da giudicare: se è stata eseguita una dimensione di profilo, nessuna ha prodotto un risultato utilizzabile (Superato, Avviso o Fallito) — relay irraggiungibile o modello senza profilo; altrimenti nessuna dimensione oltre alla connettività ne ha prodotto uno |
-| `high` | Probabilmente sostituito | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o due o più rilevazioni ALTE |
-| `medium` | Scostamenti rilevati | Esattamente una rilevazione ALTA fuori dalle dimensioni centrali, o una rilevazione MEDIA in una dimensione centrale |
+| `high` | Probabilmente sostituito | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o rilevazioni ALTE di due o più rilevatori diversi |
+| `medium` | Scostamenti rilevati | Rilevazioni ALTE fuori dalle dimensioni centrali di un solo rilevatore, o una rilevazione MEDIA in una dimensione centrale |
 | `low` | Per lo più coerente | Qualsiasi altra rilevazione MEDIA |
 | `clean` | Coerente | Nessuno dei casi precedenti |
 
@@ -763,6 +763,7 @@ riflette prima di rispondere, un primo token tardivo viene quindi solo annotato
 e non conteggiato come buffering; i segnali pochi frammenti e intervalli uniformi
 contano ancora. Uno stream riuscito ma senza contenuti non è conclusivo e non
 viene valutato.
+Una richiesta in streaming non riuscita viene ripetuta una volta. Se fallisce di nuovo con un 4xx che nomina lo streaming, o con un altro 4xx mentre lo stesso prompt senza streaming riesce, il relay non fa streaming per questo modello (`streaming.unsupported`, punteggio 0). Ogni altro errore (un 5xx, un timeout, un limite di frequenza o un 4xx che riceve anche il prompt senza streaming) è un errore di trasporto: `streaming.failed`, non conclusivo e non valutato. Entrambi sono avvisi di trasporto (vedi [Verdetto di rischio](#verdetto-di-rischio)): abbassano questa dimensione, mai il rischio di sostituzione.
 Se il modello trasmette il suo ragionamento (delta di ragionamento, blocchi di thinking, eventi di ragionamento della Responses API), si misura invece il primo token di qualunque tipo: uno stream genuino inizia presto a ragionare, quindi uno stream in cui ragionamento e risposta arrivano entrambi alla fine è bufferizzato anche per un modello di ragionamento.
 
 | Controllo | Esito | Stato | Effetto |
@@ -774,10 +775,11 @@ Se il modello trasmette il suo ragionamento (delta di ragionamento, blocchi di t
 | `streaming.uniform_gaps` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.no_usage` | Nessun chunk di utilizzo nello stream: toglie 15 punti se nulla è in buffer. | Avviso · Bassa | fino a −15 pt |
 | `streaming.no_content` | Lo stream è riuscito ma non ha fornito contenuti da giudicare; non valutato. | Non conclusivo · Bassa | Non conteggiato |
-| `streaming.failed` | La richiesta in streaming non è riuscita. | Fallito · Alta | tetto 0 |
+| `streaming.unsupported` | Il relay non fa streaming per questo modello. | Fallito · Media | tetto 0 |
+| `streaming.failed` | La richiesta in streaming non è riuscita due volte (5xx, timeout o un altro errore di trasporto); non valutato. | Non conclusivo · Bassa | Non conteggiato |
 
 Cioè: autentico 100 · utilizzo mancante 85 · un segnale di buffering 60 · due o
-più 40 · fallito 0 · nessun contenuto: nessun punteggio.
+più 40 · non supportato 0 · fallito due volte o nessun contenuto: nessun punteggio.
 
 **Avvertenze.** Output brevi, un modello piccolo e veloce o il jitter di rete
 possono sembrare una raffica. Un upstream che non supporta lo streaming

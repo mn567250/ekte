@@ -25,7 +25,7 @@ from pathlib import Path
 import pytest
 
 from ekte import risk_scale, scoring
-from ekte.models import RiskLevel
+from ekte.models import DetectorResult, Dimension, Finding, RiskLevel, Severity, Status
 from ekte.report import palette
 from tests._helpers import run_subprocess
 
@@ -173,3 +173,59 @@ def test_the_scale_colours_are_readable_and_apart(theme):
         assert 100 * math.dist(_oklab(colour[lvl]), _oklab(tok["info"])) >= 8.5, (theme, lvl, "info")
     # "consistent" is the brand green: no second green competes with --primary
     assert tok["success"] == tok["primary"]
+
+
+# --------------------------------------------------------------------------- #
+# The ladder that decides the level (ekte/scoring.py::build_verdict), one row
+# per rule of the methodology's "Risk verdict" table (#255: advisories never
+# climb it, and two HIGH findings outside the core need two detectors).
+# --------------------------------------------------------------------------- #
+def _detector(det_id: str, dim: Dimension, *findings: tuple[str, Severity]) -> DetectorResult:
+    return DetectorResult(
+        id=det_id, name=det_id, dimension=dim, score=50.0 if findings else 100.0,
+        status=Status.FAIL if findings else Status.PASS,
+        findings=[Finding(id=f, check=f, title=f, status=Status.FAIL, severity=s)
+                  for f, s in findings],
+    )
+
+
+_H, _M, _C = Severity.HIGH, Severity.MEDIUM, Severity.CRITICAL
+_LADDER = [
+    ("nothing", [], RiskLevel.CLEAN),
+    ("critical anywhere", [("integrity", Dimension.INTEGRITY, ("integrity.t", _C))], RiskLevel.HIGH),
+    ("high in a core dimension",
+     [("billing", Dimension.BILLING, ("billing.x", _H))], RiskLevel.HIGH),
+    ("two highs of two detectors",
+     [("security", Dimension.SECURITY, ("security.key_echo", _H)),
+      ("integrity", Dimension.INTEGRITY, ("integrity.t", _H))], RiskLevel.HIGH),
+    ("two highs of one detector",
+     [("integrity", Dimension.INTEGRITY, ("integrity.a", _H), ("integrity.b", _H))],
+     RiskLevel.MEDIUM),
+    ("one high outside the core",
+     [("security", Dimension.SECURITY, ("security.key_echo", _H))], RiskLevel.MEDIUM),
+    ("advisory high + high",
+     [("streaming", Dimension.STREAMING, ("streaming.failed", _H)),
+      ("security", Dimension.SECURITY, ("security.key_echo", _H))], RiskLevel.MEDIUM),
+    ("medium in a core dimension",
+     [("capability", Dimension.CAPABILITY, ("capability.x", _M))], RiskLevel.MEDIUM),
+    ("medium outside the core",
+     [("protocol", Dimension.PROTOCOL, ("protocol.x", _M))], RiskLevel.LOW),
+    ("advisories only",
+     [("streaming", Dimension.STREAMING, ("streaming.unsupported", _M)),
+      ("security", Dimension.SECURITY, ("security.tls", _H)),
+      ("reliability", Dimension.RELIABILITY, ("reliability.success_rate", _H))], RiskLevel.CLEAN),
+]
+
+
+@pytest.mark.parametrize(("case", "failing", "level"), _LADDER, ids=[c[0] for c in _LADDER])
+def test_the_ladder_sets_the_level(case, failing, level):
+    detectors = [_detector(d.value, d) for d in (
+        Dimension.MODEL_IDENTITY, Dimension.CONTEXT_WINDOW, Dimension.CAPABILITY)]
+    detectors = [d for d in detectors if d.id not in {f[0] for f in failing}]
+    detectors += [_detector(det_id, dim, *fs) for det_id, dim, *fs in failing]
+    dims = scoring.build_dimensions(detectors, None)
+    verdict = scoring.build_verdict(detectors, dims, profile_matched=True, used_judge=False,
+                                    used_baseline=True)
+    assert verdict.risk_level == level, case
+    # every level the ladder gives is a step of the one scale
+    assert verdict.risk_level in risk_scale.SCALE

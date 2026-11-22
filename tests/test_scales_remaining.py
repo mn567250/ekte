@@ -166,10 +166,92 @@ async def test_streaming_missing_usage_alone_deducts_15(audit_context, mock_serv
     assert result.score == 85.0 and result.status == Status.WARN
 
 
-async def test_streaming_failure_caps_at_0(audit_context, mock_server):
-    mock_server.chat_status = 500
+async def test_streaming_server_error_twice_is_inconclusive(audit_context, mock_server):
+    # Before #255 one 5xx made streaming Fail · High with score 0.
+    mock_server.chat_status = 503
     result = await StreamingDetector().run(audit_context)
+    _check(result, _scale_of("streaming"))
+    (f,) = result.findings
+    assert (f.id, f.outcome, f.status, f.severity) == (
+        "streaming.failed", "failed", Status.INCONCLUSIVE, Severity.LOW)
+    assert result.score is None and result.status == Status.INCONCLUSIVE
+    # repeated once; a 5xx never asks the non-stream question
+    assert [bool(r.get("stream")) for r in mock_server.requests] == [True, True]
+    assert f.evidence["attempts"] == 2 and f.evidence["non_stream_ok"] is None
+
+
+def _sequence(*outs: CompletionOutcome):
+    """A stub client answering ``outs`` in turn; it records each request's ``stream``."""
+    seen: list[bool] = []
+    queue = list(outs)
+
+    async def complete(spec):
+        seen.append(bool(spec.stream))
+        return queue.pop(0)
+
+    model = SimpleNamespace(reasoning=False, usage_in_stream=True)
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          profile=SimpleNamespace(model=model))
+    return ctx, seen
+
+
+def _error(code: int | None, message: str = "boom", error_type: str = "http_error"):
+    return CompletionOutcome(ok=False, status_code=code, error_message=message,
+                             error_type=error_type)
+
+
+_OK_PLAIN = CompletionOutcome(ok=True, status_code=200, content="One. Two. Three.")
+
+
+async def test_streaming_one_failure_then_a_good_stream_is_judged_normally():
+    good = _stream("word " * 60, ttft=100.0, duration=2000.0, chunks=40)
+    ctx, seen = _sequence(_error(503), good)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    assert seen == [True, True]
+    assert "streaming.healthy" in {f.id for f in result.findings}
+    assert result.score == 100.0 and result.status == Status.PASS
+
+
+async def test_streaming_a_4xx_naming_streaming_is_unsupported():
+    refusal = _error(400, "stream is not supported for this model")
+    ctx, seen = _sequence(refusal, refusal)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    _check(result, _scale_of("streaming"))
+    (f,) = result.findings
+    assert (f.id, f.outcome, f.status, f.severity, f.cap) == (
+        "streaming.unsupported", "unsupported", Status.FAIL, Severity.MEDIUM, 0.0)
     assert result.score == 0.0 and result.status == Status.FAIL
+    assert seen == [True, True]  # the message names streaming: no non-stream request
+    assert f.title == "Relay does not stream for this model"
+
+
+async def test_streaming_another_4xx_while_non_stream_works_is_unsupported():
+    ctx, seen = _sequence(_error(400, "invalid request"), _error(400, "invalid request"), _OK_PLAIN)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    (f,) = result.findings
+    assert (f.id, f.evidence["non_stream_ok"]) == ("streaming.unsupported", True)
+    assert seen == [True, True, False]
+    assert result.score == 0.0 and result.status == Status.FAIL
+
+
+async def test_streaming_a_4xx_that_also_fails_without_streaming_is_inconclusive():
+    bad = _error(403, "forbidden")
+    ctx, seen = _sequence(bad, bad, bad)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    (f,) = result.findings
+    assert (f.id, f.evidence["non_stream_ok"]) == ("streaming.failed", False)
+    assert seen == [True, True, False]
+    assert result.score is None and result.status == Status.INCONCLUSIVE
+
+
+@pytest.mark.parametrize("failure", [_error(429, "stream rate limit"), _error(408),
+                                     _error(None, "read timeout", "timeout")],
+                         ids=["429", "408", "timeout"])
+async def test_streaming_rate_limits_and_timeouts_are_transport_failures(failure):
+    ctx, seen = _sequence(failure, failure)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    assert [f.id for f in result.findings] == ["streaming.failed"]
+    assert seen == [True, True] and result.score is None
 
 
 # --------------------------------------------------------------------------- #

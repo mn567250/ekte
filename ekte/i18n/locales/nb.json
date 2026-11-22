@@ -326,6 +326,7 @@
   "Re-run once the endpoint reliably returns completions.": "Kjør på nytt når endepunktet pålitelig returnerer fullføringer.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Behandle dette som et tegn på avvik, ikke bevis; bekreft med fingeravtrykks- og identitetsdetektorene før du handler.",
   "Verify the relay supports stream=true for this model.": "Kontroller at reléet støtter stream=true for denne modellen.",
+  "Re-run the audit; if it keeps failing, check the relay's status for this model.": "Kjør revisjonen på nytt; hvis den fortsatt mislykkes, sjekk reléets status for denne modellen.",
   "Verify the relay streams content deltas for this model.": "Kontroller at reléet strømmer innholdsdeltaer for denne modellen.",
   "Run `ekte compare` against a trusted baseline to corroborate.": "Kjør `ekte compare` mot en pålitelig referanse for å bekrefte.",
   "A response naming a different vendor strongly suggests model substitution.": "Et svar som nevner en annen leverandør, tyder sterkt på at modellen er byttet ut.",
@@ -638,7 +639,11 @@
   ],
   "streaming.failed": [
    "Strømmeforespørselen mislyktes",
-   "Strømmeforespørselen mislyktes (HTTP {status_code}, type {error_type}); kontroller om modellen støtter stream=true."
+   "Strømmeforespørselen mislyktes to ganger (HTTP {status_code}, type {error_type}); strømmingen kunne ikke vurderes – kjør revisjonen på nytt."
+  ],
+  "streaming.unsupported": [
+   "Reléet strømmer ikke for denne modellen",
+   "Reléet avviste strømmeforespørselen to ganger (HTTP {status_code}, type {error_type}); kontroller om det støtter stream=true for denne modellen."
   ],
   "streaming.no_content": [
    "Strømmen leverte ikke noe innhold",

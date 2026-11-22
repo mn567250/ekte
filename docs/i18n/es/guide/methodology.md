@@ -136,8 +136,8 @@ El nivel de riesgo depende de la **gravedad de los hallazgos**, no de la
 puntuación. Los hallazgos de la dimensión de conectividad quedan fuera: un relay
 caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
 Tampoco cuentan los **avisos de transporte** (`ADVISORY_CHECKS` en
-`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): el HTTP sin cifrar, los fallos o
-la lentitud bajo carga dicen cómo se llega al relay, no qué modelo sirve.
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`): el HTTP sin cifrar, los fallos o
+la lentitud bajo carga, una petición en streaming que falló dos veces o un relay que no hace streaming para el modelo dicen cómo se llega al relay, no qué modelo sirve.
 Siguen bajando la puntuación y el estado de su dimensión, aparecen tras los
 hallazgos de sustitución entre los hallazgos clave y el resumen los menciona
 como avisos cuando son de gravedad Media o superior. Una clave API devuelta sigue elevando el riesgo, al igual que los hallazgos de la dimensión Integridad de las respuestas (manipulación, prompt de sistema inyectado, caché de respuestas): no es una dimensión núcleo, así que solo su gravedad fija el riesgo.
@@ -145,8 +145,8 @@ como avisos cuando son de gravedad Media o superior. Una clave API devuelta sigu
 | Riesgo | Etiqueta en la interfaz | Cuándo |
 |---|---|---|
 | `inconclusive` | Señal insuficiente | Nada utilizable que juzgar: si se ejecutó alguna dimensión de perfil, ninguna dio un resultado utilizable (Correcto, Advertencia o Fallo) — el relay es inaccesible o el modelo no tiene perfil; si no, ninguna dimensión salvo la conectividad lo dio |
-| `high` | Probablemente sustituido | Un hallazgo CRÍTICO, un hallazgo ALTO/CRÍTICO en una dimensión núcleo, o dos o más hallazgos ALTOS |
-| `medium` | Desviaciones detectadas | Exactamente un hallazgo ALTO fuera de las dimensiones núcleo, o un hallazgo MEDIO en una dimensión núcleo |
+| `high` | Probablemente sustituido | Un hallazgo CRÍTICO, un hallazgo ALTO/CRÍTICO en una dimensión núcleo, o hallazgos ALTOS de dos o más detectores distintos |
+| `medium` | Desviaciones detectadas | Hallazgos ALTOS fuera de las dimensiones núcleo de un solo detector, o un hallazgo MEDIO en una dimensión núcleo |
 | `low` | Mayormente coherente | Cualquier otro hallazgo MEDIO |
 | `clean` | Coherente | Ninguno de los anteriores |
 
@@ -758,6 +758,7 @@ usage), que piensa antes de responder, un primer token tardío solo se anota y n
 cuenta como búfer; las señales de pocos fragmentos e intervalos uniformes siguen
 contando. Un stream que tiene éxito pero no entrega contenido no es concluyente
 y no se puntúa.
+Una petición en streaming fallida se repite una vez. Si vuelve a fallar con un 4xx que menciona el streaming, o con cualquier otro 4xx mientras el mismo prompt sin streaming tiene éxito, el relay no hace streaming para este modelo (`streaming.unsupported`, puntuación 0). Cualquier otro fallo (un 5xx, un tiempo de espera agotado, un límite de tasa o un 4xx que también recibe el prompt sin streaming) es un fallo de transporte: `streaming.failed`, no concluyente y sin puntuación. Ambos son avisos de transporte (véase [Veredicto de riesgo](#veredicto-de-riesgo)): bajan esta dimensión, pero nunca el riesgo de sustitución.
 Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de thinking, eventos de razonamiento de la API Responses), se mide en su lugar el primer token de cualquier tipo: un stream genuino empieza a razonar pronto, así que un stream cuyo razonamiento y respuesta llegan ambos al final es un búfer incluso para un modelo de razonamiento.
 
 | Comprobación | Resultado | Estado | Efecto |
@@ -769,10 +770,11 @@ Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de think
 | `streaming.uniform_gaps` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.no_usage` | No hay fragmento de uso en el stream: resta 15 puntos si nada está en búfer. | Advertencia · Baja | hasta −15 pts |
 | `streaming.no_content` | El stream tuvo éxito pero no entregó contenido para juzgar; sin puntuación. | No concluyente · Baja | No computa |
-| `streaming.failed` | La petición en streaming falló. | Fallo · Alta | tope 0 |
+| `streaming.unsupported` | El relay no hace streaming para este modelo. | Fallo · Media | tope 0 |
+| `streaming.failed` | La solicitud en streaming falló dos veces (5xx, tiempo de espera agotado u otro fallo de transporte); sin puntuación. | No concluyente · Baja | No computa |
 
 Es decir: auténtico 100 · falta el uso 85 · una señal de búfer 60 · dos o más
-40 · fallo 0 · sin contenido: sin puntuación.
+40 · sin soporte 0 · dos fallos o sin contenido: sin puntuación.
 
 **Advertencias.** Salidas cortas, un modelo pequeño y rápido o la fluctuación de
 la red pueden parecer una ráfaga. Un upstream que no sabe hacer streaming

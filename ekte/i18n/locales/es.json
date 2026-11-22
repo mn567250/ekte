@@ -326,6 +326,7 @@
   "Re-run once the endpoint reliably returns completions.": "Vuelva a ejecutar cuando el endpoint devuelva completados de forma fiable.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Trátelo como una señal de desviación, no como prueba; corrobórelo con los detectores de huella e identidad antes de actuar.",
   "Verify the relay supports stream=true for this model.": "Compruebe que el intermediario admite stream=true para este modelo.",
+  "Re-run the audit; if it keeps failing, check the relay's status for this model.": "Repita la auditoría; si sigue fallando, compruebe el estado del intermediario para este modelo.",
   "Verify the relay streams content deltas for this model.": "Verifique que el relay transmita deltas de contenido para este modelo.",
   "Run `ekte compare` against a trusted baseline to corroborate.": "Ejecute `ekte compare` contra una referencia de confianza para corroborarlo.",
   "A response naming a different vendor strongly suggests model substitution.": "Una respuesta que nombra a otro proveedor sugiere claramente una sustitución de modelo.",
@@ -643,7 +644,11 @@
   ],
   "streaming.failed": [
    "La petición en streaming falló",
-   "La petición en streaming falló (HTTP {status_code}, tipo {error_type}); compruebe que el modelo admite stream=true."
+   "La petición en streaming falló dos veces (HTTP {status_code}, tipo {error_type}); no se pudo evaluar el streaming: repita la auditoría."
+  ],
+  "streaming.unsupported": [
+   "El relay no hace streaming para este modelo",
+   "El relay rechazó dos veces la petición en streaming (HTTP {status_code}, tipo {error_type}); compruebe que admite stream=true para este modelo."
   ],
   "streaming.no_content": [
    "El stream no entregó contenido",

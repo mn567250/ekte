@@ -140,8 +140,8 @@ der Bewertung. Befunde der Dimension Konnektivität zählen dabei nicht: ein
 Relay, das nicht erreichbar ist oder drosselt, konnte nicht beurteilt werden —
 das ist kein Beleg für ein anderes Modell.
 Auch die **Transport-Hinweise** zählen nicht (`ADVISORY_CHECKS` in
-`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): Klartext-HTTP, Fehler oder
-Langsamkeit unter Last zeigen, wie das Relay erreicht wird, nicht welches
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`): Klartext-HTTP, Fehler oder
+Langsamkeit unter Last, eine zweimal fehlgeschlagene Streaming-Anfrage oder ein Relay, das für das Modell nicht streamt, zeigen, wie das Relay erreicht wird, nicht welches
 Modell es ausliefert. Sie senken weiterhin Bewertung und Status ihrer
 Dimension, stehen in den wichtigsten Befunden nach den Substitutionsbefunden,
 und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Ein zurückgegebener API-Schlüssel hebt das Risiko weiterhin an, ebenso die Befunde der Dimension Antwortintegrität (Manipulation, eingeschleuster System-Prompt, Antwort-Cache): sie ist keine Kerndimension, ihr Schweregrad allein bestimmt das Risiko.
@@ -149,8 +149,8 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Ein zur�
 | Risiko | Bezeichnung in der UI | Wann |
 |---|---|---|
 | `inconclusive` | Unzureichendes Signal | Nichts Verwertbares zu beurteilen: Lief eine Profildimension, lieferte keine von ihnen ein verwertbares Ergebnis (Bestanden, Warnung oder Fehlgeschlagen) — das Relay ist nicht erreichbar oder das Modell hat kein Profil; andernfalls lieferte keine Dimension außer der Konnektivität eines |
-| `high` | Vermutlich ausgetauscht | Ein Befund KRITISCH, ein Befund HOCH/KRITISCH in einer Kerndimension oder zwei oder mehr Befunde HOCH |
-| `medium` | Abweichungen gefunden | Genau ein Befund HOCH außerhalb der Kerndimensionen oder ein Befund MITTEL in einer Kerndimension |
+| `high` | Vermutlich ausgetauscht | Ein Befund KRITISCH, ein Befund HOCH/KRITISCH in einer Kerndimension oder Befunde HOCH von zwei oder mehr verschiedenen Detektoren |
+| `medium` | Abweichungen gefunden | Befunde HOCH außerhalb der Kerndimensionen von nur einem Detektor oder ein Befund MITTEL in einer Kerndimension |
 | `low` | Weitgehend konsistent | Jeder andere Befund MITTEL |
 | `clean` | Konsistent | Nichts davon |
 
@@ -767,6 +767,7 @@ nachdenkt, wird ein spätes erstes Token daher nur vermerkt und nicht als
 Pufferung gezählt; die Signale wenige Chunks und gleichförmige Abstände zählen
 weiter. Ein Stream, der erfolgreich ist, aber keinen Inhalt liefert, ist nicht
 eindeutig und wird nicht bewertet.
+Eine fehlgeschlagene Streaming-Anfrage wird einmal wiederholt. Schlägt sie erneut mit einem 4xx fehl, der Streaming nennt, oder mit einem anderen 4xx, während derselbe Prompt ohne Streaming gelingt, streamt das Relay für dieses Modell nicht (`streaming.unsupported`, Bewertung 0). Jeder andere Fehler (ein 5xx, eine Zeitüberschreitung, ein Rate-Limit oder ein 4xx, den auch der Prompt ohne Streaming erhält) ist ein Transportfehler: `streaming.failed`, nicht eindeutig und nicht bewertet. Beide sind Transport-Hinweise (siehe [Risikourteil](#risikourteil)): Sie senken diese Dimension, aber nie das Substitutionsrisiko.
 Streamt das Modell sein Reasoning (Reasoning-Deltas, Thinking-Blöcke, Reasoning-Ereignisse der Responses-API), zählt stattdessen das erste Token beider Arten: ein echter Stream beginnt früh mit dem Reasoning, ein Stream, dessen Reasoning und Antwort beide erst ganz am Ende kommen, ist also auch bei einem Reasoning-Modell gepuffert.
 
 | Prüfung | Ergebnis | Status | Wirkung |
@@ -778,10 +779,11 @@ Streamt das Modell sein Reasoning (Reasoning-Deltas, Thinking-Blöcke, Reasoning
 | `streaming.uniform_gaps` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.no_usage` | Kein Usage-Chunk im Stream: zieht 15 Punkte ab, wenn nichts gepuffert ist. | Warnung · Niedrig | bis zu −15 Pkt. |
 | `streaming.no_content` | Der Stream war erfolgreich, lieferte aber keinen Inhalt zur Beurteilung; nicht bewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
-| `streaming.failed` | Die Streaming-Anfrage schlug fehl. | Fehlgeschlagen · Hoch | Obergrenze 0 |
+| `streaming.unsupported` | Das Relay streamt für dieses Modell nicht. | Fehlgeschlagen · Mittel | Obergrenze 0 |
+| `streaming.failed` | Die Streaming-Anfrage schlug zweimal fehl (5xx, Zeitüberschreitung oder ein anderer Transportfehler); nicht bewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
 
 Also: echt 100 · Usage fehlt 85 · ein Puffersignal 60 · zwei oder mehr 40 ·
-fehlgeschlagen 0 · kein Inhalt: keine Bewertung.
+nicht unterstützt 0 · zweimal fehlgeschlagen oder kein Inhalt: keine Bewertung.
 
 **Einschränkungen.** Kurze Ausgaben, ein schnelles kleines Modell oder
 Netzwerk-Jitter können einem Burst ähneln. Ein Upstream, der nicht streamen
