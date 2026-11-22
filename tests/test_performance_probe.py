@@ -162,6 +162,7 @@ async def test_compare_mode_alternates_endpoints(knowledge_base):
     assert [r.endpoint for r in rec.records if r.phase == "ping"] == ["target", "baseline"] * 3
     assert not any(r.phase == "probe_concurrent" for r in rec.records)  # no burst on standard
     assert any(f.id == "performance.relay_overhead" for f in result.findings)
+    assert result.baseline_compared is True
 
 
 async def test_max_tokens_rejection_switches_to_completion_tokens(knowledge_base):

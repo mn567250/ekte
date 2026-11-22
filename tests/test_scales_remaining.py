@@ -544,6 +544,7 @@ async def test_judge_high_confidence_with_working_baseline_is_high():
     (f,) = result.findings
     assert (f.outcome, f.severity, result.status) == ("confident_corroborated", Severity.HIGH, Status.FAIL)
     assert f.evidence["baseline_corroborated"] is True
+    assert result.baseline_compared is True  # #257: counts for model identity
 
 
 async def test_judge_consistent_verdict_scores_full_points():
