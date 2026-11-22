@@ -15,7 +15,7 @@ models:
   family: grok-4.7
   context_window_tokens: 500000
   max_output_tokens: -1
-  knowledge_cutoff: null
+  knowledge_cutoff: '2026-05'
   tokenizer: grok
   modalities:
   - text
@@ -52,7 +52,7 @@ models:
   family: grok-4.6
   context_window_tokens: 500000
   max_output_tokens: -1
-  knowledge_cutoff: null
+  knowledge_cutoff: '2026-01'
   tokenizer: grok
   modalities:
   - text
@@ -90,7 +90,7 @@ models:
   family: grok-4.5
   context_window_tokens: 500000
   max_output_tokens: -1
-  knowledge_cutoff: null
+  knowledge_cutoff: '2026-01'
   tokenizer: grok
   modalities:
   - text
@@ -345,3 +345,5 @@ sources:
 - https://www.promptfoo.dev/docs/providers/xai/
 - https://www.requesty.ai/models/xai/grok-4-3
 - https://gate.ai/blog/grok-4-5-xai-specs-pricing-api-use-cases
+- https://media.x.ai/v1/website/card-4p6-4cd2dc57.pdf
+- https://media.x.ai/v1/website/4p5-5184fdf9.pdf
