@@ -52,7 +52,11 @@ Adding a model-specific fingerprint:
    experiment: a fact, format or reasoning step the genuine model gets right
    and its cheaper siblings do not. The answer must fit in 512 tokens and be
    checkable with `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` or `expect_regex`.
+   `expect_not_contains` or `expect_regex`. `expect_contains` and
+   `expect_contains_any` match substrings; `expect_not_contains` terms match
+   whole words (`helpers.contains_term`: `meta` is not in `metadata`, `qwen`
+   is in `Qwen2.5`, CJK and token-like terms such as `<|User|>` still match
+   inside text).
 2. **Measure it against the genuine model** through the provider's own API
    (not a relay) at the probe's `temperature`, several times, and against each
    sibling you want it to separate. Keep the probe only if the genuine model

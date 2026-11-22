@@ -248,6 +248,11 @@ sull'identità del modello dice che l'identità del modello non è stata verific
   vengono mai ripetute. Una volta noto che un endpoint ragiona (il suo profilo
   indica `reasoning: true`, o dopo la sua prima ripetizione di questo tipo), le
   sonde brevi partono subito con il limite di 4.096 token invece che due volte.
+  I controlli che trattano diversamente un modello di ragionamento
+  (fatturazione, determinismo, output massimo, attributi della richiesta) lo
+  riconoscono tutti allo stesso modo: lo dice il profilo, il client l'ha
+  appreso da una tale ripetizione, oppure una risposta riporta token di
+  ragionamento.
 - **Parametri della richiesta:** i modelli di ragionamento rifiutano alcuni
   parametri: su Chat Completions `max_tokens` (vogliono `max_completion_tokens`)
   e, in ogni protocollo, i parametri di campionamento come `temperature`. Il
@@ -525,7 +530,8 @@ modello, e la data limite è spesso condivisa.
    conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
    lingua, …): fino a sei sonde di solo codice, verificate con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; output limitato a 512 token. Una sonda che
+   `expect_regex`; output limitato a 512 token. I termini di `expect_not_contains` valgono solo come parole intere (`meta`
+   non si trova in `metadata`; può seguire una versione, come in `Qwen2.5`). Una sonda che
    richiede più output (ad esempio una verifica dell'output massimo) viene
    saltata, indicata come Info, e un'altra sonda ne prende il posto.
    Un'impronta che si discosta
@@ -620,7 +626,7 @@ lasciato sonde senza risposta.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
-| `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 95 pt |
+| `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 100 pt |
 |  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa, media o non indicata). | Avviso · Media | 50 pt |
 |  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessun riferimento utilizzabile). | Avviso · Media | 25 pt |
 |  | Il giudice è sicuro e un riferimento affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |
@@ -657,6 +663,13 @@ alle capacità del profilo:
   OpenAI vengono segnalati come motore non OpenAI.
 - **Modalità JSON:** `response_format: json_object` deve restituire un oggetto
   analizzabile con il valore richiesto.
+- **Ripetizione:** una chiamata a strumento o un oggetto JSON dichiarati che non
+  tornano vengono richiesti ancora una volta prima di contare come non
+  consegnati: la richiesta dello strumento con `tool_choice: "required"`
+  (Anthropic: `{"type": "any"}`), la richiesta in modalità JSON invariata. Una
+  chiamata a strumento nella ripetizione è consegnata (evidenza
+  `needed_required: true`); un 4xx sulla sola richiesta forzata (alcuni modelli
+  rifiutano l'uso forzato degli strumenti) ripiega sulla prima risposta.
 - **Schema rigoroso:** un `json_schema` rigoroso; la conformità viene verificata
   se il modello la dichiara e solo annotata (informativa) se no. Saltato senza
   profilo.
@@ -864,7 +877,7 @@ arranca con un parallelismo modesto.
 (`--concurrency`, 3 predefinita). Il tasso di successo è calcolato sulle
 richieste effettivamente tentate: un HTTP 429 è una limitazione onesta e viene
 conteggiato a parte. Il punteggio toglie la quota fallita; una latenza p95
-oltre i 30 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
+oltre cinque volte la mediana della stessa raffica e oltre i 5 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
 temporaneo sulle 8 predefinite), o al massimo il 10% di un burst più grande, è un
 Avviso finché almeno l'80% riesce; di più è Fallito. Lo stato del rilevatore è il
 peggiore tra le sue rilevazioni. Sono avvisi di trasporto: non alzano mai il
@@ -877,7 +890,7 @@ verdetto di rischio.
 |  | Sono fallite più richieste; toglie la quota fallita. | Fallito · Media | fino a −100 pt |
 |  | Tutte le richieste sono state limitate (HTTP 429): non conteggiato. | Non conclusivo · Bassa | Nessuna detrazione |
 |  | Nessuna richiesta ha raggiunto il relay (fallita in ekte o sul percorso di rete): non valutato. | Non conclusivo · Bassa | Nessuna detrazione |
-| `reliability.latency` | Latenza p95 oltre 30 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
+| `reliability.latency` | Latenza p95 oltre cinque volte la mediana della raffica e oltre 5 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
 | `reliability.rate_limited` | Parte della raffica è stata limitata: limitazione legittima, non conteggiata. | Info | Nessuna detrazione |
 | `reliability.skipped` | La sonda di affidabilità era disattivata. | Info | Nessuna detrazione |
 
@@ -1126,6 +1139,10 @@ momento. Gli intervalli della base di conoscenza sono mediane volutamente ampie
 delle API native, e un obiettivo più lento viene annotato, mai conteggiato. Tutte le
 rilevazioni sono al massimo di gravità BASSA: questa dimensione muove il
 punteggio, mai il verdetto di rischio.
+Il confronto con il riferimento (`performance.reference`) viene eseguito solo
+in modalità confronto o per un profilo con un intervallo
+`performance.decode_tps`, che pochi profili inclusi hanno; per gli altri
+modelli non compare.
 
 ## Superficie di embedding
 

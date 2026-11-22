@@ -38,7 +38,7 @@ _ANSWER_CLIP = 2000  # cap each answer fed to the judge, keeping the prompt boun
 
 # The detector score is its one verdict's points (the published scale).
 SCALE = Scale(
-    outcome("quality_judge.verdict", "consistent", 95.0, Status.PASS,
+    outcome("quality_judge.verdict", "consistent", 100.0, Status.PASS,
             label="The judge found the answers consistent with the claimed model."),
     outcome("quality_judge.verdict", "suspicious", 50.0, Status.WARN, Severity.MEDIUM,
             label="The judge found the answers unlike the claimed model (low, medium or no stated confidence)."),

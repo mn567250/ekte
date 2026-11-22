@@ -463,6 +463,20 @@ async def test_judge_high_confidence_with_working_baseline_is_high():
     assert f.evidence["baseline_corroborated"] is True
 
 
+async def test_judge_consistent_verdict_scores_full_points():
+    """A consistent judge must not lower a perfect model-identity dimension (#262)."""
+    o = JUDGE_SCALE.get("quality_judge.verdict", "consistent")
+    assert (o.score, o.status) == (100.0, Status.PASS)
+    target = TargetConfig(base_url="https://r.test/v1", model="m")
+    ctx = AuditContext(
+        target=target, client=_AnswerStub("an answer"), options=AuditOptions(suite="deep"),
+        kb=None, profile=None, judge=_JudgeStub({"verdict": "consistent", "confidence": "high"}),  # type: ignore[arg-type]
+    )
+    result = await QualityJudgeDetector().run(ctx)
+    _check(result, JUDGE_SCALE)
+    assert (result.score, result.status) == (100.0, Status.PASS)
+
+
 async def test_judge_is_told_the_claimed_model():
     result, judge = await _run_judge("high", claimed="claimed-id")
     system, user = judge.calls[0]
@@ -510,3 +524,44 @@ async def test_reliability_is_not_scored_when_nothing_reached_the_relay():
     f = next(f for f in result.findings if f.id == "reliability.success_rate")
     assert f.outcome == "not_reached" and f.status == Status.INCONCLUSIVE
     assert result.score is None and result.status == Status.INCONCLUSIVE
+
+
+# --------------------------------------------------------------------------- #
+# reliability: the slow tail is judged relative to the burst (#262)
+# --------------------------------------------------------------------------- #
+async def _timed_burst(durations: list[float]) -> DetectorResult:
+    calls = []
+
+    async def complete(spec):
+        calls.append(spec)
+        return SimpleNamespace(ok=True, duration_ms=durations[len(calls) - 1], error_type=None,
+                               status_code=200, error_class=None)
+
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          options=SimpleNamespace(reliability_requests=len(durations),
+                                                  reliability_concurrency=1))
+    return await ReliabilityDetector().run(ctx)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("durations", "slow"),
+    [
+        # 8-token requests at ~0.8 s with two stuck at 12 s: slow, though far below 30 s
+        ([800.0] * 6 + [12_000.0] * 2, True),
+        # a uniformly slow relay has no tail: not flagged
+        ([9_000.0] * 8, False),
+        # a large ratio below 5 s in absolute terms is noise
+        ([200.0] * 6 + [4_000.0] * 2, False),
+        # above 5 s but under five times the median
+        ([2_000.0] * 6 + [8_000.0] * 2, False),
+    ],
+)
+async def test_reliability_slow_tail_is_relative_to_the_burst(durations, slow):
+    result = await _timed_burst(durations)
+    _check(result, _scale_of("reliability"))
+    found = [f for f in result.findings if f.id == "reliability.latency"]
+    assert bool(found) is slow
+    if slow:
+        (f,) = found
+        assert (f.outcome, f.status, f.severity) == ("slow", Status.WARN, Severity.LOW)
+        assert f.deduction == 15.0 and result.score == 85.0

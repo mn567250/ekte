@@ -251,6 +251,10 @@ Ergebnis zur Modellidentität sagt, dass die Modellidentität nicht geprüft wur
   bekannt ist, dass ein Endpunkt nachdenkt (sein Profil sagt
   `reasoning: true`, oder nach seiner ersten solchen Wiederholung), gehen kurze
   Proben gleich mit dem Limit von 4.096 Token hinaus statt zweimal.
+  Die Prüfungen, die ein Reasoning-Modell anders behandeln (Abrechnung,
+  Determinismus, maximale Ausgabe, Anfrageattribute), erkennen es alle auf
+  dieselbe Weise: das Profil sagt es, der Client hat es aus einer solchen
+  Wiederholung gelernt, oder eine Antwort meldet Reasoning-Token.
 - **Anfrageparameter:** Reasoning-Modelle lehnen manche Parameter ab: bei Chat
   Completions `max_tokens` (sie nehmen `max_completion_tokens`) und in jedem
   Protokoll Sampling-Parameter wie `temperature`. Der Client lässt die Parameter
@@ -529,7 +533,8 @@ Stichtag teilen sich Modelle eines Anbieters oft.
 2. **Verhaltens-Fingerprints** aus der Wissensbasis (Wissensstichtag,
    Tokenizer-Eigenheiten, Formatierung, sprachgebundene Tests, …): bis zu sechs
    Tests in reinem Code, geprüft mit `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` oder `expect_regex`; Ausgabe auf 512 Token begrenzt.
+   `expect_not_contains` oder `expect_regex`; Ausgabe auf 512 Token begrenzt. Begriffe unter `expect_not_contains` zählen nur als ganze Wörter (`meta`
+   wird in `metadata` nicht gefunden; eine Version darf folgen, wie in `Qwen2.5`).
    Ein Test, der mehr Ausgabe braucht (etwa eine Prüfung der maximalen
    Ausgabe), wird übersprungen und als Info aufgeführt; ein anderer Test
    rückt nach.
@@ -625,7 +630,7 @@ Proben unbeantwortet ließ.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
-| `quality_judge.verdict` (Urteil des LLM-Judge) | Der Richter fand die Antworten passend zum angegebenen Modell. | Bestanden | 95 Pkt. |
+| `quality_judge.verdict` (Urteil des LLM-Judge) | Der Richter fand die Antworten passend zum angegebenen Modell. | Bestanden | 100 Pkt. |
 |  | Der Richter fand die Antworten dem angegebenen Modell unähnlich (niedrige, mittlere oder keine angegebene Sicherheit). | Warnung · Mittel | 50 Pkt. |
 |  | Der Richter ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine verwertbare Referenz). | Warnung · Mittel | 25 Pkt. |
 |  | Der Richter ist sicher, und eine vertrauenswürdige Referenz bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 25 Pkt. |
@@ -662,6 +667,13 @@ des Profils gemessen:
   eine Nicht-OpenAI-Engine markiert.
 - **JSON-Modus:** `response_format: json_object` muss ein parsebares Objekt mit
   dem angeforderten Wert liefern.
+- **Wiederholung:** ein beanspruchter Tool-Call oder ein JSON-Objekt, das nicht
+  zurückkommt, wird noch einmal angefragt, bevor es als nicht geliefert gilt:
+  die Tool-Anfrage mit `tool_choice: "required"` (Anthropic:
+  `{"type": "any"}`), die JSON-Modus-Anfrage unverändert. Ein Tool-Call in der
+  Wiederholung gilt als geliefert (Beleg `needed_required: true`); ein 4xx nur
+  auf die erzwungene Anfrage (manche Modelle lehnen erzwungene Tool-Nutzung ab)
+  fällt auf die erste Antwort zurück.
 - **Striktes Schema:** ein striktes `json_schema`; die Einhaltung wird geprüft,
   wenn das Modell es angibt, und nur vermerkt (informativ), wenn nicht. Ohne
   Profil entfällt diese Prüfung.
@@ -869,7 +881,7 @@ mäßiger Parallelität scheitert oder kriecht.
 Standard 8) mit begrenzter Parallelität (`--concurrency`, Standard 3). Die
 Erfolgsquote bezieht sich auf die tatsächlich versuchten Anfragen: HTTP 429 ist
 ehrliche Drosselung und wird gesondert gezählt. Die Bewertung zieht den
-gescheiterten Anteil ab; eine p95-Latenz über 30 s behält 85 % des Rests.
+gescheiterten Anteil ab; eine p95-Latenz über dem Fünffachen des Medians desselben Bursts und über 5 s behält 85 % des Rests.
 Eine fehlgeschlagene Anfrage (also ein vorübergehender 5xx von standardmäßig 8)
 oder höchstens 10 % eines größeren Bursts ist eine Warnung, solange mindestens
 80 % erfolgreich waren; mehr ist Fehlgeschlagen. Der Status des Detektors ist
@@ -883,7 +895,7 @@ heben das Risikourteil nie an.
 |  | Mehr Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Fehlgeschlagen · Mittel | bis zu −100 Pkt. |
 |  | Jede Anfrage wurde gedrosselt (HTTP 429): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
 |  | Keine Anfrage erreichte das Relay (in ekte oder auf dem Netzwerkweg gescheitert): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
-| `reliability.latency` | p95-Latenz über 30 s unter Last; zieht 15 % der verbleibenden Bewertung ab. | Warnung · Niedrig | bis zu −15 Pkt. |
+| `reliability.latency` | p95-Latenz über dem Fünffachen des Burst-Medians und über 5 s unter Last; zieht 15 % der verbleibenden Bewertung ab. | Warnung · Niedrig | bis zu −15 Pkt. |
 | `reliability.rate_limited` | Ein Teil des Bursts wurde gedrosselt: ehrliches Throttling, nicht gewertet. | Info | Kein Abzug |
 | `reliability.skipped` | Die Zuverlässigkeits-Probe war deaktiviert. | Info | Kein Abzug |
 
@@ -1130,6 +1142,9 @@ einer anderen Zeit. Die Bereiche der Wissensbasis sind bewusst weit gefasste
 Mediane nativer APIs, und ein langsameres Ziel wird nur vermerkt, nie gewertet. Alle
 Befunde haben höchstens Schweregrad NIEDRIG; diese Dimension bewegt also die
 Bewertung, nie das Risikourteil.
+Der Referenzvergleich (`performance.reference`) läuft nur im Vergleichsmodus
+oder für ein Profil mit einem Bereich `performance.decode_tps`, den nur
+wenige mitgelieferte Profile haben; für alle anderen Modelle entfällt er.
 
 ## Embedding-Surface
 

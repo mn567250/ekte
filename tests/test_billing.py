@@ -262,3 +262,24 @@ async def test_reported_reasoning_tokens_mark_an_unprofiled_reasoning_model():
     assert "billing.reasoning-tokens" in found
     assert "billing.usage-inflation-completion" not in found
     assert result.status == Status.PASS
+
+
+class _LearnedReasoningStub(_UsageStub):
+    """An unprofiled reasoning endpoint the client already learned reasons
+    (``reasoning_room``), whose usage hides the reasoning-token breakdown."""
+
+    reasoning_room = True
+
+    async def complete(self, spec):
+        out = await super().complete(spec)
+        assert out.usage is not None
+        out.usage["completion_tokens"] *= 8
+        return out
+
+
+async def test_a_client_that_learned_the_endpoint_reasons_marks_it_reasoning():
+    # #262: billing, determinism and the other checks share helpers.is_reasoning
+    result = await BillingDetector().run(_ctx(_LearnedReasoningStub()))
+    found = _by_id(result)
+    assert "billing.reasoning-tokens" in found
+    assert "billing.usage-inflation-completion" not in found
