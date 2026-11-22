@@ -486,3 +486,58 @@ async def test_vendor_owning_an_ambiguous_word_keeps_it(knowledge_base):
     )
     assert next(f for f in result.findings if f.id == "model_identity.self_id").status == Status.PASS
     assert result.status == Status.PASS
+
+
+# --------------------------------------------------------------------------- #
+# expect_not_contains matches whole words (#262)
+# --------------------------------------------------------------------------- #
+def _fp(**kw):
+    from ekte.knowledge.schema import FingerprintProbe
+
+    return FingerprintProbe(id="p", signal="s", prompt="q", pure_code_checkable=True, **kw)
+
+
+@pytest.mark.parametrize(
+    ("forbidden", "text", "violated"),
+    [
+        (["meta"], "I keep no metadata about you.", False),
+        (["meta"], "I am Llama, built by Meta.", True),
+        (["gpt"], "Unlike ChatGPT, I am Claude.", False),
+        (["gpt"], "I am GPT-4o.", True),
+        (["gpt"], "I am gpt4o.", True),
+        (["gpt-4"], "I am GPT-4o by OpenAI.", True),
+        (["qwen"], "I am Qwen2.5.", True),
+        (["2021"], "My cutoff is 2021-09.", True),
+        (["2021"], "Ticket 202104 is unrelated.", False),
+        (["0.10"], "The ball costs $0.10.", True),
+        (["0.10"], "The ball costs $0.05.", False),
+        (["<|User|>"], "abc<|User|>def", True),
+        (["通义", "文心"], "我是通义千问。", True),
+    ],
+)
+def test_expect_not_contains_is_whole_word(forbidden, text, violated):
+    fp = _fp(expect_not_contains=forbidden)
+    assert ModelIdentityDetector._fingerprint_violated(fp, text) is violated
+
+
+def test_expect_contains_stays_a_substring_match():
+    # the expected terms are satisfied more easily, which is the safe direction
+    assert ModelIdentityDetector._fingerprint_violated(_fp(expect_contains=["meta"]), "metadata") is False
+    assert ModelIdentityDetector._fingerprint_violated(_fp(expect_contains_any=["gpt"]), "ChatGPT") is False
+
+
+def test_every_knowledge_base_forbidden_term_still_matches_itself(knowledge_base):
+    """Each expect_not_contains term in ekte/knowledge/data still fires on an
+    answer that states it (multi-word, token-like and CJK terms included)."""
+    from ekte.detectors.helpers import contains_term
+
+    fps = [
+        fp
+        for p in knowledge_base.providers.values()
+        for fp in [*p.fingerprints, *(f for m in p.models for f in m.fingerprints)]
+    ]
+    terms = {t for fp in fps for t in fp.expect_not_contains}
+    assert terms
+    for t in terms:
+        assert contains_term(f"Answer: {t}.", t), t
+        assert contains_term(f"({t})", t), t

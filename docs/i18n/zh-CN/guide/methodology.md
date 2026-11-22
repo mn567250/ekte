@@ -375,7 +375,8 @@ token 比其预算多出 5% 以上，则探测**超出了预算**（端点的分
    拥有这类词的厂商仍把它当作自家品牌。
 2. **行为指纹**，来自知识库（知识截止、分词器特征、格式习惯、与语言绑定的探测等）：
    最多 6 个纯代码探测，用 `expect_contains`、`expect_contains_any`、
-   `expect_not_contains` 或 `expect_regex` 判定；输出上限 512 token。
+   `expect_not_contains` 或 `expect_regex` 判定；输出上限 512 token。`expect_not_contains` 中的词按整词匹配（`metadata` 中不算出现 `meta`；
+   其后可跟版本号，如 `Qwen2.5`）。
    需要更多输出的探测（例如最大输出检查）会被跳过、记为“信息”，由其他探测补位。偏离的指纹按其
    权重占比从 100 分中扣分（每个最多 25 分）；单个偏离只算“低”，两个及以上会追加
    一条“中”的汇总发现。

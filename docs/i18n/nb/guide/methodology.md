@@ -485,7 +485,8 @@ ofte felles.
 2. **Atferdsfingeravtrykk** fra kunnskapsbasen (kunnskapsgrense, særegenheter i
    tokenizeren, formatering, språkbundne prober, …): opptil seks prober i ren kode,
    hver kontrollert med `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` eller `expect_regex`; utdata begrenset til 512 tokens. En
+   `expect_not_contains` eller `expect_regex`; utdata begrenset til 512 tokens. Ord under `expect_not_contains` gjelder bare som hele ord (`meta` finnes
+   ikke i `metadata`; en versjon kan følge, som i `Qwen2.5`). En
    probe som trenger mer utdata (som en kontroll av maks utdata), hoppes over,
    oppføres som Info, og en annen probe tar plassen. Et avvikende fingeravtrykk
    trekker fra sin vektandel av 100 poeng (høyst 25); ett alene forblir LOW, to

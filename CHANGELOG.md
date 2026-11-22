@@ -46,6 +46,13 @@ ekte has three eras:
   now fires when the p95 is above five times the median of the same burst
   **and** above 5 s. The finding stays an advisory Warning · Low (15% of the
   remaining score).
+- **Fingerprints: forbidden terms match whole words.** `expect_not_contains`
+  used substring matching, so a fingerprint forbidding `meta` fired on
+  "metadata". It now uses `helpers.contains_term`: whole words at ASCII
+  letter/digit edges, a version may follow (`qwen` matches `Qwen2.5`, `gpt-4`
+  matches `GPT-4o`), and CJK and token-like terms (`通义`, `<|User|>`) keep
+  matching inside text. `expect_contains` / `expect_contains_any` stay
+  substring matches. Every packaged `expect_not_contains` term is tested.
 
 ### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
 

@@ -512,7 +512,8 @@ modello, e la data limite è spesso condivisa.
    conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
    lingua, …): fino a sei sonde di solo codice, verificate con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; output limitato a 512 token. Una sonda che
+   `expect_regex`; output limitato a 512 token. I termini di `expect_not_contains` valgono solo come parole intere (`meta`
+   non si trova in `metadata`; può seguire una versione, come in `Qwen2.5`). Una sonda che
    richiede più output (ad esempio una verifica dell'output massimo) viene
    saltata, indicata come Info, e un'altra sonda ne prende il posto.
    Un'impronta che si discosta

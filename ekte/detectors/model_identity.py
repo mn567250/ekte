@@ -23,7 +23,13 @@ from ekte import prompts
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
-from ekte.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
+from ekte.detectors.helpers import (
+    contains_all,
+    contains_any,
+    contains_term_any,
+    contains_word,
+    contains_word_any,
+)
 from ekte.detectors.scale import DeductionScale, evidence_seqs, outcome
 from ekte.knowledge.identity import AMBIGUOUS_BRAND_WORDS, VENDOR_BRANDS, own_brand_words
 from ekte.knowledge.model_ids import compare_echoed_model
@@ -923,7 +929,9 @@ class ModelIdentityDetector(Detector):
             return True
         if fp.expect_contains_any and not contains_any(text, fp.expect_contains_any):
             return True
-        if fp.expect_not_contains and contains_any(text, fp.expect_not_contains):
+        # Forbidden terms match whole words ("meta" is not in "metadata");
+        # the expected ones stay substrings, the safe direction (#262).
+        if fp.expect_not_contains and contains_term_any(text, fp.expect_not_contains):
             return True
         if fp.expect_regex:
             try:

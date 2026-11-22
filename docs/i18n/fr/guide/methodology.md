@@ -515,7 +515,9 @@ limite est souvent partagée.
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
    `expect_contains`, `expect_contains_any`, `expect_not_contains` ou
-   `expect_regex` ; sortie limitée à 512 tokens. Une sonde qui
+   `expect_regex` ; sortie limitée à 512 tokens. Les termes de `expect_not_contains` ne comptent que comme mots entiers
+   (`meta` n'est pas trouvé dans `metadata` ; une version peut suivre, comme
+   dans `Qwen2.5`). Une sonde qui
    demande plus de sortie (un test de sortie maximale, par exemple) est
    ignorée, signalée en Info, et une autre sonde prend sa place. Une
    empreinte qui s'écarte

@@ -140,6 +140,41 @@ def contains_word(text: str, word: str) -> bool:
     return re.search(pattern, text or "", re.IGNORECASE) is not None
 
 
+def contains_term(text: str, term: str) -> bool:
+    """Case-insensitive whole-word match for a term a fingerprint forbids
+    (``expect_not_contains``, #262).
+
+    Like :func:`contains_word`, ``"meta"`` does not match ``"metadata"`` and
+    ``"gpt"`` does not match ``"ChatGPT"``. Two differences keep the knowledge
+    base's terms working:
+
+    - a boundary is only required at an edge of the term that is an ASCII
+      letter or digit, so ``"<|User|>"`` matches inside ``"x<|User|>"`` and CJK
+      terms (``"通义"``) match as substrings, as before;
+    - a term ending in a letter may be followed by a digit (a version:
+      ``"qwen"`` matches ``"Qwen2.5"``, ``"gpt"`` matches ``"gpt4o"``), and one
+      ending in a digit by a letter (``"gpt-4"`` matches ``"GPT-4o"``), but a
+      year or number is not matched inside a longer number (``"2021"`` in
+      ``"20210"``).
+    """
+    term = (term or "").strip()
+    if not term:
+        return False
+    first, last = term[0], term[-1]
+    lead = r"(?<![A-Za-z0-9])" if first.isascii() and first.isalnum() else ""
+    if last.isascii() and last.isalpha():
+        trail = r"(?![A-Za-z])"
+    elif last.isascii() and last.isdigit():
+        trail = r"(?![0-9])"
+    else:
+        trail = ""
+    return re.search(lead + re.escape(term) + trail, text or "", re.IGNORECASE) is not None
+
+
+def contains_term_any(text: str, terms: list[str]) -> bool:
+    return any(contains_term(text, t) for t in terms)
+
+
 def contains_word_any(text: str, words: list[str]) -> bool:
     return any(contains_word(text, w) for w in words)
 

@@ -507,7 +507,9 @@ ser compartida.
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; salida limitada a 512 tokens. Una sonda que
+   `expect_regex`; salida limitada a 512 tokens. Los términos de `expect_not_contains` se buscan como palabras completas
+   (`meta` no se encuentra en `metadata`; puede seguir una versión, como en
+   `Qwen2.5`). Una sonda que
    necesita más salida (por ejemplo, una comprobación de la salida máxima) se
    omite, figura como Info y otra sonda ocupa su lugar. Una huella que se
    desvía resta

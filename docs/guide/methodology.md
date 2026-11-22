@@ -478,7 +478,8 @@ hold for every model of the vendor, and a same-vendor cutoff is often shared.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` or `expect_regex`; output capped at 512 tokens. A
+   `expect_not_contains` or `expect_regex`; output capped at 512 tokens. Terms under `expect_not_contains` match whole words (`meta` is not found in
+   `metadata`; a version may follow, as in `Qwen2.5`). A
    probe that needs more output (such as a max-output check) is skipped,
    listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);

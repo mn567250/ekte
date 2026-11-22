@@ -515,7 +515,8 @@ Stichtag teilen sich Modelle eines Anbieters oft.
 2. **Verhaltens-Fingerprints** aus der Wissensbasis (Wissensstichtag,
    Tokenizer-Eigenheiten, Formatierung, sprachgebundene Tests, …): bis zu sechs
    Tests in reinem Code, geprüft mit `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` oder `expect_regex`; Ausgabe auf 512 Token begrenzt.
+   `expect_not_contains` oder `expect_regex`; Ausgabe auf 512 Token begrenzt. Begriffe unter `expect_not_contains` zählen nur als ganze Wörter (`meta`
+   wird in `metadata` nicht gefunden; eine Version darf folgen, wie in `Qwen2.5`).
    Ein Test, der mehr Ausgabe braucht (etwa eine Prüfung der maximalen
    Ausgabe), wird übersprungen und als Info aufgeführt; ein anderer Test
    rückt nach.
