@@ -304,7 +304,7 @@ class ReliabilityDetector(Detector):
             )
 
         # Latency finding: only when we have data and p95 is high.
-        if slow:
+        if slow and p95 is not None and p50 is not None:
             result.findings.append(
                 SCALE.finding(
                     "reliability.latency",
