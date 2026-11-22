@@ -26,6 +26,7 @@
     "Claimed tool calling rejected by the relay": "Claimed tool calling rejected by the relay",
     "Claimed JSON mode rejected by the relay": "Claimed JSON mode rejected by the relay",
     "Claimed strict JSON schema rejected by the relay": "Claimed strict JSON schema rejected by the relay",
+    "Relay does not stream for this model": "Relay does not stream for this model",
     "Tool-calling probe rejected (not counted)": "Tool-calling probe rejected (not counted)",
     "JSON-mode probe rejected (not counted)": "JSON-mode probe rejected (not counted)",
     "JSON-schema probe rejected (not counted)": "JSON-schema probe rejected (not counted)",

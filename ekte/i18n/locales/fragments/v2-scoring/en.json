@@ -162,6 +162,8 @@
   "Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering.": "Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering.",
   "No usage chunk in the stream: deducts 15 points when nothing is buffered.": "No usage chunk in the stream: deducts 15 points when nothing is buffered.",
   "The streaming request failed.": "The streaming request failed.",
+  "The relay does not stream for this model.": "The relay does not stream for this model.",
+  "The streaming request failed twice (5xx, timeout or another transport failure); not scored.": "The streaming request failed twice (5xx, timeout or another transport failure); not scored.",
   "The stream succeeded but delivered no content to judge by; not scored.": "The stream succeeded but delivered no content to judge by; not scored.",
   "The model named the color of the test image.": "The model named the color of the test image.",
   "Vision is claimed but the model did not name the image's color.": "Vision is claimed but the model did not name the image's color.",

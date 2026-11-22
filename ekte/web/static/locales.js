@@ -155,7 +155,7 @@
     "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.",
     "Run `ekte compare` against a trusted baseline to strengthen the verdict.",
     "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.",
-    "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.",
+    "Transport, reliability and streaming-support findings (plain HTTP, failures or slowness under load, a stream that failed or is not supported) are advisories: they lower the score but not the substitution risk.",
     "No core dimension (model identity, context window, capability) was selected, so the substitution risk cannot be judged.",
     "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.",
     "No problems found in the checked dimensions; model identity was not verified.",

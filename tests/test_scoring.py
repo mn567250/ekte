@@ -523,7 +523,8 @@ def test_plain_http_lowers_only_its_dimension():
 
 @pytest.mark.parametrize("fid", sorted(ADVISORY_CHECKS))
 def test_advisory_findings_cap_no_dimension(fid):
-    det = {"security": "security", "reliability": "reliability"}[fid.split(".")[0]]
+    det = {"security": "security", "reliability": "reliability",
+           "streaming": "streaming"}[fid.split(".")[0]]
     detectors = _clean()
     detectors[det] = _failing(det, fid, Severity.HIGH, 20.0)
     # a passing sibling in the same dimension, so a cap would show
@@ -578,6 +579,92 @@ def test_no_combination_reads_a_or_b_with_high_risk(surface):
             assert v.rating not in ("A", "B", "C", "D"), v
         if v.risk_level == RiskLevel.MEDIUM:
             assert v.rating not in ("A", "B", "C"), v
+
+
+# --------------------------------------------------------------------------- #
+# A failed or unsupported stream is an advisory, and the "two HIGH" rule needs
+# two different detectors (#255).
+# --------------------------------------------------------------------------- #
+def _streaming(fid: str, outcome: str, status: Status, severity: Severity,
+               score: float | None) -> DetectorResult:
+    return DetectorResult(
+        id="streaming", name="streaming", dimension=Dimension.STREAMING, score=score, status=status,
+        findings=[Finding(id=fid, check=fid, title=f"{fid} title", status=status,
+                          severity=severity, outcome=outcome, summary="")],
+    )
+
+
+def test_one_failed_stream_is_inconclusive_and_leaves_the_risk_alone():
+    detectors = _clean()
+    detectors["streaming"] = _streaming("streaming.failed", "failed", Status.INCONCLUSIVE,
+                                        Severity.LOW, None)
+    dims, v = _judge(list(detectors.values()))
+    assert _dim(dims, Dimension.STREAMING).score is None
+    assert v.risk_level == RiskLevel.CLEAN and v.score_cap is None and v.drivers == []
+
+
+def test_a_relay_that_does_not_stream_scores_0_without_raising_the_risk():
+    detectors = _clean()
+    detectors["streaming"] = _streaming("streaming.unsupported", "unsupported", Status.FAIL,
+                                        Severity.MEDIUM, 0.0)
+    dims, v = _judge(list(detectors.values()))
+    d = _dim(dims, Dimension.STREAMING)
+    assert (d.score, d.status) == (0.0, Status.FAIL)
+    assert v.risk_level == RiskLevel.CLEAN and v.score_cap is None
+    assert "streaming.unsupported title" in v.key_findings
+    assert "a stream that failed or is not supported" in v.summary
+    # ... and it adds nothing to what the other findings give
+    detectors["billing"] = _failing("billing", "billing.x", Severity.MEDIUM, 70.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM and v.drivers == ["billing"]
+
+
+def test_a_failed_stream_and_an_echoed_key_are_no_longer_high():
+    # The issue's reproduction, with the pre-#255 HIGH failed stream of an older report.
+    detectors = _clean()
+    detectors["streaming"] = _streaming("streaming.failed", "failed", Status.FAIL,
+                                        Severity.HIGH, 0.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.CLEAN
+    detectors["security"] = _failing("security", "security.key_echo", Severity.HIGH, 30.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM and v.drivers == ["security"]
+    assert "Streaming authenticity" not in v.headline
+
+
+def test_two_high_findings_of_one_non_core_detector_are_medium():
+    detectors = _clean()
+    det = _failing("integrity", "integrity.a", Severity.HIGH, 20.0)
+    det.findings.append(Finding(id="integrity.b", check="integrity.b", title="integrity.b title",
+                                status=Status.FAIL, severity=Severity.HIGH, summary=""))
+    detectors["integrity"] = det
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM
+    assert v.score_cap is not None and v.score_cap.findings == ["integrity.a", "integrity.b"]
+
+
+def test_high_findings_of_two_detectors_are_still_high():
+    detectors = _clean()
+    detectors["security"] = _failing("security", "security.key_echo", Severity.HIGH, 30.0)
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.HIGH, 20.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.HIGH
+    assert v.drivers == ["integrity", "security"]
+    # two detectors of one dimension count as two detectors too
+    detectors = _clean()
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.HIGH, 20.0)
+    detectors["injected_prompt"] = _failing("injected_prompt", "injected_prompt.x",
+                                            Severity.HIGH, 20.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.HIGH
+
+
+def test_an_advisory_high_does_not_pair_with_another_high():
+    detectors = _clean()
+    detectors["security"] = _failing("security", "security.tls", Severity.HIGH, 40.0)
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.HIGH, 20.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM and v.drivers == ["integrity"]
 
 
 def _report(detectors: list[DetectorResult]) -> AuditReport:

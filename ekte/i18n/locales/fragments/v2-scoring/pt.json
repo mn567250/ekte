@@ -162,6 +162,8 @@
   "Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering.": "Primeiro token tardio de um modelo de raciocínio (pensa antes de responder): informativo, não contado como buffer.",
   "No usage chunk in the stream: deducts 15 points when nothing is buffered.": "Nenhum fragmento usage no stream: desconta 15 pontos se nada estiver em buffer.",
   "The streaming request failed.": "O pedido em streaming falhou.",
+  "The relay does not stream for this model.": "O relay não faz streaming para este modelo.",
+  "The streaming request failed twice (5xx, timeout or another transport failure); not scored.": "O pedido em streaming falhou duas vezes (5xx, tempo esgotado ou outra falha de transporte); sem pontuação.",
   "The stream succeeded but delivered no content to judge by; not scored.": "O stream teve sucesso, mas não entregou conteúdo para avaliar; sem pontuação.",
   "The model named the color of the test image.": "O modelo nomeou a cor da imagem de teste.",
   "Vision is claimed but the model did not name the image's color.": "A visão é declarada, mas o modelo não nomeou a cor da imagem.",

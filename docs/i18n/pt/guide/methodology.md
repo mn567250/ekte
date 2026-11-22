@@ -136,8 +136,8 @@ O nível de risco depende da **gravidade das constatações**, não da pontuaç�
 As constatações da dimensão de conectividade ficam de fora: um relay em baixo
 ou limitado não pôde ser avaliado, o que não prova que responda outro modelo.
 Também ficam de fora os **avisos de transporte** (`ADVISORY_CHECKS` em
-`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): HTTP sem cifra, falhas ou
-lentidão sob carga dizem como se chega ao relay, não que modelo ele serve.
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`): HTTP sem cifra, falhas ou
+lentidão sob carga, um pedido em streaming que falhou duas vezes ou um relay que não faz streaming para o modelo dizem como se chega ao relay, não que modelo ele serve.
 Continuam a baixar a pontuação e o estado da sua dimensão, aparecem depois das
 constatações de substituição entre as principais e o resumo indica-os como
 avisos quando são de gravidade Média ou superior. Uma chave de API devolvida continua a elevar o risco, tal como as constatações da dimensão Integridade das respostas (adulteração, prompt de sistema injetado, cache de respostas): não é uma dimensão núcleo, pelo que só a gravidade determina o risco.
@@ -145,8 +145,8 @@ avisos quando são de gravidade Média ou superior. Uma chave de API devolvida c
 | Risco | Rótulo na interface | Quando |
 |---|---|---|
 | `inconclusive` | Sinal insuficiente | Nada utilizável para julgar: se foi executada alguma dimensão de perfil, nenhuma produziu um resultado utilizável (Aprovado, Aviso ou Falha) — o relay está inacessível ou o modelo não tem perfil; caso contrário, nenhuma dimensão além da conectividade o produziu |
-| `high` | Provavelmente substituído | Uma constatação CRÍTICA, uma constatação ALTA/CRÍTICA numa dimensão núcleo, ou duas ou mais constatações ALTAS |
-| `medium` | Desvios detetados | Exatamente uma constatação ALTA fora das dimensões núcleo, ou uma constatação MÉDIA numa dimensão núcleo |
+| `high` | Provavelmente substituído | Uma constatação CRÍTICA, uma constatação ALTA/CRÍTICA numa dimensão núcleo, ou constatações ALTAS de dois ou mais detetores diferentes |
+| `medium` | Desvios detetados | Constatações ALTAS fora das dimensões núcleo de um único detetor, ou uma constatação MÉDIA numa dimensão núcleo |
 | `low` | Maioritariamente coerente | Qualquer outra constatação MÉDIA |
 | `clean` | Coerente | Nenhum dos casos acima |
 
@@ -766,6 +766,7 @@ que pensa antes de responder, um primeiro token tardio é apenas registado e nã
 conta como buffer; os sinais de poucos fragmentos e intervalos uniformes
 continuam a contar. Um stream bem-sucedido mas sem conteúdo é inconclusivo e não
 é pontuado.
+Um pedido em streaming que falha é repetido uma vez. Se voltar a falhar com um 4xx que menciona o streaming, ou com qualquer outro 4xx enquanto o mesmo prompt sem streaming tem sucesso, o relay não faz streaming para este modelo (`streaming.unsupported`, pontuação 0). Qualquer outra falha (um 5xx, um tempo esgotado, um limite de taxa ou um 4xx que o prompt sem streaming também recebe) é uma falha de transporte: `streaming.failed`, inconclusivo e sem pontuação. Ambos são avisos de transporte (ver [Veredito de risco](#veredito-de-risco)): baixam esta dimensão, mas nunca o risco de substituição.
 Se o modelo transmitir o seu raciocínio (deltas de raciocínio, blocos de thinking, eventos de raciocínio da API Responses), mede-se antes o primeiro token de qualquer tipo: um stream genuíno começa cedo a raciocinar, pelo que um stream cujo raciocínio e resposta chegam ambos no fim é um buffer mesmo para um modelo de raciocínio.
 
 | Verificação | Resultado | Estado | Efeito |
@@ -777,10 +778,11 @@ Se o modelo transmitir o seu raciocínio (deltas de raciocínio, blocos de think
 | `streaming.uniform_gaps` | Sinal de buffer: o primeiro desconta 40 pontos, um segundo 20, os seguintes nada. | Aviso · Média | até −40 pts |
 | `streaming.no_usage` | Nenhum fragmento de uso no stream: desconta 15 pontos se nada estiver em buffer. | Aviso · Baixa | até −15 pts |
 | `streaming.no_content` | O stream teve sucesso, mas não entregou conteúdo para avaliar; sem pontuação. | Inconclusivo · Baixa | Não contabilizado |
-| `streaming.failed` | O pedido em streaming falhou. | Falha · Alta | teto 0 |
+| `streaming.unsupported` | O relay não faz streaming para este modelo. | Falha · Média | teto 0 |
+| `streaming.failed` | O pedido em streaming falhou duas vezes (5xx, tempo esgotado ou outra falha de transporte); sem pontuação. | Inconclusivo · Baixa | Não contabilizado |
 
 Ou seja: autêntico 100 · utilização em falta 85 · um sinal de buffer 60 · dois
-ou mais 40 · falha 0 · sem conteúdo: sem pontuação.
+ou mais 40 · sem suporte 0 · duas falhas ou sem conteúdo: sem pontuação.
 
 **Ressalvas.** Saídas curtas, um modelo pequeno e rápido ou a instabilidade da
 rede podem parecer uma rajada. Um upstream que não suporta streaming obriga o
