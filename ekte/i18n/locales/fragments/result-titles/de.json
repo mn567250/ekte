@@ -78,6 +78,8 @@
     "Incomplete usage breakdown": "Verbrauchsaufschlüsselung unvollständig",
     "Integrity canaries inconclusive": "Integritäts-Canaries ohne klares Ergebnis",
     "Inter-chunk gaps are uniform and near-zero": "Chunk-Abstände gleichmäßig und nahezu null",
+    "Chunks arrived in a burst": "Chunks kamen in einem Schwall",
+    "First token only after a whole non-streamed answer's time": "Erstes Token erst nach der Dauer einer ganzen Antwort ohne Streaming",
     "JSON mode delivered": "JSON-Modus geliefert",
     "JSON mode observed without strong claim": "JSON-Modus beobachtet, ohne feste Angabe",
     "JSON-mode probe failed to complete": "JSON-Modus-Sonde nicht abgeschlossen",

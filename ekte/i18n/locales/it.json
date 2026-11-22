@@ -666,9 +666,13 @@
    "Primo token tardivo di un modello di ragionamento",
    "Il primo token visibile è arrivato a {ttft_ms} ms su {duration_ms} ms totali; il modello ragiona prima di rispondere, quindi non è conteggiato come buffering."
   ],
+  "streaming.ttft_vs_total": [
+   "Primo token solo dopo il tempo di un'intera risposta senza streaming",
+   "Il primo token in streaming è arrivato dopo {ttft_ms} ms, ~{ttft_vs_total} dei {non_stream_ms} ms che lo stesso prompt richiede senza streaming: la risposta era completa prima dell'invio del primo frammento."
+  ],
   "streaming.uniform_gaps": [
-   "Intervalli tra frammenti uniformi e quasi nulli",
-   "{chunk_count} frammenti, intervallo medio ~{mean_delta_ms} ms, CV {delta_cv} — i frammenti sembrano riversati tutti insieme."
+   "Frammenti arrivati in una raffica",
+   "{burst_gaps} intervalli su {gaps} tra {chunk_count} frammenti sono sotto i 2 ms: i frammenti sono stati riversati tutti insieme."
   ],
   "streaming.no_usage": [
    "Nessun frammento usage nel flusso",
