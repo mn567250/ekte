@@ -666,9 +666,13 @@
    "Primeiro token tardio de um modelo de raciocínio",
    "O primeiro token visível chegou aos {ttft_ms} ms de {duration_ms} ms no total; o modelo raciocina antes de responder, por isso não conta como buffer."
   ],
+  "streaming.ttft_vs_total": [
+   "Primeiro token só após o tempo de uma resposta completa sem streaming",
+   "O primeiro token em streaming chegou após {ttft_ms} ms, ~{ttft_vs_total} dos {non_stream_ms} ms que o mesmo prompt leva sem streaming: a resposta estava completa antes do envio do primeiro fragmento."
+  ],
   "streaming.uniform_gaps": [
-   "Intervalos entre fragmentos uniformes e quase nulos",
-   "{chunk_count} fragmentos, intervalo médio ~{mean_delta_ms} ms, CV {delta_cv} — os fragmentos parecem despejados de uma vez."
+   "Os fragmentos chegaram de uma vez",
+   "{burst_gaps} de {gaps} intervalos entre {chunk_count} fragmentos estão abaixo de 2 ms: os fragmentos foram despejados de uma vez."
   ],
   "streaming.no_usage": [
    "Nenhum fragmento usage no fluxo",

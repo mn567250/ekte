@@ -268,7 +268,7 @@ confiance.
   `reasoning: true`, ou après sa première répétition de ce type), les sondes
   courtes partent d'emblée avec la limite de 4 096 tokens au lieu de deux fois.
   Les vérifications qui traitent un modèle de raisonnement autrement
-  (facturation, déterminisme, sortie maximale, attributs de requête) le
+  (facturation, déterminisme, sortie maximale, attributs de requête, streaming) le
   reconnaissent toutes de la même façon : le profil l'indique, le client l'a
   appris d'une telle répétition, ou une réponse signale des tokens de
   raisonnement.
@@ -784,18 +784,34 @@ latence.
 
 **Fonctionnement.** Une requête en streaming (`max_tokens` 256,
 `stream_options.include_usage`) dont on enregistre l'heure d'arrivée de chaque
-fragment. Trois signaux de mise en tampon : **peu de fragments** (deux ou moins)
-et **premier token tardif** (TTFT au-delà de 90 % de la durée totale), jugés
-seulement à partir de 220 caractères reçus, ainsi que des **écarts uniformes**
-(quatre fragments ou plus aux écarts quasi identiques, CV < 0,1, et sous 2 ms :
-livrés en bloc). Un flux sans fragment d'usage est signalé à part.
+fragment, puis le même prompt une fois sans streaming (même `max_tokens`,
+température 0). Quatre signaux de mise en tampon, tous jugés seulement à partir
+de 220 caractères reçus :
+
+- **peu de fragments** : deux ou moins ;
+- **premier token tardif** : TTFT au-delà de 90 % de la durée du flux, ou de
+  75 % quand le signal suivant se déclenche aussi ;
+- **premier token après la durée de la réponse complète**
+  (`streaming.ttft_vs_total`) : le TTFT en streaming atteint au moins 80 % du
+  temps qu'a pris la requête sans streaming ; la réponse était donc complète
+  avant le départ du premier fragment. Cela détecte une réponse mise en tampon
+  puis rejouée fragment par fragment avec un délai de « frappe », qui montre
+  beaucoup de fragments et des écarts répartis. Pas de comparaison si l'un des
+  deux appels a échoué ou si la réponse sans streaming a pris moins d'une
+  seconde (les temps de deux appels sont alors surtout du bruit réseau) ;
+- **rafale** (`streaming.uniform_gaps`, l'identifiant que portent les rapports
+  enregistrés) : quatre fragments ou plus dont au moins 80 % des écarts sont
+  sous 2 ms : livrés en bloc.
 
 Le TTFT est le premier token de contenu visible. Pour un modèle de raisonnement
-(selon la base de connaissances, ou qui déclare des tokens de raisonnement dans
-son usage), qui réfléchit avant de répondre, un premier token tardif est donc
-seulement noté et non compté comme mise en tampon ; les signaux peu de fragments
-et écarts uniformes comptent toujours. Un flux qui réussit mais ne livre aucun
-contenu n'est pas concluant et n'est pas noté.
+(le profil l'indique, le client l'a appris, ou une réponse déclare des tokens de
+raisonnement), qui réfléchit avant de répondre, un premier token tardif est donc
+seulement noté et non compté comme mise en tampon, et la comparaison sans
+streaming est omise ; les signaux peu de fragments et rafale comptent toujours.
+Un flux sans fragment d'usage est signalé à part. Un flux qui réussit mais ne
+livre aucun contenu n'est pas concluant et n'est pas noté. En mode comparaison,
+le TTFT en streaming de la référence et son temps sans streaming pour le même
+prompt sont consignés dans les preuves (`baseline`), sans être notés.
 Une requête en streaming en échec est répétée une fois. Si elle échoue à nouveau avec un 4xx qui mentionne le streaming, ou avec un autre 4xx alors que le même prompt sans streaming réussit, le relais ne diffuse pas en streaming pour ce modèle (`streaming.unsupported`, score 0). Tout autre échec (un 5xx, un délai dépassé, une limite de débit ou un 4xx que reçoit aussi le prompt sans streaming) est une défaillance de transport : `streaming.failed`, non concluant et non noté. Les deux sont des avertissements de transport (voir [Verdict de risque](#verdict-de-risque)) : ils abaissent cette dimension, jamais le risque de substitution.
 Si le modèle diffuse son raisonnement (deltas de raisonnement, blocs de thinking, événements de raisonnement de l'API Responses), c'est le premier token de l'un ou l'autre type qui est chronométré : un vrai flux commence tôt à raisonner, donc un flux dont le raisonnement et la réponse arrivent tous deux à la toute fin est mis en tampon, même pour un modèle de raisonnement.
 
@@ -805,6 +821,7 @@ Si le modèle diffuse son raisonnement (deltas de raisonnement, blocs de thinkin
 | `streaming.few_chunks` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.late_ttft` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.reasoning_ttft` | Premier token tardif d'un modèle de raisonnement (il réfléchit avant de répondre) : informatif, non compté comme mise en tampon. | Info | Aucune déduction |
+| `streaming.ttft_vs_total` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.uniform_gaps` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.no_usage` | Aucun fragment d'usage dans le flux : retire 15 points si rien n'est mis en tampon. | Avertissement · Faible | jusqu'à −15 pts |
 | `streaming.no_content` | Le flux a réussi mais n'a livré aucun contenu à juger ; non noté. | Non concluant · Faible | Non compté |

@@ -666,9 +666,13 @@
    "Premier jeton tardif d'un modèle de raisonnement",
    "Le premier jeton visible est arrivé à {ttft_ms} ms sur {duration_ms} ms au total ; le modèle raisonne avant de répondre, ce n'est donc pas compté comme mise en tampon."
   ],
+  "streaming.ttft_vs_total": [
+   "Premier token seulement après la durée d'une réponse complète sans streaming",
+   "Le premier token en streaming est arrivé après {ttft_ms} ms, soit ~{ttft_vs_total} des {non_stream_ms} ms que prend le même prompt sans streaming : la réponse était complète avant l'envoi du premier fragment."
+  ],
   "streaming.uniform_gaps": [
-   "Intervalles entre fragments uniformes et quasi nuls",
-   "{chunk_count} fragments, intervalle moyen ~{mean_delta_ms} ms, CV {delta_cv} — les fragments semblent déversés d'un coup."
+   "Fragments arrivés en rafale",
+   "{burst_gaps} des {gaps} intervalles entre {chunk_count} fragments sont inférieurs à 2 ms : les fragments ont été déversés d'un coup."
   ],
   "streaming.no_usage": [
    "Aucun fragment usage dans le flux",

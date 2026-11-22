@@ -257,7 +257,7 @@ det teller ikke for sikkerheten.
   sendes korte prober med grensen på 4 096 tokens fra starten i stedet for to
   ganger.
   Kontrollene som behandler en resonnerende modell annerledes (fakturering,
-  determinisme, maksimal utdata, forespørselsattributter) gjenkjenner den alle
+  determinisme, maksimal utdata, forespørselsattributter, strømming) gjenkjenner den alle
   på samme måte: profilen sier det, klienten har lært det av en slik
   gjentakelse, eller et svar rapporterer resonneringstokens.
 - **Forespørselsparametere:** resonnerende modeller avviser noen parametere: på
@@ -745,16 +745,31 @@ spiller det av igjen som én eller noen få biter, så gevinsten i forsinkelse
 forsvinner.
 
 **Slik virker den.** Én strømmet forespørsel (`max_tokens` 256,
-`stream_options.include_usage`) der ankomsttidene for bitene registreres. Tre
-signaler på bufring: **få biter** (to eller færre) og **sent første token** (TTFT
-over 90 % av total varighet), begge vurdert bare når minst 220 tegn kom tilbake,
-og **jevne opphold** (fire eller flere biter der oppholdene er nesten like,
-CV < 0,1, og under 2 ms: sluppet ut samlet). TTFT er det første synlige
-innholdstokenet, så for en resonnerende modell (påstått av kunnskapsbasen, eller
-som rapporterer resonneringstokens i usage), som tenker før den svarer, noteres et
-sent første token bare og telles ikke som bufring; signalene få biter og jevne
-opphold teller fortsatt. En strøm uten usage-bit flagges for seg. En strøm som
-lykkes, men ikke leverer noe innhold, er uavklart og gir ikke score.
+`stream_options.include_usage`) der ankomsttidene for bitene registreres, og
+deretter den samme prompten én gang uten strømming (samme `max_tokens`,
+temperatur 0). Fire signaler på bufring, alle vurdert bare når minst 220 tegn
+kom tilbake:
+
+- **få biter**: to eller færre;
+- **sent første token**: TTFT over 90 % av strømmens varighet, eller over 75 %
+  når også neste signal slår ut;
+- **første token først etter tiden for hele svaret** (`streaming.ttft_vs_total`):
+  den strømmede TTFT er minst 80 % av tiden forespørselen uten strømming tok, så
+  svaret var ferdig før den første biten gikk. Dette fanger et bufret svar som
+  spilles av bit for bit med en «skrive»-forsinkelse, og som viser mange biter og
+  spredte opphold. Sammenlignes ikke når et av kallene mislyktes eller svaret uten
+  strømming tok under ett sekund (tidene for to kall er da mest nettverksstøy);
+- **støt** (`streaming.uniform_gaps`, id-en lagrede rapporter bærer): fire eller
+  flere biter der minst 80 % av oppholdene er under 2 ms: sluppet ut samlet.
+
+TTFT er det første synlige innholdstokenet, så for en resonnerende modell
+(profilen sier det, klienten har lært det, eller et svar rapporterer
+resonneringstokens), som tenker før den svarer, noteres et sent første token
+bare og telles ikke som bufring, og sammenligningen uten strømming hoppes over;
+signalene få biter og støt teller fortsatt. En strøm uten usage-bit flagges for
+seg. En strøm som lykkes, men ikke leverer noe innhold, er uavklart og gir ikke
+score. I sammenligningsmodus registreres referansens strømmede TTFT og dens tid
+uten strømming for samme prompt i bevisene (`baseline`), uten score.
 En strømmeforespørsel som mislykkes, gjentas én gang. Mislykkes den igjen med en 4xx som nevner strømming, eller med en annen 4xx mens den samme prompten uten strømming lykkes, strømmer ikke reléet for denne modellen (`streaming.unsupported`, score 0). Enhver annen feil (en 5xx, et tidsavbrudd, en hastighetsgrense eller en 4xx som også prompten uten strømming får) er en transportfeil: `streaming.failed`, uavklart og uten score. Begge er transportråd (se [Risikokonklusjon](#risikokonklusjon)): de senker denne dimensjonen, men aldri risikoen for bytte.
 Når modellen strømmer resonneringen sin (resonneringsdeltaer, tenkeblokker,
 resonneringshendelser i Responses), måles i stedet det første tokenet av begge
@@ -768,6 +783,7 @@ resonnerende modell.
 | `streaming.few_chunks` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.late_ttft` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.reasoning_ttft` | Sent første token fra en resonnerende modell (den tenker før den svarer): til informasjon, telles ikke som bufring. | Info | Ingen fradrag |
+| `streaming.ttft_vs_total` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.uniform_gaps` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.no_usage` | Ingen usage-bit i strømmen: trekker fra 15 poeng når ingenting er bufret. | Advarsel · Lav | opptil −15 poeng |
 | `streaming.no_content` | Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score. | Uavklart · Lav | Telles ikke |

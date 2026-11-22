@@ -205,9 +205,9 @@ _OK_PLAIN = CompletionOutcome(ok=True, status_code=200, content="One. Two. Three
 
 async def test_streaming_one_failure_then_a_good_stream_is_judged_normally():
     good = _stream("word " * 60, ttft=100.0, duration=2000.0, chunks=40)
-    ctx, seen = _sequence(_error(503), good)
+    ctx, seen = _sequence(_error(503), good, _OK_PLAIN)
     result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
-    assert seen == [True, True]
+    assert seen == [True, True, False]  # then the same prompt without streaming (#259)
     assert "streaming.healthy" in {f.id for f in result.findings}
     assert result.score == 100.0 and result.status == Status.PASS
 
@@ -273,8 +273,11 @@ def _stream(content: str, *, ttft: float, duration: float, chunks: int,
 
 
 async def _run_streaming(out: CompletionOutcome, *, reasoning: bool) -> DetectorResult:
-    async def complete(_spec):
-        return out
+    # The non-streamed comparison (#259) takes well over the streamed first token.
+    plain = CompletionOutcome(ok=True, status_code=200, content=out.content, duration_ms=4000.0)
+
+    async def complete(spec):
+        return out if spec.stream else plain
 
     model = SimpleNamespace(reasoning=reasoning, usage_in_stream=True)
     ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),

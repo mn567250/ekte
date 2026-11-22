@@ -271,7 +271,7 @@ für die Konfidenz.
   `reasoning: true`, oder nach seiner ersten solchen Wiederholung), gehen kurze
   Proben gleich mit dem Limit von 4.096 Token hinaus statt zweimal.
   Die Prüfungen, die ein Reasoning-Modell anders behandeln (Abrechnung,
-  Determinismus, maximale Ausgabe, Anfrageattribute), erkennen es alle auf
+  Determinismus, maximale Ausgabe, Anfrageattribute, Streaming), erkennen es alle auf
   dieselbe Weise: das Profil sagt es, der Client hat es aus einer solchen
   Wiederholung gelernt, oder eine Antwort meldet Reasoning-Token.
 - **Anfrageparameter:** Reasoning-Modelle lehnen manche Parameter ab: bei Chat
@@ -785,19 +785,36 @@ Upstreams und spielt sie in einem oder wenigen Chunks ab; der Latenzvorteil geht
 verloren.
 
 **Vorgehen.** Eine gestreamte Anfrage (`max_tokens` 256,
-`stream_options.include_usage`), deren Chunk-Ankunftszeiten erfasst werden. Drei
-Puffersignale: **wenige Chunks** (zwei oder weniger) und **spätes erstes Token**
-(TTFT über 90 % der Gesamtdauer), beide erst beurteilt, sobald mindestens 220
-Zeichen zurückkamen, sowie **gleichförmige Abstände** (vier oder mehr Chunks mit
-fast gleichen Abständen, CV < 0,1, und unter 2 ms: gebündelt ausgeliefert). Ein
-Stream ohne Usage-Chunk wird gesondert markiert.
+`stream_options.include_usage`), deren Chunk-Ankunftszeiten erfasst werden,
+danach derselbe Prompt einmal ohne Streaming (gleiches `max_tokens`, Temperatur
+0). Vier Puffersignale, alle erst beurteilt, sobald mindestens 220 Zeichen
+zurückkamen:
 
-TTFT ist das erste sichtbare Inhalts-Token. Bei einem Reasoning-Modell (laut
-Wissensbasis oder mit Reasoning-Tokens in der Usage), das vor der Antwort
-nachdenkt, wird ein spätes erstes Token daher nur vermerkt und nicht als
-Pufferung gezählt; die Signale wenige Chunks und gleichförmige Abstände zählen
-weiter. Ein Stream, der erfolgreich ist, aber keinen Inhalt liefert, ist nicht
-eindeutig und wird nicht bewertet.
+- **wenige Chunks**: zwei oder weniger;
+- **spätes erstes Token**: TTFT über 90 % der Dauer des Streams, oder über 75 %,
+  wenn auch das nächste Signal anschlägt;
+- **erstes Token erst nach der Zeit der ganzen Antwort**
+  (`streaming.ttft_vs_total`): die gestreamte TTFT beträgt mindestens 80 % der
+  Zeit, die die Anfrage ohne Streaming brauchte; die Antwort war also fertig,
+  bevor der erste Chunk ging. Das erfasst eine gepufferte Antwort, die Chunk für
+  Chunk mit einer „Tipp“-Verzögerung abgespielt wird und dabei viele Chunks und
+  verteilte Abstände zeigt. Nicht verglichen, wenn einer der beiden Aufrufe
+  fehlschlug oder die Antwort ohne Streaming unter einer Sekunde brauchte (dann
+  sind die Zeiten zweier Aufrufe vor allem Netzwerkrauschen);
+- **Schwall** (`streaming.uniform_gaps`, die ID, die gespeicherte Berichte
+  tragen): vier oder mehr Chunks, von deren Abständen mindestens 80 % unter 2 ms
+  liegen: gebündelt ausgeliefert.
+
+TTFT ist das erste sichtbare Inhalts-Token. Bei einem Reasoning-Modell (das
+Profil sagt es, der Client hat es gelernt, oder eine Antwort meldet
+Reasoning-Token), das vor der Antwort nachdenkt, wird ein spätes erstes Token
+daher nur vermerkt und nicht als Pufferung gezählt, und der Vergleich ohne
+Streaming entfällt; die Signale wenige Chunks und Schwall zählen weiter. Ein
+Stream ohne Usage-Chunk wird gesondert markiert. Ein Stream, der erfolgreich
+ist, aber keinen Inhalt liefert, ist nicht eindeutig und wird nicht bewertet.
+Im Vergleichsmodus werden die gestreamte TTFT der Referenz und ihre Zeit ohne
+Streaming für denselben Prompt in den Belegen festgehalten (`baseline`), nicht
+bewertet.
 Eine fehlgeschlagene Streaming-Anfrage wird einmal wiederholt. Schlägt sie erneut mit einem 4xx fehl, der Streaming nennt, oder mit einem anderen 4xx, während derselbe Prompt ohne Streaming gelingt, streamt das Relay für dieses Modell nicht (`streaming.unsupported`, Bewertung 0). Jeder andere Fehler (ein 5xx, eine Zeitüberschreitung, ein Rate-Limit oder ein 4xx, den auch der Prompt ohne Streaming erhält) ist ein Transportfehler: `streaming.failed`, nicht eindeutig und nicht bewertet. Beide sind Transport-Hinweise (siehe [Risikourteil](#risikourteil)): Sie senken diese Dimension, aber nie das Substitutionsrisiko.
 Streamt das Modell sein Reasoning (Reasoning-Deltas, Thinking-Blöcke, Reasoning-Ereignisse der Responses-API), zählt stattdessen das erste Token beider Arten: ein echter Stream beginnt früh mit dem Reasoning, ein Stream, dessen Reasoning und Antwort beide erst ganz am Ende kommen, ist also auch bei einem Reasoning-Modell gepuffert.
 
@@ -807,6 +824,7 @@ Streamt das Modell sein Reasoning (Reasoning-Deltas, Thinking-Blöcke, Reasoning
 | `streaming.few_chunks` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.late_ttft` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.reasoning_ttft` | Spätes erstes Token eines Reasoning-Modells (es denkt vor der Antwort nach): informativ, nicht als Pufferung gezählt. | Info | Kein Abzug |
+| `streaming.ttft_vs_total` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.uniform_gaps` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.no_usage` | Kein Usage-Chunk im Stream: zieht 15 Punkte ab, wenn nichts gepuffert ist. | Warnung · Niedrig | bis zu −15 Pkt. |
 | `streaming.no_content` | Der Stream war erfolgreich, lieferte aber keinen Inhalt zur Beurteilung; nicht bewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
