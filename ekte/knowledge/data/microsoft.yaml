@@ -15,7 +15,7 @@ models:
   family: phi-4
   context_window_tokens: 16384
   max_output_tokens: 16384
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06'
   tokenizer: null
   modalities:
   - text
@@ -54,7 +54,7 @@ models:
   family: phi-4-mini
   context_window_tokens: 131072
   max_output_tokens: 4096
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06'
   tokenizer: null
   modalities:
   - text
@@ -93,7 +93,7 @@ models:
   family: phi-4-multimodal
   context_window_tokens: 131072
   max_output_tokens: 4096
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06'
   tokenizer: null
   modalities:
   - text
@@ -133,7 +133,7 @@ models:
   family: phi-4-mini-reasoning
   context_window_tokens: 128000
   max_output_tokens: 128000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2025-02'
   tokenizer: null
   modalities:
   - text
@@ -172,7 +172,7 @@ models:
   family: phi-4-reasoning
   context_window_tokens: 32768
   max_output_tokens: 32768
-  knowledge_cutoff: null
+  knowledge_cutoff: '2025-03'
   tokenizer: null
   modalities:
   - text
@@ -210,7 +210,7 @@ models:
   family: phi-4-reasoning-plus
   context_window_tokens: 32768
   max_output_tokens: -1
-  knowledge_cutoff: null
+  knowledge_cutoff: '2025-03'
   tokenizer: null
   modalities:
   - text
@@ -249,7 +249,7 @@ models:
   family: phi-4-mini-flash-reasoning
   context_window_tokens: 65536
   max_output_tokens: -1
-  knowledge_cutoff: null
+  knowledge_cutoff: '2025-02'
   tokenizer: null
   modalities:
   - text
