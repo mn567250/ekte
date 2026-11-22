@@ -376,6 +376,7 @@ class PerformanceDetector(Detector):
             )
 
         if baseline is not None:
+            result.baseline_compared = baseline.successes > 0
             self._overhead_finding(result, target, baseline, head)
             self._baseline_reference(result, target, baseline, stream=stream)
         elif reference is not None:

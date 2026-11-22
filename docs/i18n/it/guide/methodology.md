@@ -169,9 +169,25 @@ sull'identità del modello dice che l'identità del modello non è stata verific
 - **Media** — almeno due dimensioni centrali hanno prodotto un risultato
   utilizzabile (o, in un'esecuzione senza dimensioni centrali, almeno due
   dimensioni lo hanno fatto);
-- **Alta** — è stato usato un riferimento *e* ogni dimensione centrale eseguita
-  ha prodotto un risultato utilizzabile, oppure l'affidabilità era media e il
-  giudice LLM ha restituito un verdetto utilizzabile.
+- **Alta** — è stato usato un riferimento, ogni dimensione centrale eseguita
+  ha prodotto un risultato utilizzabile *e* almeno due dimensioni centrali
+  hanno un rilevatore che ha davvero confrontato l'obiettivo con una risposta
+  utilizzabile del riferimento (`baseline_compared` nel report) e ha prodotto
+  un risultato utilizzabile. Configurare un riferimento non basta: un
+  riferimento che ha dato errore, o che nessun rilevatore centrale ha
+  interrogato, lascia l'affidabilità a media. Un verdetto del giudice da solo
+  non alza mai l'affidabilità; un verdetto del giudice corroborato dal
+  riferimento conta come il confronto dell'identità del modello.
+
+I rilevatori centrali confrontano con il riferimento quando risponde:
+`model_identity` (un'impronta o la sonda della data limite a cui hanno
+risposto entrambi i lati), `quality_judge` (il riferimento ha risposto a ogni
+sonda ed è stato mostrato al giudice), `billing` (token del prompt contati da
+un riferimento dello stesso modello sullo stesso protocollo) e `capability`
+(il riferimento ha risposto a una sonda che l'obiettivo ha rifiutato).
+`context_window` non interroga mai il riferimento. Fuori dal nucleo, anche
+`integrity`, `protocol_request` e `performance` registrano
+`baseline_compared`, ma non conta per l'affidabilità.
 
 ## Suite, rilevatori e modalità
 
@@ -216,9 +232,12 @@ sull'identità del modello dice che l'identità del modello non è stata verific
   accanto a quella dell'obiettivo e invia anche ogni impronta e la sonda della
   data limite al riferimento, `protocol_request` reinvia al riferimento i
   parametri rifiutati, `integrity` porta a CRITICA una sostituzione che il
-  riferimento non fa, `quality_judge` mostra entrambi i lati al giudice e
-  `performance` sonda i due endpoint a turno. L'affidabilità può essere alta
-  solo con un riferimento.
+  riferimento non fa, `quality_judge` mostra entrambi i lati al giudice,
+  `billing` confronta i token del prompt, `capability` reinvia una sonda
+  rifiutata e `performance` sonda i due endpoint a turno. L'affidabilità può
+  essere alta solo con un riferimento, e solo quando almeno due dimensioni
+  centrali sono state davvero confrontate con esso (vedi
+  [Affidabilità del verdetto](#affidabilità-del-verdetto)).
 - **Base di conoscenza:** il profilo del modello dichiarato
   (`ekte/knowledge/data/*.yaml` più le tue voci in `kb.db`) fornisce la finestra
   di contesto dichiarata, l'output massimo, il tokenizer, le capacità, le parole
@@ -405,12 +424,16 @@ il modello deve restituirlo.
   mai rispetto alla parte di una finestra dichiarata più grande che sta oltre il
   limite.
 - **Le dimensioni sono token reali.** La stima dei token integrata in ekte
-  sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
-  rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
-  ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
-  resta entro N token reali. Una famiglia di tokenizer con un fattore misurato
-  offline userebbe il proprio fattore (`real_per_heuristic` nelle prove);
-  nessuno è ancora misurato, quindi ogni famiglia usa 1,2. Le dimensioni nelle
+  sottostima questo riempimento rispetto ai tokenizer reali, quindi ogni prompt
+  viene costruito a dimensione ÷ il fattore della famiglia di tokenizer secondo
+  la stima (ago e domanda inclusi): un gradino di dimensione N resta entro N
+  token reali. I fattori sono stati misurati offline con i tokenizer pubblicati
+  (issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Le famiglie il cui tokenizer non è pubblicato (`claude-bpe-*`, `gemini`,
+  `grok`) usano 1,2. Il fattore usato è `real_per_heuristic` nelle prove. Le dimensioni nelle
   prove (`size`, `effective_window`, `top_rung`) sono questi budget di token
   reali; le righe della scala riportano anche la stima con cui è stato
   costruito un prompt (`heuristic_tokens`) e i token di prompt che l'endpoint
@@ -1489,7 +1512,8 @@ Un relay può accorgersi dei
 test: riesegui in altri momenti e preferisci la modalità di confronto con un
 riferimento affidabile dello **snapshot esatto dichiarato** — è il modo più
 solido per separare il comportamento del modello da quello del relay, e l'unico
-per arrivare ad alta affidabilità.
+per arrivare ad alta affidabilità (almeno due dimensioni centrali confrontate
+con il riferimento; vedi [Affidabilità del verdetto](#affidabilità-del-verdetto)).
 
 **Divulgazione responsabile.** **Non accusare pubblicamente un fornitore** sulla
 base di un rapporto di ekte. Prima di agire: riesegui con più campioni e in

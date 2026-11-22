@@ -58,6 +58,63 @@ Documentation only; no score or verdict changes.
   severity, effect), checks that the seven translations carry the same rows,
   and that the weight tables equal `SURFACE_WEIGHTS` and the core dimensions.
 
+### Compare mode: high confidence needs comparisons, not just a configured baseline ([#257](https://github.com/mn567250/ekte/issues/257))
+
+The verdict confidence became **high** as soon as a baseline was configured
+and every core dimension produced a usable result, although `context_window`
+never asks the baseline and the other core detectors only compare with it in
+some cases. A usable LLM judge verdict also lifted medium to high without any
+baseline, while the documentation said only a baseline can reach high.
+
+- **Evidence flag:** every detector result has a new field
+  `baseline_compared` (default false). It is true only when the detector
+  actually compared the target with a usable baseline answer:
+  `model_identity` (a fingerprint or the cutoff probe answered by both sides),
+  `quality_judge` (the baseline answered every probe and was shown to the
+  judge), `billing` (`billing.prompt-vs-baseline` ran), `capability` (the
+  baseline answered a probe the target rejected), `integrity`,
+  `protocol_request` and `performance`. The `model_identity` evidence key
+  `baseline_compared` now carries the same value instead of "a baseline was
+  configured"; the `quality_judge` evidence key of that name, which meant "the
+  baseline was asked", is renamed `baseline_asked`.
+- **Confidence:** **high** now needs a baseline, every core dimension that ran
+  with a usable result, *and* at least two core dimensions (model identity,
+  context window, capability, billing) with a detector that has
+  `baseline_compared` and a usable status. Otherwise it is at most
+  **medium**. A judge verdict alone no longer lifts the confidence; a
+  baseline-corroborated judge verdict counts as the model-identity
+  comparison.
+- **Documentation:** the methodology's "Verdict confidence" section, its
+  compare-mode notes and the suites guide (all eight languages) state this
+  rule.
+- Verdicts can change for the same evidence (see
+  [#168](https://github.com/mn567250/ekte/issues/168)): compare runs in which
+  fewer than two core dimensions were compared with the baseline, and judged
+  runs without a baseline, report **medium** instead of **high**. **Report
+  schema 1.6** (still unreleased) gains the optional
+  `DetectorResult.baseline_compared`.
+- Not in this change (possible follow-ups): `context_window` and `streaming`
+  still do not ask the baseline.
+
+### Context window: measured token factors per tokenizer family ([#261](https://github.com/mn567250/ekte/issues/261))
+
+- `FILLER_REAL_PER_HEURISTIC` (`ekte/utils/tokenize.py`) now holds the real
+  tokens per heuristic token of the context-window filler, measured offline
+  with each family's published `tokenizer.json` (pinned Hugging Face
+  revisions, 20 filler texts each): `o200k_base` / `o200k_harmony` 1.12,
+  `moonshot-bpe` 1.14, `deepseek-bpe` 1.15, `cl100k_base` / `llama-3.3` 1.16,
+  `glm` 1.22, `nemotron-3` 1.38, `gemma` 1.39, `cohere` 1.40, `qwen` 1.41.
+  Families whose tokenizer is not published (`claude-bpe-*`, `gemini`, `grok`)
+  keep 1.2. Haystacks for the o200k, cl100k, DeepSeek, Kimi and Llama families
+  are now a little larger (closer to the rung), and those for Qwen, Gemma,
+  Command and Nemotron smaller, so these dense tokenizers no longer overshoot
+  the rung by 15-18%. Context-window probes, and therefore some scores, change;
+  see [#168](https://github.com/mn567250/ekte/issues/168).
+- `scripts/measure_tokenizer_factors.py` re-measures the table (not run in CI;
+  see `docs/dev/knowledge-base.md`). It checks that an ungated mirror is
+  byte-identical to the gated official file, or that a converted tokenizer
+  matches the official tiktoken vocabulary and split pattern.
+
 ### Knowledge base: documented cutoff months for 30 more chat profiles ([#251](https://github.com/mn567250/ekte/issues/251))
 
 - **Knowledge cutoff:** 30 chat profiles whose `knowledge_cutoff` was missing,

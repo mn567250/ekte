@@ -139,6 +139,8 @@ class QualityJudgeDetector(Detector):
         # answered every probe the target answered; otherwise the judge would be
         # comparing the target against "(no answer)" gaps.
         corroborated = _baseline_usable(target_answers, baseline_answers)
+        # Only a usable baseline is compared (shown to the judge) (#257).
+        result.baseline_compared = corroborated
 
         # 2) Build the judge prompt from model answers only (no keys / no base_url).
         system = prompts.text("quality_judge.system", claimed=claimed)
@@ -160,7 +162,7 @@ class QualityJudgeDetector(Detector):
             "claimed_model": claimed,
             "probe_labels": [p["label"] for p in target_answers],
             "target_probe_failures": target_failures,
-            "baseline_compared": bool(baseline_answers),
+            "baseline_asked": bool(baseline_answers),
             "baseline_usable": corroborated,
             "judge_verdict": kind or None,
             "judge_confidence": confidence or None,

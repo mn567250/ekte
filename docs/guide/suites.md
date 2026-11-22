@@ -58,5 +58,9 @@ ekte check --base-url ... --model gpt-4o --suite deep --judge \
 the web UI) runs the same probes against a trusted baseline of the claimed model
 at the same time. It is the strongest confirmation path: identity answers,
 rejected request parameters, tampering canaries and performance are all judged
-side by side, and only a baseline lets the verdict's confidence reach *high*.
+side by side, and only a baseline lets the verdict's confidence reach *high*:
+at least two core dimensions (model identity, context window, capability,
+billing) must actually have been compared with a usable baseline answer; a
+judge alone never does it (see
+[Verdict confidence](methodology.md#verdict-confidence)).
 Without `--judge-base-url`, compare mode uses the baseline as the judge.

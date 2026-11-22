@@ -62,5 +62,9 @@ confiável** na interface web) executa as mesmas sondas, ao mesmo tempo, contra
 uma referência de confiança do modelo declarado. É a via de confirmação mais
 forte: respostas de identidade, parâmetros de pedido rejeitados, canários de
 adulteração e desempenho são avaliados lado a lado, e só uma referência permite
-que a confiança do veredito seja *alta*. Sem `--judge-base-url`, o modo de
-comparação usa a referência como juiz.
+que a confiança do veredito seja *alta*: pelo menos duas dimensões núcleo
+(identidade do modelo, janela de contexto, capacidades declaradas, faturação)
+têm de ter sido de facto comparadas com uma resposta utilizável da
+referência; um juiz sozinho nunca o consegue (ver
+[Confiança do veredito](methodology.md#confiança-do-veredito)). Sem
+`--judge-base-url`, o modo de comparação usa a referência como juiz.

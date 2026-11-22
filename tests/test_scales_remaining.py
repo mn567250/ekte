@@ -534,7 +534,8 @@ async def test_judge_high_confidence_with_failed_baseline_is_not_corroborated():
     (f,) = result.findings
     assert (f.outcome, f.severity) == ("confident", Severity.MEDIUM)
     assert f.evidence["baseline_corroborated"] is False
-    assert result.evidence["baseline_compared"] is True
+    assert result.evidence["baseline_asked"] is True
+    assert result.baseline_compared is False
     assert result.evidence["baseline_usable"] is False
     # the unusable baseline is not shown to the judge either
     _, user = judge.calls[0]
@@ -546,6 +547,7 @@ async def test_judge_high_confidence_with_working_baseline_is_high():
     (f,) = result.findings
     assert (f.outcome, f.severity, result.status) == ("confident_corroborated", Severity.HIGH, Status.FAIL)
     assert f.evidence["baseline_corroborated"] is True
+    assert result.baseline_compared is True  # #257: counts for model identity
 
 
 async def test_judge_consistent_verdict_scores_full_points():
