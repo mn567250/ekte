@@ -57,6 +57,21 @@ ejecución se envían a la vez, así que uno lento o caído no retrasa a los dem
 Las claves se guardan cifradas en tu directorio de datos local y nunca se devuelven
 al navegador.
 
+**Ejecuciones vueltas a puntuar.** Los monitores siguen la puntuación más
+reciente. Cuando las ejecuciones de un monitor se vuelven a puntuar con un ekte
+más nuevo (**Volver a puntuar con esta versión** o **Volver a puntuar todo con
+esta versión** en el Historial, `ekte rescore --replace` o `--all`, o la
+puntuación automática tras una actualización), cada ejecución conserva su lugar
+en la tendencia del monitor con su nueva puntuación, y la comprobación de
+regresiones de la siguiente ejecución compara con el veredicto nuevo. Si la
+ejecución vuelta a puntuar es la última del monitor, su tarjeta muestra el
+veredicto nuevo (la hora de la última ejecución se mantiene) y sus reglas de
+alerta se evalúan con el veredicto nuevo: los webhooks reciben una alerta si
+alcanza el umbral o es peor que antes, marcada en la carga JSON genérica con
+`"rescored": true` y las versiones de la auditoría y de la puntuación. Volver a
+puntuar una ejecución anterior de un monitor, o una de un monitor en pausa, no
+envía nada.
+
 **Almacenamiento de claves API.** Por defecto ekte **no guarda** las claves API
 de los monitores: una clave que introduces permanece solo en la memoria de
 `ekte serve` y nunca se escribe en el disco. Tras un reinicio, la página

@@ -60,12 +60,21 @@ velger forespørsler.
 `ekte rescore` vurderer en registrert kjøring på nytt med den installerte
 ekte-versjonen: den kjører samme revisjon, men svarer på hver forespørsel med
 det registrerte svaret (i det registrerte tempoet) i stedet for å kontakte
-reléet, slik at forbedrede kontroller gjelder også for gamle kjøringer. Den tar
-id-en til en lagret kjøring (og lagrer resultatet som en ny kjøring, med mindre
-`--no-save`) eller en rapportfil med `--evidence PATH`. En kontroll som nå spør
+reléet, slik at forbedrede kontroller gjelder også for gamle kjøringer. Den tar id-en til en lagret kjøring eller en rapportfil med
+`--evidence PATH`. Med `--replace` erstatter resultatet den lagrede kjøringen
+(samme id, tid og overvåking); uten lagres det fortsatt som en ny kjøring, noe
+som er foreldet og gir en advarsel (en senere ekte erstatter som standard;
+`--no-save` lagrer ingenting). En kontroll som nå spør
 om noe den registrerte kjøringen aldri spurte om, blir uavklart i stedet for å
 få poeng på gjetning; rapportens `rescored_from` sier hvor mange forespørsler
 som ble spilt av og hvilke kontroller som ikke hadde noen.
+
+`ekte rescore --all` vurderer på nytt, én etter én, hver lagrede kjøring som
+en annen ekte-versjon har vurdert, erstatter hver av dem og viser vurderingen
+før og etter. En kjøring uten brukbar bevisfil vurderes ikke på nytt: den
+beholder vurderingen sin og hoppes over med begrunnelse. `ekte serve` gjør det
+samme i bakgrunnen ved første oppstart etter en oppgradering (se
+[Nettgrensesnitt](web-ui.md)).
 
 Nøkler og sensitive hoder fjernes før noe skrives (se [Personvern](privacy.md)).
 Hver linje følger `ekte/schemas/evidence.schema.json`

@@ -129,7 +129,8 @@ same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
 | `GET /api/history/{id}` (`?trend=1`, cached), `GET /api/v1/history/{id}` | one saved report |
 | `DELETE /api/history/{id}`, `DELETE /api/history` | delete one run, or all |
 | `GET /api/v1/history` | the newest runs (public; `limit`, `perf`) |
-| `GET /api/v1/history/{id}/evidence`, `…/evidence/exchanges`, `…/evidence/export`, `POST /api/history/{id}/rescore` (`/api/v1/…`) | a run's evidence; re-score it |
+| `GET /api/v1/history/{id}/evidence`, `…/evidence/exchanges`, `…/evidence/export`, `POST /api/history/{id}/rescore` (`/api/v1/…`) | a run's evidence; re-score it (the unversioned path always replaces the run in place) |
+| `GET /api/rescore`, `POST /api/rescore` | the bulk re-score (History's **Re-score all with this version**, and the automatic one after an upgrade, `ekte.web.rescore`): its progress (`active`, `trigger`, `version`, `total`, `done`, `rescored`, `skipped`, `failed`, `current`, `job`), and starting it (409 while one runs) |
 | `GET /api/watches`, `GET /api/watches/options` | the monitors, filtered and cached, and their filter options (see [Monitors API](#monitors-api)) |
 | `POST /api/watches`, `POST /api/watches/from-history/{id}`, `PATCH` / `DELETE /api/watches/{id}`, `POST /api/watches/{id}/run`, `POST /api/watches/{id}/cancel` | monitors |
 | `GET /api/secret`, `POST /api/secret/new`, `…/new/confirm`, `…/unlock`, `…/lock`, `…/reset`, `…/storage` | the monitors' master key |
@@ -779,7 +780,7 @@ The public part of the HTTP API lives under `/api/v1/` and follows the [stabilit
 | `GET /api/v1/history` | optional `limit` (1–500, default 50) and `perf` | 200 and a JSON array of run summaries, newest first |
 | `GET /api/v1/history/{id}` | none | 200 and the saved report as stored; 404 for an unknown id |
 | `GET /api/v1/history/{id}/evidence` | none | 200 and the run's evidence file (`application/zstd`); 404 for an unknown id or a run that kept none |
-| `POST /api/v1/history/{id}/rescore` | none | 200 and a job (as `POST /api/v1/jobs`, with `rescore_of`) that re-scores the run from its evidence file with this ekte version and saves the result as a new run; 404 for an unknown id; 409 when the run kept no evidence or the file cannot be replayed |
+| `POST /api/v1/history/{id}/rescore` | optional `replace` (query, boolean) | 200 and a job (as `POST /api/v1/jobs`, with `rescore_of`) that re-scores the run from its evidence file with this ekte version. With `replace=true` the result replaces the run in place (it keeps its id, time, monitor and evidence file; the job's `report_id` is the run's own id) and the run's monitor follows the new verdict; without it the result is saved as a new run, which is deprecated (the response carries `Deprecation: true`; a later release replaces by default). 404 for an unknown id; 409 when the run kept no evidence or the file cannot be replayed |
 | `GET /api/v1/history/{id}/evidence/export` | optional `format` (`har` (default), `curl`, `json`) and `seq` (repeatable) | 200 and the exchanges as an attachment: HAR 1.2, a curl script that sends the requests again (the key from `$EKTE_API_KEY`) or one JSON document; 400 for an unknown format; 404 as above; 409 as below |
 | `GET /api/v1/history/{id}/evidence/exchanges` | optional `seq`, `id` or `detector` | 200 and `{"run_id", "file", "verified", "exchanges"}`: without `seq` / `id` a listing without bodies (`verified`: the file's SHA-256 is the one the report names), with `seq` the full pairs of that request record, with `id` one pair; 404 for an unknown run or exchange, or a run that kept none; 409 for a file of an unknown major schema version |
 

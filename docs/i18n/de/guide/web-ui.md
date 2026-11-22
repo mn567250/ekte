@@ -95,8 +95,15 @@ curl-Skript herunterladen, das die Anfragen erneut sendet (`EKTE_API_KEY`
 liefert den Schlüssel).
 
 **Mit dieser Version neu bewerten** bei einem gespeicherten Lauf mit Belegen
-gibt ihn auf dieselbe Weise wieder und speichert das Ergebnis als neuen Lauf
-im **Verlauf**; sein Bericht nennt den wiedergegebenen Lauf.
+gibt ihn auf dieselbe Weise wieder und ersetzt den Bericht des Laufs: Der Lauf
+behält Id, Zeit und Überwachung, und sein Bericht nennt die ekte-Version, die
+ihn aufgezeichnet, und die, die ihn bewertet hat. **Alle mit dieser Version neu
+bewerten** (unter der Liste) tut das nacheinander für jeden Lauf, den eine
+andere ekte-Version bewertet hat. Ein Lauf ohne verwendbare Belegdatei wird
+nicht neu bewertet: Er behält sein Urteil. Beim ersten Start nach einem Update
+bewertet `ekte serve` die Läufe, die eine ältere Version bewertet hat, im
+Hintergrund neu (`EKTE_AUTO_RESCORE=0` schaltet das ab); ein Hinweis über der
+Liste zeigt den Fortschritt.
 
 **Analyse.** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil

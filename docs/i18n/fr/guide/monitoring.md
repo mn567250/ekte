@@ -58,6 +58,21 @@ exécution sont envoyés en même temps, si bien qu'un webhook lent ou hors serv
 ne retarde pas les autres. Les clés sont stockées chiffrées dans
 votre répertoire de données local et ne sont jamais renvoyées au navigateur.
 
+**Exécutions réévaluées.** Les surveillances suivent la notation la plus
+récente. Quand les exécutions d'une surveillance sont réévaluées avec un ekte
+plus récent (**Réévaluer avec cette version** ou **Tout réévaluer avec cette
+version** dans l'Historique, `ekte rescore --replace` ou `--all`, ou la
+réévaluation automatique après une mise à jour), chaque exécution garde sa
+place dans la tendance de la surveillance avec sa nouvelle note, et la
+détection de régression de l'exécution suivante compare avec le verdict
+réévalué. Si l'exécution réévaluée est la dernière de la surveillance, sa carte
+montre le nouveau verdict (l'heure de la dernière exécution reste) et ses
+règles d'alerte sont évaluées sur le nouveau verdict : les webhooks reçoivent
+une alerte s'il atteint le seuil ou s'il est pire qu'avant la réévaluation,
+marquée dans la charge JSON générique par `"rescored": true` et les versions de
+l'audit et de la notation. Réévaluer une exécution plus ancienne d'une
+surveillance, ou une exécution d'une surveillance en pause, n'envoie rien.
+
 **Stockage des clés API.** Par défaut, ekte **n'enregistre pas** les clés API
 des surveillances : une clé saisie reste uniquement dans la mémoire de
 `ekte serve` et n'est jamais écrite sur le disque. Après un redémarrage, la page

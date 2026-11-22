@@ -61,13 +61,22 @@ choisit les requêtes.
 `ekte rescore` réévalue une exécution enregistrée avec la version d'ekte
 installée : il refait le même audit, mais répond à chaque requête par la
 réponse enregistrée (au rythme enregistré) au lieu de contacter le relais, de
-sorte que les contrôles améliorés s'appliquent aux anciennes exécutions. Il
-prend l'identifiant d'une exécution enregistrée (et enregistre le résultat
-comme nouvelle exécution, sauf avec `--no-save`) ou un fichier de rapport avec
-`--evidence PATH`. Un contrôle qui demande désormais quelque chose que
+sorte que les contrôles améliorés s'appliquent aux anciennes exécutions. Il prend l'identifiant d'une exécution enregistrée ou un fichier de rapport
+avec `--evidence PATH`. Avec `--replace`, le résultat remplace l'exécution
+enregistrée (même identifiant, même heure, même surveillance) ; sans cette
+option, il est encore enregistré comme nouvelle exécution, ce qui est obsolète
+et affiche un avertissement (une version ultérieure d'ekte remplacera par
+défaut ; `--no-save` n'enregistre rien). Un contrôle qui demande désormais quelque chose que
 l'exécution enregistrée n'a jamais demandé reste non concluant au lieu d'être
 noté sur une supposition ; le champ `rescored_from` du rapport indique combien
 de requêtes ont été rejouées et quels contrôles n'en avaient pas.
+
+`ekte rescore --all` réévalue l'une après l'autre toutes les exécutions
+enregistrées notées par une autre version d'ekte, remplace chacune et affiche
+son verdict avant et après. Une exécution sans fichier de preuves utilisable
+n'est pas réévaluée : elle garde son verdict et est ignorée avec la raison.
+`ekte serve` fait de même en arrière-plan à son premier démarrage après une
+mise à jour (voir [Interface web](web-ui.md)).
 
 Les clés et les en-têtes sensibles sont retirés avant toute écriture (voir
 [Confidentialité](privacy.md)). Chaque ligne respecte

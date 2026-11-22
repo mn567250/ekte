@@ -241,6 +241,8 @@ class Job:
         self.cancel_requested = False
         # Set while a finished audit is being saved: too late to cancel then.
         self.finishing = False
+        # Stores the finished report (JobManager.submit's ``save``); None: a new run.
+        self.saver: Saver | None = None
 
     @property
     def active(self) -> bool:
@@ -337,7 +339,8 @@ class JobManager:
         job = Job(summary, keys)
         self._jobs[job.id] = job
         bump_live()  # a new job in the list, queued
-        job.task = asyncio.create_task(self._drive(job, run, save))
+        job.saver = save
+        job.task = asyncio.create_task(self._drive(job, run))
         return job
 
     def cancel(self, job_id: str) -> bool:
@@ -358,7 +361,7 @@ class JobManager:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _drive(self, job: Job, run: Runner, save: Saver | None = None) -> None:
+    async def _drive(self, job: Job, run: Runner) -> None:
         try:
             if self.gate.would_wait(job.keys):
                 job.waiting_for = self.gate.busy_with(job.keys)
@@ -371,7 +374,7 @@ class JobManager:
                 report = await run(job.emit)
                 # The audit is over: store and report it as one step, even if
                 # a cancel arrives while the save runs (off the loop).
-                await settle(self._finish(job, report, save))
+                await settle(self._finish(job, report))
         except asyncio.CancelledError:
             if job.status != "done":  # else the save finished first (shutdown)
                 job.status = "cancelled"
@@ -392,12 +395,12 @@ class JobManager:
             job._subscribers.clear()
 
     @staticmethod
-    async def _finish(job: Job, report: dict[str, Any], save: Saver | None = None) -> None:
+    async def _finish(job: Job, report: dict[str, Any]) -> None:
         job.finishing = True
-        if save is None:
+        if job.saver is None:
             job.report_id = await asyncio.to_thread(_save, report)
         else:
-            job.report_id = await save(report)
+            job.report_id = await job.saver(report)
         perf = report.get("performance")
         if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
             attach_trends(perf["requests"])  # the chart's trend line (after saving: never stored)

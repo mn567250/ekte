@@ -93,8 +93,15 @@ Cada par, e toda a execução, também pode ser transferido como HAR ou como um
 script curl que volta a enviar os pedidos (`EKTE_API_KEY` fornece a chave).
 
 **Reavaliar com esta versão** numa execução guardada com evidências
-reproduz-a da mesma forma e guarda o resultado como nova execução no
-**Histórico**; o seu relatório indica que execução foi reproduzida.
+reproduz-a da mesma forma e substitui o relatório da execução: a execução
+mantém o id, a hora e o monitor, e o relatório indica que versão do ekte a
+registou e qual a avaliou. **Reavaliar tudo com esta versão** (por baixo da
+lista) faz isto, uma após outra, para cada execução avaliada por outra versão
+do ekte. Uma execução sem um ficheiro de evidências utilizável não é
+reavaliada: mantém o veredito. No primeiro arranque após uma atualização, o
+`ekte serve` reavalia em segundo plano as execuções avaliadas por uma versão
+anterior (`EKTE_AUTO_RESCORE=0` desativa-o); um aviso por cima da lista mostra
+o progresso.
 
 **Análises.** `/analytics` transforma o histórico local em
 comparações: indicadores do período escolhido (execuções, pontuação mediana,

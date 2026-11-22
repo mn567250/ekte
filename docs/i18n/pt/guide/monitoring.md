@@ -55,6 +55,20 @@ execução são enviados ao mesmo tempo, para que um lento ou inacessível não
 atrase os outros. As chaves são guardadas cifradas no seu diretório de dados
 local e nunca são devolvidas ao navegador.
 
+**Execuções reavaliadas.** Os monitores seguem a avaliação mais recente.
+Quando as execuções de um monitor são reavaliadas com um ekte mais recente
+(**Reavaliar com esta versão** ou **Reavaliar tudo com esta versão** no
+Histórico, `ekte rescore --replace` ou `--all`, ou a reavaliação automática
+após uma atualização), cada execução mantém o seu lugar na tendência do monitor
+com a nova pontuação, e a verificação de regressão da execução seguinte compara
+com o veredito reavaliado. Se a execução reavaliada for a mais recente do
+monitor, o seu cartão mostra o novo veredito (a hora da última execução mantém-se)
+e as suas regras de alerta são aplicadas ao novo veredito: os webhooks recebem
+um alerta se atingir o limiar ou for pior do que antes da reavaliação, marcado
+no payload JSON genérico com `"rescored": true` e as versões da auditoria e da
+avaliação. Reavaliar uma execução anterior de um monitor, ou uma execução de um
+monitor em pausa, não envia nada.
+
 **Armazenamento das chaves de API.** Por omissão, o ekte **não guarda** as
 chaves de API dos monitores: uma chave introduzida fica apenas na memória do
 `ekte serve` e nunca é escrita no disco. Após um reinício, a página

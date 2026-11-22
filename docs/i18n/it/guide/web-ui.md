@@ -94,8 +94,15 @@ coppia, e l'intera esecuzione, si scarica anche come HAR o come script curl
 che invia di nuovo le richieste (`EKTE_API_KEY` fornisce la chiave).
 
 **Rivaluta con questa versione** su un'esecuzione salvata con prove la
-riproduce allo stesso modo e salva il risultato come nuova esecuzione nella
-**Cronologia**; il suo rapporto indica quale esecuzione ha riprodotto.
+riproduce allo stesso modo e sostituisce il rapporto dell'esecuzione:
+l'esecuzione mantiene id, orario e monitor, e il suo rapporto indica quale
+versione di ekte l'ha registrata e quale l'ha valutata. **Rivaluta tutto con
+questa versione** (sotto l'elenco) lo fa, una dopo l'altra, per ogni esecuzione
+valutata da un'altra versione di ekte. Un'esecuzione senza un file di prove
+utilizzabile non viene rivalutata: mantiene il suo verdetto. Al primo avvio
+dopo un aggiornamento, `ekte serve` rivaluta in background le esecuzioni
+valutate da una versione precedente (`EKTE_AUTO_RESCORE=0` lo disattiva); un
+avviso sopra l'elenco mostra l'avanzamento.
 
 **Analisi.** `/analytics` trasforma la cronologia
 locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio

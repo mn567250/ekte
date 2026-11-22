@@ -63,12 +63,21 @@ richieste.
 installata: ripete la stessa verifica, ma risponde a ogni richiesta con la
 risposta registrata (con i tempi registrati) invece di contattare
 l'intermediario, così i controlli migliorati valgono anche per le vecchie
-esecuzioni. Accetta l'id di un'esecuzione salvata (e salva il risultato come
-nuova esecuzione, salvo con `--no-save`) o un file di rapporto con
-`--evidence PATH`. Un controllo che ora chiede qualcosa che l'esecuzione
+esecuzioni. Accetta l'id di un'esecuzione salvata o un file di rapporto con
+`--evidence PATH`. Con `--replace` il risultato sostituisce l'esecuzione
+salvata (stesso id, orario e monitor); senza, viene ancora salvato come nuova
+esecuzione, il che è deprecato e mostra un avviso (una versione successiva di
+ekte sostituirà per impostazione predefinita; `--no-save` non salva nulla). Un controllo che ora chiede qualcosa che l'esecuzione
 registrata non ha mai chiesto resta inconcludente invece di essere valutato su
 un'ipotesi; il campo `rescored_from` del rapporto indica quante richieste sono
 state riprodotte e quali controlli non ne avevano.
+
+`ekte rescore --all` rivaluta una dopo l'altra tutte le esecuzioni salvate
+valutate da un'altra versione di ekte, sostituisce ciascuna e mostra il suo
+verdetto prima e dopo. Un'esecuzione senza un file di prove utilizzabile non
+viene rivalutata: mantiene il suo verdetto e viene saltata con il motivo.
+`ekte serve` fa lo stesso in background al primo avvio dopo un aggiornamento
+(vedi [Interfaccia web](web-ui.md)).
 
 Le chiavi e le intestazioni sensibili vengono rimosse prima di scrivere
 qualsiasi cosa (vedi [Privacy](privacy.md)). Ogni riga rispetta
