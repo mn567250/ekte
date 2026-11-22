@@ -41,6 +41,11 @@ ekte has three eras:
   a 4xx on the forced request alone falls back to the first answer instead of
   failing the check. A claimed JSON mode that does not deliver is repeated once
   as well (`needed_repeat: true`).
+- **Reliability slow tail can trigger:** `reliability.latency: slow` used a
+  fixed p95 above 30 s for 8-token requests, which no working relay reached. It
+  now fires when the p95 is above five times the median of the same burst
+  **and** above 5 s. The finding stays an advisory Warning · Low (15% of the
+  remaining score).
 
 ### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
 

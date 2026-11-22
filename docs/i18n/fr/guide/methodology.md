@@ -861,7 +861,7 @@ ou se traîne sous un parallélisme modeste.
 (`--reliability-requests`, 8 par défaut) à concurrence limitée
 (`--concurrency`, 3 par défaut). Le taux de succès porte sur les requêtes
 réellement tentées : un HTTP 429 est une limitation honnête, comptée à part. Le
-score retire la part d'échecs ; une latence p95 au-delà de 30 s garde 85 % du
+score retire la part d'échecs ; une latence p95 au-delà de cinq fois la médiane de la même rafale et de 5 s garde 85 % du
 reste. Une requête échouée (soit un 5xx passager sur les 8 par défaut), ou au plus
 10 % d'une salve plus grande, est un Avertissement tant qu'au moins 80 % ont
 réussi ; au-delà c'est un Échec. Le statut du détecteur est le pire de ses
@@ -875,7 +875,7 @@ le verdict de risque.
 |  | Davantage de requêtes ont échoué ; retire la part échouée. | Échec · Moyenne | jusqu'à −100 pts |
 |  | Toutes les requêtes ont été limitées (HTTP 429) : non noté. | Non concluant · Faible | Aucune déduction |
 |  | Aucune requête n’a atteint le relais (échec dans ekte ou sur le chemin réseau) : non noté. | Non concluant · Faible | Aucune déduction |
-| `reliability.latency` | Latence p95 au-delà de 30 s sous charge ; retire 15 % du score restant. | Avertissement · Faible | jusqu'à −15 pts |
+| `reliability.latency` | Latence p95 au-delà de cinq fois la médiane de la rafale et de 5 s sous charge ; retire 15 % du score restant. | Avertissement · Faible | jusqu'à −15 pts |
 | `reliability.rate_limited` | Une partie de la rafale a été limitée : limitation honnête, non comptée. | Info | Aucune déduction |
 | `reliability.skipped` | La sonde de fiabilité était désactivée. | Info | Aucune déduction |
 

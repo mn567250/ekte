@@ -821,7 +821,7 @@ ved moderat parallellitet.
 (`--reliability-requests`, standard 8) med avgrenset samtidighet
 (`--concurrency`, standard 3). Suksessraten beregnes over forespørslene som
 faktisk ble forsøkt: HTTP 429 er ærlig struping og telles for seg. Scoren trekker
-fra den mislykkede andelen; en p95-forsinkelse over 30 s beholder 85 % av det som
+fra den mislykkede andelen; en p95-forsinkelse over fem ganger medianen i samme støt og over 5 s beholder 85 % av det som
 er igjen. Én mislykket forespørsel (altså én forbigående 5xx av standardens 8),
 eller høyst 10 % av et større støt, er en Advarsel så lenge minst 80 % lyktes;
 flere er Ikke bestått. Detektorstatusen er den verste av funnene. Disse funnene er
@@ -834,7 +834,7 @@ transportråd: de hever aldri risikokonklusjonen.
 |  | Flere forespørsler enn det mislyktes; trekker fra den mislykkede andelen. | Ikke bestått · Middels | opptil −100 poeng |
 |  | Alle forespørsler ble strupet (HTTP 429): gir ikke score. | Uavklart · Lav | Ingen fradrag |
 |  | Ingen forespørsel nådde reléet (feilet i ekte eller på nettverksveien): ikke vurdert. | Uavklart · Lav | Ingen fradrag |
-| `reliability.latency` | p95-forsinkelse over 30 s under last; trekker fra 15 % av gjenværende score. | Advarsel · Lav | opptil −15 poeng |
+| `reliability.latency` | p95-forsinkelse over fem ganger medianen i støtet og over 5 s under last; trekker fra 15 % av gjenværende score. | Advarsel · Lav | opptil −15 poeng |
 | `reliability.rate_limited` | Deler av støtet ble strupet: ærlig struping, telles ikke. | Info | Ingen fradrag |
 | `reliability.skipped` | Pålitelighetsproben var slått av. | Info | Ingen fradrag |
 

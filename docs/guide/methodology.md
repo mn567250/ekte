@@ -800,7 +800,7 @@ crawls under modest parallelism.
 default 8) at bounded concurrency (`--concurrency`, default 3). The success rate
 is computed over the requests genuinely attempted: HTTP 429 is honest
 throttling and is bucketed separately. The score deducts the failed share; a p95
-latency above 30 s keeps 85% of what is left. One failed request (so one
+latency above five times the burst's median and above 5 s keeps 85% of what is left. One failed request (so one
 transient 5xx of the default 8), or at most 10% of a larger burst, is a
 Warning as long as at least 80% succeeded; more is a Fail. The detector status
 is the worst of its findings. These findings are transport advisories: they
@@ -813,7 +813,7 @@ never raise the risk verdict.
 |  | More requests than that failed; deducts the failed share. | Fail · Medium | up to −100 pts |
 |  | Every request was rate-limited (HTTP 429): not scored. | Inconclusive · Low | No deduction |
 |  | No request reached the relay (failed in ekte or on the network path): not scored. | Inconclusive · Low | No deduction |
-| `reliability.latency` | p95 latency above 30 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
+| `reliability.latency` | p95 latency above five times the burst's median and above 5 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
 | `reliability.rate_limited` | Part of the burst was rate-limited: honest throttling, not counted. | Info | No deduction |
 | `reliability.skipped` | The reliability probe was disabled. | Info | No deduction |
 

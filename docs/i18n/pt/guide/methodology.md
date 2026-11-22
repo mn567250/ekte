@@ -847,7 +847,7 @@ arrasta com um paralelismo moderado.
 (`--reliability-requests`, 8 por omissão) com concorrência limitada
 (`--concurrency`, 3 por omissão). A taxa de sucesso é calculada sobre os pedidos
 realmente tentados: um HTTP 429 é uma limitação honesta e é contabilizado à
-parte. A pontuação desconta a parte falhada; uma latência p95 acima de 30 s
+parte. A pontuação desconta a parte falhada; uma latência p95 acima de cinco vezes a mediana da mesma rajada e de 5 s
 mantém 85 % do resto. Um pedido falhado (ou seja, um 5xx passageiro das 8
 por omissão), ou no máximo 10% de uma rajada maior, é um Aviso desde que pelo
 menos 80% tenham sucesso; mais é Falha. O estado do detetor é o pior dos estados das suas
@@ -860,7 +860,7 @@ constatações. Estas constatações são avisos de transporte: nunca elevam o v
 |  | Falharam mais pedidos; desconta a parcela falhada. | Falha · Média | até −100 pts |
 |  | Todos os pedidos foram limitados (HTTP 429): não pontua. | Inconclusivo · Baixa | Sem dedução |
 |  | Nenhum pedido chegou ao relay (falhou no ekte ou no caminho de rede): não pontuado. | Inconclusivo · Baixa | Sem dedução |
-| `reliability.latency` | Latência p95 acima de 30 s sob carga; desconta 15% da pontuação restante. | Aviso · Baixa | até −15 pts |
+| `reliability.latency` | Latência p95 acima de cinco vezes a mediana da rajada e de 5 s sob carga; desconta 15% da pontuação restante. | Aviso · Baixa | até −15 pts |
 | `reliability.rate_limited` | Parte da rajada foi limitada: limitação legítima, não contabilizada. | Info | Sem dedução |
 | `reliability.skipped` | A sonda de fiabilidade estava desativada. | Info | Sem dedução |
 

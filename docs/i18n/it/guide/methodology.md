@@ -858,7 +858,7 @@ arranca con un parallelismo modesto.
 (`--concurrency`, 3 predefinita). Il tasso di successo è calcolato sulle
 richieste effettivamente tentate: un HTTP 429 è una limitazione onesta e viene
 conteggiato a parte. Il punteggio toglie la quota fallita; una latenza p95
-oltre i 30 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
+oltre cinque volte la mediana della stessa raffica e oltre i 5 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
 temporaneo sulle 8 predefinite), o al massimo il 10% di un burst più grande, è un
 Avviso finché almeno l'80% riesce; di più è Fallito. Lo stato del rilevatore è il
 peggiore tra le sue rilevazioni. Sono avvisi di trasporto: non alzano mai il
@@ -871,7 +871,7 @@ verdetto di rischio.
 |  | Sono fallite più richieste; toglie la quota fallita. | Fallito · Media | fino a −100 pt |
 |  | Tutte le richieste sono state limitate (HTTP 429): non conteggiato. | Non conclusivo · Bassa | Nessuna detrazione |
 |  | Nessuna richiesta ha raggiunto il relay (fallita in ekte o sul percorso di rete): non valutato. | Non conclusivo · Bassa | Nessuna detrazione |
-| `reliability.latency` | Latenza p95 oltre 30 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
+| `reliability.latency` | Latenza p95 oltre cinque volte la mediana della raffica e oltre 5 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
 | `reliability.rate_limited` | Parte della raffica è stata limitata: limitazione legittima, non conteggiata. | Info | Nessuna detrazione |
 | `reliability.skipped` | La sonda di affidabilità era disattivata. | Info | Nessuna detrazione |
 

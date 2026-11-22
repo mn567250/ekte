@@ -146,7 +146,7 @@
   "More requests than that failed; deducts the failed share.": "Flere forespørsler enn det mislyktes; trekker fra den mislykkede andelen.",
   "Every request was rate-limited (HTTP 429): not scored.": "Alle forespørsler ble strupet (HTTP 429): gir ikke score.",
   "No request reached the relay (failed in ekte or on the network path): not scored.": "Ingen forespørsel nådde reléet (feilet i ekte eller på nettverksveien): ikke vurdert.",
-  "p95 latency above 30 s under load; deducts 15% of the remaining score.": "p95-forsinkelse over 30 s under last; trekker fra 15 % av gjenværende score.",
+  "p95 latency above five times the burst's median and above 5 s under load; deducts 15% of the remaining score.": "p95-forsinkelse over fem ganger medianen i støtet og over 5 s under last; trekker fra 15 % av gjenværende score.",
   "Part of the burst was rate-limited: honest throttling, not counted.": "Deler av støtet ble strupet: ærlig struping, telles ikke.",
   "The reliability probe was disabled.": "Pålitelighetsproben var slått av.",
   "The endpoint uses HTTPS.": "Endepunktet bruker HTTPS.",

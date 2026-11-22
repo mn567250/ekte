@@ -862,7 +862,7 @@ mäßiger Parallelität scheitert oder kriecht.
 Standard 8) mit begrenzter Parallelität (`--concurrency`, Standard 3). Die
 Erfolgsquote bezieht sich auf die tatsächlich versuchten Anfragen: HTTP 429 ist
 ehrliche Drosselung und wird gesondert gezählt. Die Bewertung zieht den
-gescheiterten Anteil ab; eine p95-Latenz über 30 s behält 85 % des Rests.
+gescheiterten Anteil ab; eine p95-Latenz über dem Fünffachen des Medians desselben Bursts und über 5 s behält 85 % des Rests.
 Eine fehlgeschlagene Anfrage (also ein vorübergehender 5xx von standardmäßig 8)
 oder höchstens 10 % eines größeren Bursts ist eine Warnung, solange mindestens
 80 % erfolgreich waren; mehr ist Fehlgeschlagen. Der Status des Detektors ist
@@ -876,7 +876,7 @@ heben das Risikourteil nie an.
 |  | Mehr Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Fehlgeschlagen · Mittel | bis zu −100 Pkt. |
 |  | Jede Anfrage wurde gedrosselt (HTTP 429): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
 |  | Keine Anfrage erreichte das Relay (in ekte oder auf dem Netzwerkweg gescheitert): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
-| `reliability.latency` | p95-Latenz über 30 s unter Last; zieht 15 % der verbleibenden Bewertung ab. | Warnung · Niedrig | bis zu −15 Pkt. |
+| `reliability.latency` | p95-Latenz über dem Fünffachen des Burst-Medians und über 5 s unter Last; zieht 15 % der verbleibenden Bewertung ab. | Warnung · Niedrig | bis zu −15 Pkt. |
 | `reliability.rate_limited` | Ein Teil des Bursts wurde gedrosselt: ehrliches Throttling, nicht gewertet. | Info | Kein Abzug |
 | `reliability.skipped` | Die Zuverlässigkeits-Probe war deaktiviert. | Info | Kein Abzug |
 

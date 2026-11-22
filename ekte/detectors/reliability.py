@@ -7,7 +7,8 @@ look fine. Aggregated into a :class:`ReliabilitySummary` the runner surfaces.
 
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
 at 100, failed requests deduct their share (100 - success rate x 100; HTTP 429
-throttling is excluded), and a high tail latency deducts 15% of what is left.
+throttling is excluded), and a slow tail (p95 above five times the burst's
+median and above 5 s) deducts 15% of what is left.
 A single failure in a small burst (or at most 10% of a larger one) is a WARN,
 more is a FAIL; the detector status is the worst of its findings. These are
 transport advisories (``ekte.scoring.ADVISORY_CHECKS``): they lower this
@@ -33,8 +34,11 @@ from ekte.models import (
 )
 from ekte.utils.stats import summarize
 
-# A p95 above this (ms) is slow enough to flag and dampen the score.
-_SLOW_P95_MS = 30_000.0
+# A slow tail is judged relative to the same burst (#262): the probe asks for
+# 8 tokens, so an absolute threshold of tens of seconds never triggered. The
+# p95 must be above _SLOW_RATIO x the burst's median AND above _SLOW_MIN_MS.
+_SLOW_RATIO = 5.0
+_SLOW_MIN_MS = 5_000.0
 _SLOW_FACTOR = 0.85  # a slow tail keeps 85% of the success-rate score
 # Failures tolerated as a WARN: at most 10% of the attempted requests, or one
 # request in a small burst (one of the default 8 is 12.5%) — but never below
@@ -56,7 +60,8 @@ SCALE = DeductionScale(
             Severity.LOW,
             label="No request reached the relay (failed in ekte or on the network path): not scored."),
     outcome("reliability.latency", "slow", None, Status.WARN, Severity.LOW, max_deduction=15.0,
-            label="p95 latency above 30 s under load; deducts 15% of the remaining score."),
+            label="p95 latency above five times the burst's median and above 5 s under load; "
+                  "deducts 15% of the remaining score."),
     outcome("reliability.rate_limited", "throttled", None, Status.INFO,
             label="Part of the burst was rate-limited: honest throttling, not counted."),
     outcome("reliability.skipped", "disabled", None, Status.INFO,
@@ -202,8 +207,13 @@ class ReliabilityDetector(Detector):
         )
         result.evidence["reliability"] = summary.model_dump()
 
-        p95 = latency.get("p95")
-        slow = p95 is not None and p95 > _SLOW_P95_MS
+        p95, p50 = latency.get("p95"), latency.get("p50")
+        slow = (
+            p95 is not None
+            and p50 is not None
+            and p95 > _SLOW_RATIO * p50
+            and p95 > _SLOW_MIN_MS
+        )
         failed = effective - successes
 
         # Headline finding: how the burst fared (over genuinely-attempted requests).
@@ -301,8 +311,16 @@ class ReliabilityDetector(Detector):
                     "slow",
                     deduction=_latency_deduction(success_rate) if effective > 0 else 0.0,
                     title="High tail latency under load",
-                    summary=f"p95 latency {p95:.0f} ms exceeds {_SLOW_P95_MS:.0f} ms.",
-                    evidence={"latency_ms": latency, "concurrency": conc},
+                    summary=(
+                        f"p95 latency {p95:.0f} ms is {p95 / p50:.1f}x the burst's median "
+                        f"({p50:.0f} ms) and above {_SLOW_MIN_MS:.0f} ms."
+                    ),
+                    evidence={
+                        "latency_ms": latency,
+                        "concurrency": conc,
+                        "slow_ratio": _SLOW_RATIO,
+                        "slow_min_ms": _SLOW_MIN_MS,
+                    },
                 )
             )
 

@@ -853,7 +853,7 @@ arrastra con un paralelismo moderado.
 (`--concurrency`, 3 por defecto). La tasa de éxito se calcula sobre las
 peticiones realmente intentadas: un HTTP 429 es una limitación honesta y se
 contabiliza aparte. La puntuación resta la parte fallida; una latencia p95 por
-encima de 30 s conserva el 85 % del resto. Una petición fallida (es decir, un
+encima de cinco veces la mediana de la misma ráfaga y de 5 s conserva el 85 % del resto. Una petición fallida (es decir, un
 5xx pasajero de las 8 por defecto), o como mucho el 10 % de una ráfaga mayor, es
 una Advertencia mientras al menos el 80 % tenga éxito; más es un Fallo. El estado
 del detector es el peor de sus hallazgos. Estos hallazgos son avisos de transporte: nunca
@@ -866,7 +866,7 @@ elevan el veredicto de riesgo.
 |  | Fallaron más peticiones; resta la parte fallida. | Fallo · Media | hasta −100 pts |
 |  | Todas las peticiones fueron limitadas (HTTP 429): no puntúa. | No concluyente · Baja | Sin deducción |
 |  | Ninguna petición llegó al relay (falló en ekte o en la ruta de red): sin puntuar. | No concluyente · Baja | Sin deducción |
-| `reliability.latency` | Latencia p95 por encima de 30 s bajo carga; resta el 15 % de la puntuación restante. | Advertencia · Baja | hasta −15 pts |
+| `reliability.latency` | Latencia p95 por encima de cinco veces la mediana de la ráfaga y de 5 s bajo carga; resta el 15 % de la puntuación restante. | Advertencia · Baja | hasta −15 pts |
 | `reliability.rate_limited` | Parte de la ráfaga fue limitada: limitación legítima, no computa. | Info | Sin deducción |
 | `reliability.skipped` | La sonda de fiabilidad estaba desactivada. | Info | Sin deducción |
 

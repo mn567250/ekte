@@ -146,7 +146,7 @@
   "More requests than that failed; deducts the failed share.": "Falharam mais pedidos; desconta a parcela falha.",
   "Every request was rate-limited (HTTP 429): not scored.": "Todos os pedidos foram limitados (HTTP 429): não pontua.",
   "No request reached the relay (failed in ekte or on the network path): not scored.": "Nenhum pedido chegou ao relay (falhou no ekte ou no caminho de rede): não pontuado.",
-  "p95 latency above 30 s under load; deducts 15% of the remaining score.": "Latência p95 acima de 30 s sob carga; desconta 15% da pontuação restante.",
+  "p95 latency above five times the burst's median and above 5 s under load; deducts 15% of the remaining score.": "Latência p95 acima de cinco vezes a mediana da rajada e de 5 s sob carga; desconta 15% da pontuação restante.",
   "Part of the burst was rate-limited: honest throttling, not counted.": "Parte da rajada foi limitada: limitação legítima, não contabilizada.",
   "The reliability probe was disabled.": "A sonda de fiabilidade estava desativada.",
   "The endpoint uses HTTPS.": "O endpoint usa HTTPS.",
