@@ -587,6 +587,7 @@ def test_main_module_entry_point(monkeypatch):
 def test_exit_code_helpers_ignore_unknown_levels():
     class V:
         overall_score = None
+        rating_limit = None
         risk_level = cli.RiskLevel.HIGH
 
     class R:

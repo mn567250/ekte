@@ -287,6 +287,9 @@ def compact_dict(report: AuditReport) -> dict:
             "risk": v.risk_level.value,
             "score": v.overall_score,
             "rating": v.rating,
+            "coverage": v.coverage,
+            "not_judged": v.not_judged,
+            "rating_limit": v.rating_limit.model_dump() if v.rating_limit else None,
             "confidence": v.confidence,
             "headline": v.headline,
             "summary": v.summary,
@@ -369,17 +372,22 @@ def render_markdown(report: AuditReport) -> str:
 
     risk_label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
     score = _fmt_score(v.overall_score)
-    rating = v.rating or "—"
+    rating = dimension_details.rating_text(report)
     lines.append(f"# ekte audit — {report.target.model}")
     lines.append("")
     lines.append(
         f"**Risk:** {risk_label}  ·  **Score:** {score}/100  ·  "
+        f"**Coverage:** {dimension_details.coverage_text(report)}  ·  "
         f"**Rating:** {rating}  ·  **Confidence:** {v.confidence}"
     )
     lines.append("")
     cap_note = dimension_details.overall_cap_note(report)
     if cap_note:
         lines.append(f"_Score: {_md(cap_note)}_")
+        lines.append("")
+    coverage_note = dimension_details.coverage_note(report)
+    if coverage_note:
+        lines.append(f"_{_md(coverage_note)}_")
         lines.append("")
 
     # Metadata line.
@@ -555,7 +563,7 @@ def render_html(report: AuditReport) -> str:
     risk_label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
     risk_color = _RISK_COLOR.get(v.risk_level, "var(--ink-muted)")
     score = _fmt_score(v.overall_score)
-    rating = v.rating or "—"
+    rating = dimension_details.rating_text(report)
 
     out: list[str] = []
     out.append("<!DOCTYPE html>")
@@ -573,12 +581,18 @@ def render_html(report: AuditReport) -> str:
     )
     out.append('<div class="scoreline">')
     out.append(f"<span><strong>{_esc(score)}</strong>/100</span>")
+    out.append(
+        f"<span>coverage <strong>{_esc(dimension_details.coverage_text(report))}</strong></span>"
+    )
     out.append(f"<span>rating <strong>{_esc(rating)}</strong></span>")
     out.append(f"<span>confidence <strong>{_esc(v.confidence)}</strong></span>")
     out.append("</div>")
     cap_note = dimension_details.overall_cap_note(report)
     if cap_note:
         out.append(f'<p class="meta score-cap">Score: {_esc(cap_note)}</p>')
+    coverage_note = dimension_details.coverage_note(report)
+    if coverage_note:
+        out.append(f'<p class="meta coverage">{_esc(coverage_note)}</p>')
     # Metadata.
     meta_bits = [
         f"mode <code>{_esc(report.mode)}</code>",

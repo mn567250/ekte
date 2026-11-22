@@ -1,0 +1,12 @@
+{
+ "strings": {
+  "Coverage {1}%: {2} ran but could not be judged.": "Abdeckung {1} %: ausgeführt, aber nicht beurteilbar: {2}.",
+  "Not rated: too little was judged (coverage below {1}%).": "Keine Note: zu wenig wurde beurteilt (Abdeckung unter {1} %).",
+  "Rating limited to {1} because coverage is below {2}%.": "Note auf höchstens {1} begrenzt, weil die Abdeckung unter {2} % liegt.",
+  "Rating limited to {1} because a core dimension could not be judged.": "Note auf höchstens {1} begrenzt, weil eine Kerndimension nicht beurteilt werden konnte.",
+  "Not rated: too little was judged": "Keine Note: zu wenig wurde beurteilt",
+  "Rating at most {r}": "Note höchstens {r}",
+  "Coverage": "Abdeckung",
+  "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score.": "Der Anteil am Gewicht der ausgeführten Dimensionen, der beurteilt werden konnte; eine nicht beurteilbare Dimension fällt aus dem Score heraus."
+ }
+}

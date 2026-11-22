@@ -114,6 +114,7 @@ def test_exit_1_for_risk_and_score_gates():
 
     class V:
         overall_score = 40.0
+        rating_limit = None
         risk_level = RiskLevel.HIGH
 
     class R:
@@ -121,6 +122,15 @@ def test_exit_1_for_risk_and_score_gates():
 
     assert cli._exit_code(R(), 50.0, None) == cli.EXIT_GATE  # type: ignore[arg-type]
     assert cli._exit_code(R(), None, "medium") == cli.EXIT_GATE  # type: ignore[arg-type]
+    assert cli._exit_code(R(), 30.0, None) == cli.EXIT_OK  # type: ignore[arg-type]
+    # no rating because too little was judged (#249): --fail-under fails, whatever the score
+    from ekte.models import VerdictRatingLimit
+
+    V.overall_score = 100.0
+    V.rating_limit = VerdictRatingLimit(reason="low_coverage", limit=None, unlimited_rating="A")
+    assert cli._exit_code(R(), 30.0, None) == cli.EXIT_GATE  # type: ignore[arg-type]
+    assert cli._exit_code(R(), None, None) == cli.EXIT_OK  # type: ignore[arg-type]
+    V.rating_limit = VerdictRatingLimit(reason="low_coverage", limit="B", unlimited_rating="A")
     assert cli._exit_code(R(), 30.0, None) == cli.EXIT_OK  # type: ignore[arg-type]
     assert cli._embed_exit_code({"risk_level": "high"}, "low") == cli.EXIT_GATE
     assert cli._embed_exit_code({"risk_level": "clean"}, "low") == cli.EXIT_OK

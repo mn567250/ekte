@@ -10,7 +10,7 @@
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -22,6 +22,9 @@
 报告包含结论（风险、置信度、分数、评级）、带建议的关键发现、各维度得分与 **Dimension details**、
 每个检测器的发现及证据、性能部分、所用的知识库画像以及探测语言。由中转站控制的文本在写出前都会
 经过脱敏和转义。
+
+每份报告都在得分旁显示**覆盖率**：已运行维度的权重中能够得出判断的占比。已运行但无法判断的维度会在结论摘要中列出，
+覆盖率过低会限制评级或不给评级（“未评级：可判断的内容太少”）；参见[综合健康分、评级与权重](methodology.md#综合健康分评级与权重)。
 
 ## 证据文件
 

@@ -11,7 +11,7 @@ por defecto); `--format json|md|html|pdf` escribe un solo formato. `--json` y
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -26,6 +26,12 @@ hallazgos clave con recomendaciones, las puntuaciones por dimensión y los
 sección de rendimiento, el perfil de la base de conocimiento usado y los idiomas
 de sonda. El texto controlado por el relay se censura y se escapa antes de
 escribirse.
+
+Junto a la puntuación, cada informe muestra la **cobertura**: la parte del peso
+de las dimensiones ejecutadas que pudo evaluarse. El resumen del veredicto
+nombra la dimensión que se ejecutó pero no pudo evaluarse, y una cobertura baja
+limita la calificación o la omite («sin calificación: se evaluó demasiado
+poco»); véase [Puntuación global, nota y pesos](methodology.md#puntuación-global-nota-y-pesos).
 
 ## Archivos de evidencia
 

@@ -859,3 +859,57 @@ def test_backend_cap_sentence_is_translated():
     for code in ("de", "es", "fr", "it", "nb", "pt", "zh"):
         tr = i18n.ui(code, sentence)
         assert tr != sentence and all(p in tr for p in ("{1}", "{2}", "{3}")), code
+
+
+def _unjudged_report(only=None) -> dict:
+    # coverage (#249): context window ran but could not be judged, or only `only` was judged
+    from tests.test_scoring import _unjudged_report as build
+
+    return json.loads(build(only).model_dump_json())
+
+
+@needs_node
+def test_report_shows_coverage_and_the_rating_limit(tmp_path):
+    html = _render(tmp_path, "en", _unjudged_report())["html"]
+    text = " ".join(_text(html).split())
+    # the coverage tile next to the score, and the limit under the score
+    assert "drops out of the score. 81 %" in text
+    assert "(Rating B) Rating at most B" in text
+    assert "Coverage 81%: Context window ran but could not be judged." in text
+
+
+@needs_node
+def test_report_says_not_rated(tmp_path):
+    from ekte.models import Dimension
+
+    report = _unjudged_report((Dimension.MODEL_IDENTITY, Dimension.SECURITY))
+    html = _render(tmp_path, "en", report)["html"]
+    text = " ".join(_text(html).split())
+    assert "Not rated: too little was judged" in text and "Coverage 25" in text
+
+
+@needs_node
+@pytest.mark.parametrize(("lang", "words"), [
+    ("de", ("Abdeckung", "Note höchstens B", "ausgeführt, aber nicht beurteilbar: Kontextfenster")),
+    ("zh", ("覆盖率", "评级最高为 B", "评级上限为 B")),
+])
+def test_coverage_is_translated(tmp_path, lang, words):
+    text = " ".join(_text(_render(tmp_path, lang, _unjudged_report())["html"]).split())
+    for w in words:
+        assert w in text, (lang, w, text)
+    assert "could not be judged" not in text
+
+
+def test_backend_coverage_sentences_are_translated():
+    from ekte import i18n
+
+    for sentence in (
+        "Coverage {1}%: {2} ran but could not be judged.",
+        "Not rated: too little was judged (coverage below {1}%).",
+        "Rating limited to {1} because coverage is below {2}%.",
+        "Rating limited to {1} because a core dimension could not be judged.",
+    ):
+        holders = re.findall(r"\{\d\}", sentence)
+        for code in ("de", "es", "fr", "it", "nb", "pt", "zh"):
+            tr = i18n.ui(code, sentence)
+            assert tr != sentence and all(p in tr for p in holders), (code, sentence)

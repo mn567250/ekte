@@ -115,6 +115,27 @@
       dimList,
     ]
   );
+  // Coverage (issue 249): the dimensions that ran but could not be judged,
+  // and the limit coverage put on the rating.
+  P.push(
+    [
+      "Coverage (\\d+)%: (.+?) ran but could not be judged\\.",
+      "Coverage {1}%: {2} ran but could not be judged.",
+      { 2: dimList[1] },
+    ],
+    [
+      "Not rated: too little was judged \\(coverage below (\\d+)%\\)\\.",
+      "Not rated: too little was judged (coverage below {1}%).",
+    ],
+    [
+      "Rating limited to ([A-F]) because coverage is below (\\d+)%\\.",
+      "Rating limited to {1} because coverage is below {2}%.",
+    ],
+    [
+      "Rating limited to ([A-F]) because a core dimension could not be judged\\.",
+      "Rating limited to {1} because a core dimension could not be judged.",
+    ]
+  );
   P.push([
     "\\(confidence: (low|medium|high)\\)",
     "(confidence: {1})",

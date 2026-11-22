@@ -82,6 +82,22 @@ summary says so, `verdict.uncapped_score` keeps the weighted mean and
 `verdict.score_cap` records the risk level, the cap and the findings that set the
 risk; the reports show it next to the score.
 
+A dimension that **ran but could not be judged** (its detectors inconclusive
+or crashed, no score) also drops out of the weighted mean, so the score alone
+would read as if it had passed. The **coverage** says how much was judged: the
+share of the weight of the dimensions that ran that produced a score
+(`verdict.coverage`, 0–1; `verdict.not_judged` lists the others). Dimensions
+not in the suite or not selected do not count, nor does a dimension whose
+detectors only reported information (for example no context window claimed).
+Coverage **limits the rating** (`COVERAGE_*` in `ekte/scoring.py`): below
+**50%** there is no rating (“not rated: too little was judged”), below **80%**
+the rating is at most **B**, and so it is when a core dimension ran but could
+not be judged (an unanswered context-window probe leaves 81% coverage, but the
+rating is still at most B). `verdict.rating_limit` records the reason and the
+rating the score alone gives; the summary names the dimensions that were not
+judged, and the reports show the coverage next to the score. `--fail-under`
+also fails a run that got no rating.
+
 | Dimension | Id | Weight | Role |
 |---|---|---|---|
 | Model identity | `model_identity` | 21 | core |

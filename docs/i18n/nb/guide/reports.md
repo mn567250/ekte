@@ -11,7 +11,7 @@ standard); `--format json|md|html|pdf` skriver ett format. `--json` og
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -25,6 +25,12 @@ viktigste funnene med anbefalinger, scorene per dimensjon og **Dimension
 details**, funnene fra hver detektor med bevis, ytelsesdelen, profilen fra
 kunnskapsbasen som ble brukt, og probespråkene. Tekst som reléet styrer, sladdes
 og escapes før den skrives.
+
+Ved siden av scoren viser hver rapport **dekningen**: andelen av vekten til
+dimensjonene som ble kjørt, som kunne vurderes. Sammendraget i konklusjonen
+nevner en dimensjon som ble kjørt, men ikke kunne vurderes, og lav dekning
+begrenser karakteren eller utelater den («ingen vurdering: for lite ble
+vurdert»); se [Samlet score, karakter og vekter](methodology.md#samlet-score-karakter-og-vekter).
 
 ## Bevisfiler
 

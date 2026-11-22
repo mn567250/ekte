@@ -91,6 +91,24 @@ gewichteten Mittelwert und `verdict.score_cap` hält Risikostufe, Obergrenze und
 die Befunde fest, die das Risiko bestimmt haben; die Berichte zeigen es neben
 der Bewertung.
 
+Eine Dimension, die **lief, aber nicht beurteilt werden konnte** (ihre
+Detektoren unschlüssig oder abgestürzt, kein Score), fällt ebenfalls aus dem
+gewichteten Mittel heraus; der Score allein sähe dann aus, als hätte sie
+bestanden. Die **Abdeckung** sagt, wie viel beurteilt wurde: der Anteil am
+Gewicht der ausgeführten Dimensionen, der einen Score ergab
+(`verdict.coverage`, 0–1; `verdict.not_judged` nennt die übrigen). Dimensionen,
+die nicht in der Suite sind oder nicht ausgewählt wurden, zählen nicht, ebenso
+wenig eine Dimension, deren Detektoren nur Informationen meldeten (etwa ohne
+beanspruchtes Kontextfenster). Die Abdeckung **begrenzt die Note**
+(`COVERAGE_*` in `ekte/scoring.py`): unter **50 %** gibt es keine Note („keine
+Note: zu wenig wurde beurteilt“), unter **80 %** höchstens **B**, und
+ebenso, wenn eine Kerndimension lief, aber nicht beurteilt werden konnte (eine
+unbeantwortete Kontextfenster-Probe lässt 81 % Abdeckung, die Note ist dennoch
+höchstens B). `verdict.rating_limit` hält den Grund und die Note fest, die der
+Score allein ergäbe; die Zusammenfassung nennt die nicht beurteilten
+Dimensionen, und die Berichte zeigen die Abdeckung neben dem Score.
+`--fail-under` schlägt auch bei einem Lauf ohne Note fehl.
+
 | Dimension | Kennung | Gewicht | Rolle |
 |---|---|---|---|
 | Modellidentität | `model_identity` | 21 | Kern |
