@@ -1,0 +1,14 @@
+{
+ "strings": {
+  "Re-scoring with this version…": "正在用当前版本重新评分…",
+  "Re-scored with this version.": "已用当前版本重新评分。",
+  "{done} of {total} runs · {skipped} skipped (no usable evidence)": "已处理 {done}/{total} 次 · {skipped} 次无可用证据而跳过",
+  "Re-scoring saved runs after the upgrade to ekte {v}": "升级后正在用 ekte {v} 重新评分已保存的检测",
+  "Re-scoring saved runs with ekte {v}": "正在用 ekte {v} 重新评分已保存的检测",
+  "Re-scored {n} runs with ekte {v}": "已用 ekte {v} 重新评分 {n} 次检测",
+  "Re-score all with this version": "用当前版本重新评分全部",
+  "Before the re-score: risk unchanged ({1})": "重新评分前：风险未变（{1}）",
+  "Before the re-score: {1} → {2} ({3})": "重新评分前：{1} → {2}（{3}）",
+  "Re-scored with ekte {1} (audit ran with ekte {2})": "已用 ekte {1} 重新评分（检测时为 ekte {2}）"
+ }
+}
