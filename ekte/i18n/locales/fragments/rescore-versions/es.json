@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "ekte {audit} · re-scored with {scoring}": "ekte {audit} · vuelto a puntuar con {scoring}",
+  "before the re-score: {verdict}": "antes de volver a puntuar: {verdict}",
+  "cannot be re-scored: {reason}": "no se puede volver a puntuar: {reason}",
+  "Cannot be re-scored: {reason}": "No se puede volver a puntuar: {reason}",
+  "Cannot be re-scored with ekte {v}: {reason}": "No se puede volver a puntuar con ekte {v}: {reason}",
+  "score {v}": "puntuación {v}",
+  "grade {v}": "nota {v}",
+  "risk: {v}": "riesgo: {v}",
+  "Re-scored on": "Vuelto a puntuar el",
+  "Verdict before the re-score": "Veredicto antes de volver a puntuar",
+  "Scoring version": "Versión de puntuación",
+  "Audit version": "Versión de la auditoría",
+  "scoring version": "versión de puntuación",
+  "audit version": "versión de la auditoría",
+  "this report kept no evidence: there is nothing to replay": "este informe no guardó evidencias: no hay nada que reproducir",
+  "the evidence file is not the one the report names (its SHA-256 differs)": "el archivo de evidencias no es el que indica el informe (su SHA-256 es distinto)",
+  "this evidence file does not record the run's options; it cannot be replayed": "este archivo de evidencias no registra las opciones de la ejecución; no se puede reproducir",
+  "this evidence file names no target": "este archivo de evidencias no indica ningún destino",
+  "the evidence file cannot be read": "no se puede leer el archivo de evidencias",
+  "this evidence file has a schema version this ekte cannot read; update ekte": "este archivo de evidencias tiene una versión de esquema que este ekte no puede leer; actualice ekte"
+ }
+}

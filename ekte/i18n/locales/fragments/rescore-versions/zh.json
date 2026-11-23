@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "ekte {audit} · re-scored with {scoring}": "ekte {audit} · 用 {scoring} 重新评分",
+  "before the re-score: {verdict}": "重新评分前：{verdict}",
+  "cannot be re-scored: {reason}": "无法重新评分：{reason}",
+  "Cannot be re-scored: {reason}": "无法重新评分：{reason}",
+  "Cannot be re-scored with ekte {v}: {reason}": "无法用 ekte {v} 重新评分：{reason}",
+  "score {v}": "健康分 {v}",
+  "grade {v}": "评级 {v}",
+  "risk: {v}": "风险：{v}",
+  "Re-scored on": "重新评分时间",
+  "Verdict before the re-score": "重新评分前的结论",
+  "Scoring version": "评分版本",
+  "Audit version": "检测版本",
+  "scoring version": "评分版本",
+  "audit version": "检测版本",
+  "this report kept no evidence: there is nothing to replay": "这份报告没有保留证据：没有可重放的内容",
+  "the evidence file is not the one the report names (its SHA-256 differs)": "证据文件不是报告所指的那个（SHA-256 不同）",
+  "this evidence file does not record the run's options; it cannot be replayed": "这个证据文件没有记录检测的选项，无法重放",
+  "this evidence file names no target": "这个证据文件没有指明检测目标",
+  "the evidence file cannot be read": "无法读取证据文件",
+  "this evidence file has a schema version this ekte cannot read; update ekte": "这个证据文件的格式版本超出当前 ekte 的支持范围，请更新 ekte"
+ }
+}
