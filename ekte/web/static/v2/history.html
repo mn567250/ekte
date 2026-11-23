@@ -1402,11 +1402,14 @@
       ] : []),
       // why "Re-score with this version" is missing (issue 168): no evidence, or a
       // bulk re-score found the evidence unusable
-      note: rescorable ? null : refusal
-        ? Tf("无法用 ekte {v} 重新评分：{reason}", "Cannot be re-scored with ekte {v}: {reason}",
-          { v: refusal.version || "?", reason: EKTE_LANG.server(refusal.reason) })
-        : Tf("无法重新评分：{reason}", "Cannot be re-scored: {reason}",
-          { reason: EKTE_LANG.server("this report kept no evidence: there is nothing to replay") }),
+      // (a function: worded again when the language changes)
+      note: rescorable ? null : function () {
+        return refusal
+          ? Tf("无法用 ekte {v} 重新评分：{reason}", "Cannot be re-scored with ekte {v}: {reason}",
+            { v: refusal.version || "?", reason: EKTE_LANG.server(refusal.reason) })
+          : Tf("无法重新评分：{reason}", "Cannot be re-scored: {reason}",
+            { reason: EKTE_LANG.server("this report kept no evidence: there is nothing to replay") });
+      },
       download: { name: "ekte-report-" + panel.getAttribute("data-id") },
       // the saved run: its raw request/response pairs open under each finding
       historyId: id,

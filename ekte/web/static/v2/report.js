@@ -9,7 +9,8 @@
  *     download: { name: "ekte-report" },   // optional: JSON / Markdown / HTML / PDF buttons
  *     historyId: 42,   // optional: the saved run; with report.evidence its raw
  *                      // request/response pairs open under each finding's evidence
- *     note: "…",       // optional: plain text shown with the actions (why one is missing)
+ *     note: "…",       // optional: plain text (or a function returning it, called on
+ *                      // every render) shown with the actions: why one is missing
  *   })
  *     renders `report` (the audit stream's "report" event, or a history row's
  *     report) into `el`, wires its interactions, and re-renders it in place when
@@ -970,7 +971,9 @@
         }))));
     }
 
-    // the actions row (ekte.css .actions): the primary action last
+    // the actions row (ekte.css .actions): the primary action last, after
+    // the note on a missing one (text, or a function giving it in the language)
+    var note = typeof opts.note === "function" ? opts.note() : opts.note;
     var acts = opts.actions || [];
     var actions = acts.map(function (a, i) { return { a: a, i: i }; })
       .filter(function (x) { return !x.a.primary; })
@@ -1036,7 +1039,7 @@
         "ekte provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
       ) +
       "</p>" +
-      (actions || opts.note ? '<div class="actions">' + (opts.note ? '<p class="hint">' + esc(opts.note) + "</p>" : "") + actions + "</div>" : "") +
+      (actions || note ? '<div class="actions">' + (note ? '<p class="hint">' + esc(note) + "</p>" : "") + actions + "</div>" : "") +
       dl +
       "</footer></article>"
     );
