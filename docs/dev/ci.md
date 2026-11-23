@@ -2,7 +2,7 @@
 
 | Workflow | Runs | Does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `*/integration`); nightly and manual (accessibility only) | `ruff`, `mypy` and `pytest` on Python 3.11–3.14 (Linux; on macOS and Windows 3.11 and 3.14) with the `dev` and `web` extras, one Linux run with the coverage floors of `scripts/check_coverage.py`; lints the workflows with `zizmor`; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the performance budget tests serially on one runner and shows their p50 / p95 in the job summary (skipped for pull requests that change only documentation or locale fragments; see [Benchmark](web-server.md#benchmark)); runs the accessibility suite (informational, never fails the run) and uploads its findings: every page on pushes, the nightly and manual runs (with the BITV conformance report), on pull requests only the pages the change affects (none for docs-only changes) — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
+| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `*/integration`); nightly and manual (accessibility and the latest-dependencies early warning only) | `ruff`, `mypy` and `pytest` on Python 3.11–3.14 (Linux; on macOS and Windows 3.11 and 3.14) with the `dev` and `web` extras, installed from `uv.lock` (see below), one Linux run with the coverage floors of `scripts/check_coverage.py`; lints the workflows with `zizmor`; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the performance budget tests serially on one runner and shows their p50 / p95 in the job summary (skipped for pull requests that change only documentation or locale fragments; see [Benchmark](web-server.md#benchmark)); runs the accessibility suite (informational, never fails the run) and uploads its findings: every page on pushes, the nightly and manual runs (with the BITV conformance report), on pull requests only the pages the change affects (none for docs-only changes) — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
 | `.github/workflows/release.yml` | a `v*` tag | builds, runs `twine check` and publishes to PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daily schedule, manual | example of a scheduled relay audit with the action |
 | `.github/workflows/docs.yml` | push and pull request | `scripts/check_translations.py`: the translations of the user documentation have not drifted (see [Translations](translations.md#documentation)) |
@@ -18,6 +18,18 @@ The composite action itself is `action.yml`, documented in the user guide's
   request per week for the Python dependencies (it only refreshes `uv.lock`)
   and one for GitHub Actions. Ranges in `pyproject.toml` stay open; the
   lockfile pins the tested set.
+- **Locked installs in CI.** The test, performance budget and accessibility
+  jobs install with `uv sync --locked` (plus the extras they need), so a pull
+  request is tested with exactly the versions in `uv.lock`, and CI fails if
+  `uv.lock` no longer matches `pyproject.toml` (run `uv lock` and commit it).
+  Reproduce a CI run locally with
+  `uv sync --locked --extra dev --extra web && uv run pytest`.
+- **Early warning for new releases.** The nightly (and manual) "test latest
+  dependencies" job runs `ruff`, `mypy` and `pytest` on Python 3.11 and 3.14
+  with the newest versions `pyproject.toml` allows (`uv sync --upgrade`,
+  ignoring `uv.lock`); its job summary lists what is newer than the lockfile.
+  It never runs on pull requests. When it fails, an upstream release breaks
+  ekte: fix that on `main` before the lockfile moves forward.
 - **Vulnerabilities.** The `Security` workflow exports `uv.lock` and runs
   `pip-audit` on pull requests, pushes to `main` and nightly. Run it locally
   with `pip install uv pip-audit && python scripts/check_vulnerabilities.py`.

@@ -5,7 +5,8 @@ on:
     branches: [main, "*/integration"]
   pull_request:
     branches: [main, "*/integration"]
-  # nightly full accessibility run (the other jobs skip it)
+  # nightly: the full accessibility run and the test-latest early warning
+  # (the other jobs skip it)
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -48,8 +49,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install
-        run: python -m pip install --upgrade pip && pip install -e '.[dev,web]'
+      # The locked set (uv.lock), not the newest versions pyproject.toml
+      # allows: a pull request is tested with exactly the dependencies it
+      # pins, and --locked fails when uv.lock no longer matches
+      # pyproject.toml. The newest versions are the nightly test-latest job.
+      # activate-environment puts .venv first on PATH for the later steps.
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+
+      - name: Install (uv.lock)
+        run: uv sync --locked --extra dev --extra web
 
       - name: Lint (ruff)
         run: ruff check ekte tests
@@ -81,6 +92,57 @@ jobs:
         run: |
           pytest -q -n auto --durations=20 -o faulthandler_timeout=110 --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
           python scripts/check_coverage.py coverage.json
+
+  test-latest:
+    # Early warning: the test suite with the newest versions pyproject.toml
+    # allows, ignoring uv.lock (the other jobs test the locked set). A new
+    # upstream release that breaks ekte turns this nightly run red before a
+    # Dependabot pull request or a user's fresh `pip install` runs into it;
+    # it never blocks a pull request. The job summary lists what is newer
+    # than uv.lock. Fix the break on main, then let Dependabot (or
+    # `uv lock --upgrade`) move the lockfile forward.
+    name: test latest dependencies (py${{ matrix.python-version }}, early warning)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # the oldest and the newest supported Python
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+          # the cache is keyed on uv.lock, which this job does not follow
+          enable-cache: false
+      - name: Dependencies newer than uv.lock
+        env:
+          PY: ${{ matrix.python-version }}
+        run: |
+          {
+            echo "### Dependencies newer than uv.lock (py$PY)"
+            echo
+            echo '```'
+            uv lock --upgrade --dry-run 2>&1
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Install (newest allowed versions)
+        run: uv sync --upgrade --extra dev --extra web
+      - name: Lint (ruff)
+        run: ruff check ekte tests
+      - name: Type-check (mypy)
+        run: mypy ekte
+      - name: Test (pytest)
+        timeout-minutes: 10
+        run: pytest -q -n auto --durations=20 -o faulthandler_timeout=110
 
   benchmark-scope:
     # Whether the performance budget job runs: not for a pull request that
@@ -165,8 +227,12 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - name: Install
-        run: python -m pip install --upgrade pip && pip install -e '.[dev,web]'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.12"
+          activate-environment: true
+      - name: Install (uv.lock)
+        run: uv sync --locked --extra dev --extra web
       - name: Budget tests (pytest -m slow, serial)
         # every test marked slow, so new budget tests are picked up; their
         # cases go to EKTE_BENCH_REPORT (tests/bench_report.py)
@@ -257,13 +323,14 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - name: Install
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.12"
+          activate-environment: true
+      - name: Install (uv.lock)
         id: install
         run: |
-          python -m pip install --upgrade pip
-          pip install -e '.[dev,web,a11y]'
+          uv sync --locked --extra dev --extra web --extra a11y
           echo "playwright=$(python -c 'import importlib.metadata as m; print(m.version("playwright"))')" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright's Chromium
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -320,8 +387,6 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
       - name: Download shard results
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -331,13 +396,18 @@ jobs:
       # the ANTHROPIC_API_KEY secret is configured, never blocks. It runs
       # before the conformance report, which counts a completed review as the
       # manual part of the steps it covers (a skipped one is ignored).
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
+        continue-on-error: true
+        with:
+          python-version: "3.12"
+          activate-environment: true
       - name: Install (LLM review)
         if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
         # a failed install must not keep the conformance report from being built
         continue-on-error: true
         run: |
-          python -m pip install --upgrade pip
-          pip install -e '.[dev,web,a11y]'
+          uv sync --locked --extra dev --extra web --extra a11y
           playwright install --with-deps chromium
       - name: LLM review (advisory)
         if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
