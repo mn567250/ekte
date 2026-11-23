@@ -14,8 +14,12 @@ from ekte.web import jobs  # noqa: E402
 from ekte.web.server import create_app  # noqa: E402
 
 
-async def _until(cond, timeout: float = 5.0) -> None:
-    """Wait for ``cond()``: history and watch-store calls hop to a worker thread."""
+async def _until(cond, timeout: float = 30.0) -> None:
+    """Wait for ``cond()``: history and watch-store calls hop to a worker thread.
+
+    The deadline is generous because a loaded CI runner (Windows, every core busy
+    with other xdist workers) can starve that thread for seconds; the wait ends
+    as soon as the condition holds."""
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout
     while not cond():

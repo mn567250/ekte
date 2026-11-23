@@ -397,7 +397,8 @@ Deprecated in 0.36.0 (#168): a re-score saved as a **new** History run, by
 `Deprecation: true` and the server logs a warning) and by `ekte rescore ID`
 without `--replace` (a warning on stderr). It keeps working for at least one
 minor release; then the default becomes the replacement in place, which the web
-UI, `ekte rescore --all` and the automatic re-score after an upgrade use already.
+UI, `ekte rescore --all` and the automatic re-score after an upgrade use already
+([#294](https://github.com/mn567250/ekte/issues/294)).
 
 Removed in the release after 0.30.0: `POST /api/audit/stream`, `POST /api/embed`,
 `POST /api/rerank` and `GET /api/history/trend`. Queue an audit with
