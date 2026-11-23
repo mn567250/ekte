@@ -10,7 +10,7 @@
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -22,6 +22,9 @@
 报告包含结论（风险、置信度、分数、评级）、带建议的关键发现、各维度得分与 **Dimension details**、
 每个检测器的发现及证据、性能部分、所用的知识库画像以及探测语言。由中转站控制的文本在写出前都会
 经过脱敏和转义。
+
+每份报告都在得分旁显示**覆盖率**：已运行维度的权重中能够得出判断的占比。已运行但无法判断的维度会在结论摘要中列出，
+覆盖率过低会限制评级或不给评级（“未评级：可判断的内容太少”）；参见[综合健康分、评级与权重](methodology.md#综合健康分评级与权重)。
 
 ## 证据文件
 
@@ -44,9 +47,17 @@ zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
 
 `ekte rescore` 用当前安装的 ekte 版本重新评判一次录制的检测：它重新执行同样的检测，
 但每个请求都用录制的响应（按录制时的节奏）来应答，而不联系中转站，因此改进后的检测项也能用于旧的检测记录。
-它接受已保存检测的 id（并把结果保存为新的检测，除非使用 `--no-save`），或带 `--evidence PATH` 的报告文件。
+它接受已保存检测的 id，或带 `--evidence PATH` 的报告文件。使用 `--replace` 时，结果原地替换已保存的检测（id、时间和监控不变）；
+不加时仍保存为新的检测，这种做法已弃用并会打印警告（后续版本的 ekte 默认替换；`--no-save` 不保存）。
 如果某个检测项现在会问录制时从未问过的内容，它会显示为无法判定，而不是凭猜测打分；
 报告的 `rescored_from` 说明重放了多少个请求，以及哪些检测项没有录制应答。
+
+`ekte rescore --all` 依次重新评分所有由其他 ekte 版本评分的已保存检测，逐个替换，并打印每次检测评分前后的结论。
+没有可用证据文件的检测不会重新评分：它保留原结论，并注明原因后跳过。
+`ekte serve` 在升级后首次启动时会在后台做同样的事（见 [Web 界面](web-ui.md)）。
+
+重新评分过的报告在 Markdown、HTML 和 PDF 导出中会注明两个版本、重新评分的时间和之前的结论；
+`--compact` 结论把它们放在 `rescored` 中。
 
 密钥和敏感请求头在写入前即被去除（见[隐私](privacy.md)）。每一行都符合
 `ekte/schemas/evidence.schema.json`（[Schema](../../../reference/schemas.md)）。在 Web 界面中，

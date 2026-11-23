@@ -13,6 +13,7 @@ from functools import lru_cache
 from typing import Any
 
 from ekte import prompts
+from ekte.perf.recorder import usage_tokens
 from ekte.utils.tokenize import estimate_tokens
 
 # The filler's pool of natural-ish sentences (ekte/prompts/en.json). Varied so it
@@ -21,20 +22,37 @@ from ekte.utils.tokenize import estimate_tokens
 _FILLER_SENTENCES: list[str] = prompts.get("context_window.filler_sentences")
 
 
-def stable_marker(seed: str, prefix: str = "EKTE") -> str:
-    """A reproducible high-entropy marker derived from ``seed``.
+def stable_marker(seed: str, nonce: str, prefix: str = "EKTE") -> str:
+    """A high-entropy marker derived from ``seed`` and the run's ``nonce``
+    (``AuditContext.run_nonce``).
 
-    Used as a needle/canary that a model cannot have memorized.
+    Used as a needle/canary that a model cannot have memorized. The same seed
+    gives the same marker within a run and a different one in every other run,
+    so no relay can keep a table of ekte's markers. An empty ``nonce`` gives
+    the marker of runs from before the nonce existed (replay of old evidence).
     """
-    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:10].upper()
+    material = f"{nonce}|{seed}" if nonce else seed
+    digest = hashlib.sha256(material.encode("utf-8")).hexdigest()[:10].upper()
     return f"{prefix}-{digest}"
 
 
+def _filler_offsets(nonce: str) -> tuple[int, int]:
+    """Where a run's filler starts numbering its lines and cycling its sentences."""
+    if not nonce:
+        return 0, 0
+    digest = hashlib.sha256(f"ekte-filler|{nonce}".encode()).digest()
+    return int.from_bytes(digest[:4], "big") % 100_000, digest[4] % len(_FILLER_SENTENCES)
+
+
 @lru_cache(maxsize=4)
-def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
+def build_filler(target_tokens: int, tokenizer: str | None = None, nonce: str = "") -> str:
     """Build filler text of approximately ``target_tokens`` tokens.
 
     Lines are numbered so position is meaningful and the text resists dedup.
+    The run's ``nonce`` sets the first line number and the first sentence, so
+    every run sends a different long prompt of practically the same token
+    count (a five-digit number for a five-digit number); an empty nonce gives
+    the filler of runs from before the nonce existed.
 
     Linear in the output size: each line is counted once and a running total is
     kept, instead of re-joining and re-counting the whole text every 50 lines
@@ -52,11 +70,13 @@ def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
     """
     if target_tokens <= 0:
         return ""
+    base, first = _filler_offsets(nonce)
     parts: list[str] = []
     total = 0
     idx = 0
     while True:
-        line = f"[{idx:05d}] {_FILLER_SENTENCES[idx % len(_FILLER_SENTENCES)]}"
+        number = (base + idx) % 100_000
+        line = f"[{number:05d}] {_FILLER_SENTENCES[(first + idx) % len(_FILLER_SENTENCES)]}"
         parts.append(line)
         total += estimate_tokens(line if idx == 0 else "\n" + line, tokenizer)
         idx += 1
@@ -74,6 +94,7 @@ def build_haystack(
     depth: float,
     tokenizer: str | None = None,
     instruction: str = "",
+    nonce: str = "",
 ) -> str:
     """Embed ``needle`` at fractional ``depth`` (0.0=start, 1.0=end) in filler.
 
@@ -81,7 +102,7 @@ def build_haystack(
     followed by a retrieval instruction.
     """
     depth = max(0.0, min(1.0, depth))
-    filler = build_filler(total_tokens, tokenizer)
+    filler = build_filler(total_tokens, tokenizer, nonce)
     lines = filler.split("\n")
     needle_line = prompts.text("context_window.needle", needle=needle)
     insert_at = int(len(lines) * depth)
@@ -119,6 +140,41 @@ def contains_word(text: str, word: str) -> bool:
     return re.search(pattern, text or "", re.IGNORECASE) is not None
 
 
+def contains_term(text: str, term: str) -> bool:
+    """Case-insensitive whole-word match for a term a fingerprint forbids
+    (``expect_not_contains``, #262).
+
+    Like :func:`contains_word`, ``"meta"`` does not match ``"metadata"`` and
+    ``"gpt"`` does not match ``"ChatGPT"``. Two differences keep the knowledge
+    base's terms working:
+
+    - a boundary is only required at an edge of the term that is an ASCII
+      letter or digit, so ``"<|User|>"`` matches inside ``"x<|User|>"`` and CJK
+      terms (``"通义"``) match as substrings, as before;
+    - a term ending in a letter may be followed by a digit (a version:
+      ``"qwen"`` matches ``"Qwen2.5"``, ``"gpt"`` matches ``"gpt4o"``), and one
+      ending in a digit by a letter (``"gpt-4"`` matches ``"GPT-4o"``), but a
+      year or number is not matched inside a longer number (``"2021"`` in
+      ``"20210"``).
+    """
+    term = (term or "").strip()
+    if not term:
+        return False
+    first, last = term[0], term[-1]
+    lead = r"(?<![A-Za-z0-9])" if first.isascii() and first.isalnum() else ""
+    if last.isascii() and last.isalpha():
+        trail = r"(?![A-Za-z])"
+    elif last.isascii() and last.isdigit():
+        trail = r"(?![0-9])"
+    else:
+        trail = ""
+    return re.search(lead + re.escape(term) + trail, text or "", re.IGNORECASE) is not None
+
+
+def contains_term_any(text: str, terms: list[str]) -> bool:
+    return any(contains_term(text, t) for t in terms)
+
+
 def contains_word_any(text: str, words: list[str]) -> bool:
     return any(contains_word(text, w) for w in words)
 
@@ -126,6 +182,29 @@ def contains_word_any(text: str, words: list[str]) -> bool:
 def words_present(text: str, words: list[str]) -> list[str]:
     """Return the subset of ``words`` present in ``text`` as whole words."""
     return [w for w in (words or []) if contains_word(text, w)]
+
+
+def is_reasoning(ctx: Any, *outcomes: Any) -> bool:
+    """Whether the endpoint under test is a reasoning model, decided the same
+    way by every detector (#262).
+
+    True when the claimed profile says ``reasoning: true``, when the client
+    has learned that the endpoint reasons (``reasoning_room``: a short probe
+    already needed the reasoning repeat, see "Reasoning models" in the
+    methodology), or when any of ``outcomes`` reports reasoning tokens. An
+    unprofiled reasoning model is therefore recognised by what it does, not
+    only by its knowledge-base entry.
+    """
+    profile = getattr(ctx, "profile", None)
+    if profile is not None and getattr(profile.model, "reasoning", False) is True:
+        return True
+    if getattr(getattr(ctx, "client", None), "reasoning_room", False) is True:
+        return True
+    return any(
+        (usage_tokens(getattr(o, "usage", None))["reasoning"] or 0) > 0
+        for o in outcomes
+        if o is not None
+    )
 
 
 def first_json_object(text: str) -> dict[str, Any] | None:

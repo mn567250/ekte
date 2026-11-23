@@ -94,8 +94,27 @@ Cada par, y toda la ejecución, también se descarga como HAR o como un script
 curl que vuelve a enviar las peticiones (`EKTE_API_KEY` aporta la clave).
 
 **Volver a puntuar con esta versión** en una ejecución guardada con evidencia la
-reproduce del mismo modo y guarda el resultado como una ejecución nueva en el
-**Historial**; su informe indica qué ejecución reprodujo.
+reproduce del mismo modo y sustituye el informe de la ejecución: la ejecución
+conserva su id, su hora y su monitor, y su informe indica qué versión de ekte
+la registró y cuál la puntuó. **Volver a puntuar todo con esta versión** (bajo
+la lista) hace esto, una tras otra, con cada ejecución que puntuó otra versión
+de ekte. Una ejecución sin un archivo de evidencia utilizable no se vuelve a
+puntuar: conserva su veredicto. En su primer arranque tras una actualización,
+`ekte serve` vuelve a puntuar en segundo plano las ejecuciones que puntuó una
+versión anterior (`EKTE_AUTO_RESCORE=0` lo desactiva); un aviso sobre la lista
+muestra el progreso.
+
+**Versión de la auditoría y de puntuación.** Una ejecución vuelta a puntuar
+indica dos versiones de ekte: aquella con la que se hizo su auditoría y la que
+la puntuó. En **Historial** una ejecución así muestra, por ejemplo, «ekte 0.33.1
+· vuelto a puntuar con 0.35.0», seguido de su veredicto antes de volver a
+puntuar. Una ejecución que una reevaluación masiva no pudo volver a puntuar
+indica el motivo (por ejemplo, que no hay archivo de evidencias), y su informe
+explica por qué falta **Volver a puntuar con esta versión**. **Historial** y
+**Analítica** filtran por cualquiera de las dos versiones (**Versión de
+puntuación**, **Versión de la auditoría**), y la clasificación de **Analítica**
+también ordena por ellas, con cuántas ejecuciones de cada versión volvió a
+puntuar otra.
 
 **Analítica.** `/analytics` convierte el historial local
 en comparaciones: indicadores del periodo elegido (ejecuciones, puntuación

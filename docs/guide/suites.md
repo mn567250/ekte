@@ -28,7 +28,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--dimension/-D` is repeatable or comma-separated and implies `--suite custom`;
 in a config file use `run.dimensions: [protocol, performance]`. The dimensions
 are `connectivity`, `protocol`, `context_window`, `model_identity`, `capability`,
-`streaming`, `billing`, `reliability`, `security` and `performance`. In the web
+`streaming`, `billing`, `reliability`, `integrity`, `security` and `performance`. In the web
 UI, the `custom` suite button opens the same choice (**Dimensions to run**) on
 the audit page and the monitors.
 
@@ -58,5 +58,9 @@ ekte check --base-url ... --model gpt-4o --suite deep --judge \
 the web UI) runs the same probes against a trusted baseline of the claimed model
 at the same time. It is the strongest confirmation path: identity answers,
 rejected request parameters, tampering canaries and performance are all judged
-side by side, and only a baseline lets the verdict's confidence reach *high*.
+side by side, and only a baseline lets the verdict's confidence reach *high*:
+at least two core dimensions (model identity, context window, capability,
+billing) must actually have been compared with a usable baseline answer; a
+judge alone never does it (see
+[Verdict confidence](methodology.md#verdict-confidence)).
 Without `--judge-base-url`, compare mode uses the baseline as the judge.

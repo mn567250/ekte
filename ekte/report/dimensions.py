@@ -4,7 +4,8 @@ For every dimension that ran, this explains how its score and status came about
 and lists every check behind it, passed and failed alike:
 
 * the score — the equal-weight mean of the dimension's detector scores, with
-  each detector's score and whether it was counted;
+  each detector's score and whether it was counted, and the cap when a
+  detector with a HIGH/CRITICAL finding scored below that mean;
 * the status — the worst status the detectors concluded, and, when a finding's
   severity overrode it, which findings did;
 * per detector — each check's outcome and the points it scored. A detector that
@@ -36,7 +37,14 @@ from ekte.models import (
     Status,
 )
 from ekte.report import performance as perf_render
-from ekte.scoring import _worst_status, weights_for
+from ekte.scoring import (
+    COVERAGE_LIMITED_BELOW,
+    COVERAGE_UNRATED_BELOW,
+    DIMENSION_NAMES,
+    _worst_status,
+    coverage_pct,
+    weights_for,
+)
 
 _STATUS_EMOJI: dict[Status, str] = {
     Status.PASS: "✅",
@@ -115,6 +123,8 @@ def score_explanation(d: DimensionScore, members: list[DetectorResult]) -> str:
         parts = [(c.detector, c.score, c.counted) for c in d.breakdown.detectors]
     else:  # reports from before the breakdown existed
         parts = [(det.id, det.score, det.score is not None) for det in members]
+    cap = d.breakdown.score_cap if d.breakdown is not None else None
+    mean = cap.uncapped_score if cap is not None else d.score
     counted = [(i, s) for i, s, ok in parts if ok]
     skipped = [i for i, _, ok in parts if not ok]
     if not counted:
@@ -124,10 +134,72 @@ def score_explanation(d: DimensionScore, members: list[DetectorResult]) -> str:
         line = f"Score of one detector: {names.get(i, i)} {_num(s)}."
     else:
         terms = ", ".join(f"{names.get(i, i)} {_num(s)}" for i, s in counted)
-        line = f"Mean of {len(counted)} detectors, equal weight: {terms} → {_num(d.score)}."
+        line = f"Mean of {len(counted)} detectors, equal weight: {terms} → {_num(mean)}."
     if skipped:
         line += " Not counted (no numeric score): " + ", ".join(names.get(i, i) for i in skipped) + "."
+    if cap is not None:
+        line += (
+            f" Capped at {_num(cap.cap)}, the score of {names.get(cap.detector, cap.detector)}, "
+            f"by its HIGH/CRITICAL finding{'s' if len(cap.findings) != 1 else ''} "
+            f"({', '.join(cap.findings)}): a dimension scores no higher than its lowest "
+            "detector with such a finding."
+        )
     return line
+
+
+def overall_cap_note(report: AuditReport) -> str:
+    """One line when the risk capped the overall score, else ""."""
+    v = report.verdict
+    c = v.score_cap
+    if c is None:
+        return ""
+    return (
+        f"Capped at {_num(c.cap)} by the {c.risk_level.value} risk "
+        f"(weighted mean of the dimensions {_num(v.uncapped_score)}); "
+        f"set by: {', '.join(c.findings) or '—'}."
+    )
+
+
+NOT_RATED = "not rated: too little was judged"
+
+
+def rating_text(report: AuditReport) -> str:
+    """The rating as the reports show it: the letter, "not rated: too little
+    was judged" when coverage withheld it (issue 249), else "—"."""
+    v = report.verdict
+    if v.rating:
+        return v.rating
+    if v.rating_limit is not None and v.rating_limit.limit is None:
+        return NOT_RATED
+    return "—"
+
+
+def coverage_text(report: AuditReport) -> str:
+    """The coverage as a percentage ("81%"), "—" when none was recorded."""
+    c = report.verdict.coverage
+    return "—" if c is None else f"{coverage_pct(c)}%"
+
+
+def coverage_note(report: AuditReport) -> str:
+    """One line when a dimension ran but could not be judged or coverage
+    limited the rating (issue 249), else ""."""
+    v = report.verdict
+    bits = []
+    if v.not_judged:
+        names = ", ".join(DIMENSION_NAMES.get(Dimension(d), d) for d in v.not_judged)
+        bits.append(f"not judged (ran without a usable result): {names}")
+    lim = v.rating_limit
+    if lim is not None:
+        why = (
+            "a core dimension could not be judged" if lim.reason == "core_not_judged"
+            else f"coverage below {coverage_pct(COVERAGE_UNRATED_BELOW)}%" if lim.limit is None
+            else f"coverage below {coverage_pct(COVERAGE_LIMITED_BELOW)}%"
+        )
+        head = "no rating" if lim.limit is None else f"rating at most {lim.limit}"
+        bits.append(f"{head} ({why}; the score alone gives {lim.unlimited_rating or '—'})")
+    if not bits:
+        return ""
+    return f"Coverage {coverage_text(report)}: " + "; ".join(bits) + "."
 
 
 def status_explanation(d: DimensionScore) -> str:

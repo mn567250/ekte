@@ -46,7 +46,9 @@ Endpoints:
   GET  /api/history/{id}     a saved report; ?trend=1 adds the request
                              medians and the run's History trend values
   DELETE /api/history/{id}, /api/history   delete one run, or all of them
-  POST /api/history/{id}/rescore   re-score a run from its evidence (a job)
+  POST /api/history/{id}/rescore   re-score a run from its evidence (a job), in place
+  GET  /api/rescore                progress of the bulk re-score
+  POST /api/rescore                re-score every run scored by another version
   GET  /api/v1/history/{id}/evidence[/exchanges|/export]   a run's evidence
   GET  /api/watches          the monitors, filtered (q, surface, relay, model,
                              suite, api, stream, state, alerting) and cached;
@@ -143,6 +145,7 @@ from ekte.config import (
     AuditOptions,
     ConfigError,
     build_target,
+    stored_dimensions,
     validate_api,
     validate_dimensions,
     validate_suite,
@@ -802,9 +805,17 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         await asyncio.to_thread(history.sweep_evidence)
     task = asyncio.create_task(_scheduler_loop())
+    # The first start of a new ekte version re-scores the runs an older one
+    # scored (in the background, resumed on the next start if stopped).
+    from ekte.web import rescore
+
+    with contextlib.suppress(Exception):
+        await rescore.start_upgrade()
     try:
         yield
     finally:
+        with contextlib.suppress(Exception):
+            await rescore.bulk.stop()
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError, Exception):
             await task
@@ -1592,41 +1603,60 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/history/{rid}/rescore")
     @app.post("/api/history/{rid}/rescore")
-    async def history_rescore(rid: int) -> Any:
+    async def history_rescore(request: Request, rid: int, replace: bool | None = None) -> Any:
         """Re-score a saved run with this ekte version from its evidence file
-        (ekte.replay): queued as a background job like an audit, saved to
-        History as a new run. The relay is never contacted."""
+        (ekte.replay): queued as a background job like an audit. The new
+        report replaces the run in place (same id; the job reports it as
+        ``report_id``) and its monitor follows the new verdict
+        (ekte.web.rescore). The relay is never contacted.
+
+        On ``/api/v1/`` the stability policy keeps the documented behavior
+        for a deprecation period: without ``replace=true`` the re-score is
+        saved as a new run (deprecated; logged, ``Deprecation`` header).
+        ``replace=false`` asks for that explicitly (deprecated as well)."""
         from ekte import replay
+        from ekte.web import rescore
+
+        v1 = request.url.path.startswith("/api/v1/")
+        in_place = bool(replace) if v1 else replace is not False
 
         path, report = await asyncio.to_thread(_evidence_of, rid)
         if report is None:
             return JSONResponse({"error": "not found"}, status_code=404)
         if path is None:
-            return JSONResponse({"error": "this run kept no evidence: there is nothing to replay"}, status_code=409)
+            return JSONResponse({"error": replay.NO_EVIDENCE}, status_code=409)
         reason = await asyncio.to_thread(replay.refusal, report, path)
         if reason is not None:
             return JSONResponse({"error": reason}, status_code=409)
-        t = report.get("target") or {}
-
-        async def run(emit: jobs.Emit) -> dict[str, Any]:
-            out = await replay.rescore(report, path, report_id=rid, on_event=emit)
-            return json.loads(out.model_dump_json())
-
-        summary = {
-            "base_url": t.get("base_url"),
-            "model": t.get("model"),
-            "claimed_model": t.get("claimed_model") or t.get("model"),
-            "suite": report.get("suite"),
-            "surface": report.get("surface") or "chat",
-            "dimensions": list(report.get("dimensions_selected") or []),
-            "baseline_url": (report.get("baseline") or {}).get("base_url"),
-            "api": t.get("api"),
-            "api_auto": t.get("api_auto"),
-            "stream_mode": report.get("stream_mode"),
-            "rescore_of": rid,
-        }
         # no relay is contacted: the job waits for no relay gate
-        return JSONResponse(jobs.manager.submit(summary, [], run).info())
+        job = rescore.submit_job(rid, report, path, replace=in_place)
+        if in_place:
+            return JSONResponse(job.info())
+        _log.warning("POST %s: %s", request.url.path, rescore.NEW_RUN_DEPRECATED)
+        return JSONResponse(job.info(), headers={"Deprecation": "true"})
+
+    @app.get("/api/rescore")
+    def history_rescore_progress() -> Any:
+        """Progress of the bulk re-score (History's "Re-score all with this
+        version", or the automatic one after an upgrade): ``active``,
+        ``trigger`` ("manual" | "upgrade"), ``version``, ``total``, ``done``,
+        ``rescored``, ``skipped``, ``failed``, ``current`` (run id),
+        ``job``."""
+        from ekte.web import rescore
+
+        return JSONResponse(rescore.bulk.info(), headers={"Cache-Control": "no-store"})
+
+    @app.post("/api/rescore")
+    async def history_rescore_all() -> Any:
+        """Re-score every saved run scored by another ekte version, one job
+        after another; runs without a usable evidence file are skipped and
+        their reason recorded. 409 while a bulk re-score is running."""
+        from ekte.web import rescore
+
+        if not rescore.bulk.start("manual"):
+            return JSONResponse({"error": "a bulk re-score is already running", **rescore.bulk.info()},
+                                status_code=409)
+        return JSONResponse(rescore.bulk.info())
 
     @app.get("/api/v1/history/{rid}/evidence/export")
     def history_evidence_export(
@@ -1832,7 +1862,8 @@ def create_app() -> FastAPI:
         api = tgt.get("api") if tgt.get("api_auto") is False and tgt.get("api") else "auto"
         try:
             suite = validate_suite(str(report.get("suite") or "standard"))
-            dimensions = validate_dimensions(suite, report.get("dimensions_selected"))
+            dimensions = validate_dimensions(
+                suite, stored_dimensions(report.get("surface"), report.get("dimensions_selected")))
             build_target(
                 kind="target",
                 name=tgt.get("name") or "watch",

@@ -108,6 +108,16 @@
     - combobox "Monitor":
       - option "All" [selected]
       - option "gpt-4o (4)"
+    - text: Scoring version
+    - combobox "Scoring version":
+      - option "All" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Audit version
+    - combobox "Audit version":
+      - option "All" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Trends":
       - text: Trends 2 of at most 2 selected
       - button "Score" [pressed]
@@ -301,7 +311,7 @@
             - term: Version
             - definition:
               - code: ekte v<version>
-            - heading "Per-dimension checks 1 of 10 dimensions run" [level=3]
+            - heading "Per-dimension checks 1 of 11 dimensions run" [level=3]
             - button "Protocol compliance"
             - text: Is the API spec-compliant?
             - meter "Protocol compliance Is the API spec-compliant?"
@@ -319,6 +329,8 @@
             - text: Is token usage inflated? Not run
             - button "Concurrency reliability"
             - text: Stable under load? Not run
+            - button "Response integrity"
+            - text: Is the response unaltered? Not run
             - button "Transport security"
             - text: Are keys handled safely? Not run
             - button "Performance"
@@ -335,6 +347,7 @@
               - text: ekte provides
               - strong: reproducible evidence of behavioral deviation and risk
               - text: ", not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
+            - paragraph: "Cannot be re-scored: this report kept no evidence: there is nothing to replay"
             - button "Re-run audit"
             - button "Schedule as monitor"
             - group "Download report":
@@ -367,6 +380,7 @@
           - button "Delete"
           - button "Cancel"
   - text: Showing 15 of 15 audits
+  - button "Re-score all with this version"
   - button "Clear history"
   - status
 - contentinfo:

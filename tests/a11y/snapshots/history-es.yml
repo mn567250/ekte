@@ -108,6 +108,16 @@
     - combobox "Monitor":
       - option "Todos" [selected]
       - option "gpt-4o (4)"
+    - text: Versión de puntuación
+    - combobox "Versión de puntuación":
+      - option "Todos" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Versión de la auditoría
+    - combobox "Versión de la auditoría":
+      - option "Todos" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Tendencias":
       - text: Tendencias 2 de un máximo de 2 seleccionados
       - button "Puntuación" [pressed]
@@ -301,7 +311,7 @@
             - term: Versión
             - definition:
               - code: ekte v<version>
-            - heading "Comprobaciones por dimensión 1 de 10 dimensiones ejecutadas" [level=3]
+            - heading "Comprobaciones por dimensión 1 de 11 dimensiones ejecutadas" [level=3]
             - button "Conformidad del protocolo"
             - text: ¿Cumple la API la especificación?
             - meter "Conformidad del protocolo ¿Cumple la API la especificación?"
@@ -319,6 +329,8 @@
             - text: ¿Está inflado el uso de tokens? No ejecutado
             - button "Fiabilidad en concurrencia"
             - text: ¿Estable bajo carga? No ejecutado
+            - button "Integridad de las respuestas"
+            - text: ¿La respuesta llega sin alterar? No ejecutado
             - button "Seguridad del transporte"
             - text: ¿Se manejan las claves de forma segura? No ejecutado
             - button "Rendimiento"
@@ -335,6 +347,7 @@
               - text: ekte aporta
               - strong: evidencias reproducibles de desviación de comportamiento y riesgo
               - text: ", no una prueba legal ni criptográfica de fraude. Los intermediarios pueden enrutar de forma probabilística; valore usted mismo el tamaño de la muestra, la configuración de facturación y la legislación local, y nunca acuse públicamente a un proveedor por una sola ejecución."
+            - paragraph: "No se puede volver a puntuar: este informe no guardó evidencias: no hay nada que reproducir"
             - button "Repetir auditoría"
             - button "Programar como monitor"
             - group "Descargar informe":
@@ -367,6 +380,7 @@
           - button "Eliminar"
           - button "Cancelar"
   - text: Mostrando 15 de 15 auditorías
+  - button "Volver a puntuar todo con esta versión"
   - button "Borrar historial"
   - status
 - contentinfo:

@@ -72,7 +72,7 @@ Más ejemplos, archivos de configuración y uso desde scripts o agentes LLM:
 
 ## Qué comprueba
 
-ekte puntúa diez dimensiones. Las cuatro **dimensiones núcleo** — identidad del
+ekte puntúa once dimensiones. Las cuatro **dimensiones núcleo** — identidad del
 modelo, ventana de contexto, capacidades declaradas y facturación y uso — revelan
 más directamente un «gato por liebre». Los nombres son los de la interfaz
 web y los informes.
@@ -81,13 +81,14 @@ web y los informes.
 |---|---|---|
 | **Identidad del modelo** | `model_identity` | Degradación o sustitución silenciosa del modelo |
 | **Ventana de contexto** | `context_window` | Recorte silencioso del contexto y «lost in the middle» |
-| **Capacidades declaradas** | `capability` | Llamadas a herramientas, modo JSON, salida máxima o visión declarados pero no entregados |
+| **Capacidades declaradas** | `capability` | Llamadas a herramientas, modo JSON o visión declarados pero no entregados, o una salida cortada antes de tiempo o recortada por el relay (se prueba hasta 2.048 tokens) |
 | **Conformidad del protocolo** | `protocol` | Parámetros de petición y atributos de respuesta descartados o ignorados |
 | **Facturación y uso** | `billing` | Uso de tokens inflado o ausente |
 | **Conectividad** | `connectivity` | Accesibilidad del endpoint y la lista de modelos anunciada |
 | **Autenticidad del streaming** | `streaming` | Streaming falso (búfer y luego troceo) |
 | **Fiabilidad en concurrencia** | `reliability` | Fallos y ralentizaciones bajo carga concurrente |
-| **Seguridad del transporte** | `security` | HTTP sin cifrar, eco de secretos, prompts de sistema inyectados, manipulación |
+| **Integridad de las respuestas** | `integrity` | Respuestas manipuladas, prompts de sistema inyectados, respuestas servidas desde una caché |
+| **Seguridad del transporte** | `security` | HTTP sin cifrar, clave API devuelta, cabeceras que revelan el upstream |
 | **Rendimiento** | `performance` | Lo constantes que son la latencia, el tiempo hasta el primer token y el throughput |
 
 Cómo funciona cada comprobación y cómo se llega al veredicto:

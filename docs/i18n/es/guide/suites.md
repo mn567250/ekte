@@ -28,7 +28,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--dimension/-D` es repetible o separado por comas e implica `--suite custom`; en
 un archivo de configuración usa `run.dimensions: [protocol, performance]`. Las
 dimensiones son `connectivity`, `protocol`, `context_window`, `model_identity`,
-`capability`, `streaming`, `billing`, `reliability`, `security` y `performance`.
+`capability`, `streaming`, `billing`, `reliability`, `integrity`, `security` y `performance`.
 En la interfaz web, el botón de suite `custom` abre la misma elección
 (**Dimensiones a ejecutar**) en la página de auditoría y los
 monitores.
@@ -62,5 +62,9 @@ confianza** en la interfaz web) ejecuta las mismas sondas, al mismo tiempo,
 contra una referencia de confianza del modelo declarado. Es la vía de
 confirmación más fuerte: respuestas de identidad, parámetros de petición
 rechazados, canarios de manipulación y rendimiento se juzgan lado a lado, y solo
-una referencia permite que la confianza del veredicto sea *alta*. Sin
+una referencia permite que la confianza del veredicto sea *alta*: al menos dos
+dimensiones núcleo (identidad del modelo, ventana de contexto, capacidades
+declaradas, facturación) deben haberse comparado de verdad con una respuesta
+utilizable de la referencia; un juez solo nunca lo consigue (ver
+[Confianza del veredicto](methodology.md#confianza-del-veredicto)). Sin
 `--judge-base-url`, el modo comparación usa la referencia como juez.

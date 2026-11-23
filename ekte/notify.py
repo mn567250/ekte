@@ -103,6 +103,17 @@ def _key_findings(report: dict[str, Any], lang: str) -> list[str]:
     ]
 
 
+def audit_version(report: dict[str, Any] | None) -> str | None:
+    """The ekte version the audit itself ran with: a re-scored report's
+    ``rescored_from.tool_version``, else its own ``tool_version``."""
+    report = report or {}
+    ref = report.get("rescored_from")
+    if isinstance(ref, dict) and isinstance(ref.get("tool_version"), str):
+        return str(ref["tool_version"])
+    version = report.get("tool_version")
+    return version if isinstance(version, str) else None
+
+
 def regressed(current: dict[str, Any], previous: dict[str, Any] | None) -> bool:
     """True if ``current``'s risk is strictly worse than ``previous``'s.
 
@@ -115,24 +126,34 @@ def regressed(current: dict[str, Any], previous: dict[str, Any] | None) -> bool:
 
 
 def _delta_line(
-    current: dict[str, Any], previous: dict[str, Any] | None, lang: str | None = i18n.DEFAULT
+    current: dict[str, Any],
+    previous: dict[str, Any] | None,
+    lang: str | None = i18n.DEFAULT,
+    rescored: bool = False,
 ) -> str | None:
-    """A "since last run" line describing the risk change, or ``None`` if no previous."""
+    """A "since last run" line describing the risk change, or ``None`` if no
+    previous. For a re-score, ``previous`` is the run before the re-score."""
     if previous is None:
         return None
     cur = _risk_value(current)
     prev = _risk_value(previous)
     if cur == prev:
-        return _t(lang, "Since last run: risk unchanged ({1})", _risk_label(prev, lang))
+        template = "Before the re-score: risk unchanged ({1})" if rescored else "Since last run: risk unchanged ({1})"
+        return _t(lang, template, _risk_label(prev, lang))
     direction = _t(lang, "worse ⬆️" if _risk_rank(cur) > _risk_rank(prev) else "better ⬇️")
-    return _t(lang, "Since last run: {1} → {2} ({3})", _risk_label(prev, lang), _risk_label(cur, lang), direction)
+    template = "Before the re-score: {1} → {2} ({3})" if rescored else "Since last run: {1} → {2} ({3})"
+    return _t(lang, template, _risk_label(prev, lang), _risk_label(cur, lang), direction)
 
 
 # --------------------------------------------------------------------------- #
 # Text digest
 # --------------------------------------------------------------------------- #
 def build_text(
-    report: dict[str, Any], previous: dict[str, Any] | None = None, lang: str | None = i18n.DEFAULT
+    report: dict[str, Any],
+    previous: dict[str, Any] | None = None,
+    lang: str | None = i18n.DEFAULT,
+    *,
+    rescored: bool = False,
 ) -> str:
     """A compact multi-line alert digest shared by every text platform.
 
@@ -166,8 +187,13 @@ def build_text(
     ]
     if headline:
         lines.append(_t(lang, "Verdict: {1}", headline))
+    if rescored:
+        lines.append(_t(
+            lang, "Re-scored with ekte {1} (audit ran with ekte {2})",
+            report.get("tool_version") or "?", audit_version(report) or "?",
+        ))
 
-    delta = _delta_line(report, previous, lang)
+    delta = _delta_line(report, previous, lang, rescored)
     if delta:
         lines.append(delta)
 
@@ -184,7 +210,11 @@ def build_text(
 # Per-platform payload formatters
 # --------------------------------------------------------------------------- #
 def format_generic(
-    report: dict[str, Any], previous: dict[str, Any] | None = None, lang: str | None = i18n.DEFAULT
+    report: dict[str, Any],
+    previous: dict[str, Any] | None = None,
+    lang: str | None = i18n.DEFAULT,
+    *,
+    rescored: bool = False,
 ) -> dict[str, Any]:
     """A structured JSON payload for a generic / custom webhook consumer.
 
@@ -201,7 +231,7 @@ def format_generic(
         "tool": "ekte",
         "event": "audit_alert",
         "language": lang,
-        "text": build_text(report, previous, lang),
+        "text": build_text(report, previous, lang, rescored=rescored),
         "risk_level": _risk_value(report),
         "score": verdict.get("overall_score"),
         "rating": verdict.get("rating"),
@@ -211,28 +241,45 @@ def format_generic(
         "key_findings": _key_findings(report, lang),
         "previous_risk_level": _risk_value(previous) if previous is not None else None,
         "regressed": regressed(report, previous),
+        # webhook schema 1.1: an alert sent when a stored run was re-scored
+        # (ekte.replay), and the ekte versions of the audit and its scoring
+        "rescored": bool(rescored),
+        "audit_tool_version": audit_version(report),
+        "scoring_tool_version": report.get("tool_version"),
     }
 
 
 def format_slack(
-    report: dict[str, Any], previous: dict[str, Any] | None = None, lang: str | None = i18n.DEFAULT
+    report: dict[str, Any],
+    previous: dict[str, Any] | None = None,
+    lang: str | None = i18n.DEFAULT,
+    *,
+    rescored: bool = False,
 ) -> dict[str, Any]:
     """Slack incoming-webhook body — a single ``text`` field (mrkdwn)."""
-    return {"text": build_text(report, previous, lang)}
+    return {"text": build_text(report, previous, lang, rescored=rescored)}
 
 
 def format_feishu(
-    report: dict[str, Any], previous: dict[str, Any] | None = None, lang: str | None = i18n.DEFAULT
+    report: dict[str, Any],
+    previous: dict[str, Any] | None = None,
+    lang: str | None = i18n.DEFAULT,
+    *,
+    rescored: bool = False,
 ) -> dict[str, Any]:
     """Feishu/Lark custom-bot body — ``msg_type: "text"`` with a ``content.text``."""
-    return {"msg_type": "text", "content": {"text": build_text(report, previous, lang)}}
+    return {"msg_type": "text", "content": {"text": build_text(report, previous, lang, rescored=rescored)}}
 
 
 def format_dingtalk(
-    report: dict[str, Any], previous: dict[str, Any] | None = None, lang: str | None = i18n.DEFAULT
+    report: dict[str, Any],
+    previous: dict[str, Any] | None = None,
+    lang: str | None = i18n.DEFAULT,
+    *,
+    rescored: bool = False,
 ) -> dict[str, Any]:
     """DingTalk custom-robot body — ``msgtype: "text"`` with a ``text.content``."""
-    return {"msgtype": "text", "text": {"content": build_text(report, previous, lang)}}
+    return {"msgtype": "text", "text": {"content": build_text(report, previous, lang, rescored=rescored)}}
 
 
 _FORMATTERS = {
@@ -275,13 +322,15 @@ def build_payload(
     previous: dict[str, Any] | None = None,
     webhook_url: str | None = None,
     lang: str | None = i18n.DEFAULT,
+    rescored: bool = False,
 ) -> dict[str, Any]:
-    """Pick the formatter by ``kind`` (or auto-detect from ``webhook_url``)."""
+    """Pick the formatter by ``kind`` (or auto-detect from ``webhook_url``).
+    ``rescored`` marks an alert about a stored run that was re-scored."""
     resolved = kind
     if resolved == "auto":
         resolved = detect_kind(webhook_url or "")
     formatter = _FORMATTERS.get(resolved, format_generic)
-    return formatter(report, previous, lang)
+    return formatter(report, previous, lang, rescored=rescored)
 
 
 async def send(
@@ -292,18 +341,22 @@ async def send(
     previous: dict[str, Any] | None = None,
     timeout: float = 10.0,
     lang: str | None = i18n.DEFAULT,
+    rescored: bool = False,
 ) -> bool:
     """POST an alert for ``report`` to ``webhook_url``; return whether it succeeded.
 
     The payload shape is chosen from ``kind`` (``slack`` | ``feishu`` | ``dingtalk``
     | ``generic``) or auto-detected from the URL host when ``kind == "auto"``. The
-    alert is written in ``lang`` (English by default).
+    alert is written in ``lang`` (English by default). ``rescored`` marks an
+    alert about a stored run that was re-scored (:mod:`ekte.replay`).
     Never raises — a network error, timeout, or non-2xx status simply returns
     ``False`` so the watch loop keeps running.
     """
     if not webhook_url:
         return False
-    payload = build_payload(report, kind=kind, previous=previous, webhook_url=webhook_url, lang=lang)
+    payload = build_payload(
+        report, kind=kind, previous=previous, webhook_url=webhook_url, lang=lang, rescored=rescored
+    )
     try:
         # the relay clients' shared TLS context: no CA bundle load per alert
         async with httpx.AsyncClient(timeout=timeout, verify=await get_ssl_context()) as client:

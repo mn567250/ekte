@@ -64,6 +64,16 @@
     ["Overall health score ([\\d.]+)/100\\.", "Overall health score {1}/100."],
     ["Custom run: (\\d+) of (\\d+) selected dimensions scored\\.", "Custom run: {1} of {2} selected dimensions scored."],
     [
+      "Score capped at ([\\d.]+) because the risk level is (high|medium); the weighted mean of the dimensions is ([\\d.]+)\\.",
+      "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.",
+      {
+        // the risk level as the UI labels it ("Likely substituted")
+        2: function (g, tr) {
+          return tr(g === "high" ? "Likely substituted" : "Deviations found");
+        },
+      },
+    ],
+    [
       "Findings: ((?:\\d+ (?:critical|high|medium)(?:, )?)+)\\.",
       "Findings: {1}.",
       {
@@ -105,6 +115,27 @@
       dimList,
     ]
   );
+  // Coverage (issue 249): the dimensions that ran but could not be judged,
+  // and the limit coverage put on the rating.
+  P.push(
+    [
+      "Coverage (\\d+)%: (.+?) ran but could not be judged\\.",
+      "Coverage {1}%: {2} ran but could not be judged.",
+      { 2: dimList[1] },
+    ],
+    [
+      "Not rated: too little was judged \\(coverage below (\\d+)%\\)\\.",
+      "Not rated: too little was judged (coverage below {1}%).",
+    ],
+    [
+      "Rating limited to ([A-F]) because coverage is below (\\d+)%\\.",
+      "Rating limited to {1} because coverage is below {2}%.",
+    ],
+    [
+      "Rating limited to ([A-F]) because a core dimension could not be judged\\.",
+      "Rating limited to {1} because a core dimension could not be judged.",
+    ]
+  );
   P.push([
     "\\(confidence: (low|medium|high)\\)",
     "(confidence: {1})",
@@ -124,11 +155,12 @@
     "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.",
     "Run `ekte compare` against a trusted baseline to strengthen the verdict.",
     "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.",
-    "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.",
+    "Transport, reliability and streaming-support findings (plain HTTP, failures or slowness under load, a stream that failed or is not supported) are advisories: they lower the score but not the substitution risk.",
     "No core dimension (model identity, context window, capability) was selected, so the substitution risk cannot be judged.",
     "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.",
     "No problems found in the checked dimensions; model identity was not verified.",
     "Minor concerns in the checked dimensions; model identity was not verified.",
+    "The answers fit the claimed model's vendor, but no check could tell that model from the vendor's other models and neither a baseline nor a judge was used: the specific model was not verified.",
     "ekte reports black-box evidence of divergence and risk, not proof of fraud.",
   ].forEach(function (s) {
     P.push([esc(s), s]);

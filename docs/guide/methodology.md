@@ -49,14 +49,20 @@ once per check, and reports list the subjects under their check.
 
 ### Dimension score and status
 
-ekte scores ten dimensions. A dimension's score is the **equal-weight mean of
+ekte scores eleven dimensions. A dimension's score is the **equal-weight mean of
 its detectors' scores**: a detector with many checks does not outweigh one with
-few, and a detector without a numeric score is left out. Its status is the
+few, and a detector without a numeric score is left out. A detector with a
+HIGH/CRITICAL finding **caps** the dimension at its own score, so passing
+siblings cannot average a failure away: a tampering detector at 10 next to three
+clean integrity detectors gives response integrity 10, not 77.5 (the lowest such
+detector wins). Transport advisories (see [Risk verdict](#risk-verdict)) and the
+connectivity dimension cap nothing. Its status is the
 worst status its detectors concluded, except that a HIGH/CRITICAL finding
 forces **Fail** and a MEDIUM finding lifts **Pass** to **Warning**, whatever the
 score. Every report records this per dimension (`DimensionScore.breakdown`:
-each detector's score, whether it counted, and any status override with the
-findings that caused it) and shows it under **Dimension details**
+each detector's score, whether it counted, the score cap with the detector and
+findings that caused it, and any status override with the findings that caused
+it) and shows it under **Dimension details**
 (Markdown/HTML/PDF) and in the expandable rows of **Per-dimension checks** in
 the web UI. A detector that crashes is reported with status **Error** and never
 aborts the audit.
@@ -66,21 +72,45 @@ aborts the audit.
 The **overall health score** is the weighted mean over the dimensions that
 produced a score (`DIMENSION_WEIGHTS` in `ekte/scoring.py`). A dimension that
 did not run (not in the suite, or not selected in a `custom` run) drops out and
-the remaining weights are renormalized. The rating is A (≥ 90), B (≥ 80),
-C (≥ 70), D (≥ 60) or F.
+the remaining weights are renormalized. The [risk level](#risk-verdict) then
+**caps** the score (`RISK_SCORE_CAPS` in `ekte/scoring.py`): at most **49** for
+`high` and **69** for `medium`; `low`, `clean` and `inconclusive` leave it as
+it is. The rating follows from the capped score and is A (≥ 90), B (≥ 80),
+C (≥ 70), D (≥ 60) or F, so a high risk always rates F and a medium risk at
+best D, and `--fail-under` gates on the capped score. When the cap applies, the
+summary says so, `verdict.uncapped_score` keeps the weighted mean and
+`verdict.score_cap` records the risk level, the cap and the findings that set the
+risk; the reports show it next to the score.
+
+A dimension that **ran but could not be judged** (its detectors inconclusive
+or crashed, no score) also drops out of the weighted mean, so the score alone
+would read as if it had passed. The **coverage** says how much was judged: the
+share of the weight of the dimensions that ran that produced a score
+(`verdict.coverage`, 0–1; `verdict.not_judged` lists the others). Dimensions
+not in the suite or not selected do not count, nor does a dimension whose
+detectors only reported information (for example no context window claimed).
+Coverage **limits the rating** (`COVERAGE_*` in `ekte/scoring.py`): below
+**50%** there is no rating (“not rated: too little was judged”), below **80%**
+the rating is at most **B**, and so it is when a core dimension ran but could
+not be judged (an unanswered context-window probe leaves 81% coverage, but the
+rating is still at most B). `verdict.rating_limit` records the reason and the
+rating the score alone gives; the summary names the dimensions that were not
+judged, and the reports show the coverage next to the score. `--fail-under`
+also fails a run that got no rating.
 
 | Dimension | Id | Weight | Role |
 |---|---|---|---|
 | Model identity | `model_identity` | 21 | core |
 | Context window | `context_window` | 19 | core |
 | Capability claims | `capability` | 13 | core |
-| Protocol compliance | `protocol` | 8 |  |
 | Billing & usage | `billing` | 8 | core |
 | Connectivity | `connectivity` | 7 |  |
+| Protocol compliance | `protocol` | 6 |  |
 | Streaming authenticity | `streaming` | 6 |  |
 | Concurrency reliability | `reliability` | 6 |  |
-| Transport security | `security` | 6 |  |
-| Performance | `performance` | 6 |  |
+| Response integrity | `integrity` | 6 |  |
+| Transport security | `security` | 4 |  |
+| Performance | `performance` | 4 |  |
 
 The verdict is judged on the dimensions that **ran** — a `custom` run checks
 only its selection. Two groups of dimensions matter:
@@ -99,17 +129,18 @@ the connectivity dimension are left out of the ladder: a relay that is down or
 throttled could not be assessed, which is not evidence of a different model.
 The **transport advisories** are left out too (`ADVISORY_CHECKS` in
 `ekte/scoring.py`: `security.tls`, `reliability.success_rate`,
-`reliability.latency`): plain HTTP, failures or slowness under load say how the
-relay is reached, not which model it serves. They still lower their dimension's
+`reliability.latency`, `streaming.failed`, `streaming.unsupported`): plain HTTP,
+failures or slowness under load, a stream request that failed twice or a relay
+that does not stream for the model say how the relay is reached, not which
+model it serves. They still lower their dimension's
 score and status, are listed after the substitution findings in the key
-findings and are noted in the summary as advisories when Medium or higher. Integrity tampering and an
-echoed API key still escalate.
+findings and are noted in the summary as advisories when Medium or higher. An echoed API key still escalates, and so do the findings of the response integrity dimension (tampering, an injected system prompt, a response cache): it is not a core dimension, so their severity alone sets the risk.
 
 | Risk | Label in the UI | When |
 |---|---|---|
 | `inconclusive` | Insufficient signal | Nothing usable to judge by: when a profile dimension ran, none of them produced a usable result (Pass, Warning or Fail) — the relay is unreachable or the model is unprofiled; otherwise no dimension other than connectivity produced one |
-| `high` | Likely substituted | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or two or more HIGH findings |
-| `medium` | Deviations found | Exactly one HIGH finding outside the core dimensions, or a MEDIUM finding in a core dimension |
+| `high` | Likely substituted | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or HIGH findings from two or more different detectors |
+| `medium` | Deviations found | HIGH findings outside the core dimensions from a single detector, or a MEDIUM finding in a core dimension |
 | `low` | Mostly consistent | Any other MEDIUM finding |
 | `clean` | Consistent | None of the above |
 
@@ -129,19 +160,32 @@ result says that model identity was not verified.
   result;
 - **medium** — at least two core dimensions produced a usable result (or, in
   a run without core dimensions, at least two dimensions did);
-- **high** — a baseline was used *and* every core dimension that ran produced
-  a usable result, or the confidence was medium and the LLM judge returned a
-  usable verdict.
+- **high** — a baseline was used, every core dimension that ran produced a
+  usable result, *and* at least two core dimensions have a detector that
+  actually compared the target with a usable baseline answer
+  (`baseline_compared` in the report) and a usable result. Configuring a
+  baseline is not enough: a baseline that errored, or that no core detector
+  asked, leaves the confidence at medium. A judge verdict alone never lifts
+  the confidence; a judge verdict the baseline corroborated counts as the
+  model-identity comparison.
+
+Core detectors compare with the baseline when it answers: `model_identity`
+(a fingerprint or the knowledge-cutoff probe answered by both sides),
+`quality_judge` (the baseline answered every probe and was shown to the
+judge), `billing` (prompt tokens counted by a baseline of the same model on
+the same protocol) and `capability` (the baseline answered a probe the target
+rejected). `context_window` never asks the baseline. Outside the core,
+`integrity`, `protocol_request` and `performance` also record
+`baseline_compared`, but it does not count for the confidence.
 
 ## Suites, detectors and modes
 
 | Detector | Id | Dimension | From suite |
 |---|---|---|---|
 | Connectivity & basic completion | `connectivity` | Connectivity | `smoke` |
-| OpenAI-compatibility conformance | `protocol` | Protocol compliance | `standard` |
+| Wire-protocol conformance | `protocol` | Protocol compliance | `standard` |
 | Request attribute support | `protocol_request` | Protocol compliance | `standard` |
 | Response attribute availability | `protocol_response` | Protocol compliance | `standard` |
-| Determinism & cache-correctness | `determinism` | Protocol compliance | `deep` |
 | Real context window & truncation | `context_window` | Context window | `deep` |
 | Model identity & downgrade fingerprinting | `model_identity` | Model identity | `standard` |
 | LLM-judged quality / downgrade assessment | `quality_judge` | Model identity | `deep` (only with `--judge`) |
@@ -151,9 +195,10 @@ result says that model identity was not verified.
 | Token/usage billing audit | `billing` | Billing & usage | `standard` |
 | Concurrent reliability & latency | `reliability` | Concurrency reliability | `standard` |
 | Transport & secret-handling signals | `security` | Transport security | `smoke` |
-| Injected system-prompt detection | `injected_prompt` | Transport security | `deep` |
-| Response integrity / tampering | `integrity` | Transport security | `deep` |
-| Prompt prefix-cache (timing) | `prompt_cache` | Transport security | `deep` |
+| Determinism & cache-correctness | `determinism` | Response integrity | `deep` |
+| Injected system-prompt detection | `injected_prompt` | Response integrity | `deep` |
+| Response integrity / tampering | `integrity` | Response integrity | `deep` |
+| Prompt prefix-cache (timing) | `prompt_cache` | Response integrity | `deep` |
 | Performance probe | `performance` | Performance | `deep` (on `standard` only in compare mode, 5 requests) |
 
 - **smoke** runs connectivity and security; **standard** adds the protocol,
@@ -172,10 +217,14 @@ result says that model identity was not verified.
   uses the baseline as the judge.
 - **Compare mode** (`ekte compare`) gives the probes a trusted baseline:
   `model_identity` records the baseline's self-identification next to the
-  target's, `protocol_request` re-sends rejected parameters to the baseline,
+  target's and sends every fingerprint and the cutoff probe to the baseline
+  too, `protocol_request` re-sends rejected parameters to the baseline,
   `integrity` escalates a substitution the baseline does not make to CRITICAL,
-  `quality_judge` shows the judge both sides, and `performance` probes both
-  endpoints alternately. Confidence can only reach high with a baseline.
+  `quality_judge` shows the judge both sides, `billing` compares prompt
+  tokens, `capability` re-sends a rejected probe, and `performance` probes both
+  endpoints alternately. Confidence can only reach high with a baseline, and
+  only when at least two core dimensions were actually compared with it (see
+  [Verdict confidence](#verdict-confidence)).
 - **Knowledge base:** the claimed model's profile (`ekte/knowledge/data/*.yaml`
   plus your own entries in `kb.db`) supplies the declared context window, max
   output, tokenizer, capability flags, identity keywords and behavioral
@@ -203,6 +252,10 @@ result says that model identity was not verified.
   repeated. Once an endpoint is known to reason (its profile says
   `reasoning: true`, or after its first such repeat), short probes are sent
   with the 4,096-token limit from the start instead of twice.
+  The checks that treat a reasoning model differently (billing, determinism,
+  maximum output, request attributes, streaming) all recognise one the same
+  way: the profile says so, the client has learned it from such a repeat, or a
+  response reports reasoning tokens.
 - **Request parameters:** reasoning models refuse some parameters: on Chat
   Completions `max_tokens` (they take `max_completion_tokens`), and on every
   protocol sampling parameters such as `temperature`. The client leaves out the
@@ -248,10 +301,9 @@ verdict.
 
 **Catches.** Relays whose middleware breaks the wire contract (dropped turns,
 ignored stop sequences, malformed errors, missing or zeroed response fields,
-stripped request parameters) and, via determinism, `cache.ignore-temperature`.
-It partly covers `capability.json-tool-fakery`.
+stripped request parameters). It partly covers `capability.json-tool-fakery`.
 
-### `protocol` — OpenAI-compatibility conformance
+### `protocol` — Wire-protocol conformance
 
 **How it works.** Three probes: a multi-turn conversation that must recall a
 color from an earlier turn; a `stop` sequence that must truncate the output; and
@@ -325,26 +377,6 @@ protocol rejects it too. Tools and JSON mode stay with `capability`, `stop` with
 |  | Rejected, but the model itself does not support it; not counted. | Info | Not counted |
 |  | Server error or no response; not counted. | Inconclusive · Low | Not counted |
 
-### `determinism` — Determinism & cache-correctness
-
-**How it works.** Four identical creative prompts at `temperature=1.0` (no
-seed): a genuine model varies; byte-identical output across all samples points
-to a response cache that ignores sampling. At least three of the four samples
-must be usable (and all usable ones identical) for the caching call; with fewer
-the check is inconclusive. The verdict is suppressed for
-reasoning models, which legitimately ignore temperature. Two identical factual
-prompts at `temperature=0` are informational only.
-
-| Check | Outcome | Status | Effect |
-|---|---|---|---|
-| `determinism.temp1_variability` | Repeated samples at temperature=1.0 differed, as genuine sampling does. | Pass | 100 pts |
-|  | Samples were identical, but reasoning models legitimately ignore temperature. | Info | 100 pts |
-|  | All usable samples (at least 3) at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
-|  | Fewer than 3 usable samples at temperature=1.0 to judge by. | Inconclusive · Low | Not counted |
-| `determinism.temp0_stability` | Identical answers at temperature=0 (expected); informational, not scored. | Info | Not counted |
-|  | Answers differed at temperature=0; informational, not scored. | Info | Not counted |
-|  | No usable response to judge by. | Inconclusive · Low | Not counted |
-
 **Caveats.** Gateways may add provider-specific extra fields; only missing or
 invalid required fields are flagged. Anthropic↔OpenAI dialect translation
 legitimately reshapes some structures. Confirm a suspected defect by repeating
@@ -363,13 +395,23 @@ marker is embedded in non-repetitive filler, and the model must return it.
 
 - **Probed window.** The probe runs up to `upper` = the declared window, capped
   by `--max-context-tokens` (default 200K). Every verdict is judged against
-  `upper`, never against the part of a larger declared window above the cap.
+  the top rung (90% of `upper`, below), never against the part of a larger
+  declared window above the cap.
 - **Sizes are real tokens.** ekte's built-in token estimate under-counts this
-  filler by about 12% (o200k) to 15% (cl100k) against real tokenizers, so each
-  prompt is built at size ÷ 1.2 by the estimate (needle and question included):
-  a size-N rung stays within N real tokens. Sizes in the evidence (`size`,
-  `effective_window`, `top_rung`) are these real-token budgets; the ladder rows
-  also carry the estimate a prompt was built at (`heuristic_tokens`).
+  filler against real tokenizers, so each prompt is built at size ÷ the
+  tokenizer family's factor by the estimate (needle and question included): a
+  size-N rung stays within N real tokens. The factors were measured offline
+  with the published tokenizers (issue #261):
+  `o200k_base` / `o200k_harmony` 1.12, `moonshot-bpe` 1.14, `deepseek-bpe` 1.15,
+  `cl100k_base` / `llama-3.3` 1.16, `glm` 1.22, `nemotron-3` 1.38, `gemma` 1.39,
+  `cohere` 1.40, `qwen` 1.41.
+  Families whose tokenizer is not published (`claude-bpe-*`, `gemini`, `grok`)
+  use 1.2. The factor a run used is `real_per_heuristic` in the evidence.
+  Sizes in the
+  evidence (`size`, `effective_window`, `top_rung`) are these real-token
+  budgets; the ladder rows also carry the estimate a prompt was built at
+  (`heuristic_tokens`) and the prompt tokens the endpoint reported for it
+  (`prompt_tokens`).
 
 1. A ladder of at most seven sizes, halving down from a **top rung at 90% of
    `upper`** (so no rung reaches the full window, leaving room for the answer
@@ -398,19 +440,26 @@ marker is embedded in non-repetitive filler, and the model must return it.
    size is reported as unverified (inconclusive, not scored), never as
    truncation or `no_recall`. Only an answer without the needle is a miss.
 
-The measured window (largest recalled size) is compared with `upper`: recall
-at the top rung is consistent (or, when the declared window exceeds the cap,
-**verified to the cap**: the window above it was not exercised); below it, the
-verdict deducts the share of the top rung that did not recall — a WARN from
-half of `upper` up, a FAIL below half. Without a declared window the
+The measured window (largest recalled size) is compared with the top rung:
+recall at the top rung is consistent (or, when the declared window exceeds the
+cap, **verified to the cap**: the window above it was not exercised); below it,
+the verdict deducts the share of the top rung that did not recall
+(`top_rung_share`) — a WARN from half of the top rung up, a FAIL below half.
+The verdict and the deduction use the same reference, so a WARN never deducts
+more than 50 points. When only the top rung failed and the endpoint reported
+more than 5% more prompt tokens for the largest recalled size than its budget,
+the probe **overshot** (the endpoint's tokenizer counts the filler denser than
+the factor allows): the window above it is reported as not exercised (Info),
+never as short or as a rejection below the claim. Without a declared window the
 measurement is reported but not scored.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `context_window.window` (Effective context window) | Recall held at the top rung (90% of the probed window): no deduction. | Pass | No deduction |
 |  | Recall verified up to the probe cap; the declared window above it was not exercised. | Pass | No deduction |
-|  | Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
-|  | Recall failed below half of the probed window; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
+|  | Only the top rung failed and the endpoint counted the largest recalled prompt more than 5% above its budget: the probe overshot, the window above it was not exercised. | Info | No deduction |
+|  | Recall held at half of the top rung or above, but not at the top rung; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
+|  | Recall failed below half of the top rung; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
 |  | Not even the smallest probe size recalled the needle. | Fail · High | −100 pts |
 | `context_window.lost_in_middle` | The start and end were recalled but the middle was not, twice. | Warning · Medium | −15 pts |
 | `context_window.rejected_below_claim` | A prompt well below the declared window was rejected as too long. | Fail · High | No deduction |
@@ -438,7 +487,13 @@ when they change behavior.
 
 ### `model_identity` — Model identity & downgrade fingerprinting
 
-**How it works.** Three independent signals:
+**How it works.** What runs depends on the claimed model's profile: the
+self-identification and the echoed `model` field always, the knowledge-cutoff
+probe when the profile's `knowledge_cutoff` names a month, and the profile's
+pure-code fingerprints, the model's own first. Only the model's own
+fingerprints can tell it from a cheaper model of the same vendor (`gpt-4o`
+served by `gpt-4o-mini`); the brand checks and the provider-wide fingerprints
+hold for every model of the vendor, and a same-vendor cutoff is often shared.
 
 1. **Self-identification** at `temperature=0`, matched whole-word against the
    profile's identity keywords (the genuine brand) and a list of rival brands
@@ -460,17 +515,46 @@ when they change behavior.
    "Step-2"); fingerprint answers never
    count them, so "let me think step by step" is not a rival brand. A vendor
    that owns such a word keeps it as its own.
-2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
-   tokenizer quirks, formatting, language-bound probes, …): up to six
+2. **Behavioral fingerprints** from the knowledge base: up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` or `expect_regex`; output capped at 512 tokens. A
+   `expect_not_contains` or `expect_regex`; output capped at 512 tokens. Terms under `expect_not_contains` match whole words (`meta` is not found in
+   `metadata`; a version may follow, as in `Qwen2.5`). A
    probe that needs more output (such as a max-output check) is skipped,
    listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
-   one alone stays LOW, two or more add a MEDIUM aggregate.
-3. **Echoed `model` field** of a plain call: snapshot suffixes and aliases are
-   tolerated; a smaller-tier word (`mini`, `flash`, `lite`, `8b`, …) or a
-   different family is flagged.
+   one alone stays LOW, two or more add a MEDIUM aggregate. In compare mode
+   each probe is also sent to the baseline: a divergence the baseline does not
+   share is corroborated (MEDIUM); one the baseline shares is a knowledge-base
+   problem, not relay evidence, and is recorded as Info without deduction
+   (evidence `baseline_also_diverged`). A rival brand stays HIGH either way.
+   What runs depends on the knowledge base: only a few packaged profiles have
+   pure-code probes of their own; most have only their provider's, most often
+   a second self-identification prompt, a dated fact or a tokenizer artifact
+   that every model of the vendor answers alike, and about a third have none.
+   Models of one vendor are therefore usually not told apart without a judge
+   or a baseline (see `model_identity.model_specific` below).
+3. **Knowledge cutoff** (`model_identity.cutoff`), when the profile's
+   `knowledge_cutoff` is `YYYY-MM` or `YYYY-MM-DD`: the model is asked for its
+   training cutoff as `CUTOFF=YYYY-MM`. Within 6 months of the profile's it is
+   consistent; more than 12 months earlier, as an older model of the vendor
+   would answer, it is a LOW warning that deducts like a fingerprint of weight
+   1 and counts toward the aggregate; any other gap is recorded as Info; an
+   answer without that format is inconclusive. A self-reported cutoff is soft
+   evidence, so this check is never HIGH; in compare mode the baseline
+   corroborates or clears it like a fingerprint.
+4. **Echoed `model` field** of a plain call, compared with the claimed model
+   and with the id sent (a deployment alias may differ from the claim). Both
+   ids are normalized first: lower case, no `provider/` or `vendor.` prefix
+   (`openai/`, `models/`, `anthropic.`), no `:tag`, Bedrock `-v2:0` or
+   snapshot-date suffix. Then the knowledge base decides: an id that resolves
+   to the claimed model's profile is consistent (exact, alias or snapshot),
+   one that resolves to another profile diverges, and the evidence names both
+   profiles. An id the knowledge base cannot place is flagged when it carries
+   a smaller-tier word the request lacks (`mini`, `flash`, `lite`, `8b`, …,
+   whole words only, so `mini` is not found in `gemini`), names a different
+   family, or carries a different version number (`gpt-4o` → `gpt-3.5-turbo`);
+   a different id that none of these explains is recorded as unknown, with no
+   deduction.
 
 Without a knowledge-base profile the detector is inconclusive.
 It is also inconclusive and unscored (`model_identity.no_evidence`) when
@@ -478,6 +562,12 @@ neither the self-identification nor any fingerprint returned a usable
 answer and the echoed `model` field does not diverge: a relay that rejects
 or empties every request gives no identity evidence, and an echo of the
 requested name proves nothing on its own. Partial evidence scores normally.
+
+When none of the model's own fingerprints answered and neither a baseline
+nor a judge was used, an Info finding (`model_identity.model_specific`, evidence
+`model_specific_checks: 0`) says that the answers fit the vendor but the
+specific model was not verified. Every result records `model_specific_checks`.
+The verdict summary and the model identity dimension's reason say so as well.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
@@ -488,13 +578,23 @@ requested name proves nothing on its own. Partial evidence scores normally.
 |  | No usable response to judge by. | Inconclusive | No deduction |
 | `model_identity.fp` (Behavioral fingerprints) | The answer matched the claimed model's native behavior. | Pass | No deduction |
 |  | The answer diverged from native behavior: deducts the probe's weight share of 100 points. | Warning · Low | up to −25 pts |
+|  | The answer diverged from native behavior while the baseline's matched it: deducts the probe's weight share of 100 points. | Warning · Medium | up to −25 pts |
+|  | The answer diverged, but so did the baseline's: a knowledge-base problem, not relay evidence; no deduction. | Info | No deduction |
 |  | The answer named a rival brand and not the genuine one: deducts the probe's weight share. | Fail · High | up to −25 pts · cap 20 |
 |  | No usable response to judge by. | Inconclusive | No deduction |
 |  | The probe needs more output than the 512-token identity cap; not run. | Info | No deduction |
+| `model_identity.cutoff` | The reported knowledge cutoff is within 6 months of the claimed model's. | Pass | No deduction |
+|  | The reported knowledge cutoff is more than 12 months earlier than the claimed model's: deducts its weight share of 100 points like a fingerprint. | Warning · Low | up to −25 pts |
+|  | The reported knowledge cutoff is more than 12 months earlier while the baseline's is consistent: deducts its weight share of 100 points. | Warning · Medium | up to −25 pts |
+|  | The reported knowledge cutoff is more than 12 months earlier, but so is the baseline's: a knowledge-base problem, not relay evidence; no deduction. | Info | No deduction |
+|  | The reported knowledge cutoff is off by more than 6 months, but not more than 12 months earlier: recorded, not judged. | Info | No deduction |
+|  | No answer in the CUTOFF=YYYY-MM format to judge by. | Inconclusive | No deduction |
 | `model_identity.fp_aggregate` | Two or more behavioral fingerprints diverged. | Warning · Medium | No deduction |
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |
+|  | The echoed model field names a different id that ekte cannot place: recorded, not judged. | Info | No deduction |
 |  | The response had no usable model field. | Inconclusive | No deduction |
+| `model_identity.model_specific` | No check could tell the claimed model from other models of its vendor and no baseline or judge was used: the vendor is consistent, the specific model was not verified. | Info | No deduction |
 | `model_identity.no_evidence` | No self-identification or fingerprint answer was usable and the model field did not diverge: not scored. | Inconclusive | No deduction |
 
 ### `quality_judge` — LLM-judged quality / downgrade assessment
@@ -512,7 +612,7 @@ baseline that errored or left probes unanswered.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
-| `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 95 pts |
+| `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 100 pts |
 |  | The judge found the answers unlike the claimed model (low, medium or no stated confidence). | Warning · Medium | 50 pts |
 |  | The judge is confident the answers are unlike the claimed model (no usable baseline). | Warning · Medium | 25 pts |
 |  | The judge is confident, and a trusted baseline corroborated the difference. | Fail · High | 25 pts |
@@ -547,36 +647,67 @@ profile's capability flags:
   than the JSON string OpenAI returns are flagged as a non-OpenAI engine.
 - **JSON mode:** `response_format: json_object` must return a parseable object
   carrying the requested value.
+- **Repeat:** a claimed tool call or JSON object that does not come back is
+  asked for once more before it counts as not delivered: the tool request with
+  `tool_choice: "required"` (Anthropic: `{"type": "any"}`), the JSON-mode
+  request unchanged. A tool call on the repeat is delivered (evidence
+  `needed_required: true`); a 4xx on the forced request alone (some models
+  refuse forced tool use) falls back to the first answer.
 - **Strict schema:** a strict `json_schema`; conformance is verified when the
   model claims it and noted (informational) when it does not. Skipped without a
   profile.
-- **Max output:** a long generation capped at min(declared max output, 2048)
-  tokens; reaching the cap or a plausible length passes, stopping below a
-  quarter of it is flagged.
+- **Max output:** a long generation capped at min(declared max output,
+  `--max-output-probe-tokens`) tokens, 2048 by default. An answer cut off with
+  `finish_reason: length` reaches the cap only when at least 80 % of the
+  requested tokens came back: the reported completion tokens, else an estimate
+  from the text, with a reasoning model's reasoning tokens counted as delivered.
+  Cut off below that, the relay clamps the output, which fails. A plausible
+  length passes, stopping below a quarter of it is flagged. When the reported
+  completion tokens and the text estimate of a non-reasoning model are more
+  than 3x apart, the evidence notes it (billing judges the count).
 
 An observation without a claim to verify — no tool call or JSON object when the
 feature is not claimed, or any strict-schema result when the profile says the
 model lacks strict schemas — is noted but not counted, so a model is never
 marked down for what nobody claimed.
 
+A probe the relay answers with a 4xx (other than 401, 403, 408 and 429)
+although the profile claims the feature is a refused capability: it scores like
+an undelivered one, and its summary quotes the status code and error message. It
+counts only if the relay answers the same request without the feature parameter
+(one extra request, sent only while no other probe has come back) and a
+configured baseline on the same protocol does not reject the probe too;
+otherwise it is no usable response, or a limit of the model. A 4xx for a
+feature nobody claims is noted but not counted.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `capability.tools` | A tool call came back for an explicit tool-use request. | Pass | 100 pts |
 |  | Tool calling is claimed but no tool call came back. | Fail · Medium | 0 pts |
 |  | No tool call came back, and tool calling is not claimed. | Info | Not counted |
+|  | Tool calling is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.tools.encoding` | Tool arguments arrived as an object, not the JSON string OpenAI returns. | Warning · Low | Not counted |
 | `capability.json_mode` | JSON mode returned a parseable object with the requested value. | Pass | 100 pts |
 |  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | Not counted |
 |  | No parseable JSON object came back; JSON mode is not claimed. | Info | Not counted |
 |  | JSON mode is claimed but no valid object with the value came back. | Fail · Medium | 0 pts |
+|  | JSON mode is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.json_schema` | The strict schema is claimed and the response conformed. | Pass | 100 pts |
 |  | The strict schema was not enforced, consistent with the claim. | Info | Not counted |
 |  | The response conformed although the claimed model lacks strict schemas. | Info | Not counted |
 |  | The strict schema is claimed but the response did not conform. | Warning · Low | 40 pts |
+|  | The strict schema is claimed but the relay rejected the probe with a 4xx. | Fail · Medium | 0 pts |
+|  | Rejected with a 4xx, and the baseline rejects it too: a limit of the model. | Info | Not counted |
+|  | Rejected with a 4xx; the capability is not claimed. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
+|  | The output was cut off with finish_reason length well below the requested limit: the relay limits output tokens. | Fail · Medium | 0 pts |
 |  | Output stopped before the cap at a plausible length. | Pass | 90 pts |
 |  | Output stopped below a quarter of the requested length. | Warning · Low | 70 pts |
 |  | Output stopped below a quarter of the request despite a large claimed maximum. | Warning · Low | 60 pts |
@@ -608,17 +739,40 @@ ceiling. One image is suggestive, not proof.
 answer and replays it as one or a few chunks, losing the latency benefit.
 
 **How it works.** One streamed request (`max_tokens` 256,
-`stream_options.include_usage`) with chunk arrival times recorded. Three
-buffering signals: **few chunks** (two or fewer) and **late first token** (TTFT
-above 90% of the total duration), both judged only once at least 220 characters
-came back, and **uniform gaps** (four or more chunks whose gaps are almost
-equal, CV < 0.1, and under 2 ms: dumped together). TTFT is the first visible
-content token, so for a reasoning model (claimed by the knowledge base, or
-reporting reasoning tokens in its usage), which thinks before answering, a late
-first token is only noted and not counted as buffering; its few-chunks and
-uniform-gaps signals still count. A stream without a usage chunk is flagged
+`stream_options.include_usage`) with chunk arrival times recorded, then the same
+prompt once without streaming (same `max_tokens`, temperature 0). Four buffering
+signals, all judged only once at least 220 characters came back:
+
+- **few chunks**: two or fewer;
+- **late first token**: TTFT above 90% of the stream's duration, or above 75%
+  when the next signal fires too;
+- **first token after the whole answer's time** (`streaming.ttft_vs_total`): the
+  streamed TTFT is at least 80% of the time the request without streaming took,
+  so the answer was complete before the first chunk left. This catches a
+  buffered answer replayed chunk by chunk with a "typing" delay, which shows
+  many chunks and spread-out gaps. Not compared when either call failed or the
+  answer without streaming took under a second (two calls' timings are then
+  mostly network noise);
+- **burst** (`streaming.uniform_gaps`, the id stored reports carry): four or more
+  chunks with at least 80% of the gaps between them under 2 ms, dumped together.
+
+TTFT is the first visible content token, so for a reasoning model (the profile
+says so, the client has learned it, or a response reports reasoning tokens),
+which thinks before answering, a late first token is only noted and not counted
+as buffering, and the comparison without streaming is skipped; its few-chunks
+and burst signals still count. A stream without a usage chunk is flagged
 separately. A stream that succeeds but delivers no content is inconclusive and
-not scored.
+not scored. In compare mode the baseline's streamed TTFT and its time without
+streaming for the same prompt are recorded in the evidence (`baseline`), not
+scored.
+A failed stream request is repeated once. If it fails again with a 4xx that
+names streaming, or with any other 4xx while the same prompt without streaming
+succeeds, the relay does not stream for this model (`streaming.unsupported`,
+score 0). Any other failure (a 5xx, a timeout, a rate limit, or a 4xx that the
+non-streamed prompt gets too) is a transport failure: `streaming.failed`,
+inconclusive and not scored. Both are transport advisories (see
+[Risk verdict](#risk-verdict)): they lower this dimension but never the
+substitution risk.
 When the model streams its reasoning (reasoning deltas, thinking blocks, Responses reasoning events), the first token of either kind is timed instead: a genuine stream starts reasoning early, so a stream whose reasoning and answer both arrive at the very end is buffering even for a reasoning model.
 
 | Check | Outcome | Status | Effect |
@@ -627,13 +781,18 @@ When the model streams its reasoning (reasoning deltas, thinking blocks, Respons
 | `streaming.few_chunks` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.late_ttft` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.reasoning_ttft` | Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering. | Info | No deduction |
+| `streaming.ttft_vs_total` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.uniform_gaps` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.no_usage` | No usage chunk in the stream: deducts 15 points when nothing is buffered. | Warning · Low | up to −15 pts |
-| `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | Not counted |
-| `streaming.failed` | The streaming request failed. | Fail · High | cap 0 |
+| `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | No deduction |
+| `streaming.unsupported` | The relay does not stream for this model. | Fail · Medium | cap 0 |
+| `streaming.failed` | The streaming request failed twice (5xx, timeout or another transport failure); not scored. | Inconclusive · Low | No deduction |
 
 So: genuine 100 · usage missing 85 · one buffering signal 60 · two or more 40 ·
-failed 0 · no content: no score.
+not supported 0 · failed twice or no content: no score. "No deduction" in the
+`streaming.no_content` and `streaming.failed` rows is the wording of the
+deduction scale; the detector leaves its result unscored in both cases, so it
+does not count toward the dimension.
 
 **Caveats.** Short outputs, a fast small model or network jitter can resemble a
 burst. An upstream that cannot stream forces the relay to buffer legitimately;
@@ -648,22 +807,44 @@ known-streaming baseline.
 tokens), `billing.missing-usage` (no, partial or inconsistent `usage`) and, as
 a corroborating signal, `prompt.injected-system-prompt`.
 
-**How it works.** One deterministic call (a known paragraph to summarize,
-`temperature=0`). The prompt and the visible answer are counted independently
-with a language-aware heuristic (about ±25%), for every model family: ekte uses
-no tokenizer library and downloads none. Reported prompt tokens above 2.5× the
-estimate and more than 50 tokens over it count as inflation. Completion tokens
-of a reasoning model legitimately include hidden reasoning tokens and are not
-flagged; otherwise completion tokens above 3× the estimate and more than 80
-tokens over it are a soft warning, never a failure, because the estimate of a
-short answer is noisy. `total` must equal `prompt + completion` (±2), and a
-total without the split is flagged. An undercount (below half the estimate) is
-informational (not buyer-harmful).
+**How it works.** Three deterministic calls: the same summarization task at
+three prompt sizes (about 150, 600 and 2,400 tokens of fixed paragraphs,
+`temperature=0`). The prompts and the visible answers are counted
+independently with a language-aware heuristic (about ±25%; it under-counts real
+tokenizers by 12 to 15%), for every model family: ekte uses no tokenizer library
+and downloads none. The reported prompt tokens are fitted against the estimate:
+the slope is the proportional factor, the intercept a fixed overhead. A slope up
+to 1.35 passes (the heuristic's under-count plus a dense tokenizer), 1.35 to 1.6
+is a warning and above 1.6 a failure. A fixed overhead with a normal slope is
+not inflation: below 30 tokens it is informational, from 30 tokens a low warning
+that points to `injected_prompt`. In compare mode, with a baseline of the same
+model on the same protocol, the same three prompts go to the baseline and
+`prompt_tokens` are compared directly: more than 3% or 5 tokens above the
+baseline (whichever is larger) is a failure, and this replaces the slope
+verdict. If only one of the three calls returns usable counts, the
+single-request check stands in, with a note that the slope could not be
+measured: prompt tokens above 2.5× the estimate and more than 50 tokens over it
+count as inflation. Completion tokens of a reasoning model (per the knowledge
+base, or because the response reports reasoning tokens) legitimately include
+hidden reasoning tokens and are not flagged; otherwise completion tokens above
+3× the estimate and more than 80 tokens per answer over it are a soft warning,
+never a failure, because the estimate of a short answer is noisy. `total` must
+equal `prompt + completion` (±2), and a total without the split is flagged. An
+undercount (below half the estimate) is informational (not buyer-harmful).
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `billing.request-failed` | No usable response to judge by. | Inconclusive · Low | No deduction |
 | `billing.missing-usage` | The response carried no token usage at all. | Warning · Medium | cap 75 |
+| `billing.prompt-vs-baseline` | Reported prompt tokens match the baseline's for the same prompts. | Pass | No deduction |
+| `billing.prompt-vs-baseline` | Reported prompt tokens exceed the baseline's for the same prompts. | Fail · High | cap 55 |
+| `billing.prompt-vs-baseline` | Reported prompt tokens are below the baseline's (not buyer-harmful). | Info | No deduction |
+| `billing.prompt-slope` | Reported prompt tokens grow in proportion to the estimate (slope up to 1.35). | Pass | No deduction |
+| `billing.prompt-slope` | Reported prompt tokens grow 1.35 to 1.6 times as fast as the estimate. | Warning · Medium | cap 70 |
+| `billing.prompt-slope` | Reported prompt tokens grow more than 1.6 times as fast as the estimate. | Fail · High | cap 55 |
+| `billing.prompt-slope` | Only one prompt size returned usable counts; the slope could not be measured. | Info | No deduction |
+| `billing.fixed-overhead` | A small fixed prompt-token overhead (under 30 tokens), as chat templates add. | Info | No deduction |
+| `billing.fixed-overhead` | A fixed prompt-token overhead of 30 tokens or more on every request. | Warning · Low | cap 90 |
 | `billing.usage-inflation` | Reported prompt tokens far exceed the independent estimate. | Fail · High | cap 55 |
 | `billing.usage-inflation-completion` | Reported completion tokens are far above a heuristic estimate. | Warning · Medium | cap 70 |
 | `billing.reasoning-tokens` | Completion tokens exceed the visible text, as expected for a reasoning model. | Info | No deduction |
@@ -676,10 +857,16 @@ informational (not buyer-harmful).
 A failed probe request leaves the detector unscored.
 
 **Caveats.** Chat templates and special tokens add a small fixed offset, so an
-exact match is not expected. If the served model differs from the claimed one,
+exact match is not expected. Without a baseline the tolerance lets moderate
+inflation pass: a proportional inflation that keeps the slope at or below
+1.35 (about a fifth above the real count, given the heuristic's under-count)
+is not flagged, nor, in the single-request fallback, prompt tokens below 2.5×
+the estimate. Compare mode with a baseline of the same model catches more
+than 3%. If the served model differs from the claimed one,
 the "right" tokenizer is unknown. Hidden reasoning tokens cannot be counted
-from outside. One probe measures one size; a size-scaling multiplier needs
-repeated runs or compare mode.
+from outside. Three sizes up to about 2,400 tokens separate a proportional
+factor from a fixed overhead; a multiplier that only sets in on much larger
+prompts stays unseen.
 
 ---
 
@@ -692,7 +879,7 @@ crawls under modest parallelism.
 default 8) at bounded concurrency (`--concurrency`, default 3). The success rate
 is computed over the requests genuinely attempted: HTTP 429 is honest
 throttling and is bucketed separately. The score deducts the failed share; a p95
-latency above 30 s keeps 85% of what is left. One failed request (so one
+latency above five times the burst's median and above 5 s keeps 85% of what is left. One failed request (so one
 transient 5xx of the default 8), or at most 10% of a larger burst, is a
 Warning as long as at least 80% succeeded; more is a Fail. The detector status
 is the worst of its findings. These findings are transport advisories: they
@@ -705,7 +892,7 @@ never raise the risk verdict.
 |  | More requests than that failed; deducts the failed share. | Fail · Medium | up to −100 pts |
 |  | Every request was rate-limited (HTTP 429): not scored. | Inconclusive · Low | No deduction |
 |  | No request reached the relay (failed in ekte or on the network path): not scored. | Inconclusive · Low | No deduction |
-| `reliability.latency` | p95 latency above 30 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
+| `reliability.latency` | p95 latency above five times the burst's median and above 5 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
 | `reliability.rate_limited` | Part of the burst was rate-limited: honest throttling, not counted. | Info | No deduction |
 | `reliability.skipped` | The reliability probe was disabled. | Info | No deduction |
 
@@ -720,11 +907,115 @@ idle, leaked upstream request ids) are on the roadmap.
 
 ---
 
+## `integrity` — Response integrity
+
+**Catches.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` and evidence toward `privacy.prompt-logging-leakage` (prefix caching): whether the response is the model's own, unaltered and freshly generated. On the embedding and rerank surfaces the dimension holds the determinism check. It is not a core dimension: its findings set the risk through their severity alone.
+
+### `injected_prompt` — Injected system-prompt detection
+
+**How it works.** Two independent tells. (1) A **fixed input-token overhead**:
+two user messages of different sizes without a system message; reported
+`prompt_tokens` minus the independent estimate must stay small. An overhead of
+at least 30 tokens that stays constant (within 16) across both sizes reads as a
+hidden prepended prompt rather than proportional inflation. (2) A **leak probe**
+asking the model to repeat any preceding instructions. The answer is a leak only
+if it contains instruction-like content: a quoted or block-quoted passage, or at
+least two second-person imperative sentences ("You are …", "Always …", "Do not
+…") outside a denial. `NONE`, or a denial in the first two sentences ("there are
+no system instructions"), is no leak; anything else, such as a refusal, is
+unclear and also counts as no leak. The evidence keeps the kind of answer
+(`leak_answer_kind`) and its first 300 characters. A leak alone is informational
+and not counted, because models confabulate system prompts. Only both together
+reach MEDIUM.
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `injected_prompt.verdict` (Injected system prompt) | Input-token overhead is small and no hidden instructions leaked. | Pass | 100 pts |
+|  | Instruction-like text leaked when asked (not counted: models confabulate). | Info | Not counted |
+|  | A large fixed input-token overhead, constant across message sizes. | Warning · Low | 75 pts |
+|  | A fixed input-token overhead and a leaked preamble together. | Warning · Medium | 55 pts |
+|  | No usable prompt token counts to measure the overhead. | Inconclusive | Not counted |
+
+### `integrity` — Response integrity / tampering
+
+**How it works.** Known-answer canaries carrying the values a tampering proxy
+targets must come back verbatim: two synthetic ones (an install URL and a pinned
+`pip install` package), a well-known installer (`curl -fsSL https://sh.rustup.rs | sh`),
+a popular pinned package (`pip install requests==2.32.3`), a
+`git clone https://github.com/pallets/flask.git` line and a Bitcoin address of valid format derived from the run's random value, so it is no fixed value a relay could
+allow-list and differs in every run (a re-score reuses the recorded value). The `git clone` canary is
+sent streamed and, when the profile claims tool calling, an installer URL is sent
+as a tool-call argument (the model must call a tool with the exact URL), so
+streamed text and tool arguments are checked too. The canaries run concurrently,
+at most three at a time, and the detector sends at most eight requests to the
+target. An exact echo passes, a non-echo (paraphrase, refusal) is inconclusive,
+and only a structure-preserving **value substitution** counts as tampering; a
+changed wallet address counts only when it is itself a valid address, so a
+miscopied character is not a substitution.
+In compare mode a substitution the trusted baseline does not make is CRITICAL.
+Only a baseline that returns the canary intact corroborates: a baseline that
+errors or returns nothing usable confirms nothing (evidence `baseline_unavailable`).
+Without a usable baseline the substituted canary is sent once more, on the same
+channel: substituted again (with the same or another value) is HIGH, which makes
+the risk at least medium; intact on the repeat, or no usable repeat, stays MEDIUM
+(evidence `repeat_intact`).
+An answer cut off at the output limit is inconclusive, not a substitution.
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `integrity.verdict` (Response integrity) | Known-answer canaries came back intact. | Pass | 100 pts |
+|  | A canary value was substituted once, confirmed neither by a baseline nor by a repeat. | Fail · Medium | 45 pts |
+|  | A canary value was substituted again when the same canary was sent a second time. | Fail · High | 20 pts |
+|  | A canary value was substituted while the trusted baseline kept it intact. | Fail · Critical | 10 pts |
+|  | No canary was echoed verbatim, so tampering could not be assessed. | Inconclusive | Not counted |
+
+### `determinism` — Determinism & cache-correctness
+
+**How it works.** Four identical creative prompts at `temperature=1.0` (no
+seed): a genuine model varies; byte-identical output across all samples points
+to a response cache that ignores sampling. At least three of the four samples
+must be usable (and all usable ones identical) for the caching call; with fewer
+the check is inconclusive. The verdict is suppressed for
+reasoning models, which legitimately ignore temperature. Two identical factual
+prompts at `temperature=0` are informational only.
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `determinism.temp1_variability` | Repeated samples at temperature=1.0 differed, as genuine sampling does. | Pass | 100 pts |
+|  | Samples were identical, but reasoning models legitimately ignore temperature. | Info | 100 pts |
+|  | All usable samples (at least 3) at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
+|  | Fewer than 3 usable samples at temperature=1.0 to judge by. | Inconclusive · Low | Not counted |
+| `determinism.temp0_stability` | Identical answers at temperature=0 (expected); informational, not scored. | Info | Not counted |
+|  | Answers differed at temperature=0; informational, not scored. | Info | Not counted |
+|  | No usable response to judge by. | Inconclusive · Low | Not counted |
+
+### `prompt_cache` — Prompt prefix-cache (timing)
+
+**How it works.** A unique ~1,200-token prefix is streamed twice (cold, then
+warm) and a different control prefix once. When the warm TTFT is below half of
+both the cold and the control TTFT, and at least 150 ms faster than cold,
+prefix caching is active. Always informational: prefix caching is a legitimate
+optimization.
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `prompt_cache.verdict` (Prompt-prefix caching) | A repeated prompt prefix came back much faster: prefix caching is active. | Info | Not counted |
+|  | A repeated prompt prefix was not distinctly faster. | Info | Not counted |
+|  | One or more timing probes returned no usable timing. | Inconclusive | Not counted |
+
+**Caveats.** Models invent fake "system prompts" when asked to leak, so a leak
+alone stays LOW. Dialect translation reshapes tool-call JSON; only a *value*
+substitution counts. Conditional tampering (only for some keywords, clients or
+after a warm-up) can evade a finite set of probes. Black-box logging is
+**unprovable** from the client, and ekte cannot show *cross-user* cache sharing
+from one key: the absence of a timing signal does not prove prompts are not
+logged.
+
+---
+
 ## `security` — Transport security
 
-**Catches.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-evidence toward `privacy.prompt-logging-leakage` (prefix caching), and basic
-transport and secret hygiene.
+**Catches.** Basic transport and secret hygiene: plain HTTP, an API key echoed in a response and response headers that reveal the upstream.
 
 ### `security` — Transport & secret-handling signals
 
@@ -749,65 +1040,6 @@ transport advisory and never raises the risk verdict.
 |  | Response headers reveal the upstream or proxy (informational). | Info · Low | No deduction |
 |  | No response headers to inspect. | Inconclusive | No deduction |
 | `security.note` | Prompt logging and shared upstream keys are not provable from outside. | Info | No deduction |
-
-### `injected_prompt` — Injected system-prompt detection
-
-**How it works.** Two independent tells. (1) A **fixed input-token overhead**:
-two user messages of different sizes without a system message; reported
-`prompt_tokens` minus the independent estimate must stay small. An overhead of
-at least 30 tokens that stays constant (within 16) across both sizes reads as a
-hidden prepended prompt rather than proportional inflation. (2) A **leak
-probe** asking the model to repeat any preceding instructions. Only both
-together reach MEDIUM.
-
-| Check | Outcome | Status | Effect |
-|---|---|---|---|
-| `injected_prompt.verdict` (Injected system prompt) | Input-token overhead is small and no hidden instructions leaked. | Pass | 100 pts |
-|  | Instruction-like text leaked when asked (weak on its own). | Info · Low | 85 pts |
-|  | A large fixed input-token overhead, constant across message sizes. | Warning · Low | 75 pts |
-|  | A fixed input-token overhead and a leaked preamble together. | Warning · Medium | 55 pts |
-|  | No usable prompt token counts to measure the overhead. | Inconclusive | Not counted |
-
-### `integrity` — Response integrity / tampering
-
-**How it works.** Known-answer canaries whose values are sensitive — an install
-URL and a pinned `pip install` package — must come back verbatim. An exact echo
-passes, a non-echo (paraphrase, refusal) is inconclusive, and only a
-structure-preserving **value substitution** counts as tampering. In compare mode
-a substitution the trusted baseline does not make is CRITICAL.
-Only a baseline that returns the canary intact corroborates: a baseline that
-errors or returns nothing usable confirms nothing, so the substitution stays
-MEDIUM (evidence `baseline_unavailable`).
-An answer cut off at the output limit is inconclusive, not a substitution.
-
-| Check | Outcome | Status | Effect |
-|---|---|---|---|
-| `integrity.verdict` (Response integrity) | Known-answer canaries came back intact. | Pass | 100 pts |
-|  | A canary value was substituted (not yet confirmed by a baseline). | Fail · Medium | 45 pts |
-|  | A canary value was substituted while the trusted baseline kept it intact. | Fail · Critical | 10 pts |
-|  | No canary was echoed verbatim, so tampering could not be assessed. | Inconclusive | Not counted |
-
-### `prompt_cache` — Prompt prefix-cache (timing)
-
-**How it works.** A unique ~1,200-token prefix is streamed twice (cold, then
-warm) and a different control prefix once. When the warm TTFT is below half of
-both the cold and the control TTFT, and at least 150 ms faster than cold,
-prefix caching is active. Always informational: prefix caching is a legitimate
-optimization.
-
-| Check | Outcome | Status | Effect |
-|---|---|---|---|
-| `prompt_cache.verdict` (Prompt-prefix caching) | A repeated prompt prefix came back much faster: prefix caching is active. | Info | Not counted |
-|  | A repeated prompt prefix was not distinctly faster. | Info | Not counted |
-|  | One or more timing probes returned no usable timing. | Inconclusive | Not counted |
-
-**Caveats.** Models invent fake "system prompts" when asked to leak, so a leak
-alone stays LOW. Dialect translation reshapes tool-call JSON; only a *value*
-substitution counts. Conditional tampering (only for some keywords, clients or
-after a warm-up) can evade a finite set of probes. Black-box logging is
-**unprovable** from the client, and ekte cannot show *cross-user* cache sharing
-from one key: the absence of a timing signal does not prove prompts are not
-logged.
 
 ---
 
@@ -888,6 +1120,9 @@ that moment; repeat a poor consistency result at another time. The
 knowledge-base ranges are deliberately wide medians of native APIs, and a
 slower target is noted, never scored. All findings are at most LOW severity, so
 this dimension moves the score, never the risk verdict.
+The reference check (`performance.reference`) runs only in compare mode or
+for a profile with a `performance.decode_tps` range, which few packaged
+profiles have; for every other model it is not shown.
 
 ---
 
@@ -896,16 +1131,24 @@ this dimension moves the score, never the risk verdict.
 An audit's **surface** (`chat` by default, or `embedding`) selects the
 detectors; the suite still sets the depth. An embedding audit sends only
 `POST /embeddings` requests and reuses the chat dimensions and the shared
-0–100 score and A–F grade, with per-surface weights. A dimension mismatch
-(MODEL_IDENTITY, HIGH) makes the risk HIGH, as a swapped model does on chat.
+0–100 score and A–F grade, with its own weights (`SURFACE_WEIGHTS` in
+`ekte/scoring.py`). A dimension mismatch (MODEL_IDENTITY, HIGH) makes the risk
+HIGH, as a swapped model does on chat.
 
-| Check | Id | Dimension | What it tests |
+| Dimension | Id | Weight | Role |
+|---|---|---|---|
+| Model identity | `model_identity` | 40 | core |
+| Performance | `performance` | 20 |  |
+| Capability claims | `capability` | 15 |  |
+| Response integrity | `integrity` | 15 |  |
+| Connectivity | `connectivity` | 10 |  |
+
+| Detector | Id | Dimension | What it tests |
 |---|---|---|---|
 | Connectivity | `embed.connectivity` | Connectivity | the endpoint returns well-formed vectors |
-| Vector dimension | `embed.dimension` | Model identity | returned length vs the claimed model's native dimension (KB, or `claimed_dimensions`) |
-| Echoed model | `embed.model_field` | Model identity | the response's `model` field names the claimed model |
+| Model identity | `embed.identity` | Model identity | `embed.dimension`: the returned length vs the claimed model's native dimension (KB, or `claimed_dimensions`); `embed.model_field`: the response's `model` field names the claimed model |
 | Vector drift | `embed.drift` | Model identity | the pinned probe input's vector vs the previous saved run |
-| Determinism | `embed.determinism` | Concurrency reliability | the same input twice gives cosine ≥ 0.9999 |
+| Determinism | `embed.determinism` | Response integrity | the same input twice gives cosine ≥ 0.9999 |
 | Distinctness | `embed.distinctness` | Capability claims | unrelated inputs give cosine below 0.98 |
 | Performance probe | `performance.embed` | Performance | latency, cold start, throughput, batch scaling |
 
@@ -942,23 +1185,110 @@ load stability. **Document-count scaling** compares the per-document latency
 of 32 documents with that of 4: at 0.6x or more the documents are split or
 serialized (linear, WARN LOW).
 
+**Scoring scales** of the embedding detectors (`SCALE` in `ekte/detectors/embed_*.py`). Each detector scores the mean of its counted checks.
+
+### `embed.connectivity` — Embedding endpoint connectivity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.connectivity` | The embeddings endpoint returned vectors. | Pass | 100 pts |
+|  | The embeddings endpoint answered without one vector per input. | Fail · High | 0 pts |
+|  | The embeddings request failed. | Fail · High | 0 pts |
+
+### `embed.identity` — Embedding model identity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.dimension` | The vector length matches the claimed model. | Pass | 100 pts |
+|  | The vector length differs from the claimed model's (another model is served). | Fail · High | 0 pts |
+|  | The claimed model's vector length is unknown; the observed length is recorded. | Info | Not counted |
+|  | No vector was returned to measure. | Inconclusive | Not counted |
+| `embed.model_field` | The relay echoes the requested model. | Pass | 100 pts |
+|  | The relay echoes a different model than the one requested. | Warning · Medium | 50 pts |
+|  | The relay echoes a different model id that ekte cannot place: recorded, not judged. | Info | Not counted |
+|  | The relay echoes no model field. | Info | Not counted |
+
+### `embed.drift` — Embedding vector drift
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.drift` | The pinned input's vector matches the previous run. | Pass | 100 pts |
+|  | The pinned input's vector moved since the previous run (cosine 0.95 to 0.995). | Warning · Medium | 60 pts |
+|  | The pinned input's vector changed since the previous run (cosine below 0.95, or another length): the model was swapped. | Fail · High | 0 pts |
+|  | No previous run to compare with; this run's vector is the baseline. | Info | Not counted |
+|  | No vector was returned for the pinned input. | Inconclusive | Not counted |
+
+### `embed.determinism` — Embedding determinism
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.determinism` | The same input twice gives the same vector. | Pass | 100 pts |
+|  | The same input twice gives different vectors. | Warning · Medium | 50 pts |
+|  | No vectors were returned to compare. | Inconclusive | Not counted |
+
+### `embed.distinctness` — Embedding distinctness
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `embed.distinctness` | Unrelated inputs give clearly different vectors. | Pass | 100 pts |
+|  | Unrelated inputs give near-identical vectors (a degenerate or stub backend). | Warning · High | 30 pts |
+|  | No vectors were returned to compare. | Inconclusive | Not counted |
+
+### `performance.embed` — Embedding performance probe
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `performance.summary` | Embedding latency and throughput were measured. | Info | Not counted |
+|  | None of the probe requests succeeded. | Inconclusive | Not counted |
+| `performance.latency_consistency` | Latency is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Latency is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Latency varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Latency is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent latency is. | Info | Not counted |
+| `performance.throughput_consistency` | Throughput is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Throughput is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Throughput varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Throughput is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent throughput is. | Info | Not counted |
+| `performance.errors` | At most 2% of the probe requests failed. | Pass | 100 pts |
+|  | Up to 10% of the probe requests failed or timed out. | Warning · Low | 80 pts |
+|  | Many probe requests failed or timed out. | Fail · Low | 50 pts |
+| `performance.load_stability` | Latency holds up under concurrent load (at most 1.5x). | Pass | 100 pts |
+|  | Latency rises under concurrent load (up to 3x). | Warning · Low | 80 pts |
+|  | Latency degrades sharply under concurrent load (above 3x). | Fail · Low | 55 pts |
+| `performance.batch_scaling` | A batch of 16 inputs costs far less per input than single requests. | Pass | 100 pts |
+|  | A batch of 16 inputs costs about as much per input as single requests (consistent with a relay that splits or serialises batches). | Warning · Low | 60 pts |
+|  | Too few batch samples to judge how latency scales with batch size. | Info | Not counted |
+| `performance.cache_hit` | Unique probe inputs came back with repeated vectors (left out of the statistics). | Warning · Low | 60 pts |
+|  | The baseline returned repeated vectors for unique probe inputs (not scored). | Info | Not counted |
+| `performance.relay_overhead` | Latency compared with the trusted baseline (informational). | Info | Not counted |
+| `performance.skipped` | The performance probe was disabled. | Info | Not counted |
+
 ---
 
 ## Rerank surface
 
 A rerank audit (`surface` `rerank`) sends only `POST /rerank` requests and is
-scored on the shared 0–100 scale and A–F grade with its own weights: model
-identity 30, capability claims 30, performance 20, concurrency reliability 10,
-connectivity 10. A failed known-answer ranking (capability claims, HIGH) or a
-swapped model (model identity, HIGH) makes the risk HIGH.
+scored on the shared 0–100 scale and A–F grade with its own weights
+(`SURFACE_WEIGHTS` in `ekte/scoring.py`). A failed known-answer ranking
+(capability claims, HIGH) or a swapped model (model identity, HIGH) makes the
+risk HIGH.
 
-| Check | Id | Dimension | What it tests |
+| Dimension | Id | Weight | Role |
+|---|---|---|---|
+| Model identity | `model_identity` | 30 | core |
+| Capability claims | `capability` | 30 | core |
+| Performance | `performance` | 20 |  |
+| Response integrity | `integrity` | 10 |  |
+| Connectivity | `connectivity` | 10 |  |
+
+| Detector | Id | Dimension | What it tests |
 |---|---|---|---|
 | Connectivity | `rerank.connectivity` | Connectivity | the endpoint returns a well-formed ranking |
 | Known answer | `rerank.known_answer` | Capability claims | a probe with one obviously relevant document ranks it first |
-| Echoed model | `rerank.identity` | Model identity | the response's `model` field names the claimed model |
+| Echoed model | `rerank.identity` | Model identity | `rerank.model_field`: the response's `model` field names the claimed model |
 | Ranking drift | `rerank.drift` | Model identity | the pinned probe's ranking and scores vs the previous saved run |
-| Determinism | `rerank.determinism` | Concurrency reliability | the same query twice gives the same ranking and scores |
+| Determinism | `rerank.determinism` | Response integrity | the same query twice gives the same ranking and scores |
 | Performance probe | `performance.rerank` | Performance | latency, cold start, documents/s, document-count scaling |
 
 **Ranking drift.** Every run stores the ranking and the rounded scores of one
@@ -975,6 +1305,82 @@ detection, and a response that leaves documents unscored counts as a failed
 request. There is no knowledge-base speed reference; raw speed only counts
 against a baseline.
 
+**Scoring scales** of the rerank detectors (`SCALE` in `ekte/detectors/rerank_*.py`). Each detector scores the mean of its counted checks.
+
+### `rerank.connectivity` — Rerank endpoint connectivity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.connectivity` | The rerank endpoint returned a ranking. | Pass | 100 pts |
+|  | The rerank endpoint answered without one score per document. | Fail · High | 0 pts |
+|  | The rerank request failed. | Fail · High | 0 pts |
+
+### `rerank.identity` — Rerank model identity
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.model_field` | The relay echoes the requested model. | Pass | 100 pts |
+|  | The relay echoes a different model than the one requested. | Warning · Medium | 50 pts |
+|  | The relay echoes a different model id that ekte cannot place: recorded, not judged. | Info | Not counted |
+|  | The relay echoes no model field. | Info | Not counted |
+|  | The rerank request failed; there is no model field to check. | Inconclusive | Not counted |
+
+### `rerank.drift` — Rerank drift
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.drift` | The pinned probe's ranking and scores match the previous run. | Pass | 100 pts |
+|  | The pinned probe's scores moved since the previous run (by 0.01 to 0.1 on the score scale), with the same ranking. | Warning · Medium | 60 pts |
+|  | The pinned probe's ranking changed since the previous run, or its scores moved by more than 0.1 on the score scale: the model was swapped. | Fail · High | 0 pts |
+|  | No previous run to compare with; this run's ranking is the baseline. | Info | Not counted |
+|  | No ranking was returned for the pinned probe. | Inconclusive | Not counted |
+
+### `rerank.determinism` — Rerank determinism
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.determinism` | The same query twice gives the same ranking and scores. | Pass | 100 pts |
+|  | The same query twice gives a different ranking or scores. | Warning · Medium | 50 pts |
+|  | No rankings were returned to compare. | Inconclusive | Not counted |
+
+### `rerank.known_answer` — Rerank known-answer probe
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `rerank.known_answer` | The obviously relevant document is ranked first. | Pass | 100 pts |
+|  | Another document is ranked above the obviously relevant one. | Fail · High | 0 pts |
+|  | No ranking was returned to check. | Inconclusive | Not counted |
+
+### `performance.rerank` — Rerank performance probe
+
+| Check | Outcome | Status | Effect |
+|---|---|---|---|
+| `performance.summary` | Rerank latency and throughput were measured. | Info | Not counted |
+|  | None of the probe requests succeeded. | Inconclusive | Not counted |
+| `performance.latency_consistency` | Latency is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Latency is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Latency varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Latency is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent latency is. | Info | Not counted |
+| `performance.throughput_consistency` | Throughput is steady (tail ratio at most 1.3). | Pass | 100 pts |
+|  | Throughput is stable (tail ratio at most 1.75). | Pass | 85 pts |
+|  | Throughput varies noticeably (tail ratio at most 2.5). | Warning · Low | 65 pts |
+|  | Throughput is erratic (tail ratio above 2.5). | Fail · Low | 40 pts |
+|  | Too few samples to judge how consistent throughput is. | Info | Not counted |
+| `performance.errors` | At most 2% of the probe requests failed. | Pass | 100 pts |
+|  | Up to 10% of the probe requests failed or timed out. | Warning · Low | 80 pts |
+|  | Many probe requests failed or timed out. | Fail · Low | 50 pts |
+| `performance.load_stability` | Latency holds up under concurrent load (at most 1.5x). | Pass | 100 pts |
+|  | Latency rises under concurrent load (up to 3x). | Warning · Low | 80 pts |
+|  | Latency degrades sharply under concurrent load (above 3x). | Fail · Low | 55 pts |
+| `performance.document_scaling` | A query over 32 documents costs far less per document than one over 4. | Pass | 100 pts |
+|  | A query over 32 documents costs about as much per document as one over 4 (consistent with a relay that splits or serialises the documents). | Warning · Low | 60 pts |
+|  | Too few samples to judge how latency scales with the number of documents. | Info | Not counted |
+| `performance.cache_hit` | Unique probe queries came back with repeated scores (left out of the statistics). | Warning · Low | 60 pts |
+|  | The baseline returned repeated scores for unique probe queries (not scored). | Info | Not counted |
+| `performance.relay_overhead` | Latency compared with the trusted baseline (informational). | Info | Not counted |
+| `performance.skipped` | The performance probe was disabled. | Info | Not counted |
+
 ---
 
 ## Trick → detector mapping
@@ -990,7 +1396,7 @@ The 16 relay tricks from the research map onto ekte as follows.
 | 5 | `context.window-truncation` | high | `context_window` | edge-needle ladder + binary search; measured vs declared |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | depths 0.1/0.5/0.9 at a mid size |
 | 7 | `stream.fake-streaming` | medium | `streaming` | chunk count, first-token timing, gap uniformity |
-| 8 | `billing.usage-inflation` | high | `billing` | independent heuristic token estimate of one known probe |
+| 8 | `billing.usage-inflation` | high | `billing` | slope of reported prompt tokens over three prompt sizes against a heuristic estimate; the baseline's exact counts in compare mode |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | usage presence, split and arithmetic; stream usage chunk |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | prefix caching by TTFT (informational); cross-user sharing and logging stay unprovable from one key |
 | 11 | `infra.shared-upstream-key` | high | — | roadmap (quota decreasing while idle, leaked upstream request ids) |
@@ -998,7 +1404,7 @@ The 16 relay tricks from the research map onto ekte as follows.
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | fixed input-token overhead (two sizes) + leak probe |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | success rate (429 separate), tail latency, load stability; longitudinal probing is roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | tools, JSON mode, strict schema, parameters; one probe each, not rates |
-| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer URL/package canaries; CRITICAL when a baseline corroborates |
+| 16 | `integrity.response-tampering` | critical | `integrity` | known-answer canaries (synthetic and well-known install URLs, pinned packages, a `git clone` line, a wallet address derived per endpoint) in plain, streamed and tool-argument output; MEDIUM for a single substitution that neither a baseline nor a repeat confirms, HIGH when a repeat substitutes again, CRITICAL when a baseline corroborates |
 
 ---
 
@@ -1023,10 +1429,19 @@ evidence.
 **Method.** Findings that depend on exact comparison use `temperature=0` and
 constrained prompts. Each finding carries its evidence (inputs, observed values,
 counts, timings), and every report records the profile, prompt languages and
-settings it ran with, so a result can be checked independently. A relay may be
+settings it ran with, so a result can be checked independently. Needles, canaries and cache prefixes are derived from a random value drawn
+once per run (`run_nonce` in the report and in the evidence file), so no two
+runs send the same probes: a test-aware relay cannot answer them from a table,
+and a response cache cannot replay an earlier run's answers to a monitor. One
+run stays consistent, a re-score reuses the recorded value, and
+`EKTE_RUN_NONCE` fixes it. Prompts whose wording is the measurement
+(fingerprints, the billing paragraph, the injected-prompt probes) stay fixed.
+A relay may be
 test-aware: re-run at other times, and prefer compare mode against a trusted
 baseline of the **exact claimed snapshot** — it is the strongest way to separate
-model behavior from relay behavior and the only way to reach high confidence.
+model behavior from relay behavior and the only way to reach high confidence
+(at least two core dimensions compared with the baseline; see
+[Verdict confidence](#verdict-confidence)).
 
 **Responsible disclosure.** Do **not** publicly accuse a vendor on the basis of
 an ekte report. Before acting, re-run with more samples and at other times,

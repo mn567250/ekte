@@ -162,6 +162,7 @@ async def test_compare_mode_alternates_endpoints(knowledge_base):
     assert [r.endpoint for r in rec.records if r.phase == "ping"] == ["target", "baseline"] * 3
     assert not any(r.phase == "probe_concurrent" for r in rec.records)  # no burst on standard
     assert any(f.id == "performance.relay_overhead" for f in result.findings)
+    assert result.baseline_compared is True
 
 
 async def test_max_tokens_rejection_switches_to_completion_tokens(knowledge_base):
@@ -326,7 +327,7 @@ async def test_compare_audit_on_standard_has_probe_and_comparison(patched_make_c
     det = next(d for d in report.detectors if d.id == "performance")
     assert det.dimension == Dimension.PERFORMANCE and det.score is not None
     dim = next(d for d in report.dimensions if d.dimension == Dimension.PERFORMANCE)
-    assert dim.score == det.score and dim.weight == 6.0
+    assert dim.score == det.score and dim.weight == 4.0
 
 
 async def test_non_streaming_probe(knowledge_base):

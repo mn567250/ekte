@@ -52,13 +52,20 @@ kontrollen sin.
 
 ### Dimensjonsscore og status
 
-ekte gir score i ti dimensjoner. En dimensjons score er **gjennomsnittet med lik
+ekte gir score i elleve dimensjoner. En dimensjons score er **gjennomsnittet med lik
 vekt av detektorenes scorer**: en detektor med mange kontroller veier ikke mer
-enn en med få, og en detektor uten numerisk score utelates. Statusen er den
+enn en med få, og en detektor uten numerisk score utelates. En detektor med et
+HIGH/CRITICAL-funn **begrenser** dimensjonen til sin egen score, slik at
+beståtte naboer ikke jevner ut en feil i gjennomsnittet: en
+manipulasjonsdetektor på 10 ved siden av tre rene integritetsdetektorer gir
+svarintegritet 10, ikke 77,5 (den laveste slike detektoren gjelder).
+Transportråd (se [Risikokonklusjon](#risikokonklusjon)) og
+tilkoblingsdimensjonen begrenser ingenting. Statusen er den
 verste statusen detektorene konkluderte med, bortsett fra at et
 HIGH/CRITICAL-funn tvinger fram **Ikke bestått** og et MEDIUM-funn hever
 **Bestått** til **Advarsel**, uansett score. Hver rapport registrerer dette per
-dimensjon (`DimensionScore.breakdown`: hver detektors score, om den ble telt, og
+dimensjon (`DimensionScore.breakdown`: hver detektors score, om den ble telt,
+begrensningen av scoren med detektoren og funnene som forårsaket den, og
 eventuell overstyring av status med funnene som forårsaket den) og viser det
 under **Dimension details** (Markdown/HTML/PDF) og i radene som kan foldes ut i
 **Kontroller per dimensjon** i nettgrensesnittet. En detektor som krasjer,
@@ -69,21 +76,46 @@ rapporteres med status **Feil** og avbryter aldri revisjonen.
 Den **samlede helsescoren** er det vektede gjennomsnittet over dimensjonene som
 ga en score (`DIMENSION_WEIGHTS` i `ekte/scoring.py`). En dimensjon som ikke
 kjørte (ikke i testsettet, eller ikke valgt i en `custom`-kjøring), faller ut,
-og de gjenværende vektene normaliseres på nytt. Karakteren er A (≥ 90),
-B (≥ 80), C (≥ 70), D (≥ 60) eller F.
+og de gjenværende vektene normaliseres på nytt. [Risikonivået](#risikokonklusjon)
+**begrenser** deretter scoren (`RISK_SCORE_CAPS` i `ekte/scoring.py`): høyst
+**49** ved `high` og **69** ved `medium`; `low`, `clean` og `inconclusive` lar
+den stå. Karakteren følger av den begrensede scoren og er A (≥ 90),
+B (≥ 80), C (≥ 70), D (≥ 60) eller F, så høy risiko gir alltid F og middels
+risiko høyst D, og `--fail-under` vurderer den begrensede scoren. Når
+begrensningen slår inn, sier sammendraget det, `verdict.uncapped_score` beholder
+det vektede gjennomsnittet og `verdict.score_cap` registrerer risikonivået,
+grensen og funnene som avgjorde risikoen; rapportene viser det ved scoren.
+
+En dimensjon som **ble kjørt, men ikke kunne vurderes** (detektorene
+uavklarte eller krasjet, ingen score), faller også ut av det vektede snittet,
+slik at scoren alene ville se ut som om den besto. **Dekningen** sier hvor mye
+som ble vurdert: andelen av vekten til dimensjonene som ble kjørt, som ga en
+score (`verdict.coverage`, 0–1; `verdict.not_judged` lister de andre).
+Dimensjoner som ikke er i suiten eller ikke er valgt, teller ikke, heller ikke
+en dimensjon der detektorene bare meldte informasjon (for eksempel uten oppgitt
+kontekstvindu). Dekningen **begrenser vurderingen** (`COVERAGE_*` i
+`ekte/scoring.py`): under **50 %** gis ingen vurdering («ingen vurdering: for lite
+ble vurdert»), under **80 %** er den høyst **B**, og det samme når en
+kjernedimensjon ble kjørt, men ikke kunne vurderes (en ubesvart
+kontekstvindu-probe gir 81 % dekning, men vurderingen er likevel høyst B).
+`verdict.rating_limit` registrerer grunnen og vurderingen scoren alene ville
+gitt; sammendraget nevner dimensjonene som ikke ble vurdert, og rapportene viser
+dekningen ved siden av scoren. `--fail-under` feiler også for en kjøring uten
+vurdering.
 
 | Dimensjon | ID | Vekt | Rolle |
 |---|---|---|---|
 | Modellidentitet | `model_identity` | 21 | kjerne |
 | Kontekstvindu | `context_window` | 19 | kjerne |
 | Påståtte egenskaper | `capability` | 13 | kjerne |
-| Protokollsamsvar | `protocol` | 8 |  |
 | Fakturering og forbruk | `billing` | 8 | kjerne |
 | Tilkobling | `connectivity` | 7 |  |
+| Protokollsamsvar | `protocol` | 6 |  |
 | Ekte strømming | `streaming` | 6 |  |
 | Pålitelighet ved samtidighet | `reliability` | 6 |  |
-| Transportsikkerhet | `security` | 6 |  |
-| Ytelse | `performance` | 6 |  |
+| Svarintegritet | `integrity` | 6 |  |
+| Transportsikkerhet | `security` | 4 |  |
+| Ytelse | `performance` | 4 |  |
 
 Konklusjonen vurderes på dimensjonene som **kjørte** — en `custom`-kjøring
 kontrollerer bare utvalget sitt. To grupper av dimensjoner betyr noe:
@@ -100,18 +132,17 @@ Risikonivået styres av **funnenes alvorlighet**, ikke av scoren. Funn i
 tilkoblingsdimensjonen holdes utenfor stigen: et relé som er nede eller strupes,
 kunne ikke vurderes, og det er ikke bevis på en annen modell.
 **Transportrådene** holdes også utenfor (`ADVISORY_CHECKS` i `ekte/scoring.py`:
-`security.tls`, `reliability.success_rate`, `reliability.latency`): ren HTTP,
-feil eller treghet under last sier hvordan reléet nås, ikke hvilken modell det
+`security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`): ren HTTP,
+feil eller treghet under last, en strømmeforespørsel som mislyktes to ganger eller et relé som ikke strømmer for modellen, sier hvordan reléet nås, ikke hvilken modell det
 leverer. De senker fortsatt score og status i dimensjonen sin, vises etter
 funnene om bytte blant de viktigste funnene og nevnes i sammendraget som råd når
-de er Middels eller høyere. Manipulering av integriteten og en gjengitt
-API-nøkkel trapper fortsatt opp.
+de er Middels eller høyere. En gjengitt API-nøkkel trapper fortsatt opp, og det gjør også funnene i dimensjonen Svarintegritet (manipulering, injisert systemprompt, svarbuffer): den er ikke en kjernedimensjon, så alvorligheten alene bestemmer risikoen.
 
 | Risiko | Etikett i grensesnittet | Når |
 |---|---|---|
 | `inconclusive` | For lite grunnlag | Ingenting brukbart å vurdere etter: når en profildimensjon kjørte, ga ingen av dem et brukbart resultat (Bestått, Advarsel eller Ikke bestått) — reléet kan ikke nås eller modellen har ingen profil; ellers ga ingen annen dimensjon enn tilkobling et slikt resultat |
-| `high` | Trolig byttet ut | Et CRITICAL-funn, et HIGH/CRITICAL-funn i en kjernedimensjon, eller to eller flere HIGH-funn |
-| `medium` | Avvik funnet | Nøyaktig ett HIGH-funn utenfor kjernedimensjonene, eller et MEDIUM-funn i en kjernedimensjon |
+| `high` | Trolig byttet ut | Et CRITICAL-funn, et HIGH/CRITICAL-funn i en kjernedimensjon, eller HIGH-funn fra to eller flere ulike detektorer |
+| `medium` | Avvik funnet | HIGH-funn utenfor kjernedimensjonene fra én enkelt detektor, eller et MEDIUM-funn i en kjernedimensjon |
 | `low` | Stort sett konsistent | Alle andre MEDIUM-funn |
 | `clean` | Konsistent | Ingen av delene over |
 
@@ -131,19 +162,32 @@ at modellidentiteten ikke ble verifisert.
   ga et brukbart resultat;
 - **middels** — minst to kjernedimensjoner ga et brukbart resultat (eller, i en
   kjøring uten kjernedimensjoner, minst to dimensjoner gjorde det);
-- **høy** — en referanse ble brukt, *og* hver kjernedimensjon som kjørte, ga et
-  brukbart resultat, eller sikkerheten var middels og LLM-dommeren returnerte en
-  brukbar konklusjon.
+- **høy** — en referanse ble brukt, hver kjernedimensjon som kjørte, ga et
+  brukbart resultat, *og* minst to kjernedimensjoner har en detektor som
+  faktisk sammenlignet målet med et brukbart svar fra referansen
+  (`baseline_compared` i rapporten) og ga et brukbart resultat. Det er ikke
+  nok å konfigurere en referanse: en referanse som feilet, eller som ingen
+  kjernedetektor spurte, lar sikkerheten bli på middels. En dommerkonklusjon
+  alene løfter aldri sikkerheten; en dommerkonklusjon som referansen
+  bekreftet, teller som sammenligningen av modellidentiteten.
+
+Kjernedetektorene sammenligner med referansen når den svarer:
+`model_identity` (et fingeravtrykk eller kunnskapsgrense-proben besvart av
+begge sider), `quality_judge` (referansen besvarte hver probe og ble vist til
+dommeren), `billing` (prompt-tokener talt av en referanse for samme modell på
+samme protokoll) og `capability` (referansen besvarte en probe som målet
+avviste). `context_window` spør aldri referansen. Utenfor kjernen registrerer
+også `integrity`, `protocol_request` og `performance` `baseline_compared`, men
+det teller ikke for sikkerheten.
 
 ## Testsett, detektorer og moduser
 
 | Detektor | ID | Dimensjon | Fra testsett |
 |---|---|---|---|
 | Tilkobling og enkel fullføring | `connectivity` | Tilkobling | `smoke` |
-| Samsvar med OpenAI-kompatibilitet | `protocol` | Protokollsamsvar | `standard` |
+| Samsvar med overføringsprotokollen | `protocol` | Protokollsamsvar | `standard` |
 | Støtte for forespørselsattributter | `protocol_request` | Protokollsamsvar | `standard` |
 | Tilgjengelighet av svarattributter | `protocol_response` | Protokollsamsvar | `standard` |
-| Determinisme og korrekt hurtigbuffer | `determinism` | Protokollsamsvar | `deep` |
 | Reelt kontekstvindu og avkorting | `context_window` | Kontekstvindu | `deep` |
 | Modellidentitet og fingeravtrykk for nedgradering | `model_identity` | Modellidentitet | `standard` |
 | Kvalitets-/nedgraderingsvurdering ved LLM-dommer | `quality_judge` | Modellidentitet | `deep` (bare med `--judge`) |
@@ -153,9 +197,10 @@ at modellidentiteten ikke ble verifisert.
 | Revisjon av token-/forbruksfakturering | `billing` | Fakturering og forbruk | `standard` |
 | Pålitelighet og forsinkelse ved samtidighet | `reliability` | Pålitelighet ved samtidighet | `standard` |
 | Signaler om transport og hemmelighetshåndtering | `security` | Transportsikkerhet | `smoke` |
-| Påvisning av injisert systemprompt | `injected_prompt` | Transportsikkerhet | `deep` |
-| Svarintegritet / manipulering | `integrity` | Transportsikkerhet | `deep` |
-| Prefiks-hurtigbuffer for prompt (tidsmåling) | `prompt_cache` | Transportsikkerhet | `deep` |
+| Determinisme og korrekt hurtigbuffer | `determinism` | Svarintegritet | `deep` |
+| Påvisning av injisert systemprompt | `injected_prompt` | Svarintegritet | `deep` |
+| Svarintegritet / manipulering | `integrity` | Svarintegritet | `deep` |
+| Prefiks-hurtigbuffer for prompt (tidsmåling) | `prompt_cache` | Svarintegritet | `deep` |
 | Ytelsesprobe | `performance` | Ytelse | `deep` (på `standard` bare i sammenligningsmodus, 5 forespørsler) |
 
 - **smoke** kjører tilkobling og sikkerhet; **standard** legger til detektorene
@@ -174,10 +219,15 @@ at modellidentiteten ikke ble verifisert.
   referansen som dommer.
 - **Sammenligningsmodus** (`ekte compare`) gir probene en pålitelig referanse:
   `model_identity` registrerer referansens selvidentifikasjon ved siden av
-  målets, `protocol_request` sender avviste parametere på nytt til referansen,
+  målets og sender også hvert fingeravtrykk og kunnskapsgrense-proben til
+  referansen, `protocol_request` sender avviste parametere på nytt til referansen,
   `integrity` trapper et bytte som referansen ikke gjør, opp til CRITICAL,
-  `quality_judge` viser dommeren begge sider, og `performance` prober begge
-  endepunktene vekselvis. Sikkerheten kan bare nå høy med en referanse.
+  `quality_judge` viser dommeren begge sider, `billing` sammenligner
+  prompt-tokener, `capability` sender en avvist probe på nytt, og
+  `performance` prober begge endepunktene vekselvis. Sikkerheten kan bare nå
+  høy med en referanse, og bare når minst to kjernedimensjoner faktisk ble
+  sammenlignet med den (se
+  [Sikkerhet i konklusjonen](#sikkerhet-i-konklusjonen)).
 - **Kunnskapsbase:** den oppgitte modellens profil (`ekte/knowledge/data/*.yaml`
   pluss dine egne oppføringer i `kb.db`) leverer det oppgitte kontekstvinduet,
   maks utdata, tokenizer, egenskapsflagg, identitetsnøkkelord og
@@ -206,6 +256,10 @@ at modellidentiteten ikke ble verifisert.
   (profilen sier `reasoning: true`, eller etter den første slike gjentakelsen),
   sendes korte prober med grensen på 4 096 tokens fra starten i stedet for to
   ganger.
+  Kontrollene som behandler en resonnerende modell annerledes (fakturering,
+  determinisme, maksimal utdata, forespørselsattributter, strømming) gjenkjenner den alle
+  på samme måte: profilen sier det, klienten har lært det av en slik
+  gjentakelse, eller et svar rapporterer resonneringstokens.
 - **Forespørselsparametere:** resonnerende modeller avviser noen parametere: på
   Chat Completions `max_tokens` (de tar `max_completion_tokens`), og på alle
   protokoller samplingsparametere som `temperature`. Klienten utelater
@@ -253,10 +307,9 @@ aldri risikokonklusjonen.
 
 **Fanger.** Releer der mellomvaren bryter protokollkontrakten (droppede turer,
 ignorerte stoppsekvenser, feilformede feil, manglende eller tomme (null) svarfelt,
-fjernede forespørselsparametere) og, via determinisme,
-`cache.ignore-temperature`. Den dekker delvis `capability.json-tool-fakery`.
+fjernede forespørselsparametere). Den dekker delvis `capability.json-tool-fakery`.
 
-### `protocol` — Samsvar med OpenAI-kompatibilitet
+### `protocol` — Samsvar med overføringsprotokollen
 
 **Slik virker den.** Tre prober: en samtale over flere turer som må huske en
 farge fra en tidligere tur; en `stop`-sekvens som må kutte utdataen; og en
@@ -330,26 +383,6 @@ referanse på samme protokoll også avviser den. Verktøy og JSON-modus hører t
 |  | Avvist, men selve modellen støtter den ikke; telles ikke. | Info | Telles ikke |
 |  | Serverfeil eller ikke noe svar; telles ikke. | Uavklart · Lav | Telles ikke |
 
-### `determinism` — Determinisme og korrekt hurtigbuffer
-
-**Slik virker den.** Fire identiske kreative prompter ved `temperature=1.0`
-(uten seed): en ekte modell varierer, og byte-identisk utdata i alle prøvene tyder
-på en hurtigbuffer for svar som ignorerer sampling. Minst tre av de fire prøvene
-må være brukbare (og alle brukbare identiske) for å konkludere med bufring; med
-færre er kontrollen uavklart. Konklusjonen undertrykkes for resonnerende
-modeller, som med rette ignorerer temperaturen. To identiske faktaprompter ved
-`temperature=0` er bare til informasjon.
-
-| Kontroll | Utfall | Status | Effekt |
-|---|---|---|---|
-| `determinism.temp1_variability` | Gjentatte prøver ved temperature=1.0 var forskjellige, slik ekte sampling gir. | Bestått | 100 poeng |
-|  | Prøvene var identiske, men resonnerende modeller ignorerer med rette temperaturen. | Info | 100 poeng |
-|  | Alle brukbare prøver (minst 3) ved temperature=1.0 var byte-identiske, noe som tyder på bufring av svar. | Advarsel · Middels | 55 poeng |
-|  | Færre enn 3 brukbare prøver ved temperature=1.0 å vurdere. | Uavklart · Lav | Telles ikke |
-| `determinism.temp0_stability` | Identiske svar ved temperature=0 (forventet); til informasjon, gir ikke score. | Info | Telles ikke |
-|  | Svarene var forskjellige ved temperature=0; til informasjon, gir ikke score. | Info | Telles ikke |
-|  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
-
 **Forbehold.** Gatewayer kan legge til leverandørspesifikke ekstrafelt; bare
 manglende eller ugyldige påkrevde felt flagges. Oversettelse mellom dialektene
 Anthropic↔OpenAI omformer med rette noen strukturer. Bekreft en mistenkt feil
@@ -369,14 +402,21 @@ den.
 
 - **Probet vindu.** Proben kjører opp til `upper` = det oppgitte vinduet, begrenset
   av `--max-context-tokens` (standard 200K). Hver konklusjon vurderes mot
-  `upper`, aldri mot delen av et større oppgitt vindu over taket.
+  øverste trinn (90 % av `upper`, se under), aldri mot delen av et større
+  oppgitt vindu over taket.
 - **Størrelsene er ekte tokens.** ektes innebygde tokenanslag teller denne
-  fyllteksten omtrent 12 % (o200k) til 15 % (cl100k) for lavt sammenlignet med
-  ekte tokenizere, så hver prompt bygges med størrelse ÷ 1,2 etter anslaget (nål
-  og spørsmål inkludert): et trinn på størrelse N holder seg innenfor N ekte
-  tokens. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
+  fyllteksten for lavt sammenlignet med ekte tokenizere, så hver prompt bygges
+  med størrelse ÷ tokenizer-familiens faktor etter anslaget (nål og spørsmål
+  inkludert): et trinn på størrelse N holder seg innenfor N ekte tokens.
+  Faktorene er målt offline med de publiserte tokenizerne (issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Familier uten publisert tokenizer (`claude-bpe-*`, `gemini`, `grok`) bruker
+  1,2. Faktoren som ble brukt, står som `real_per_heuristic` i bevisene. Størrelsene i bevisene (`size`, `effective_window`, `top_rung`) er
   disse budsjettene i ekte tokens; radene i stigen har også anslaget en prompt ble
-  bygget etter (`heuristic_tokens`).
+  bygget etter (`heuristic_tokens`) og prompttokenene endepunktet rapporterte for
+  den (`prompt_tokens`).
 
 1. En stige med høyst sju størrelser, som halveres nedover fra et **øverste trinn
    på 90 % av `upper`** (så ingen trinn når hele vinduet, og det blir plass til
@@ -404,19 +444,26 @@ den.
    rapporteres som ikke verifisert (uavklart, gir ikke score), aldri som
    avkorting eller `no_recall`. Bare et svar uten nålen er en bom.
 
-Det målte vinduet (den største huskede størrelsen) sammenlignes med `upper`:
-gjenkalling på øverste trinn er konsistent (eller, når det oppgitte vinduet er
-større enn taket, **verifisert opp til taket**: vinduet over det ble ikke prøvd);
-under det trekker konklusjonen fra andelen av øverste trinn som ikke ble husket —
-en WARN fra halvparten av `upper` og opp, en FAIL under halvparten. Uten et
+Det målte vinduet (den største huskede størrelsen) sammenlignes med øverste
+trinn: gjenkalling på øverste trinn er konsistent (eller, når det oppgitte
+vinduet er større enn taket, **verifisert opp til taket**: vinduet over det ble
+ikke prøvd); under det trekker konklusjonen fra andelen av øverste trinn som
+ikke ble husket (`top_rung_share`) — en WARN fra halvparten av øverste trinn og
+opp, en FAIL under halvparten. Konklusjonen og fradraget har samme referanse, så
+en WARN trekker aldri fra mer enn 50 poeng. Når bare øverste trinn sviktet og
+endepunktet rapporterte mer enn 5 % flere prompttokens for den største huskede
+størrelsen enn budsjettet, **skjøt proben over** (endepunktets tokenizer teller
+fyllteksten tettere enn faktoren tillater): vinduet over rapporteres som ikke
+prøvd (Info), aldri som for kort eller som en avvisning under påstanden. Uten et
 oppgitt vindu rapporteres målingen, men gir ikke score.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `context_window.window` (Effektivt kontekstvindu) | Gjenkallingen holdt på øverste trinn (90 % av det probede vinduet): ingen fradrag. | Bestått | Ingen fradrag |
 |  | Gjenkallingen er verifisert opp til probens tak; det oppgitte vinduet over det ble ikke prøvd. | Bestått | Ingen fradrag |
-|  | Gjenkallingen holdt opp til 50–90 % av det probede vinduet; trekker fra andelen av øverste trinn som ikke ble husket. | Advarsel · Middels | opptil −50 poeng |
-|  | Gjenkallingen sviktet under halvparten av det probede vinduet; trekker fra andelen av øverste trinn som ikke ble husket. | Ikke bestått · Høy | opptil −100 poeng |
+|  | Bare øverste trinn sviktet, og endepunktet telte den største huskede prompten mer enn 5 % over budsjettet: proben skjøt over, vinduet over den ble ikke prøvd. | Info | Ingen fradrag |
+|  | Gjenkallingen holdt fra halvparten av øverste trinn og opp, men ikke på øverste trinn; trekker fra andelen av øverste trinn som ikke ble husket. | Advarsel · Middels | opptil −50 poeng |
+|  | Gjenkallingen sviktet under halvparten av øverste trinn; trekker fra andelen av øverste trinn som ikke ble husket. | Ikke bestått · Høy | opptil −100 poeng |
 |  | Ikke engang den minste probestørrelsen fikk nålen husket. | Ikke bestått · Høy | −100 poeng |
 | `context_window.lost_in_middle` | Starten og slutten ble husket, men ikke midten, to ganger. | Advarsel · Middels | −15 poeng |
 | `context_window.rejected_below_claim` | En prompt godt under det oppgitte vinduet ble avvist som for lang. | Ikke bestått · Høy | Ingen fradrag |
@@ -444,7 +491,14 @@ de endrer atferden.
 
 ### `model_identity` — Modellidentitet og fingeravtrykk for nedgradering
 
-**Slik virker den.** Tre uavhengige signaler:
+**Slik virker den.** Hva som kjøres, avhenger av profilen til den oppgitte
+modellen: selvidentifikasjonen og det gjengitte `model`-feltet alltid,
+kunnskapsgrense-proben når profilens `knowledge_cutoff` angir en måned, og
+profilens fingeravtrykk i ren kode, modellens egne først. Bare modellens egne
+fingeravtrykk skiller den fra en billigere modell fra samme leverandør
+(`gpt-4o` levert av `gpt-4o-mini`); merkekontrollene og leverandørens felles
+fingeravtrykk gjelder for alle leverandørens modeller, og kunnskapsgrensen er
+ofte felles.
 
 1. **Selvidentifikasjon** ved `temperature=0`, sammenlignet som hele ord mot
    profilens identitetsnøkkelord (det ekte merket) og en liste over konkurrerende
@@ -466,17 +520,48 @@ de endrer atferden.
    eller et listepunkt bare med en versjon, «Step-2»); fingeravtrykkssvar teller
    dem aldri, så «let me think step by step» er ikke et konkurrerende merke. En
    leverandør som eier et slikt ord, beholder det som sitt eget.
-2. **Atferdsfingeravtrykk** fra kunnskapsbasen (kunnskapsgrense, særegenheter i
-   tokenizeren, formatering, språkbundne prober, …): opptil seks prober i ren kode,
+2. **Atferdsfingeravtrykk** fra kunnskapsbasen: opptil seks prober i ren kode,
    hver kontrollert med `expect_contains`, `expect_contains_any`,
-   `expect_not_contains` eller `expect_regex`; utdata begrenset til 512 tokens. En
+   `expect_not_contains` eller `expect_regex`; utdata begrenset til 512 tokens. Ord under `expect_not_contains` gjelder bare som hele ord (`meta` finnes
+   ikke i `metadata`; en versjon kan følge, som i `Qwen2.5`). En
    probe som trenger mer utdata (som en kontroll av maks utdata), hoppes over,
    oppføres som Info, og en annen probe tar plassen. Et avvikende fingeravtrykk
    trekker fra sin vektandel av 100 poeng (høyst 25); ett alene forblir LOW, to
    eller flere legger til et samlet MEDIUM-funn.
-3. **Gjengitt `model`-felt** fra et vanlig kall: snapshot-suffikser og aliaser
-   tåles; et ord for et mindre nivå (`mini`, `flash`, `lite`, `8b`, …) eller en
-   annen familie flagges.
+   I sammenligningsmodus sendes hver probe også til referansen: et avvik som
+   referansen ikke deler, er bekreftet (MEDIUM); et som referansen deler, er et
+   problem i kunnskapsbasen, ikke bevis mot reléet, og registreres som Info uten
+   fradrag (bevis `baseline_also_diverged`). Et konkurrerende merke forblir HIGH
+   uansett.
+   Hva som kjører, avhenger av kunnskapsbasen: bare noen få medfølgende profiler
+   har egne prober i ren kode; de fleste har bare leverandørens, oftest en ny
+   selvidentifisering, et datert faktum eller en tokenizer-artefakt som alle
+   leverandørens modeller svarer likt på, og omtrent en tredjedel har ingen.
+   Modeller fra samme leverandør skilles derfor vanligvis ikke fra hverandre uten
+   en dommer eller en referanse (se `model_identity.model_specific` nedenfor).
+3. **Kunnskapsgrense** (`model_identity.cutoff`), når profilens
+   `knowledge_cutoff` er `YYYY-MM` eller `YYYY-MM-DD`: modellen blir spurt om
+   treningsgrensen sin som `CUTOFF=YYYY-MM`. Innenfor 6 måneder fra profilens
+   stemmer den; mer enn 12 måneder tidligere, slik en eldre modell fra
+   leverandøren ville svart, er den en LOW-advarsel som trekker fra som et
+   fingeravtrykk med vekt 1 og teller med i det samlede funnet; enhver annen
+   avstand registreres som Info; et svar uten dette formatet er uavklart. En
+   selvrapportert kunnskapsgrense er svakt bevis, så denne kontrollen er aldri
+   HIGH; i sammenligningsmodus bekrefter eller avkrefter referansen den som et
+   fingeravtrykk.
+4. **Gjengitt `model`-felt** fra et vanlig kall, sammenlignet med den oppgitte
+   modellen og med ID-en som ble sendt (et deployment-alias kan avvike fra det
+   oppgitte). Begge ID-ene normaliseres først: små bokstaver, uten prefiks
+   `provider/` eller `vendor.` (`openai/`, `models/`, `anthropic.`), uten
+   `:tag`, Bedrock-`-v2:0` eller snapshot-dato. Deretter avgjør
+   kunnskapsbasen: en ID som slås opp til den oppgitte modellens profil er
+   konsistent (eksakt, alias eller snapshot), en som slås opp til en annen
+   profil avviker, og bevisene nevner begge profilene. En ID kunnskapsbasen
+   ikke kan plassere flagges når den har et ord for et mindre nivå som
+   forespørselen mangler (`mini`, `flash`, `lite`, `8b`, …, bare som hele ord,
+   så `mini` finnes ikke i `gemini`), nevner en annen familie eller har et
+   annet versjonsnummer (`gpt-4o` → `gpt-3.5-turbo`); en annen ID som ingen av
+   disse forklarer, registreres som ukjent, uten fradrag.
 
 Uten en profil i kunnskapsbasen er detektoren uavklart. Den er også uavklart og
 uten score (`model_identity.no_evidence`) når verken selvidentifikasjonen eller
@@ -484,6 +569,13 @@ noe fingeravtrykk returnerte et brukbart svar og det gjengitte `model`-feltet
 ikke avviker: et relé som avviser eller tømmer hver forespørsel, gir ingen
 identitetsbevis, og et ekko av det forespurte navnet beviser ingenting alene.
 Delvise bevis gir score som vanlig.
+
+Når ingen av modellens egne fingeravtrykk ga svar og verken referanse eller
+dommer ble brukt, sier et Info-funn (`model_identity.model_specific`, bevis
+`model_specific_checks: 0`) at svarene passer leverandøren, men at den konkrete
+modellen ikke ble verifisert. Hvert resultat registrerer
+`model_specific_checks`.
+Sammendraget av dommen og begrunnelsen for dimensjonen modellidentitet sier det også.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
@@ -494,13 +586,23 @@ Delvise bevis gir score som vanlig.
 |  | Ikke noe brukbart svar å vurdere. | Uavklart | Ingen fradrag |
 | `model_identity.fp` (Atferdsfingeravtrykk) | Svaret stemte med den oppgitte modellens egen atferd. | Bestått | Ingen fradrag |
 |  | Svaret avvek fra den egne atferden: trekker fra probens vektandel av 100 poeng. | Advarsel · Lav | opptil −25 poeng |
+|  | Svaret avvek fra den native oppførselen mens referansens svar stemte: trekker probens vektandel av 100 poeng. | Advarsel · Middels | opptil −25 poeng |
+|  | Svaret avvek, men det gjorde referansens også: et problem i kunnskapsbasen, ikke bevis mot reléet; ingen trekk. | Info | Ingen fradrag |
 |  | Svaret nevnte et konkurrerende merke og ikke det ekte: trekker fra probens vektandel. | Ikke bestått · Høy | opptil −25 poeng · tak 20 |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart | Ingen fradrag |
 |  | Proben trenger mer utdata enn identitetstaket på 512 tokens; ikke kjørt. | Info | Ingen fradrag |
+| `model_identity.cutoff` | Den oppgitte kunnskapsgrensen ligger innenfor 6 måneder fra den oppgitte modellens. | Bestått | Ingen fradrag |
+|  | Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder før den oppgitte modellens: trekker sin vektandel av 100 poeng som et fingeravtrykk. | Advarsel · Lav | opptil −25 poeng |
+|  | Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder tidligere mens referansens stemmer: trekker sin vektandel av 100 poeng. | Advarsel · Middels | opptil −25 poeng |
+|  | Den oppgitte kunnskapsgrensen ligger mer enn 12 måneder tidligere, men referansens også: et problem i kunnskapsbasen, ikke bevis mot reléet; ingen trekk. | Info | Ingen fradrag |
+|  | Den oppgitte kunnskapsgrensen avviker med mer enn 6 måneder, men ligger ikke mer enn 12 måneder tidligere: registrert, ikke vurdert. | Info | Ingen fradrag |
+|  | Ikke noe svar i formatet CUTOFF=YYYY-MM å vurdere. | Uavklart | Ingen fradrag |
 | `model_identity.fp_aggregate` | To eller flere atferdsfingeravtrykk avvek. | Advarsel · Middels | Ingen fradrag |
 | `model_identity.model_field` | Det gjengitte model-feltet stemte med den forespurte modellen. | Bestått | Ingen fradrag |
 |  | Det gjengitte model-feltet nevner en annen eller mindre modell. | Advarsel · Middels | Ingen fradrag |
+|  | Det gjengitte model-feltet nevner en annen ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Ingen fradrag |
 |  | Svaret hadde ikke noe brukbart model-felt. | Uavklart | Ingen fradrag |
+| `model_identity.model_specific` | Ingen kontroll kunne skille den oppgitte modellen fra leverandørens andre modeller, og verken referanse eller dommer ble brukt: leverandøren stemmer, den konkrete modellen ble ikke verifisert. | Info | Ingen fradrag |
 | `model_identity.no_evidence` | Ingen selvidentifikasjon eller fingeravtrykkssvar var brukbart, og model-feltet avvek ikke: gir ikke score. | Uavklart | Ingen fradrag |
 
 ### `quality_judge` — Kvalitets-/nedgraderingsvurdering ved LLM-dommer
@@ -519,7 +621,7 @@ ubesvart.
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
-| `quality_judge.verdict` (LLM-dommerens konklusjon) | Dommeren fant svarene i samsvar med den oppgitte modellen. | Bestått | 95 poeng |
+| `quality_judge.verdict` (LLM-dommerens konklusjon) | Dommeren fant svarene i samsvar med den oppgitte modellen. | Bestått | 100 poeng |
 |  | Dommeren fant svarene ulike den oppgitte modellen (lav, middels eller ingen oppgitt sikkerhet). | Advarsel · Middels | 50 poeng |
 |  | Dommeren er sikker på at svarene er ulike den oppgitte modellen (ingen brukbar referanse). | Advarsel · Middels | 25 poeng |
 |  | Dommeren er sikker, og en pålitelig referanse bekreftet forskjellen. | Ikke bestått · Høy | 25 poeng |
@@ -555,36 +657,69 @@ egenskapsflagg:
   som ikke er OpenAI.
 - **JSON-modus:** `response_format: json_object` må returnere et objekt som kan
   tolkes, med den forespurte verdien.
+- **Gjentakelse:** et oppgitt verktøykall eller JSON-objekt som ikke kommer
+  tilbake, etterspørres én gang til før det regnes som ikke levert:
+  verktøyforespørselen med `tool_choice: "required"` (Anthropic:
+  `{"type": "any"}`), JSON-modus-forespørselen uendret. Et verktøykall i
+  gjentakelsen regnes som levert (bevis `needed_required: true`); en 4xx bare på
+  den tvungne forespørselen (noen modeller avviser tvungen verktøybruk) faller
+  tilbake til det første svaret.
 - **Strengt skjema:** et strengt `json_schema`; samsvar verifiseres når modellen
   påstår det, og noteres (til informasjon) når den ikke gjør det. Hoppes over uten
   profil.
 - **Maks utdata:** en lang generering begrenset til min(oppgitt maks utdata,
-  2048) tokens; å nå taket eller en troverdig lengde er bestått, å stoppe under en
-  firedel av det flagges.
+  `--max-output-probe-tokens`) tokens, 2048 som standard. Et svar som kuttes med
+  `finish_reason: length`, når taket bare når minst 80 % av de forespurte
+  tokenene kom tilbake: de rapporterte completion-tokenene, ellers et estimat
+  fra teksten; for en resonneringsmodell teller resonneringstokenene som
+  levert. Kuttet under det begrenser reléet utdataen, og det er ikke bestått.
+  En troverdig lengde er bestått, å stoppe under en firedel av det flagges.
+  Når de rapporterte completion-tokenene og tekstestimatet for en modell uten
+  resonnering ligger mer enn 3 ganger fra hverandre, noterer bevisene det
+  (fakturering vurderer tellingen).
 
 En observasjon uten en påstand å verifisere — ikke noe verktøykall eller
 JSON-objekt når funksjonen ikke påstås, eller et hvilket som helst resultat for
 strengt skjema når profilen sier at modellen mangler strenge skjemaer — noteres,
 men telles ikke, så en modell aldri trekkes ned for noe ingen har påstått.
 
+En probe som reléet besvarer med en 4xx (unntatt 401, 403, 408 og 429) selv om
+profilen påstår funksjonen, er en avvist egenskap: den telles som en som ikke
+leveres, og sammendraget gjengir statuskoden og feilmeldingen. Den telles bare
+hvis reléet besvarer den samme forespørselen uten funksjonsparameteren (én ekstra
+forespørsel, sendt bare så lenge ingen annen probe har kommet tilbake) og en
+konfigurert referanse med samme protokoll ikke også avviser proben; ellers
+regnes den som ikke noe brukbart svar, eller som en begrensning i modellen. En
+4xx for en funksjon ingen påstår, noteres, men telles ikke.
+
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `capability.tools` | Et verktøykall kom tilbake for en uttrykkelig forespørsel om verktøybruk. | Bestått | 100 poeng |
 |  | Verktøykall er påstått, men ikke noe verktøykall kom tilbake. | Ikke bestått · Middels | 0 poeng |
 |  | Ikke noe verktøykall kom tilbake, og verktøykall er ikke påstått. | Info | Telles ikke |
+|  | Verktøykall er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.tools.encoding` | Verktøyargumentene kom som et objekt, ikke som JSON-strengen OpenAI returnerer. | Advarsel · Lav | Telles ikke |
 | `capability.json_mode` | JSON-modus returnerte et objekt som kan tolkes, med den forespurte verdien. | Bestått | 100 poeng |
 |  | Et JSON-objekt kom tilbake med feil verdi; JSON-modus er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe JSON-objekt som kan tolkes, kom tilbake; JSON-modus er ikke påstått. | Info | Telles ikke |
 |  | JSON-modus er påstått, men ikke noe gyldig objekt med verdien kom tilbake. | Ikke bestått · Middels | 0 poeng |
+|  | JSON-modus er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.json_schema` | Det strenge skjemaet er påstått, og svaret fulgte det. | Bestått | 100 poeng |
 |  | Det strenge skjemaet ble ikke håndhevet, i samsvar med påstanden. | Info | Telles ikke |
 |  | Svaret fulgte skjemaet selv om den oppgitte modellen mangler strenge skjemaer. | Info | Telles ikke |
 |  | Det strenge skjemaet er påstått, men svaret fulgte det ikke. | Advarsel · Lav | 40 poeng |
+|  | Det strenge skjemaet er påstått, men reléet avviste proben med en 4xx. | Ikke bestått · Middels | 0 poeng |
+|  | Avvist med en 4xx, og referansen avviser den også: en begrensning i modellen. | Info | Telles ikke |
+|  | Avvist med en 4xx; egenskapen er ikke påstått. | Info | Telles ikke |
 |  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
 | `capability.max_output` | Utdataen fortsatte opp til det forespurte tokentaket. | Bestått | 100 poeng |
+|  | Utdataen ble kuttet med finish_reason length langt under den forespurte grensen: reléet begrenser utdata-tokenene. | Ikke bestått · Middels | 0 poeng |
 |  | Utdataen stoppet før taket ved en troverdig lengde. | Bestått | 90 poeng |
 |  | Utdataen stoppet under en firedel av den forespurte lengden. | Advarsel · Lav | 70 poeng |
 |  | Utdataen stoppet under en firedel av forespørselen til tross for et stort oppgitt maksimum. | Advarsel · Lav | 60 poeng |
@@ -618,16 +753,32 @@ spiller det av igjen som én eller noen få biter, så gevinsten i forsinkelse
 forsvinner.
 
 **Slik virker den.** Én strømmet forespørsel (`max_tokens` 256,
-`stream_options.include_usage`) der ankomsttidene for bitene registreres. Tre
-signaler på bufring: **få biter** (to eller færre) og **sent første token** (TTFT
-over 90 % av total varighet), begge vurdert bare når minst 220 tegn kom tilbake,
-og **jevne opphold** (fire eller flere biter der oppholdene er nesten like,
-CV < 0,1, og under 2 ms: sluppet ut samlet). TTFT er det første synlige
-innholdstokenet, så for en resonnerende modell (påstått av kunnskapsbasen, eller
-som rapporterer resonneringstokens i usage), som tenker før den svarer, noteres et
-sent første token bare og telles ikke som bufring; signalene få biter og jevne
-opphold teller fortsatt. En strøm uten usage-bit flagges for seg. En strøm som
-lykkes, men ikke leverer noe innhold, er uavklart og gir ikke score.
+`stream_options.include_usage`) der ankomsttidene for bitene registreres, og
+deretter den samme prompten én gang uten strømming (samme `max_tokens`,
+temperatur 0). Fire signaler på bufring, alle vurdert bare når minst 220 tegn
+kom tilbake:
+
+- **få biter**: to eller færre;
+- **sent første token**: TTFT over 90 % av strømmens varighet, eller over 75 %
+  når også neste signal slår ut;
+- **første token først etter tiden for hele svaret** (`streaming.ttft_vs_total`):
+  den strømmede TTFT er minst 80 % av tiden forespørselen uten strømming tok, så
+  svaret var ferdig før den første biten gikk. Dette fanger et bufret svar som
+  spilles av bit for bit med en «skrive»-forsinkelse, og som viser mange biter og
+  spredte opphold. Sammenlignes ikke når et av kallene mislyktes eller svaret uten
+  strømming tok under ett sekund (tidene for to kall er da mest nettverksstøy);
+- **støt** (`streaming.uniform_gaps`, id-en lagrede rapporter bærer): fire eller
+  flere biter der minst 80 % av oppholdene er under 2 ms: sluppet ut samlet.
+
+TTFT er det første synlige innholdstokenet, så for en resonnerende modell
+(profilen sier det, klienten har lært det, eller et svar rapporterer
+resonneringstokens), som tenker før den svarer, noteres et sent første token
+bare og telles ikke som bufring, og sammenligningen uten strømming hoppes over;
+signalene få biter og støt teller fortsatt. En strøm uten usage-bit flagges for
+seg. En strøm som lykkes, men ikke leverer noe innhold, er uavklart og gir ikke
+score. I sammenligningsmodus registreres referansens strømmede TTFT og dens tid
+uten strømming for samme prompt i bevisene (`baseline`), uten score.
+En strømmeforespørsel som mislykkes, gjentas én gang. Mislykkes den igjen med en 4xx som nevner strømming, eller med en annen 4xx mens den samme prompten uten strømming lykkes, strømmer ikke reléet for denne modellen (`streaming.unsupported`, score 0). Enhver annen feil (en 5xx, et tidsavbrudd, en hastighetsgrense eller en 4xx som også prompten uten strømming får) er en transportfeil: `streaming.failed`, uavklart og uten score. Begge er transportråd (se [Risikokonklusjon](#risikokonklusjon)): de senker denne dimensjonen, men aldri risikoen for bytte.
 Når modellen strømmer resonneringen sin (resonneringsdeltaer, tenkeblokker,
 resonneringshendelser i Responses), måles i stedet det første tokenet av begge
 slag: en ekte strøm begynner å resonnere tidlig, så en strøm der både
@@ -640,13 +791,18 @@ resonnerende modell.
 | `streaming.few_chunks` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.late_ttft` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.reasoning_ttft` | Sent første token fra en resonnerende modell (den tenker før den svarer): til informasjon, telles ikke som bufring. | Info | Ingen fradrag |
+| `streaming.ttft_vs_total` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.uniform_gaps` | Tegn på bufring: det første trekker fra 40 poeng, et andre 20, flere ingenting. | Advarsel · Middels | opptil −40 poeng |
 | `streaming.no_usage` | Ingen usage-bit i strømmen: trekker fra 15 poeng når ingenting er bufret. | Advarsel · Lav | opptil −15 poeng |
-| `streaming.no_content` | Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score. | Uavklart · Lav | Telles ikke |
-| `streaming.failed` | Strømmeforespørselen mislyktes. | Ikke bestått · Høy | tak 0 |
+| `streaming.no_content` | Strømmen lyktes, men leverte ikke noe innhold å vurdere; gir ikke score. | Uavklart · Lav | Ingen fradrag |
+| `streaming.unsupported` | Reléet strømmer ikke for denne modellen. | Ikke bestått · Middels | tak 0 |
+| `streaming.failed` | Strømmeforespørselen mislyktes to ganger (5xx, tidsavbrudd eller en annen transportfeil); gir ikke score. | Uavklart · Lav | Ingen fradrag |
 
 Altså: ekte 100 · usage mangler 85 · ett signal på bufring 60 · to eller flere 40
-· mislyktes 0 · ikke noe innhold: ingen score.
+· ikke støttet 0 · mislyktes to ganger eller ikke noe innhold: ingen score.
+«Ingen fradrag» i radene `streaming.no_content` og `streaming.failed` er
+ordlyden i fradragsskalaen; detektoren lar resultatet stå uten score i begge
+tilfeller, så det teller ikke for dimensjonen.
 
 **Forbehold.** Korte utdata, en rask liten modell eller variasjon i nettverket kan
 likne et støt. Et oppstrøms endepunkt som ikke kan strømme, tvinger reléet til å
@@ -661,22 +817,46 @@ på nytt og sammenlign med en referanse som er kjent for å strømme.
 fullføringstokens), `billing.missing-usage` (ingen, delvis eller inkonsistent
 `usage`) og, som støttende signal, `prompt.injected-system-prompt`.
 
-**Slik virker den.** Ett deterministisk kall (et kjent avsnitt som skal
-oppsummeres, `temperature=0`). Prompten og det synlige svaret telles uavhengig
-med en språkbevisst heuristikk (omtrent ±25 %), for hver modellfamilie: ekte
-bruker ikke noe tokenizer-bibliotek og laster ikke ned noe. Rapporterte
-prompttokens over 2,5× anslaget og mer enn 50 tokens over det regnes som
-oppblåsing. Fullføringstokens fra en resonnerende modell inkluderer med rette
-skjulte resonneringstokens og flagges ikke; ellers er fullføringstokens over 3×
-anslaget og mer enn 80 tokens over det en myk advarsel, aldri en feil, fordi
-anslaget for et kort svar er usikkert. `total` må være lik `prompt + completion`
-(±2), og en total uten fordelingen flagges. En undertelling (under halvparten av
-anslaget) er til informasjon (ikke til skade for kjøperen).
+**Slik virker den.** Tre deterministiske kall: den samme oppsummeringsoppgaven
+i tre promptstørrelser (omtrent 150, 600 og 2 400 tokens med faste avsnitt,
+`temperature=0`). Promptene og de synlige svarene telles uavhengig med en
+språkbevisst heuristikk (omtrent ±25 %; den teller 12 til 15 % lavere enn ekte
+tokenizere), for hver modellfamilie: ekte bruker ikke noe tokenizer-bibliotek og
+laster ikke ned noe. De rapporterte prompttokens tilpasses mot anslaget:
+stigningstallet er den proporsjonale faktoren, konstantleddet en fast overhead.
+Et stigningstall opptil 1,35 består (heuristikkens undertelling pluss en tett
+tokenizer), 1,35 til 1,6 er en advarsel og over 1,6 en feil. En fast overhead
+med normalt stigningstall er ikke oppblåsing: under 30 tokens er den til
+informasjon, fra 30 tokens er den en lav advarsel som viser til
+`injected_prompt`. I sammenligningsmodus, med en referanse for samme modell på
+samme protokoll, sendes de samme tre promptene til referansen, og
+`prompt_tokens` sammenlignes direkte: mer enn 3 % eller 5 tokens over
+referansen (den største av de to) er en feil, og dette erstatter vurderingen
+av stigningstallet. Hvis bare ett av de tre kallene gir brukbare tall, brukes
+kontrollen for én enkelt forespørsel, med en merknad om at stigningstallet ikke
+kunne måles: prompttokens over 2,5× anslaget og mer enn 50 tokens over det
+regnes som oppblåsing. Fullføringstokens fra en resonnerende modell (ifølge
+kunnskapsbasen, eller fordi svaret rapporterer resonneringstokens) inkluderer
+med rette skjulte resonneringstokens og flagges ikke; ellers er
+fullføringstokens over 3× anslaget og mer enn 80 tokens per svar over det en
+myk advarsel, aldri en feil, fordi anslaget for et kort svar er usikkert.
+`total` må være lik `prompt + completion` (±2), og en total uten fordelingen
+flagges. En undertelling (under halvparten av anslaget) er til informasjon
+(ikke til skade for kjøperen).
 
 | Kontroll | Utfall | Status | Effekt |
 |---|---|---|---|
 | `billing.request-failed` | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Ingen fradrag |
 | `billing.missing-usage` | Svaret inneholdt ikke noe tokenforbruk i det hele tatt. | Advarsel · Middels | tak 75 |
+| `billing.prompt-vs-baseline` | Rapporterte prompttokens stemmer med referansens for de samme promptene. | Bestått | Ingen fradrag |
+| `billing.prompt-vs-baseline` | Rapporterte prompttokens er høyere enn referansens for de samme promptene. | Ikke bestått · Høy | tak 55 |
+| `billing.prompt-vs-baseline` | Rapporterte prompttokens er lavere enn referansens (ikke til skade for kjøperen). | Info | Ingen fradrag |
+| `billing.prompt-slope` | Rapporterte prompttokens vokser proporsjonalt med anslaget (stigningstall opptil 1,35). | Bestått | Ingen fradrag |
+| `billing.prompt-slope` | Rapporterte prompttokens vokser 1,35 til 1,6 ganger så raskt som anslaget. | Advarsel · Middels | tak 70 |
+| `billing.prompt-slope` | Rapporterte prompttokens vokser mer enn 1,6 ganger så raskt som anslaget. | Ikke bestått · Høy | tak 55 |
+| `billing.prompt-slope` | Bare én promptstørrelse ga brukbare tall; stigningstallet kunne ikke måles. | Info | Ingen fradrag |
+| `billing.fixed-overhead` | En liten fast overhead i prompttokens (under 30 tokens), slik chatmaler legger til. | Info | Ingen fradrag |
+| `billing.fixed-overhead` | En fast overhead i prompttokens på 30 tokens eller mer i hver forespørsel. | Advarsel · Lav | tak 90 |
 | `billing.usage-inflation` | Rapporterte prompttokens er langt over det uavhengige anslaget. | Ikke bestått · Høy | tak 55 |
 | `billing.usage-inflation-completion` | Rapporterte fullføringstokens er langt over et heuristisk anslag. | Advarsel · Middels | tak 70 |
 | `billing.reasoning-tokens` | Fullføringstokens overstiger den synlige teksten, som forventet for en resonnerende modell. | Info | Ingen fradrag |
@@ -689,10 +869,16 @@ anslaget) er til informasjon (ikke til skade for kjøperen).
 En mislykket probeforespørsel etterlater detektoren uten score.
 
 **Forbehold.** Chat-maler og spesialtokens legger til en liten fast forskyvning,
-så et nøyaktig samsvar forventes ikke. Hvis den leverte modellen er en annen enn
+så et nøyaktig samsvar forventes ikke. Uten referanse slipper toleransen
+gjennom moderat oppblåsing: en proporsjonal oppblåsing som holder stigningen på
+1,35 eller lavere (omtrent en femtedel over det reelle tallet, siden
+heuristikken teller for lavt), flagges ikke, og heller ikke, i reserveløsningen
+med én forespørsel, prompt-tokens under 2,5× estimatet. Sammenligningsmodus med
+en referanse av samme modell fanger mer enn 3 %. Hvis den leverte modellen er en annen enn
 den oppgitte, er den «riktige» tokenizeren ukjent. Skjulte resonneringstokens kan
-ikke telles utenfra. Én probe måler én størrelse; en multiplikator som skalerer
-med størrelsen, krever gjentatte kjøringer eller sammenligningsmodus.
+ikke telles utenfra. Tre størrelser opptil omtrent 2 400 tokens skiller en
+proporsjonal faktor fra en fast overhead; en multiplikator som først slår inn
+ved mye større prompter, forblir usett.
 
 ---
 
@@ -705,7 +891,7 @@ ved moderat parallellitet.
 (`--reliability-requests`, standard 8) med avgrenset samtidighet
 (`--concurrency`, standard 3). Suksessraten beregnes over forespørslene som
 faktisk ble forsøkt: HTTP 429 er ærlig struping og telles for seg. Scoren trekker
-fra den mislykkede andelen; en p95-forsinkelse over 30 s beholder 85 % av det som
+fra den mislykkede andelen; en p95-forsinkelse over fem ganger medianen i samme støt og over 5 s beholder 85 % av det som
 er igjen. Én mislykket forespørsel (altså én forbigående 5xx av standardens 8),
 eller høyst 10 % av et større støt, er en Advarsel så lenge minst 80 % lyktes;
 flere er Ikke bestått. Detektorstatusen er den verste av funnene. Disse funnene er
@@ -718,7 +904,7 @@ transportråd: de hever aldri risikokonklusjonen.
 |  | Flere forespørsler enn det mislyktes; trekker fra den mislykkede andelen. | Ikke bestått · Middels | opptil −100 poeng |
 |  | Alle forespørsler ble strupet (HTTP 429): gir ikke score. | Uavklart · Lav | Ingen fradrag |
 |  | Ingen forespørsel nådde reléet (feilet i ekte eller på nettverksveien): ikke vurdert. | Uavklart · Lav | Ingen fradrag |
-| `reliability.latency` | p95-forsinkelse over 30 s under last; trekker fra 15 % av gjenværende score. | Advarsel · Lav | opptil −15 poeng |
+| `reliability.latency` | p95-forsinkelse over fem ganger medianen i støtet og over 5 s under last; trekker fra 15 % av gjenværende score. | Advarsel · Lav | opptil −15 poeng |
 | `reliability.rate_limited` | Deler av støtet ble strupet: ærlig struping, telles ikke. | Info | Ingen fradrag |
 | `reliability.skipped` | Pålitelighetsproben var slått av. | Info | Ingen fradrag |
 
@@ -734,11 +920,120 @@ i ro, lekkede forespørsels-ID-er fra oppstrøms) står på veikartet.
 
 ---
 
+## `integrity` — Svarintegritet
+
+**Fanger.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` og bevis i retning av `privacy.prompt-logging-leakage` (prefiksbufring): om svaret er modellens eget, uendret og nygenerert. På embedding- og rerank-overflatene inneholder dimensjonen determinismekontrollen. Den er ikke en kjernedimensjon: funnene bestemmer risikoen bare gjennom alvorligheten sin.
+
+### `injected_prompt` — Påvisning av injisert systemprompt
+
+**Slik virker den.** To uavhengige tegn. (1) En **fast overhead i
+inndatatokens**: to brukermeldinger av ulik størrelse uten systemmelding;
+rapporterte `prompt_tokens` minus det uavhengige anslaget må holde seg lite. En
+overhead på minst 30 tokens som holder seg konstant (innenfor 16) på tvers av
+begge størrelsene, leses som en skjult prompt foran heller enn proporsjonal
+oppblåsing. (2) En **lekkasjeprobe** som ber modellen gjenta eventuelle
+foregående instruksjoner. Svaret er en lekkasje bare hvis det inneholder
+instruksjonsaktig innhold: et sitert avsnitt eller blokksitat, eller minst to
+setninger i imperativ andre person («You are …», «Always …», «Do not …») utenfor
+en benektelse. `NONE`, eller en benektelse i de to første setningene («det
+finnes ingen systeminstruksjoner»), er ingen lekkasje; alt annet, for eksempel
+en avvisning, er uklart og teller heller ikke som lekkasje. Bevisene tar vare på
+svartypen (`leak_answer_kind`) og de første 300 tegnene i svaret. En lekkasje
+alene er bare informasjon og telles ikke, fordi modeller dikter opp
+systemprompter. Bare begge sammen når MEDIUM.
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `injected_prompt.verdict` (Injisert systemprompt) | Overheaden i inndatatokens er liten, og ingen skjulte instruksjoner lekket. | Bestått | 100 poeng |
+|  | Instruksjonsaktig tekst lekket når det ble spurt (telles ikke: modeller dikter opp slikt). | Info | Telles ikke |
+|  | En stor fast overhead i inndatatokens, konstant på tvers av meldingsstørrelser. | Advarsel · Lav | 75 poeng |
+|  | En fast overhead i inndatatokens og en lekket innledning sammen. | Advarsel · Middels | 55 poeng |
+|  | Ingen brukbare tellinger av prompttokens til å måle overheaden. | Uavklart | Telles ikke |
+
+### `integrity` — Svarintegritet / manipulering
+
+**Slik virker den.** Kanarier med kjent svar som bærer verdiene en
+manipulerende proxy går etter, må komme tilbake ordrett: to syntetiske (en
+installasjons-URL og en `pip install`-pakke med fast versjon), et kjent
+installasjonsskript (`curl -fsSL https://sh.rustup.rs | sh`), en populær pakke med
+fast versjon (`pip install requests==2.32.3`), en linje
+`git clone https://github.com/pallets/flask.git` og en Bitcoin-adresse i
+gyldig format som utledes av kjøringens tilfeldige verdi, så den er ingen fast
+verdi et relé kan sette på en unntaksliste, og den er ny i hver kjøring (en ny
+poengsetting gjenbruker den registrerte verdien). `git clone`-kanarien
+sendes strømmet, og når profilen oppgir verktøykall, sendes en installasjons-URL
+som argument i et verktøykall (modellen må kalle et verktøy med nøyaktig den
+URL-en), så strømmet tekst og verktøyargumenter kontrolleres også. Kanariene
+kjøres samtidig, høyst tre om gangen, og detektoren sender høyst åtte
+forespørsler til målet. Et eksakt ekko er bestått, et manglende ekko
+(omskrivning, avvisning) er uavklart, og bare en **utbytting av verdier** som
+bevarer strukturen, regnes som manipulering; en endret lommebokadresse teller bare
+når den selv er en gyldig adresse, så et feilkopiert tegn er ikke et bytte.
+I sammenligningsmodus er et bytte som den pålitelige referansen ikke gjør,
+CRITICAL. Bare en referanse som returnerer kanarien uendret, bekrefter: en
+referanse som feiler eller ikke returnerer noe brukbart, bekrefter ingenting
+(beviset `baseline_unavailable`).
+Uten en brukbar referanse sendes den utbyttede kanarien én gang til, over samme
+kanal: byttes den ut igjen (med samme eller en annen verdi), er det HIGH, og
+risikoen er minst middels; kommer den uendret tilbake ved gjentakelsen, eller gir
+gjentakelsen ikke noe brukbart, forblir det MEDIUM (beviset `repeat_intact`).
+Et svar som kuttes ved utdatagrensen, er uavklart, ikke et bytte.
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `integrity.verdict` (Svarintegritet) | Kanarier med kjent svar kom tilbake uendret. | Bestått | 100 poeng |
+|  | En kanariverdi ble byttet ut én gang, uten bekreftelse fra verken en referanse eller en gjentakelse. | Ikke bestått · Middels | 45 poeng |
+|  | En kanariverdi ble byttet ut igjen da den samme kanarien ble sendt en gang til. | Ikke bestått · Høy | 20 poeng |
+|  | En kanariverdi ble byttet ut, mens den pålitelige referansen beholdt den uendret. | Ikke bestått · Kritisk | 10 poeng |
+|  | Ingen kanari ble gjentatt ordrett, så manipulering kunne ikke vurderes. | Uavklart | Telles ikke |
+
+### `determinism` — Determinisme og korrekt hurtigbuffer
+
+**Slik virker den.** Fire identiske kreative prompter ved `temperature=1.0`
+(uten seed): en ekte modell varierer, og byte-identisk utdata i alle prøvene tyder
+på en hurtigbuffer for svar som ignorerer sampling. Minst tre av de fire prøvene
+må være brukbare (og alle brukbare identiske) for å konkludere med bufring; med
+færre er kontrollen uavklart. Konklusjonen undertrykkes for resonnerende
+modeller, som med rette ignorerer temperaturen. To identiske faktaprompter ved
+`temperature=0` er bare til informasjon.
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `determinism.temp1_variability` | Gjentatte prøver ved temperature=1.0 var forskjellige, slik ekte sampling gir. | Bestått | 100 poeng |
+|  | Prøvene var identiske, men resonnerende modeller ignorerer med rette temperaturen. | Info | 100 poeng |
+|  | Alle brukbare prøver (minst 3) ved temperature=1.0 var byte-identiske, noe som tyder på bufring av svar. | Advarsel · Middels | 55 poeng |
+|  | Færre enn 3 brukbare prøver ved temperature=1.0 å vurdere. | Uavklart · Lav | Telles ikke |
+| `determinism.temp0_stability` | Identiske svar ved temperature=0 (forventet); til informasjon, gir ikke score. | Info | Telles ikke |
+|  | Svarene var forskjellige ved temperature=0; til informasjon, gir ikke score. | Info | Telles ikke |
+|  | Ikke noe brukbart svar å vurdere. | Uavklart · Lav | Telles ikke |
+
+### `prompt_cache` — Prefiks-hurtigbuffer for prompt (tidsmåling)
+
+**Slik virker den.** Et unikt prefiks på ~1 200 tokens strømmes to ganger (kaldt,
+så varmt) og et annet kontrollprefiks én gang. Når den varme TTFT er under
+halvparten av både den kalde og kontrollens TTFT, og minst 150 ms raskere enn den
+kalde, er prefiksbufring aktiv. Alltid til informasjon: prefiksbufring er en
+legitim optimalisering.
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `prompt_cache.verdict` (Bufring av promptprefiks) | Et gjentatt promptprefiks kom tilbake mye raskere: prefiksbufring er aktiv. | Info | Telles ikke |
+|  | Et gjentatt promptprefiks var ikke tydelig raskere. | Info | Telles ikke |
+|  | En eller flere tidsprober returnerte ingen brukbar tidsmåling. | Uavklart | Telles ikke |
+
+**Forbehold.** Modeller dikter opp falske «systemprompter» når de blir bedt om å
+lekke, så en lekkasje alene forblir LOW. Oversettelse mellom dialekter omformer
+JSON for verktøykall; bare en utbytting av *verdier* teller. Betinget manipulering
+(bare for noen nøkkelord, klienter eller etter en oppvarming) kan unngå et
+begrenset sett med prober. Logging er **umulig å bevise** med black box-tester fra
+klienten, og ekte kan ikke vise deling av hurtigbuffer *mellom brukere* med én
+nøkkel: at et tidssignal mangler, beviser ikke at prompter ikke logges.
+
+---
+
 ## `security` — Transportsikkerhet
 
-**Fanger.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-bevis i retning av `privacy.prompt-logging-leakage` (prefiksbufring), og
-grunnleggende hygiene for transport og hemmeligheter.
+**Fanger.** Grunnleggende hygiene for transport og hemmeligheter: ren HTTP, en API-nøkkel gjengitt i svaret og svarhoder som avslører oppstrømstjenesten.
 
 ### `security` — Signaler om transport og hemmelighetshåndtering
 
@@ -763,65 +1058,6 @@ internett; ren HTTP til andre verter forblir Ikke bestått · Høy. Uansett er
 |  | Svarhoder avslører oppstrøms eller proxy (til informasjon). | Info · Lav | Ingen fradrag |
 |  | Ingen svarhoder å undersøke. | Uavklart | Ingen fradrag |
 | `security.note` | Logging av prompter og delte nøkler oppstrøms kan ikke bevises utenfra. | Info | Ingen fradrag |
-
-### `injected_prompt` — Påvisning av injisert systemprompt
-
-**Slik virker den.** To uavhengige tegn. (1) En **fast overhead i
-inndatatokens**: to brukermeldinger av ulik størrelse uten systemmelding;
-rapporterte `prompt_tokens` minus det uavhengige anslaget må holde seg lite. En
-overhead på minst 30 tokens som holder seg konstant (innenfor 16) på tvers av
-begge størrelsene, leses som en skjult prompt foran heller enn proporsjonal
-oppblåsing. (2) En **lekkasjeprobe** som ber modellen gjenta eventuelle
-foregående instruksjoner. Bare begge sammen når MEDIUM.
-
-| Kontroll | Utfall | Status | Effekt |
-|---|---|---|---|
-| `injected_prompt.verdict` (Injisert systemprompt) | Overheaden i inndatatokens er liten, og ingen skjulte instruksjoner lekket. | Bestått | 100 poeng |
-|  | Instruksjonsaktig tekst lekket når det ble spurt (svakt alene). | Info · Lav | 85 poeng |
-|  | En stor fast overhead i inndatatokens, konstant på tvers av meldingsstørrelser. | Advarsel · Lav | 75 poeng |
-|  | En fast overhead i inndatatokens og en lekket innledning sammen. | Advarsel · Middels | 55 poeng |
-|  | Ingen brukbare tellinger av prompttokens til å måle overheaden. | Uavklart | Telles ikke |
-
-### `integrity` — Svarintegritet / manipulering
-
-**Slik virker den.** Kanarier med kjent svar der verdiene er følsomme — en
-installasjons-URL og en `pip install`-pakke med fast versjon — må komme tilbake
-ordrett. Et eksakt ekko er bestått, et manglende ekko (omskrivning, avvisning) er
-uavklart, og bare en **utbytting av verdier** som bevarer strukturen, regnes som
-manipulering. I sammenligningsmodus er et bytte som den pålitelige referansen ikke
-gjør, CRITICAL. Bare en referanse som returnerer kanarien uendret, bekrefter: en
-referanse som feiler eller ikke returnerer noe brukbart, bekrefter ingenting, så
-byttet forblir MEDIUM (beviset `baseline_unavailable`). Et svar som kuttes ved
-utdatagrensen, er uavklart, ikke et bytte.
-
-| Kontroll | Utfall | Status | Effekt |
-|---|---|---|---|
-| `integrity.verdict` (Svarintegritet) | Kanarier med kjent svar kom tilbake uendret. | Bestått | 100 poeng |
-|  | En kanariverdi ble byttet ut (ennå ikke bekreftet av en referanse). | Ikke bestått · Middels | 45 poeng |
-|  | En kanariverdi ble byttet ut, mens den pålitelige referansen beholdt den uendret. | Ikke bestått · Kritisk | 10 poeng |
-|  | Ingen kanari ble gjentatt ordrett, så manipulering kunne ikke vurderes. | Uavklart | Telles ikke |
-
-### `prompt_cache` — Prefiks-hurtigbuffer for prompt (tidsmåling)
-
-**Slik virker den.** Et unikt prefiks på ~1 200 tokens strømmes to ganger (kaldt,
-så varmt) og et annet kontrollprefiks én gang. Når den varme TTFT er under
-halvparten av både den kalde og kontrollens TTFT, og minst 150 ms raskere enn den
-kalde, er prefiksbufring aktiv. Alltid til informasjon: prefiksbufring er en
-legitim optimalisering.
-
-| Kontroll | Utfall | Status | Effekt |
-|---|---|---|---|
-| `prompt_cache.verdict` (Bufring av promptprefiks) | Et gjentatt promptprefiks kom tilbake mye raskere: prefiksbufring er aktiv. | Info | Telles ikke |
-|  | Et gjentatt promptprefiks var ikke tydelig raskere. | Info | Telles ikke |
-|  | En eller flere tidsprober returnerte ingen brukbar tidsmåling. | Uavklart | Telles ikke |
-
-**Forbehold.** Modeller dikter opp falske «systemprompter» når de blir bedt om å
-lekke, så en lekkasje alene forblir LOW. Oversettelse mellom dialekter omformer
-JSON for verktøykall; bare en utbytting av *verdier* teller. Betinget manipulering
-(bare for noen nøkkelord, klienter eller etter en oppvarming) kan unngå et
-begrenset sett med prober. Logging er **umulig å bevise** med black box-tester fra
-klienten, og ekte kan ikke vise deling av hurtigbuffer *mellom brukere* med én
-nøkkel: at et tidssignal mangler, beviser ikke at prompter ikke logges.
 
 ---
 
@@ -905,6 +1141,9 @@ per endepunkt, så jevnheten vurderes i testsettene deep, full og custom.
 kunnskapsbasen er bevisst brede medianer fra de egne API-ene, og et tregere mål
 noteres, gis aldri score. Alle funn har høyst LOW-alvorlighet, så denne
 dimensjonen flytter scoren, aldri risikokonklusjonen.
+Referansesammenligningen (`performance.reference`) kjører bare i
+sammenligningsmodus eller for en profil med et `performance.decode_tps`-område,
+som få medfølgende profiler har; for alle andre modeller vises den ikke.
 
 ---
 
@@ -913,16 +1152,23 @@ dimensjonen flytter scoren, aldri risikokonklusjonen.
 En revisjons **overflate** (`chat` som standard, eller `embedding`) velger
 detektorene; testsettet bestemmer fortsatt dybden. En embedding-revisjon sender
 bare `POST /embeddings`-forespørsler og gjenbruker chat-dimensjonene og den felles
-scoren 0–100 og karakteren A–F, med vekter per overflate. Et dimensjonsavvik
+scoren 0–100 og karakteren A–F, med egne vekter (`SURFACE_WEIGHTS` i `ekte/scoring.py`). Et dimensjonsavvik
 (MODEL_IDENTITY, HIGH) gjør risikoen HIGH, slik en byttet modell gjør i chat.
 
-| Kontroll | ID | Dimensjon | Hva den tester |
+| Dimensjon | ID | Vekt | Rolle |
+|---|---|---|---|
+| Modellidentitet | `model_identity` | 40 | kjerne |
+| Ytelse | `performance` | 20 |  |
+| Påståtte egenskaper | `capability` | 15 |  |
+| Svarintegritet | `integrity` | 15 |  |
+| Tilkobling | `connectivity` | 10 |  |
+
+| Detektor | ID | Dimensjon | Hva den tester |
 |---|---|---|---|
 | Tilkobling | `embed.connectivity` | Tilkobling | endepunktet returnerer velformede vektorer |
-| Vektordimensjon | `embed.dimension` | Modellidentitet | returnert lengde mot den oppgitte modellens egen dimensjon (kunnskapsbasen, eller `claimed_dimensions`) |
-| Gjengitt modell | `embed.model_field` | Modellidentitet | svarets `model`-felt nevner den oppgitte modellen |
+| Modellidentitet | `embed.identity` | Modellidentitet | `embed.dimension`: returnert lengde mot den oppgitte modellens egen dimensjon (kunnskapsbasen, eller `claimed_dimensions`); `embed.model_field`: svarets `model`-felt nevner den oppgitte modellen |
 | Vektordrift | `embed.drift` | Modellidentitet | vektoren for den faste probeinndataen mot forrige lagrede kjøring |
-| Determinisme | `embed.determinism` | Pålitelighet ved samtidighet | samme inndata to ganger gir cosinus ≥ 0,9999 |
+| Determinisme | `embed.determinism` | Svarintegritet | samme inndata to ganger gir cosinus ≥ 0,9999 |
 | Atskillelse | `embed.distinctness` | Påståtte egenskaper | urelaterte inndata gir cosinus under 0,98 |
 | Ytelsesprobe | `performance.embed` | Ytelse | forsinkelse, kaldstart, gjennomstrømning, batchskalering |
 
@@ -960,24 +1206,110 @@ stabilitet under last. **Skalering med antall dokumenter** sammenligner
 forsinkelsen per dokument for 32 dokumenter med den for 4: ved 0,6x eller mer
 deles dokumentene opp eller serialiseres (lineært, WARN LOW).
 
+**Scoreskalaer** for embedding-detektorene (`SCALE` i `ekte/detectors/embed_*.py`). Hver detektor gir snittet av kontrollene som telles.
+
+### `embed.connectivity` — Tilkobling til embedding-endepunktet
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.connectivity` | Embeddings-endepunktet returnerte vektorer. | Bestått | 100 poeng |
+|  | Embeddings-endepunktet svarte uten én vektor per inndata. | Ikke bestått · Høy | 0 poeng |
+|  | Embeddings-forespørselen mislyktes. | Ikke bestått · Høy | 0 poeng |
+
+### `embed.identity` — Identitet for embedding-modellen
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.dimension` | Vektorlengden stemmer med den oppgitte modellen. | Bestått | 100 poeng |
+|  | Vektorlengden avviker fra den oppgitte modellens (en annen modell leveres). | Ikke bestått · Høy | 0 poeng |
+|  | Den oppgitte modellens vektorlengde er ukjent; den observerte lengden er registrert. | Info | Telles ikke |
+|  | Ingen vektor ble returnert å måle. | Uavklart | Telles ikke |
+| `embed.model_field` | Reléet gjengir den forespurte modellen. | Bestått | 100 poeng |
+|  | Reléet gjengir en annen modell enn den som ble forespurt. | Advarsel · Middels | 50 poeng |
+|  | Reléet gjengir en annen modell-ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Telles ikke |
+|  | Reléet gjengir ikke noe model-felt. | Info | Telles ikke |
+
+### `embed.drift` — Vektordrift for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.drift` | Vektoren for den faste inndataen stemmer med forrige kjøring. | Bestått | 100 poeng |
+|  | Vektoren for den faste inndataen har flyttet seg siden forrige kjøring (cosinus 0,95 til 0,995). | Advarsel · Middels | 60 poeng |
+|  | Vektoren for den faste inndataen er endret siden forrige kjøring (cosinus under 0,95, eller en annen lengde): modellen er byttet. | Ikke bestått · Høy | 0 poeng |
+|  | Ingen tidligere kjøring å sammenligne med; vektoren fra denne kjøringen er referansen. | Info | Telles ikke |
+|  | Ingen vektor ble returnert for den faste inndataen. | Uavklart | Telles ikke |
+
+### `embed.determinism` — Determinisme for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.determinism` | Samme inndata to ganger gir samme vektor. | Bestått | 100 poeng |
+|  | Samme inndata to ganger gir forskjellige vektorer. | Advarsel · Middels | 50 poeng |
+|  | Ingen vektorer ble returnert å sammenligne. | Uavklart | Telles ikke |
+
+### `embed.distinctness` — Atskillelse for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `embed.distinctness` | Urelaterte inndata gir tydelig forskjellige vektorer. | Bestått | 100 poeng |
+|  | Urelaterte inndata gir nesten identiske vektorer (en degenerert eller falsk bakende). | Advarsel · Høy | 30 poeng |
+|  | Ingen vektorer ble returnert å sammenligne. | Uavklart | Telles ikke |
+
+### `performance.embed` — Ytelsesprobe for embeddinger
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `performance.summary` | Forsinkelse og gjennomstrømning for embeddinger ble målt. | Info | Telles ikke |
+|  | Ingen av probeforespørslene lyktes. | Uavklart | Telles ikke |
+| `performance.latency_consistency` | Forsinkelsen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Forsinkelsen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Forsinkelsen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Forsinkelsen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn forsinkelsen er. | Info | Telles ikke |
+| `performance.throughput_consistency` | Gjennomstrømningen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Gjennomstrømningen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Gjennomstrømningen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Gjennomstrømningen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn gjennomstrømningen er. | Info | Telles ikke |
+| `performance.errors` | Høyst 2 % av probeforespørslene mislyktes. | Bestått | 100 poeng |
+|  | Opptil 10 % av probeforespørslene mislyktes eller fikk tidsavbrudd. | Advarsel · Lav | 80 poeng |
+|  | Mange probeforespørsler mislyktes eller fikk tidsavbrudd. | Ikke bestått · Lav | 50 poeng |
+| `performance.load_stability` | Forsinkelsen holder seg under samtidig last (høyst 1,5x). | Bestått | 100 poeng |
+|  | Forsinkelsen øker under samtidig last (opptil 3x). | Advarsel · Lav | 80 poeng |
+|  | Forsinkelsen forverres kraftig under samtidig last (over 3x). | Ikke bestått · Lav | 55 poeng |
+| `performance.batch_scaling` | En batch med 16 inndata koster langt mindre per inndata enn enkeltforespørsler. | Bestått | 100 poeng |
+|  | En batch med 16 inndata koster omtrent like mye per inndata som enkeltforespørsler (forenlig med et relé som deler opp eller serialiserer batcher). | Advarsel · Lav | 60 poeng |
+|  | For få batchprøver til å vurdere hvordan forsinkelsen skalerer med batchstørrelsen. | Info | Telles ikke |
+| `performance.cache_hit` | Unike probeinndata kom tilbake med gjentatte vektorer (holdt utenfor statistikken). | Advarsel · Lav | 60 poeng |
+|  | Referansen returnerte gjentatte vektorer for unike probeinndata (gir ikke score). | Info | Telles ikke |
+| `performance.relay_overhead` | Forsinkelse sammenlignet med den pålitelige referansen (til informasjon). | Info | Telles ikke |
+| `performance.skipped` | Ytelsesproben var slått av. | Info | Telles ikke |
+
 ---
 
 ## Rerank-overflaten
 
 En rerank-revisjon (`surface` `rerank`) sender bare `POST /rerank`-forespørsler og
-gis score på den felles skalaen 0–100 og karakteren A–F med egne vekter:
-modellidentitet 30, påståtte egenskaper 30, ytelse 20, pålitelighet ved
-samtidighet 10, tilkobling 10. En mislykket rangering med kjent svar (påståtte
+gis score på den felles skalaen 0–100 og karakteren A–F med egne vekter
+(`SURFACE_WEIGHTS` i `ekte/scoring.py`). En mislykket rangering med kjent svar (påståtte
 egenskaper, HIGH) eller en byttet modell (modellidentitet, HIGH) gjør risikoen
 HIGH.
 
-| Kontroll | ID | Dimensjon | Hva den tester |
+| Dimensjon | ID | Vekt | Rolle |
+|---|---|---|---|
+| Modellidentitet | `model_identity` | 30 | kjerne |
+| Påståtte egenskaper | `capability` | 30 | kjerne |
+| Ytelse | `performance` | 20 |  |
+| Svarintegritet | `integrity` | 10 |  |
+| Tilkobling | `connectivity` | 10 |  |
+
+| Detektor | ID | Dimensjon | Hva den tester |
 |---|---|---|---|
 | Tilkobling | `rerank.connectivity` | Tilkobling | endepunktet returnerer en velformet rangering |
 | Kjent svar | `rerank.known_answer` | Påståtte egenskaper | en probe med ett åpenbart relevant dokument rangerer det først |
-| Gjengitt modell | `rerank.identity` | Modellidentitet | svarets `model`-felt nevner den oppgitte modellen |
+| Gjengitt modell | `rerank.identity` | Modellidentitet | `rerank.model_field`: svarets `model`-felt nevner den oppgitte modellen |
 | Rangeringsdrift | `rerank.drift` | Modellidentitet | den faste probens rangering og scorer mot forrige lagrede kjøring |
-| Determinisme | `rerank.determinism` | Pålitelighet ved samtidighet | samme spørring to ganger gir samme rangering og scorer |
+| Determinisme | `rerank.determinism` | Svarintegritet | samme spørring to ganger gir samme rangering og scorer |
 | Ytelsesprobe | `performance.rerank` | Ytelse | forsinkelse, kaldstart, dokumenter/s, skalering med antall dokumenter |
 
 **Rangeringsdrift.** Hver kjøring lagrer rangeringen og de avrundede scorene for
@@ -995,6 +1327,82 @@ oppdage bufring, og et svar som lar dokumenter stå uten score, regnes som en
 mislykket forespørsel. Det finnes ingen hastighetsreferanse i kunnskapsbasen; rå
 hastighet teller bare mot en referanse.
 
+**Scoreskalaer** for rerank-detektorene (`SCALE` i `ekte/detectors/rerank_*.py`). Hver detektor gir snittet av kontrollene som telles.
+
+### `rerank.connectivity` — Tilkobling til rerank-endepunktet
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.connectivity` | Rerank-endepunktet returnerte en rangering. | Bestått | 100 poeng |
+|  | Rerank-endepunktet svarte uten én score per dokument. | Ikke bestått · Høy | 0 poeng |
+|  | Rerank-forespørselen mislyktes. | Ikke bestått · Høy | 0 poeng |
+
+### `rerank.identity` — Identitet for rerank-modellen
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.model_field` | Reléet gjengir den forespurte modellen. | Bestått | 100 poeng |
+|  | Reléet gjengir en annen modell enn den som ble forespurt. | Advarsel · Middels | 50 poeng |
+|  | Reléet gjengir en annen modell-ID som ekte ikke kan plassere: registrert, ikke vurdert. | Info | Telles ikke |
+|  | Reléet gjengir ikke noe model-felt. | Info | Telles ikke |
+|  | Rerank-forespørselen mislyktes; det finnes ikke noe model-felt å kontrollere. | Uavklart | Telles ikke |
+
+### `rerank.drift` — Drift for rerank
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.drift` | Den faste probens rangering og scorer stemmer med forrige kjøring. | Bestått | 100 poeng |
+|  | Den faste probens scorer har flyttet seg siden forrige kjøring (med 0,01 til 0,1 på scoreskalaen), med samme rangering. | Advarsel · Middels | 60 poeng |
+|  | Den faste probens rangering er endret siden forrige kjøring, eller scorene har flyttet seg med mer enn 0,1 på scoreskalaen: modellen er byttet. | Ikke bestått · Høy | 0 poeng |
+|  | Ingen tidligere kjøring å sammenligne med; rangeringen fra denne kjøringen er referansen. | Info | Telles ikke |
+|  | Ingen rangering ble returnert for den faste proben. | Uavklart | Telles ikke |
+
+### `rerank.determinism` — Determinisme for rerank
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.determinism` | Samme spørring to ganger gir samme rangering og scorer. | Bestått | 100 poeng |
+|  | Samme spørring to ganger gir en annen rangering eller andre scorer. | Advarsel · Middels | 50 poeng |
+|  | Ingen rangeringer ble returnert å sammenligne. | Uavklart | Telles ikke |
+
+### `rerank.known_answer` — Rerank-probe med kjent svar
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `rerank.known_answer` | Det åpenbart relevante dokumentet er rangert først. | Bestått | 100 poeng |
+|  | Et annet dokument er rangert over det åpenbart relevante. | Ikke bestått · Høy | 0 poeng |
+|  | Ingen rangering ble returnert å kontrollere. | Uavklart | Telles ikke |
+
+### `performance.rerank` — Ytelsesprobe for rerank
+
+| Kontroll | Utfall | Status | Effekt |
+|---|---|---|---|
+| `performance.summary` | Forsinkelse og gjennomstrømning for rerank ble målt. | Info | Telles ikke |
+|  | Ingen av probeforespørslene lyktes. | Uavklart | Telles ikke |
+| `performance.latency_consistency` | Forsinkelsen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Forsinkelsen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Forsinkelsen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Forsinkelsen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn forsinkelsen er. | Info | Telles ikke |
+| `performance.throughput_consistency` | Gjennomstrømningen er jevn (haleforhold høyst 1,3). | Bestått | 100 poeng |
+|  | Gjennomstrømningen er stabil (haleforhold høyst 1,75). | Bestått | 85 poeng |
+|  | Gjennomstrømningen varierer merkbart (haleforhold høyst 2,5). | Advarsel · Lav | 65 poeng |
+|  | Gjennomstrømningen er ujevn (haleforhold over 2,5). | Ikke bestått · Lav | 40 poeng |
+|  | For få prøver til å vurdere hvor jevn gjennomstrømningen er. | Info | Telles ikke |
+| `performance.errors` | Høyst 2 % av probeforespørslene mislyktes. | Bestått | 100 poeng |
+|  | Opptil 10 % av probeforespørslene mislyktes eller fikk tidsavbrudd. | Advarsel · Lav | 80 poeng |
+|  | Mange probeforespørsler mislyktes eller fikk tidsavbrudd. | Ikke bestått · Lav | 50 poeng |
+| `performance.load_stability` | Forsinkelsen holder seg under samtidig last (høyst 1,5x). | Bestått | 100 poeng |
+|  | Forsinkelsen øker under samtidig last (opptil 3x). | Advarsel · Lav | 80 poeng |
+|  | Forsinkelsen forverres kraftig under samtidig last (over 3x). | Ikke bestått · Lav | 55 poeng |
+| `performance.document_scaling` | En spørring over 32 dokumenter koster langt mindre per dokument enn en over 4. | Bestått | 100 poeng |
+|  | En spørring over 32 dokumenter koster omtrent like mye per dokument som en over 4 (forenlig med et relé som deler opp eller serialiserer dokumentene). | Advarsel · Lav | 60 poeng |
+|  | For få prøver til å vurdere hvordan forsinkelsen skalerer med antall dokumenter. | Info | Telles ikke |
+| `performance.cache_hit` | Unike probespørringer kom tilbake med gjentatte scorer (holdt utenfor statistikken). | Advarsel · Lav | 60 poeng |
+|  | Referansen returnerte gjentatte scorer for unike probespørringer (gir ikke score). | Info | Telles ikke |
+| `performance.relay_overhead` | Forsinkelse sammenlignet med den pålitelige referansen (til informasjon). | Info | Telles ikke |
+| `performance.skipped` | Ytelsesproben var slått av. | Info | Telles ikke |
+
 ---
 
 ## Triks → detektor
@@ -1010,7 +1418,7 @@ De 16 relétriksene fra undersøkelsen fordeler seg slik på ekte.
 | 5 | `context.window-truncation` | høy | `context_window` | stige med nål ved kanten + binærsøk; målt mot oppgitt |
 | 6 | `context.lost-in-middle-rag` | høy | `context_window` | dybdene 0,1/0,5/0,9 ved en middels størrelse |
 | 7 | `stream.fake-streaming` | middels | `streaming` | antall biter, tidspunkt for første token, jevnhet i oppholdene |
-| 8 | `billing.usage-inflation` | høy | `billing` | uavhengig heuristisk tokenanslag for én kjent probe |
+| 8 | `billing.usage-inflation` | høy | `billing` | stigningstallet for rapporterte prompttokens over tre promptstørrelser mot et heuristisk anslag; i sammenligningsmodus referansens eksakte tall |
 | 9 | `billing.missing-usage` | middels | `billing`, `protocol_response`, `streaming` | om usage finnes, fordelingen og regnestykket; usage-bit i strømmen |
 | 10 | `privacy.prompt-logging-leakage` | høy | `prompt_cache` | prefiksbufring etter TTFT (til informasjon); deling mellom brukere og logging kan fortsatt ikke bevises med én nøkkel |
 | 11 | `infra.shared-upstream-key` | høy | — | veikart (kvote som synker i ro, lekkede forespørsels-ID-er fra oppstrøms) |
@@ -1018,7 +1426,7 @@ De 16 relétriksene fra undersøkelsen fordeler seg slik på ekte.
 | 13 | `prompt.injected-system-prompt` | middels | `injected_prompt`, `billing` | fast overhead i inndatatokens (to størrelser) + lekkasjeprobe |
 | 14 | `throttle.rate-limit-quality` | middels | `reliability`, `performance` | suksessrate (429 for seg), haleforsinkelse, stabilitet under last; prober over tid står på veikartet |
 | 15 | `capability.json-tool-fakery` | middels | `capability`, `protocol_request` | verktøy, JSON-modus, strengt skjema, parametere; én probe hver, ikke rater |
-| 16 | `integrity.response-tampering` | kritisk | `integrity` | kanarier med kjent URL/pakke; CRITICAL når en referanse bekrefter |
+| 16 | `integrity.response-tampering` | kritisk | `integrity` | kanarier med kjent svar (syntetiske og kjente installasjons-URL-er, pakker med fast versjon, en `git clone`-linje, en lommebokadresse utledet per endepunkt) i vanlig og strømmet utdata og i verktøyargumenter; MEDIUM for én utskifting som verken en referanse eller en gjentakelse bekrefter, HIGH når en gjentakelse bytter ut igjen, CRITICAL når en referanse bekrefter |
 
 ---
 
@@ -1043,10 +1451,20 @@ uavklart og trapper bare opp til høy på harde bevis med høy alvorlighet.
 avgrensede prompter. Hvert funn har med seg bevisene sine (inndata, observerte
 verdier, antall, tidsmålinger), og hver rapport registrerer profilen,
 promptspråkene og innstillingene den kjørte med, så et resultat kan kontrolleres
-uavhengig. Et relé kan være testbevisst: kjør på nytt på andre tidspunkter, og
+uavhengig. Nåler, kanarier og cache-prefikser utledes av en tilfeldig verdi som trekkes én
+gang per kjøring (`run_nonce` i rapporten og i bevisfilen), så to kjøringer
+sender aldri de samme probene: et testbevisst relé kan ikke svare på dem fra en
+tabell, og en svarbuffer kan ikke gi en overvåking svarene fra en tidligere
+kjøring på nytt. Én kjøring forblir konsistent, en ny poengsetting gjenbruker
+den registrerte verdien, og `EKTE_RUN_NONCE` låser den. Prompter der ordlyden
+er selve målingen (fingeravtrykk, faktureringsavsnittet, probene for injisert
+prompt), er faste.
+Et relé kan være testbevisst: kjør på nytt på andre tidspunkter, og
 foretrekk sammenligningsmodus mot en pålitelig referanse for **nøyaktig det
 oppgitte snapshotet** — det er den sterkeste måten å skille modellens atferd fra
-reléets atferd på, og den eneste måten å nå høy sikkerhet.
+reléets atferd på, og den eneste måten å nå høy sikkerhet (minst to
+kjernedimensjoner sammenlignet med referansen; se
+[Sikkerhet i konklusjonen](#sikkerhet-i-konklusjonen)).
 
 **Ansvarlig varsling.** **Ikke** anklag en leverandør offentlig på grunnlag av en
 ekte-rapport. Før du handler, kjør på nytt med flere prøver og på andre

@@ -9,6 +9,8 @@
  *     download: { name: "ekte-report" },   // optional: JSON / Markdown / HTML / PDF buttons
  *     historyId: 42,   // optional: the saved run; with report.evidence its raw
  *                      // request/response pairs open under each finding's evidence
+ *     note: "…",       // optional: plain text (or a function returning it, called on
+ *                      // every render) shown with the actions: why one is missing
  *   })
  *     renders `report` (the audit stream's "report" event, or a history row's
  *     report) into `el`, wires its interactions, and re-renders it in place when
@@ -123,6 +125,7 @@
     protocol: ["协议兼容", "接口是否规范？"],
     connectivity: ["连通性", "稳定可达？"],
     reliability: ["并发可靠", "压力下稳不稳？"],
+    integrity: ["响应完整性", "响应是否原样未改？"],
     streaming: ["流式真实", "真流式还是假装？"],
     security: ["传输安全", "密钥是否安全？"],
     performance: ["性能表现", "快慢是否稳定？"],
@@ -135,6 +138,7 @@
     protocol: ["Protocol compliance", "Is the API spec-compliant?"],
     connectivity: ["Connectivity", "Reliably reachable?"],
     reliability: ["Concurrency reliability", "Stable under load?"],
+    integrity: ["Response integrity", "Is the response unaltered?"],
     streaming: ["Streaming authenticity", "Real streaming or faked?"],
     security: ["Transport security", "Are keys handled safely?"],
     performance: ["Performance", "Is its speed consistent?"],
@@ -146,13 +150,13 @@
   // back as "not run".
   var DIM_ORDER = [
     "connectivity", "protocol", "context_window", "model_identity", "capability",
-    "streaming", "billing", "reliability", "security", "performance",
+    "streaming", "billing", "reliability", "integrity", "security", "performance",
   ];
   // Another surface scores only the dimensions it has evidence for
   // (ekte/scoring.py SURFACE_WEIGHTS); a missing surface is chat.
   var SURFACE_DIMS = {
-    embedding: ["connectivity", "model_identity", "capability", "reliability", "performance"],
-    rerank: ["connectivity", "model_identity", "capability", "reliability", "performance"],
+    embedding: ["connectivity", "model_identity", "capability", "integrity", "performance"],
+    rerank: ["connectivity", "model_identity", "capability", "integrity", "performance"],
   };
   var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
   function surfaceOf(r) {
@@ -204,12 +208,12 @@
   var DIMDESC_EMBED = {
     model_identity: ["向量是否属于声称的模型？", "Do the vectors come from the claimed model?"],
     capability: ["不同输入是否得到不同向量？", "Do different inputs give different vectors?"],
-    reliability: ["同一输入是否得到同一向量？", "Does the same input give the same vector?"],
+    integrity: ["同一输入是否得到同一向量？", "Does the same input give the same vector?"],
   };
   var DIMDESC_RERANK = {
     model_identity: ["排序是否来自声称的模型？", "Do the rankings come from the claimed model?"],
     capability: ["显而易见的答案是否排在首位？", "Does the obvious answer rank first?"],
-    reliability: ["同一请求是否得到同一排序？", "Does the same request give the same ranking?"],
+    integrity: ["同一请求是否得到同一排序？", "Does the same request give the same ranking?"],
   };
   var DIMDESC = { embedding: DIMDESC_EMBED, rerank: DIMDESC_RERANK };
   function dimName(k, surface) {
@@ -235,13 +239,52 @@
     var K = window.EkteKpi;
     if (!K) return "";
     var none = scoreTxt === "—";
-    return K.html([
+    // coverage limits the rating (verdict.rating_limit, report schema 1.6, issue 249)
+    var lim = v.rating_limit;
+    var unrated = !!lim && lim.limit == null;
+    var note = unrated
+      ? T("未评级：可判断的内容太少", "Not rated: too little was judged")
+      : lim ? Tf("评级最高为 {r}", "Rating at most {r}", { r: lim.limit }) : null;
+    var tiles = [
       { id: "score", label: T("综合健康分", "Overall health score"), text: scoreTxt, unit: "/100",
         // the grade's step when the report has one, so score and grade agree
         family: v.rating ? window.EKTE_I18N.gradeStep(v.rating).family : scoreC(sc),
+        note: note,
         sr: none ? null : scoreTxt + "/100" + (v.rating ? " (" + Tf("评级 {r}", "Rating {r}", { r: v.rating }) + ")" : "") },
-      { id: "confidence", label: T("结论置信度", "Verdict confidence"), text: v.confidence ? label("CONFIDENCE", v.confidence) : "—" },
-    ], { variant: "compact" });
+    ];
+    // the judged share of the weight of the dimensions that ran
+    if (v.coverage != null && isFinite(v.coverage))
+      tiles.push({ id: "coverage", label: T("覆盖率", "Coverage"),
+        text: num(Math.floor(Math.round(v.coverage * 1e6) / 1e4), 0), unit: "%",
+        hint: T("运行过的维度中得出判断的权重占比；未能判断的维度不计入综合分。",
+          "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score.") });
+    tiles.push({ id: "confidence", label: T("结论置信度", "Verdict confidence"), text: v.confidence ? label("CONFIDENCE", v.confidence) : "—" });
+    return K.html(tiles, { variant: "compact" });
+  }
+  // The risk caps the overall score (verdict.score_cap, report schema 1.6):
+  // say so under the tiles, with the weighted mean and the findings that set it.
+  function scoreCapNote(v, r) {
+    var c = v.score_cap;
+    if (!c) return "";
+    var byId = {};
+    (r.detectors || []).forEach(function (det) {
+      (det.findings || []).forEach(function (f) {
+        if (!byId[f.id]) byId[f.id] = f;
+      });
+    });
+    var list = (c.findings || []).map(function (fid) {
+      return byId[fid] ? loc(byId[fid]).title : fid;
+    }).join(", ");
+    return '<p class="how zr-cap">' + esc(Tf(
+      "综合分上限为 {cap}，因为风险为「{risk}」（各维度加权平均分为 {mean}）。决定风险的发现：{list}。",
+      "Score capped at {cap} because the risk level is “{risk}” (weighted mean of the dimensions: {mean}). Findings that set the risk: {list}.",
+      {
+        cap: num(c.cap, 0),
+        risk: label("RISK_LEVEL", riskStep(c.risk_level).key),
+        mean: v.uncapped_score == null ? "—" : num(v.uncapped_score, 1),
+        list: list || "—",
+      }
+    )) + "</p>";
   }
   // The headline names what drove the risk (verdict.drivers, scoring order):
   // the claimed-model sentences only when model identity is among them, and a
@@ -286,17 +329,22 @@
   // went through EKTE_I18N.exportReport and came back via history/import).
   var SCORE_EN = "Overall health score {1}/100.";
   var DISC_EN = "ekte reports black-box evidence of divergence and risk, not proof of fraud.";
+  // the risk cap sentence (issue 247): the card shows the cap under the score tiles
+  var CAP_EN = "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.";
   function summaryRest(s) {
     s = String(s || "");
-    var forms = [[SCORE_EN, DISC_EN]];
+    var forms = [[SCORE_EN, DISC_EN, CAP_EN]];
     var strings = (window.EKTE_LOCALES && window.EKTE_LOCALES.strings) || {};
     Object.keys(strings).forEach(function (code) {
       var d = strings[code] || {};
-      forms.push([d[SCORE_EN], d[DISC_EN]]);
+      forms.push([d[SCORE_EN], d[DISC_EN], d[CAP_EN]]);
     });
     forms.forEach(function (f) {
       if (f[0]) s = s.replace(new RegExp("\\s*" + reEsc(f[0]).replace("\\{1\\}", "[\\d.,]+"), "g"), " ");
       if (f[1]) s = s.split(f[1]).join(" ");
+      if (f[2])
+        s = s.replace(new RegExp("\\s*" + reEsc(f[2]).replace("\\{1\\}", "[\\d.,]+")
+          .replace("\\{3\\}", "[\\d.,]+").replace("\\{2\\}", "[^;；.。]+?"), "g"), " ");
     });
     return s.replace(/\s{2,}/g, " ").trim();
   }
@@ -453,6 +501,28 @@
           return dname(x.id);
         }).join(", "),
       });
+    // a detector with a HIGH/CRITICAL finding caps the dimension (report schema 1.6)
+    var title = function (fid) {
+      var f = null;
+      members.forEach(function (det) {
+        (det.findings || []).forEach(function (x) {
+          if (!f && x.id === fid) f = x;
+        });
+      });
+      return f ? loc(f).title : fid;
+    };
+    var cap = b && b.score_cap;
+    if (cap)
+      how += " " + Tf(
+        "平均分 {mean}，上限为 {cap}（{det} 的得分），原因是其严重程度为高或严重的发现：{list}。维度得分不高于带有此类发现的最低检测器得分。",
+        "Mean {mean}, capped at {cap}, the score of {det}, by its high or critical findings: {list}. A dimension scores no higher than its lowest detector with such a finding.",
+        {
+          mean: num(cap.uncapped_score, 1),
+          cap: num(cap.cap, 1),
+          det: dname(cap.detector),
+          list: (cap.findings || []).map(title).join(", "),
+        }
+      );
     var o = b && b.status_override;
     var why = o
       ? Tf(
@@ -462,15 +532,7 @@
             from: label("STATUS", o.from_status),
             to: label("STATUS", o.to_status),
             sev: label("SEVERITY", o.severity),
-            list: o.findings.map(function (fid) {
-              var f = null;
-              members.forEach(function (det) {
-                (det.findings || []).forEach(function (x) {
-                  if (!f && x.id === fid) f = x;
-                });
-              });
-              return f ? loc(f).title : fid;
-            }).join(", "),
+            list: o.findings.map(title).join(", "),
           }
         )
       : b
@@ -873,9 +935,28 @@
       if (!isNaN(dt))
         meta.push(item(T("时间", "Time"), esc(intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(dt))));
     }
-    meta.push(item(T("版本", "Version"), code("ekte v" + (r.tool_version || "?"))));
-    // a re-score: the recorded run it replayed, and what had no recorded answer
+    // a re-score: the version the audit ran with and the one that scored it
+    // (issue 168), when, the verdict before it, the recorded run it replayed, and
+    // what had no recorded answer
     var rs = r.rescored_from;
+    var dateTime = function (s) {
+      var d = s ? new Date(s) : null;
+      return d && !isNaN(d) ? intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(d) : null;
+    };
+    meta.push(item(T("版本", "Version"), rs
+      ? esc(Tf("ekte {audit} · 用 {scoring} 重新评分", "ekte {audit} · re-scored with {scoring}", {
+          audit: "v" + (rs.tool_version || "?"), scoring: "v" + (r.tool_version || "?") }))
+      : code("ekte v" + (r.tool_version || "?"))));
+    if (rs && dateTime(rs.rescored_at))
+      meta.push(item(T("重新评分时间", "Re-scored on"), esc(dateTime(rs.rescored_at))));
+    var pv = rs && rs.previous_verdict;
+    if (pv) {
+      var was = [];
+      if (pv.risk_level) was.push(Tf("风险：{v}", "risk: {v}", { v: label("RISK_LEVEL", riskStep(pv.risk_level).key) }));
+      if (pv.overall_score != null) was.push(Tf("健康分 {v}", "score {v}", { v: num(pv.overall_score, 1) }));
+      if (pv.rating) was.push(Tf("评级 {v}", "grade {v}", { v: pv.rating }));
+      if (was.length) meta.push(item(T("重新评分前的结论", "Verdict before the re-score"), esc(was.join(" · "))));
+    }
     if (rs) {
       var when = rs.generated_at ? new Date(rs.generated_at) : null;
       var missed = Object.keys(rs.missing || {}).reduce(function (a, k) { return a + rs.missing[k]; }, 0);
@@ -890,7 +971,9 @@
         }))));
     }
 
-    // the actions row (ekte.css .actions): the primary action last
+    // the actions row (ekte.css .actions): the primary action last, after
+    // the note on a missing one (text, or a function giving it in the language)
+    var note = typeof opts.note === "function" ? opts.note() : opts.note;
     var acts = opts.actions || [];
     var actions = acts.map(function (a, i) { return { a: a, i: i }; })
       .filter(function (x) { return !x.a.primary; })
@@ -928,6 +1011,7 @@
       '<h2 id="' + hid + '">' + esc(head(v)) + "</h2>" +
       (rest ? '<p class="sum">' + esc(rest) + "</p>" : "") +
       '<div class="vscores">' + scoreTiles(v, sc, scoreTxt) + "</div>" +
+      scoreCapNote(v, r) +
       "</div></div>" +
       '<dl class="meta-strip">' + meta.join("") + "</dl>" +
       '<section class="sect"><h3>' + esc(T("逐项体检", "Per-dimension checks")) +
@@ -955,7 +1039,7 @@
         "ekte provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
       ) +
       "</p>" +
-      (actions ? '<div class="actions">' + actions + "</div>" : "") +
+      (actions || note ? '<div class="actions">' + (note ? '<p class="hint">' + esc(note) + "</p>" : "") + actions + "</div>" : "") +
       dl +
       "</footer></article>"
     );

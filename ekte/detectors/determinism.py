@@ -24,6 +24,7 @@ from ekte import prompts
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import is_reasoning
 from ekte.detectors.scale import Scale, outcome
 from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
 
@@ -52,7 +53,7 @@ SCALE = Scale(
 class DeterminismDetector(Detector):
     id = "determinism"
     name = "Determinism & cache-correctness"
-    dimension = Dimension.PROTOCOL
+    dimension = Dimension.INTEGRITY
     min_suite = "deep"
     cost_hint = 6
 
@@ -66,10 +67,6 @@ class DeterminismDetector(Detector):
 
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
-        # Reasoning models legitimately ignore/clamp temperature and may repeat
-        # output, so a byte-identical run is NOT evidence of caching for them.
-        reasoning = bool(ctx.profile and getattr(ctx.profile.model, "reasoning", False))
-
         # 1) High-temperature variability — the load-bearing caching probe. A longer
         # generation has far more entropy, so genuine sampling almost never repeats.
         creative = RequestSpec(
@@ -84,6 +81,12 @@ class DeterminismDetector(Detector):
         )
         outcomes = [await ctx.client.complete(creative) for _ in range(self.CACHING_SAMPLES)]
         usable = [o for o in outcomes if o.ok and o.has_content()]
+        # Reasoning models legitimately ignore/clamp temperature and may repeat
+        # output, so a byte-identical run is NOT evidence of caching for them.
+        # Reasoning = the profile, the client's learned state, or reported
+        # reasoning tokens (helpers.is_reasoning), so an unprofiled reasoning
+        # model is recognised too.
+        reasoning = is_reasoning(ctx, *outcomes)
 
         if len(usable) >= self.MIN_USABLE_SAMPLES:
             texts = [o.content.strip() for o in usable]
@@ -123,7 +126,7 @@ class DeterminismDetector(Detector):
                         calls=outcomes,
                         title="Identical output at temperature=1.0 (expected for a reasoning model)",
                         summary=(
-                            f"{len(usable)} samples were byte-identical, but the claimed "
+                            f"{len(usable)} samples were byte-identical, but the "
                             "model is a reasoning model that legitimately ignores sampling "
                             "parameters — not treated as a caching signal."
                         ),

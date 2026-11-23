@@ -28,7 +28,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--dimension/-D` è ripetibile o separato da virgole e implica `--suite custom`;
 in un file di configurazione usa `run.dimensions: [protocol, performance]`. Le
 dimensioni sono `connectivity`, `protocol`, `context_window`, `model_identity`,
-`capability`, `streaming`, `billing`, `reliability`, `security` e
+`capability`, `streaming`, `billing`, `reliability`, `integrity`, `security` e
 `performance`. Nell'interfaccia web il pulsante di suite `custom` apre la stessa
 scelta (**Dimensioni da eseguire**) nella pagina di verifica e nei
 monitor.
@@ -62,5 +62,10 @@ affidabile** nell'interfaccia web) esegue le stesse sonde, nello stesso momento,
 contro un riferimento affidabile del modello dichiarato. È la via di conferma più
 forte: risposte d'identità, parametri di richiesta rifiutati, canary di
 manomissione e prestazioni vengono giudicati fianco a fianco, e solo un
-riferimento permette all'affidabilità del verdetto di essere *alta*. Senza
-`--judge-base-url`, la modalità di confronto usa il riferimento come giudice.
+riferimento permette all'affidabilità del verdetto di essere *alta*: almeno
+due dimensioni centrali (identità del modello, finestra di contesto, capacità
+dichiarate, fatturazione) devono essere state davvero confrontate con una
+risposta utilizzabile del riferimento; un giudice da solo non ci riesce mai
+(vedi [Affidabilità del verdetto](methodology.md#affidabilità-del-verdetto)).
+Senza `--judge-base-url`, la modalità di confronto usa il riferimento come
+giudice.

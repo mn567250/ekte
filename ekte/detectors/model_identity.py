@@ -1,10 +1,12 @@
 """Model identity & downgrade fingerprinting — the core 货不对板 detector.
 
 A relay can claim to serve an expensive model while quietly routing to a cheaper
-substitute. This detector triangulates identity three ways: a direct self-id
-prompt checked against the genuine brand words (and rival brands that betray a
-swap), the knowledge base's pure-code behavioral fingerprints (knowledge cutoff,
-tokenizer quirks, etc.), and the ``model`` field the relay echoes back. Divergence
+substitute. This detector checks a direct self-id prompt against the genuine
+brand words (and rival brands that betray a swap), the knowledge base's
+pure-code behavioral fingerprints (the model's own first: only they can tell it
+from a sibling of the same vendor), the self-reported knowledge cutoff against
+the profile's, and the ``model`` field the relay echoes back. In compare mode
+every fingerprint and the cutoff probe also go to the baseline. Divergence
 between the claim and what the model actually behaves like is the signal.
 
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
@@ -21,9 +23,16 @@ from ekte import prompts
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
-from ekte.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
+from ekte.detectors.helpers import (
+    contains_all,
+    contains_any,
+    contains_term_any,
+    contains_word,
+    contains_word_any,
+)
 from ekte.detectors.scale import DeductionScale, evidence_seqs, outcome
 from ekte.knowledge.identity import AMBIGUOUS_BRAND_WORDS, VENDOR_BRANDS, own_brand_words
+from ekte.knowledge.model_ids import compare_echoed_model
 from ekte.models import (
     CompletionOutcome,
     DetectorResult,
@@ -33,10 +42,6 @@ from ekte.models import (
     Severity,
     Status,
 )
-
-# Substrings that name a cheaper/smaller tier of a family. If the returned model
-# field carries one of these and the requested id does not, that is a downgrade.
-_DOWNGRADE_HINTS = ("mini", "nano", "flash", "lite", "small", "tiny", "8b", "7b", "3b", "1b")
 
 # Known LLM vendor/brand words (incl. Chinese). A model that self-identifies with
 # any of these — OTHER than its own brand — betrays a substitution, even when the KB
@@ -116,6 +121,13 @@ SCALE = DeductionScale(
     outcome("model_identity.fp", "diverged", None, Status.WARN, Severity.LOW,
             max_deduction=_MAX_FP_DEDUCTION,
             label="The answer diverged from native behavior: deducts the probe's weight share of 100 points."),
+    outcome("model_identity.fp", "corroborated", None, Status.WARN, Severity.MEDIUM,
+            max_deduction=_MAX_FP_DEDUCTION,
+            label="The answer diverged from native behavior while the baseline's matched it: "
+                  "deducts the probe's weight share of 100 points."),
+    outcome("model_identity.fp", "baseline_also_diverged", None, Status.INFO,
+            label="The answer diverged, but so did the baseline's: a knowledge-base problem, "
+                  "not relay evidence; no deduction."),
     outcome("model_identity.fp", "rival_brand", None, Status.FAIL, Severity.HIGH,
             max_deduction=_MAX_FP_DEDUCTION, cap=_CONTRADICTION_CAP,
             label="The answer named a rival brand and not the genuine one: deducts the probe's weight share."),
@@ -123,19 +135,102 @@ SCALE = DeductionScale(
             label=_NO_RESPONSE),
     outcome("model_identity.fp", "skipped_output_cap", None, Status.INFO,
             label="The probe needs more output than the 512-token identity cap; not run."),
+    outcome("model_identity.cutoff", "consistent", None, Status.PASS,
+            label="The reported knowledge cutoff is within 6 months of the claimed model's."),
+    outcome("model_identity.cutoff", "earlier", None, Status.WARN, Severity.LOW,
+            max_deduction=_MAX_FP_DEDUCTION,
+            label="The reported knowledge cutoff is more than 12 months earlier than the claimed "
+                  "model's: deducts its weight share of 100 points like a fingerprint."),
+    outcome("model_identity.cutoff", "corroborated", None, Status.WARN, Severity.MEDIUM,
+            max_deduction=_MAX_FP_DEDUCTION,
+            label="The reported knowledge cutoff is more than 12 months earlier while the "
+                  "baseline's is consistent: deducts its weight share of 100 points."),
+    outcome("model_identity.cutoff", "baseline_also_diverged", None, Status.INFO,
+            label="The reported knowledge cutoff is more than 12 months earlier, but so is the "
+                  "baseline's: a knowledge-base problem, not relay evidence; no deduction."),
+    outcome("model_identity.cutoff", "differs", None, Status.INFO,
+            label="The reported knowledge cutoff is off by more than 6 months, but not more than "
+                  "12 months earlier: recorded, not judged."),
+    outcome("model_identity.cutoff", "inconclusive", None, Status.INCONCLUSIVE,
+            label="No answer in the CUTOFF=YYYY-MM format to judge by."),
     outcome("model_identity.fp_aggregate", "diverged", None, Status.WARN, Severity.MEDIUM,
             label="Two or more behavioral fingerprints diverged."),
     outcome("model_identity.model_field", "consistent", None, Status.PASS,
             label="The echoed model field matched the requested model."),
     outcome("model_identity.model_field", "diverges", None, Status.WARN, Severity.MEDIUM,
             label="The echoed model field names a different or smaller model."),
+    outcome("model_identity.model_field", "unknown", None, Status.INFO,
+            label="The echoed model field names a different id that ekte cannot place: recorded, not judged."),
     outcome("model_identity.model_field", "unavailable", None, Status.INCONCLUSIVE,
             label="The response had no usable model field."),
+    outcome("model_identity.model_specific", "vendor_only", None, Status.INFO,
+            label="No check could tell the claimed model from other models of its vendor and no "
+                  "baseline or judge was used: the vendor is consistent, the specific model was "
+                  "not verified."),
     outcome("model_identity.no_evidence", "none", None, Status.INCONCLUSIVE,
             label="No self-identification or fingerprint answer was usable and the model "
                   "field did not diverge: not scored."),
     titles={"model_identity.fp": "Behavioral fingerprints"},
 )
+
+# The self-reported knowledge cutoff (prompt model_identity.cutoff): within
+# _CUTOFF_TOLERANCE months of the profile's it is consistent; more than
+# _CUTOFF_EARLIER months earlier it diverges. Self-reported cutoffs are soft
+# evidence, so the check weighs like one fingerprint and is never HIGH.
+_CUTOFF_PROMPT = prompts.text("model_identity.cutoff")
+_CUTOFF_ANSWER = re.compile(r"CUTOFF\s*[=:]\s*(\d{4})\s*[-/.]\s*(\d{1,2})(?!\d)", re.IGNORECASE)
+_CUTOFF_TOLERANCE = 6
+_CUTOFF_EARLIER = 12
+_CUTOFF_WEIGHT = 1.0
+_CUTOFF_SIGNAL = "self-reported knowledge cutoff"
+_CUTOFF_MAX_TOKENS = 64
+
+
+def parse_cutoff(text: str | None) -> tuple[int, int] | None:
+    """The (year, month) of a ``CUTOFF=YYYY-MM`` answer, or None."""
+    m = _CUTOFF_ANSWER.search(text or "")
+    if not m or not 1 <= int(m[2]) <= 12:
+        return None
+    return int(m[1]), int(m[2])
+
+
+def _months(ym: tuple[int, int]) -> int:
+    return ym[0] * 12 + ym[1] - 1
+
+
+def _ym(ym: tuple[int, int]) -> str:
+    return f"{ym[0]:04d}-{ym[1]:02d}"
+
+
+def _cutoff_verdict(answer: tuple[int, int] | None, claimed: tuple[int, int]) -> str:
+    """``consistent`` / ``earlier`` / ``differs`` / ``inconclusive``."""
+    if answer is None:
+        return "inconclusive"
+    delta = _months(answer) - _months(claimed)
+    if abs(delta) <= _CUTOFF_TOLERANCE:
+        return "consistent"
+    if delta < -_CUTOFF_EARLIER:
+        return "earlier"
+    return "differs"
+
+
+class _Tally:
+    """What the fingerprint and cutoff checks add up to across probes."""
+
+    def __init__(self, total_weight: float) -> None:
+        self.total_weight = total_weight
+        self.violated = 0
+        self.soft_violations: list[str] = []
+        self.diverged_calls: list[CompletionOutcome] = []
+        self.high = False
+        self.medium = False
+
+    def deduction(self, weight: float) -> float:
+        """A diverging probe's weight share of 100 points, capped so one
+        fragile fingerprint can't tank the identity score on its own."""
+        if self.total_weight <= 0:
+            return 0.0
+        return min((max(weight, 0.0) / self.total_weight) * 100.0, _MAX_FP_DEDUCTION)
 
 
 @register
@@ -144,7 +239,7 @@ class ModelIdentityDetector(Detector):
     name = "Model identity & downgrade fingerprinting"
     dimension = Dimension.MODEL_IDENTITY
     min_suite = "standard"
-    cost_hint = 9
+    cost_hint = 10
 
     # Cap on fingerprint probes actually issued (cost control, ~8-call budget).
     MAX_FINGERPRINTS = 6
@@ -187,7 +282,12 @@ class ModelIdentityDetector(Detector):
             has_high = True
 
         # 2) Pure-code behavioral fingerprints. -------------------------- #
-        probes = [fp for fp in ctx.profile.all_fingerprints() if fp.pure_code_checkable]
+        # The model's own probes go first, so the slice below never drops the
+        # only ones that can tell it from a sibling of the same vendor.
+        own = ctx.profile.model.fingerprints
+        probes = [
+            fp for fp in (*own, *ctx.profile.provider.fingerprints) if fp.pure_code_checkable
+        ]
         # A probe whose expected answer needs more output than the cap (e.g. a
         # count-to-4000 max-output check) would diverge on every genuine model.
         # Skip it before the slice so another probe takes its slot; it counts
@@ -215,116 +315,39 @@ class ModelIdentityDetector(Detector):
                     },
                 )
             )
+        # The knowledge-cutoff probe runs when the profile names a cutoff month
+        # and weighs like one fingerprint.
+        claimed_cutoff = model.cutoff_month()
         total_weight = sum(max(fp.weight, 0.0) for fp in probes)
-        violated = 0
+        if claimed_cutoff is not None:
+            total_weight += _CUTOFF_WEIGHT
         # Non-identity (behavioral) fingerprint divergences are individually noisy,
         # so a single one stays LOW and does not escalate overall risk; two or more
-        # together raise a MEDIUM aggregate.
-        soft_violations: list[str] = []
-        diverged_calls: list[CompletionOutcome] = []
+        # together raise a MEDIUM aggregate, and a baseline that answers natively
+        # where the target diverges raises the divergence itself to MEDIUM.
+        tally = _Tally(total_weight)
+        own_ids = {id(fp) for fp in own}
+        model_specific = 0
         for fp in probes:
-            outcome = await ctx.client.complete(
-                RequestSpec(
-                    messages=[{"role": "user", "content": fp.prompt}],
-                    temperature=fp.temperature,
-                    max_tokens=min(fp.max_tokens, self.MAX_FINGERPRINT_OUTPUT),
-                )
-            )
-            if not (outcome.ok and outcome.has_content()):
-                # A relay that errors or stays silent on a probe is not evidence of
-                # a downgrade by itself — record it but do not penalize the score.
-                result.findings.append(
-                    SCALE.finding(
-                        "model_identity.fp",
-                        "inconclusive",
-                        recommendation=advice.failure_advice(outcome),
-                        calls=[outcome],
-                        id=f"model_identity.fp.{fp.id}",
-                        title=f"Fingerprint inconclusive: {fp.signal}",
-                        summary=outcome.error_message or f"No usable response (HTTP {outcome.status_code}).",
-                        evidence={"probe": fp.id, "status_code": outcome.status_code},
-                    )
-                )
-                continue
-
-            text = outcome.content
-            # Ambiguous brand words ("step by step", "a meta question") never count
-            # here: a fingerprint answer is free prose, not a self-description.
-            forbidden_hits = _brand_hits(
-                text, self._forbidden_brands(model, ctx.profile.provider), ambiguous=False
-            )
-            # A rival brand only contradicts identity when the GENUINE brand is
-            # absent; an honest model contrasting itself ("not Claude") is benign —
-            # same gating as the direct self-id check. Own brand words match in
-            # any form: the genuine brand is never ambiguous to its own model.
-            genuine_present = contains_word_any(text, own_brand_words(ctx.profile.provider, model))
-            forbidden_contradiction = bool(forbidden_hits) and not genuine_present
-            is_violation = self._fingerprint_violated(fp, text) or forbidden_contradiction
-            if is_violation:
-                violated += 1
-                # Cap a single probe's penalty so one fragile fingerprint can't
-                # tank the identity score on its own.
-                deduction = (
-                    min((max(fp.weight, 0.0) / total_weight) * 100.0, _MAX_FP_DEDUCTION)
-                    if total_weight > 0
-                    else 0.0
-                )
-                if forbidden_contradiction:
-                    has_high = True
-                    hit = forbidden_hits[0]
-                    summary = (
-                        f"Probe '{fp.signal}' surfaced a forbidden brand ({hit}); "
-                        f"expected behavior consistent with {model.id}."
-                    )
-                    key = "rival_brand"
-                else:
-                    soft_violations.append(fp.signal)
-                    diverged_calls.append(outcome)
-                    summary = (
-                        f"Probe '{fp.signal}' diverged from native behavior. "
-                        f"Expected: {fp.native_expected or self._expectation_text(fp)}."
-                    )
-                    key = "diverged"
-                result.findings.append(
-                    SCALE.finding(
-                        "model_identity.fp",
-                        key,
-                        calls=[outcome],
-                        id=f"model_identity.fp.{fp.id}",
-                        deduction=deduction,
-                        title=f"Fingerprint divergence: {fp.signal}",
-                        summary=summary,
-                        evidence={
-                            "probe": fp.id,
-                            "signal": fp.signal,
-                            "native_expected": fp.native_expected,
-                            "downgrade_signal": fp.downgrade_signal,
-                            "observed": text[:400],
-                            "weight": fp.weight,
-                        },
-                    )
-                )
-            else:
-                result.findings.append(
-                    SCALE.finding(
-                        "model_identity.fp",
-                        "consistent",
-                        calls=[outcome],
-                        id=f"model_identity.fp.{fp.id}",
-                        title=f"Fingerprint consistent: {fp.signal}",
-                        summary=f"Behavior consistent with {model.id}.",
-                        evidence={"probe": fp.id, "observed": text[:200]},
-                    )
-                )
+            got_answer = await self._run_fingerprint(ctx, fp, model, result, tally)
+            if got_answer and id(fp) in own_ids:
+                model_specific += 1
+        if claimed_cutoff is not None:
+            await self._check_cutoff(ctx, claimed_cutoff, result, tally)
+        if tally.high:
+            has_high = True
+        if tally.medium:
+            has_medium = True
 
         # Two or more behavioral divergences together justify a MEDIUM aggregate.
+        soft_violations = tally.soft_violations
         if len(soft_violations) >= 2:
             has_medium = True
             result.findings.append(
                 SCALE.finding(
                     "model_identity.fp_aggregate",
                     "diverged",
-                    calls=diverged_calls,
+                    calls=tally.diverged_calls,
                     title="Multiple behavioral fingerprints diverged",
                     summary=(
                         f"{len(soft_violations)} pure-code fingerprints diverged from native "
@@ -363,13 +386,33 @@ class ModelIdentityDetector(Detector):
                         "usable answer, and the echoed model field shows no divergence; "
                         "identity could not be judged."
                     ),
-                    # The identity questions asked: self-id plus each fingerprint run.
-                    evidence={"checks": 1 + len(probes)},
+                    # The identity questions asked: self-id, each fingerprint
+                    # run and the cutoff probe.
+                    evidence={"checks": 1 + len(probes) + int(claimed_cutoff is not None)},
                 )
             )
             result.score = None
             result.status = Status.INCONCLUSIVE
         else:
+            if not has_high and model_specific == 0 and not ctx.has_baseline and not ctx.has_judge:
+                # Honest wording: every check that ran holds for any model of
+                # the vendor, so a same-vendor substitute would pass them too.
+                vendor = ctx.profile.provider.display_name or ctx.profile.provider.provider
+                result.findings.append(
+                    SCALE.finding(
+                        "model_identity.model_specific",
+                        "vendor_only",
+                        recommendation=advice.VERIFY_SPECIFIC_MODEL,
+                        calls=[],
+                        title="Specific model not verified",
+                        summary=(
+                            f"The answers are consistent with the vendor ({vendor}), but no check "
+                            f"can tell {model.id} from the vendor's other models and no baseline "
+                            "or judge was used: the specific model was not verified."
+                        ),
+                        evidence={"model_specific_checks": 0, "vendor": vendor, "model": model.id},
+                    )
+                )
             result.score = SCALE.total(result.findings)
             if has_high:
                 result.status = Status.FAIL
@@ -382,12 +425,288 @@ class ModelIdentityDetector(Detector):
         # Languages of the fingerprint prompts actually sent (see prompt_lang in
         # the knowledge base); the runner records them on the report.
         result.evidence["fingerprint_prompt_langs"] = sorted({fp.prompt_lang for fp in probes})
-        result.evidence["fingerprints_violated"] = violated
+        result.evidence["fingerprints_violated"] = tally.violated
         result.evidence["fingerprints_skipped"] = [fp.id for fp in skipped]
+        # Answered probes that can tell the claimed model from a same-vendor
+        # sibling (its own fingerprints; see model_specific_fingerprints).
+        result.evidence["model_specific_checks"] = model_specific
+        result.evidence["cutoff_checked"] = claimed_cutoff is not None
+        # Whether a usable baseline answer was compared (not merely configured).
+        result.evidence["baseline_compared"] = result.baseline_compared
         result.evidence["match_confidence"] = ctx.profile.match_confidence
         return result
 
     # ------------------------------------------------------------------ #
+    @staticmethod
+    async def _baseline(ctx: AuditContext, spec: RequestSpec) -> CompletionOutcome | None:
+        """The same request on the baseline, in compare mode; else None."""
+        if not (ctx.has_baseline and ctx.baseline_client is not None):
+            return None
+        return await ctx.baseline_client.complete(spec)
+
+    def _violation(self, ctx: AuditContext, fp, model, text: str) -> tuple[bool, list[str]]:
+        """(violated, forbidden brand hits that contradict identity) for one
+        fingerprint answer."""
+        provider = ctx.profile.provider if ctx.profile is not None else None
+        # Ambiguous brand words ("step by step", "a meta question") never count
+        # here: a fingerprint answer is free prose, not a self-description.
+        forbidden_hits = _brand_hits(text, self._forbidden_brands(model, provider), ambiguous=False)
+        # A rival brand only contradicts identity when the GENUINE brand is
+        # absent; an honest model contrasting itself ("not Claude") is benign —
+        # same gating as the direct self-id check. Own brand words match in
+        # any form: the genuine brand is never ambiguous to its own model.
+        genuine_present = contains_word_any(text, own_brand_words(provider, model))
+        contradiction = forbidden_hits if forbidden_hits and not genuine_present else []
+        return self._fingerprint_violated(fp, text) or bool(contradiction), contradiction
+
+    async def _run_fingerprint(
+        self, ctx: AuditContext, fp, model, result: DetectorResult, tally: _Tally
+    ) -> bool:
+        """Send one fingerprint probe (and, in compare mode, the same probe to
+        the baseline); append its finding. Returns True when the target answered."""
+        spec = RequestSpec(
+            messages=[{"role": "user", "content": fp.prompt}],
+            temperature=fp.temperature,
+            max_tokens=min(fp.max_tokens, self.MAX_FINGERPRINT_OUTPUT),
+        )
+        outcome = await ctx.client.complete(spec)
+        base = await self._baseline(ctx, spec)
+        calls = [outcome] if base is None else [outcome, base]
+        if not (outcome.ok and outcome.has_content()):
+            # A relay that errors or stays silent on a probe is not evidence of
+            # a downgrade by itself — record it but do not penalize the score.
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.fp",
+                    "inconclusive",
+                    recommendation=advice.failure_advice(outcome),
+                    calls=calls,
+                    id=f"model_identity.fp.{fp.id}",
+                    title=f"Fingerprint inconclusive: {fp.signal}",
+                    summary=outcome.error_message or f"No usable response (HTTP {outcome.status_code}).",
+                    evidence={"probe": fp.id, "status_code": outcome.status_code},
+                )
+            )
+            return False
+
+        text = outcome.content
+        is_violation, forbidden_hits = self._violation(ctx, fp, model, text)
+        # The baseline's verdict on the same probe: True (it diverged too),
+        # False (it answered natively) or None (no baseline / no usable answer).
+        base_text = base.content if base is not None and base.ok and base.has_content() else None
+        base_violated = None if base_text is None else self._violation(ctx, fp, model, base_text)[0]
+        evidence: dict = {"probe": fp.id}
+        if fp.separates_from:
+            evidence["separates_from"] = fp.separates_from
+            evidence["verified"] = fp.verified
+        if base_text is not None:
+            result.baseline_compared = True
+            evidence["baseline_observed"] = base_text[:400 if is_violation else 200]
+            evidence["baseline_diverged"] = base_violated
+
+        if not is_violation:
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.fp",
+                    "consistent",
+                    calls=calls,
+                    id=f"model_identity.fp.{fp.id}",
+                    title=f"Fingerprint consistent: {fp.signal}",
+                    summary=f"Behavior consistent with {model.id}.",
+                    evidence={**evidence, "observed": text[:200]},
+                )
+            )
+            return True
+
+        tally.violated += 1
+        evidence.update({
+            "signal": fp.signal,
+            "native_expected": fp.native_expected,
+            "downgrade_signal": fp.downgrade_signal,
+            "observed": text[:400],
+            "weight": fp.weight,
+        })
+        expected = fp.native_expected or self._expectation_text(fp)
+        if forbidden_hits:
+            # A rival brand is evidence of its own, whatever the baseline says.
+            tally.high = True
+            key = "rival_brand"
+            summary = (
+                f"Probe '{fp.signal}' surfaced a forbidden brand ({forbidden_hits[0]}); "
+                f"expected behavior consistent with {model.id}."
+            )
+        elif base_violated:
+            # The trusted baseline misses the expectation too: the probe, not
+            # the relay, is wrong. Recorded for the knowledge base, not scored.
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.fp",
+                    "baseline_also_diverged",
+                    recommendation=advice.KB_PROBE_DIVERGES_ON_BASELINE,
+                    calls=calls,
+                    id=f"model_identity.fp.{fp.id}",
+                    title=f"Fingerprint diverged on the baseline too: {fp.signal}",
+                    summary=(
+                        f"Probe '{fp.signal}' diverged on the target and on the baseline "
+                        f"(expected: {expected}); a knowledge-base problem, not relay evidence."
+                    ),
+                    evidence={**evidence, "baseline_also_diverged": True},
+                )
+            )
+            return True
+        else:
+            tally.soft_violations.append(fp.signal)
+            tally.diverged_calls.append(outcome)
+            if base_violated is False:
+                tally.medium = True
+                key = "corroborated"
+                summary = (
+                    f"Probe '{fp.signal}' diverged from native behavior while the baseline "
+                    f"answered natively. Expected: {expected}."
+                )
+            else:
+                key = "diverged"
+                summary = f"Probe '{fp.signal}' diverged from native behavior. Expected: {expected}."
+        result.findings.append(
+            SCALE.finding(
+                "model_identity.fp",
+                key,
+                calls=calls,
+                id=f"model_identity.fp.{fp.id}",
+                deduction=tally.deduction(fp.weight),
+                title=f"Fingerprint divergence: {fp.signal}",
+                summary=summary,
+                evidence=evidence,
+            )
+        )
+        return True
+
+    async def _check_cutoff(
+        self, ctx: AuditContext, claimed: tuple[int, int], result: DetectorResult, tally: _Tally
+    ) -> None:
+        """Ask for the knowledge cutoff (``CUTOFF=YYYY-MM``) and compare it with
+        the profile's; in compare mode the baseline answers too."""
+        spec = RequestSpec(
+            messages=[{"role": "user", "content": _CUTOFF_PROMPT}],
+            temperature=0.0,
+            max_tokens=_CUTOFF_MAX_TOKENS,
+        )
+        outcome = await ctx.client.complete(spec)
+        base = await self._baseline(ctx, spec)
+        calls = [outcome] if base is None else [outcome, base]
+        usable = outcome.ok and outcome.has_content()
+        answer = parse_cutoff(outcome.content) if usable else None
+        key = _cutoff_verdict(answer, claimed)
+        evidence: dict = {
+            "claimed_cutoff": _ym(claimed),
+            "reported_cutoff": _ym(answer) if answer else None,
+            "observed": (outcome.content or "")[:200] if usable else None,
+        }
+        if answer is not None:
+            evidence["months_off"] = _months(answer) - _months(claimed)
+        base_key = None
+        if base is not None and base.ok and base.has_content():
+            base_answer = parse_cutoff(base.content)
+            base_key = _cutoff_verdict(base_answer, claimed)
+            evidence["baseline_cutoff"] = _ym(base_answer) if base_answer else None
+            if answer is not None and base_answer is not None:
+                result.baseline_compared = True
+
+        if key == "inconclusive":
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.cutoff",
+                    "inconclusive",
+                    recommendation=None if usable else advice.failure_advice(outcome),
+                    calls=calls,
+                    title="Knowledge cutoff not reported",
+                    summary=(
+                        outcome.error_message
+                        or "The answer named no cutoff in the CUTOFF=YYYY-MM format; not judged."
+                    ),
+                    evidence={**evidence, "status_code": outcome.status_code},
+                )
+            )
+            return
+        assert answer is not None
+        reported, claimed_text = _ym(answer), _ym(claimed)
+        if key == "consistent":
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.cutoff",
+                    "consistent",
+                    calls=calls,
+                    title="Knowledge cutoff consistent",
+                    summary=(
+                        f"Reported knowledge cutoff {reported} is within {_CUTOFF_TOLERANCE} months "
+                        f"of the claimed model's ({claimed_text})."
+                    ),
+                    evidence=evidence,
+                )
+            )
+            return
+        if key == "differs":
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.cutoff",
+                    "differs",
+                    calls=calls,
+                    title="Knowledge cutoff differs from the claimed model's",
+                    summary=(
+                        f"Reported knowledge cutoff {reported} differs from the claimed model's "
+                        f"({claimed_text}) by more than {_CUTOFF_TOLERANCE} months, but is not more "
+                        f"than {_CUTOFF_EARLIER} months earlier; recorded, not judged."
+                    ),
+                    evidence=evidence,
+                )
+            )
+            return
+
+        # More than a year earlier than the claimed model's cutoff.
+        if base_key == "earlier":
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.cutoff",
+                    "baseline_also_diverged",
+                    recommendation=advice.KB_PROBE_DIVERGES_ON_BASELINE,
+                    calls=calls,
+                    title="Knowledge cutoff earlier on the baseline too",
+                    summary=(
+                        f"Target and baseline both report a knowledge cutoff more than "
+                        f"{_CUTOFF_EARLIER} months before the claimed model's ({claimed_text}); "
+                        "a knowledge-base problem, not relay evidence."
+                    ),
+                    evidence={**evidence, "baseline_also_diverged": True},
+                )
+            )
+            return
+        tally.violated += 1
+        tally.soft_violations.append(_CUTOFF_SIGNAL)
+        tally.diverged_calls.append(outcome)
+        corroborated = base_key == "consistent"
+        if corroborated:
+            tally.medium = True
+        result.findings.append(
+            SCALE.finding(
+                "model_identity.cutoff",
+                "corroborated" if corroborated else "earlier",
+                calls=calls,
+                deduction=tally.deduction(_CUTOFF_WEIGHT),
+                title=(
+                    "Knowledge cutoff earlier than the claimed model's, baseline consistent"
+                    if corroborated
+                    else "Knowledge cutoff earlier than the claimed model's"
+                ),
+                summary=(
+                    f"Reported knowledge cutoff {reported} is more than {_CUTOFF_EARLIER} months "
+                    f"before the claimed model's ({claimed_text}), as an older model of the "
+                    "vendor would answer."
+                    + (" The baseline's answer is consistent." if corroborated else "")
+                ),
+                evidence={**evidence, "signal": _CUTOFF_SIGNAL, "weight": _CUTOFF_WEIGHT},
+            )
+        )
+
     async def _check_self_id(
         self, ctx: AuditContext, model, result: DetectorResult
     ) -> bool:
@@ -510,8 +829,9 @@ class ModelIdentityDetector(Detector):
         return False
 
     async def _check_model_field(self, ctx: AuditContext, result: DetectorResult) -> bool:
-        """Compare the echoed ``model`` field to the requested id. Returns True if
-        it clearly names a different/cheaper model."""
+        """Compare the echoed ``model`` field to the claimed and requested ids
+        (see :func:`ekte.knowledge.model_ids.compare_echoed_model`). Returns True
+        if it clearly names a different/cheaper model."""
         outcome = await ctx.client.complete(
             RequestSpec(
                 messages=[{"role": "user", "content": prompts.text("model_identity.ping")}],
@@ -520,6 +840,7 @@ class ModelIdentityDetector(Detector):
             )
         )
         requested = ctx.target.model
+        claimed = ctx.target.claimed
         returned = (outcome.model_returned or "").strip()
         if not (outcome.ok) or not returned:
             result.findings.append(
@@ -538,7 +859,11 @@ class ModelIdentityDetector(Detector):
             )
             return False
 
-        if self._model_field_diverges(requested, returned):
+        # Compared with the claimed model and the id sent (a deployment alias
+        # may differ from the claim), through the knowledge base first.
+        cmp = compare_echoed_model(ctx.kb, returned, claimed, requested, claimed_profile=ctx.profile)
+        evidence = {"requested": requested, "claimed": claimed, "returned": returned, **cmp.evidence()}
+        if cmp.verdict == "diverges":
             result.findings.append(
                 SCALE.finding(
                     "model_identity.model_field",
@@ -549,11 +874,28 @@ class ModelIdentityDetector(Detector):
                         f"Response 'model' field ({returned}) differs from requested "
                         f"({requested})."
                     ),
-                    evidence={"requested": requested, "returned": returned},
+                    evidence=evidence,
                     recommendation="A smaller-tier or different-family model id in the response suggests routing to a substitute.",
                 )
             )
             return True
+
+        if cmp.verdict == "unknown":
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.model_field",
+                    "unknown",
+                    calls=[outcome],
+                    title="Echoed model field not recognized",
+                    summary=(
+                        f"Response 'model' field ({returned}) is a different id from requested "
+                        f"({requested}) that the knowledge base cannot place; not judged."
+                    ),
+                    evidence=evidence,
+                    recommendation="Ask the relay what the echoed id names, or add it to the knowledge base as an alias.",
+                )
+            )
+            return False
 
         result.findings.append(
             SCALE.finding(
@@ -562,7 +904,7 @@ class ModelIdentityDetector(Detector):
                 calls=[outcome],
                 title="Echoed model field consistent",
                 summary=f"Response 'model' field ({returned}) matches requested.",
-                evidence={"requested": requested, "returned": returned},
+                evidence=evidence,
             )
         )
         return False
@@ -591,7 +933,9 @@ class ModelIdentityDetector(Detector):
             return True
         if fp.expect_contains_any and not contains_any(text, fp.expect_contains_any):
             return True
-        if fp.expect_not_contains and contains_any(text, fp.expect_not_contains):
+        # Forbidden terms match whole words ("meta" is not in "metadata");
+        # the expected ones stay substrings, the safe direction (#262).
+        if fp.expect_not_contains and contains_term_any(text, fp.expect_not_contains):
             return True
         if fp.expect_regex:
             try:
@@ -613,34 +957,3 @@ class ModelIdentityDetector(Detector):
         if fp.expect_regex:
             return f"matches /{fp.expect_regex}/"
         return "native behavior"
-
-    @staticmethod
-    def _model_field_diverges(requested: str, returned: str) -> bool:
-        """Lenient comparison: ignore snapshot suffixes/aliases, flag a clear
-        downgrade-tier word or a different family."""
-        req = requested.lower()
-        ret = returned.lower()
-        if req == ret:
-            return False
-
-        # A downgrade-tier word present in the returned id but not the requested one.
-        # Checked BEFORE the snapshot/alias substring tolerance below, otherwise the
-        # most common substitution — gpt-4o -> gpt-4o-mini, where the requested id is
-        # a substring of the returned one — would be waved through as an "alias".
-        for hint in _DOWNGRADE_HINTS:
-            if hint in ret and hint not in req:
-                return True
-
-        def norm(name: str) -> str:
-            return "".join(ch for ch in name if ch.isalnum())
-
-        nreq, nret = norm(req), norm(ret)
-        # Snapshot/alias tolerance: one being a prefix/substring of the other
-        # (e.g. "gpt-4o" vs "gpt-4o-2024-08-06") is not a divergence.
-        if nreq and nret and (nreq in nret or nret in nreq):
-            return False
-
-        # Different leading family token (e.g. "gpt" vs "qwen", "claude" vs "llama").
-        req_family = re.split(r"[-_/:.\s]", req, maxsplit=1)[0]
-        ret_family = re.split(r"[-_/:.\s]", ret, maxsplit=1)[0]
-        return bool(req_family and ret_family and req_family != ret_family)

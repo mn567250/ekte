@@ -12,14 +12,20 @@ divergence; it never asserts fraud outright.
 The probe never exceeds the *probed window* ``upper = min(declared, cap)``
 (``--max-context-tokens``), and every rung stays at or below 90% of it, leaving
 room for the answer and the chat template. Sizes are budgets of REAL tokens: the
-haystack is built smaller by ekte's heuristic count (see
-``_HEURISTIC_UNDERCOUNT``) so a real tokenizer stays within the rung.
+haystack is built smaller by ekte's heuristic count (by the tokenizer family's
+factor, ``ekte.utils.tokenize.filler_real_per_heuristic``) so a real tokenizer
+stays within the rung.
 
-Scoring follows the published ``SCALE`` (method "deductions"): the score starts
-at 100, the window verdict deducts the share of the top rung (90% of the probed
-window) that did not recall, and a needle lost in the middle (confirmed with a
-fresh needle) deducts 15. Recall at the top rung of a window capped below the
-declared one is verified only up to the cap, never read as truncation. Without a
+Scoring follows the published ``SCALE`` (method "deductions"): the window
+verdict is judged and deducted against one reference, the top rung (90% of the
+probed window): the score starts at 100, the verdict deducts the share of the top
+rung that did not recall (below half of it is truncation, otherwise short), and a
+needle lost in the middle (confirmed with a fresh needle) deducts 15. Recall at
+the top rung of a window capped below the declared one is verified only up to the
+cap, never read as truncation. When only the top rung failed and the endpoint
+counted the largest recalled prompt more than 5% above its budget, the probe
+overshot (the real tokenizer counts more than the factor allows): the window
+above is reported as not exercised, never as short. Without a
 declared window the measurement is reported but not scored; errors (a rejected
 parameter, HTTP errors, 5xx) and timeouts end the ladder as inconclusive, never
 as a recall failure.
@@ -43,7 +49,7 @@ from ekte.models import (
     Severity,
     Status,
 )
-from ekte.utils.tokenize import estimate_tokens
+from ekte.utils.tokenize import estimate_tokens, filler_real_per_heuristic
 
 # A 4xx whose body mentions one of these context-specific phrases is the relay
 # rejecting the prompt for SIZE — strong evidence of where the real ceiling sits.
@@ -89,16 +95,21 @@ _MAX_RUNGS = 7
 # The smallest rung a small window may drop to below the configured floor (a
 # 2K-token window still gets a three-rung ladder: ~1.8K, ~920, ~460).
 _MIN_RUNG = 256
-# ekte's stdlib heuristic (ekte/utils/tokenize.py) under-counts this filler by
-# ~12% (o200k) to ~15% (cl100k) against real tokenizers, so a haystack sized by
-# the heuristic alone would overshoot its rung. Each haystack is built at
-# size / 1.2 heuristic tokens, so its real token count stays within the rung.
-_HEURISTIC_UNDERCOUNT = 1.2
+# ekte's stdlib heuristic (ekte/utils/tokenize.py) under-counts this filler
+# against real tokenizers, so a haystack sized by the heuristic alone would
+# overshoot its rung. Each haystack is built at size / factor heuristic tokens,
+# the factor being the tokenizer family's measured ratio (1.12 for o200k up to
+# 1.41 for Qwen 3.5+), else 1.2; see ``ekte.utils.tokenize.FILLER_REAL_PER_HEURISTIC``.
 # What "tokens" means in this detector's sizes and evidence.
 _TOKEN_UNIT = (
     "rung sizes are budgets of real prompt tokens; each haystack is built at "
-    "size / 1.2 by ekte's heuristic count, which under-counts real tokenizers by ~12-15%"
+    "size / real_per_heuristic by ekte's heuristic count (1.2 unless the tokenizer "
+    "family has a measured factor), which under-counts real tokenizers by ~12-41%"
 )
+# The largest recalled rung's reported prompt tokens above this share of its
+# budget: the real tokenizer counts more than the factor allows, so a failure at
+# the top rung may be the probe overshooting a genuine window.
+_OVERSHOOT_TOLERANCE = 1.05
 
 # Statuses of a probe that produced no answer to judge: a rejected parameter, an
 # HTTP error, a 5xx / transport / malformed response. Inconclusive, never a miss.
@@ -110,13 +121,17 @@ SCALE = DeductionScale(
     outcome("context_window.window", "verified_to_cap", None, Status.PASS,
             label="Recall verified up to the probe cap; the declared window above it "
                   "was not exercised."),
+    outcome("context_window.window", "overshot", None, Status.INFO,
+            label="Only the top rung failed and the endpoint counted the largest "
+                  "recalled prompt more than 5% above its budget: the probe overshot, "
+                  "the window above it was not exercised."),
     outcome("context_window.window", "short", None, Status.WARN, Severity.MEDIUM,
             max_deduction=50.0,
-            label="Recall held up to 50-90% of the probed window; deducts the share of "
-                  "the top rung that did not recall."),
+            label="Recall held at half of the top rung or above, but not at the top "
+                  "rung; deducts the share of the top rung that did not recall."),
     outcome("context_window.window", "truncated", None, Status.FAIL, Severity.HIGH,
             max_deduction=100.0,
-            label="Recall failed below half of the probed window; deducts the share of "
+            label="Recall failed below half of the top rung; deducts the share of "
                   "the top rung that did not recall."),
     outcome("context_window.window", "no_recall", None, Status.FAIL, Severity.HIGH,
             deduction=100.0, label="Not even the smallest probe size recalled the needle."),
@@ -155,25 +170,37 @@ def _window_deduction(share: float) -> float:
     return round(100.0 - round(min(1.0, share) * 100, 1), 1)
 
 
-def _heuristic_size(size: int) -> int:
-    """The heuristic token count a ``size``-token rung's haystack is built at."""
-    return max(1, int(size / _HEURISTIC_UNDERCOUNT))
+def _heuristic_size(size: int, tokenizer: str | None = None) -> int:
+    """The heuristic token count a ``size``-token rung's haystack is built at:
+    ``size`` divided by ``tokenizer``'s real-per-heuristic factor."""
+    return max(1, int(size / filler_real_per_heuristic(tokenizer)))
 
 
-def _build_haystack(size: int, *, needle: str, depth: float, tokenizer: str | None) -> str:
+def _reported_prompt_tokens(outcome: CompletionOutcome) -> int | None:
+    """The endpoint's ``usage.prompt_tokens`` for a probe, if it reported one."""
+    value = (outcome.usage or {}).get("prompt_tokens")
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+        return None
+    return int(value)
+
+
+def _build_haystack(
+    size: int, *, needle: str, depth: float, tokenizer: str | None, nonce: str = ""
+) -> str:
     """A full probe prompt (filler, the needle at fractional ``depth``, the
     question) whose heuristic count stays within ``_heuristic_size(size)``.
 
     Unlike ``helpers.build_haystack`` the budget is a ceiling: the shared filler
     grows in 50-line steps (hundreds of tokens past a small target), so it is
     trimmed back line by line, and the needle and question count against it.
+    ``nonce`` (the run's) varies the filler per run (``helpers.build_filler``).
     """
     needle_line = prompts.text("context_window.needle", needle=needle)
     question = prompts.text("context_window.question")
-    budget = _heuristic_size(size) - estimate_tokens(needle_line + "\n" + question, tokenizer)
+    budget = _heuristic_size(size, tokenizer) - estimate_tokens(needle_line + "\n" + question, tokenizer)
     lines: list[str] = []
     total = 0
-    for line in build_filler(max(1, budget), tokenizer).split("\n"):
+    for line in build_filler(max(1, budget), tokenizer, nonce).split("\n"):
         total += estimate_tokens(line if not lines else "\n" + line, tokenizer)
         if total > budget and lines:
             break
@@ -237,11 +264,15 @@ class ContextWindowDetector(Detector):
         # The smallest size whose start was dropped while its end was recalled.
         front_truncated_at: int | None = None
 
+        # The endpoint's reported prompt tokens per probed size (the deciding probe).
+        reported: dict[int, int | None] = {}
+
         def log(size: int, recalled: bool, rejected: bool, status: str, **extra) -> None:
             ladder_log.append(
                 {
                     "size": size,
-                    "heuristic_tokens": _heuristic_size(size),
+                    "heuristic_tokens": _heuristic_size(size, tokenizer),
+                    "prompt_tokens": reported.get(size),
                     "recalled": recalled,
                     "rejected": rejected,
                     "status": status,
@@ -249,11 +280,18 @@ class ContextWindowDetector(Detector):
                 }
             )
 
-        for size in ladder_sizes:
+        async def probe(size: int) -> tuple[bool, bool, str]:
+            nonlocal calls
+            usage: dict = {}
             recalled, rejected, status, n = await self._probe_size(
-                ctx, size, tokenizer=tokenizer, errors=errors
+                ctx, size, tokenizer=tokenizer, errors=errors, usage=usage
             )
             calls += n
+            reported[size] = usage.get("prompt_tokens")
+            return recalled, rejected, status
+
+        for size in ladder_sizes:
+            recalled, rejected, status = await probe(size)
             log(size, recalled, rejected, status)
             if recalled:
                 last_pass = size
@@ -283,10 +321,7 @@ class ContextWindowDetector(Detector):
             mid = (last_pass + hi) // 2
             if not last_pass < mid < hi:
                 break
-            recalled, rejected, status, n = await self._probe_size(
-                ctx, mid, tokenizer=tokenizer, errors=errors
-            )
-            calls += n
+            recalled, rejected, status = await probe(mid)
             log(mid, recalled, rejected, status, refine=True)
             if recalled:
                 last_pass = mid
@@ -351,8 +386,29 @@ class ContextWindowDetector(Detector):
             else {}
         )
         front_note = _front_note(front_truncated_at) if front_truncated_at is not None else ""
+        # The probe overshot its budget: the ascending ladder failed first at the
+        # top rung (every lower rung recalled; the refines probe only between the
+        # half and the top rung) and the endpoint counted the largest recalled
+        # prompt more than 5% above its budget. Its tokenizer counts more than the
+        # factor allows, so the failures above may be the probe exceeding a
+        # genuine window: the window above is not exercised, never short.
+        largest_reported = reported.get(last_pass) if last_pass is not None else None
+        overshoot = (
+            round(largest_reported / last_pass, 3)
+            if largest_reported is not None and last_pass
+            else None
+        )
+        overshot = bool(
+            declared
+            and first_fail == top
+            and timed_out_at is None
+            and errored_at is None
+            and overshoot is not None
+            and overshoot > _OVERSHOOT_TOLERANCE
+        )
         # Below the top rung only: a rejection at the 90% rung is not "well below".
-        if rejected_at is not None and declared and rejected_at < top:
+        # Nor is a refine rejection above a prompt that already overshot its budget.
+        if rejected_at is not None and declared and rejected_at < top and not overshot:
             result.findings.append(
                 SCALE.finding(
                     "context_window.rejected_below_claim",
@@ -427,15 +483,16 @@ class ContextWindowDetector(Detector):
             result.score = None
         elif declared:
             measured = effective_window or 0
-            # Judged against the probed window, never the part above the cap.
-            ratio = measured / upper
+            # Judged and deducted against one reference, the top rung (90% of the
+            # probed window), never the part of a declared window above the cap.
+            share = measured / top
             window_ev = {
                 "declared": declared,
                 "upper": upper,
                 "probe_cap": cap,
                 "top_rung": top,
                 "effective_window": measured,
-                "ratio": round(ratio, 3),
+                "top_rung_share": round(share, 3),
                 "tokens": _TOKEN_UNIT,
             }
             claim = (
@@ -466,13 +523,42 @@ class ContextWindowDetector(Detector):
                     )
                 )
                 result.status = Status.FAIL
-            elif ratio < 0.5:
+            elif overshot:
+                result.findings.append(
+                    SCALE.finding(
+                        "context_window.window",
+                        "overshot",
+                        id="context_window.overshot",
+                        title="Context-window probe overshot its token budget",
+                        summary=(
+                            f"The endpoint counted the ~{measured}-token prompt as "
+                            f"{largest_reported} prompt tokens ({overshoot}x its budget) and "
+                            f"only the {top}-token top rung failed: the probe overshot, so "
+                            f"the window above ~{largest_reported} tokens was not exercised "
+                            f"(not evidence of a window below {claim})." + front_note
+                        ),
+                        evidence={
+                            **window_ev,
+                            "reported_prompt_tokens": largest_reported,
+                            "overshoot": overshoot,
+                            **front_ev,
+                        },
+                        recommendation=(
+                            "Treat the window above the largest recalled prompt as "
+                            "unverified; a measured token factor for this tokenizer "
+                            "family would let the probe reach it."
+                        ),
+                    )
+                )
+                if result.status not in (Status.FAIL, Status.WARN):
+                    result.status = Status.PASS
+            elif share < 0.5:
                 result.findings.append(
                     SCALE.finding(
                         "context_window.window",
                         "truncated",
                         id="context_window.truncation",
-                        deduction=_window_deduction(measured / top),
+                        deduction=_window_deduction(share),
                         title="Real context window far below the declared one",
                         summary=(
                             f"Real context window ~{measured} << {claim} "
@@ -494,7 +580,7 @@ class ContextWindowDetector(Detector):
                         "context_window.window",
                         "short",
                         id="context_window.short",
-                        deduction=_window_deduction(measured / top),
+                        deduction=_window_deduction(share),
                         title="Real context window below the declared one",
                         summary=(
                             f"Real context window ~{measured} is below {claim} "
@@ -573,6 +659,7 @@ class ContextWindowDetector(Detector):
                 "probe_cap": cap,
                 "top_rung": top,
                 "tokens": _TOKEN_UNIT,
+                "real_per_heuristic": filler_real_per_heuristic(tokenizer),
                 "effective_window": effective_window,
                 "timed_out_at": timed_out_at,
                 "errored_at": errored_at,
@@ -612,6 +699,7 @@ class ContextWindowDetector(Detector):
         *,
         tokenizer: str | None,
         errors: list[dict] | None = None,
+        usage: dict | None = None,
     ) -> tuple[bool, bool, str, int]:
         """Decide recall at ``size``, START edge first.
 
@@ -629,7 +717,9 @@ class ContextWindowDetector(Detector):
         and the size fails as ``"front_truncated"``. At most three calls per size.
         A clear size-rejection, a timeout or an error answer (one of
         ``_ERROR_STATUSES``: nothing to judge, so never a miss) ends the size on the
-        first hit; an error's details are appended to ``errors``.
+        first hit; an error's details are appended to ``errors``. ``usage`` gets
+        the ``prompt_tokens`` the endpoint reported for the deciding probe (None
+        when it reported none).
         """
         calls = 0
         status = "no_recall"
@@ -639,6 +729,8 @@ class ContextWindowDetector(Detector):
                 ctx, size, depth=depth, tokenizer=tokenizer, attempt=attempt
             )
             calls += 1
+            if usage is not None:
+                usage["prompt_tokens"] = _reported_prompt_tokens(outcome)
             recalled, rejected, status = self._classify(outcome, size)
             if recalled and depth == 0.0:
                 return True, False, status, calls
@@ -696,15 +788,17 @@ class ContextWindowDetector(Detector):
         attempt: int = 0,
     ) -> CompletionOutcome:
         # A re-probe (attempt > 0) gets a fresh needle, so an answer that merely
-        # repeats the previous probe's marker cannot pass it.
+        # repeats the previous probe's marker cannot pass it. The run's nonce
+        # makes every needle (and the filler) differ from any other run's.
         seed = f"ctxwin-{size}-{depth}" + (f"-{attempt}" if attempt else "")
-        needle = stable_marker(seed)
+        needle = stable_marker(seed, ctx.run_nonce)
         # Building a ~200k-token haystack is CPU work; run it off the event loop so
         # concurrent audits in `ekte serve` keep measuring honest latencies.
         # Built smaller by the heuristic's under-count so the REAL token count of
         # the prompt stays within ``size``.
         haystack = await asyncio.to_thread(
-            _build_haystack, size, needle=needle, depth=depth, tokenizer=tokenizer
+            _build_haystack, size, needle=needle, depth=depth, tokenizer=tokenizer,
+            nonce=ctx.run_nonce,
         )
         messages = [{"role": "user", "content": haystack}]
         # A model that wants max_completion_tokens gets it from the client (profile

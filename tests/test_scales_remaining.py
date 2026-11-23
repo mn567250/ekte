@@ -166,10 +166,92 @@ async def test_streaming_missing_usage_alone_deducts_15(audit_context, mock_serv
     assert result.score == 85.0 and result.status == Status.WARN
 
 
-async def test_streaming_failure_caps_at_0(audit_context, mock_server):
-    mock_server.chat_status = 500
+async def test_streaming_server_error_twice_is_inconclusive(audit_context, mock_server):
+    # Before #255 one 5xx made streaming Fail · High with score 0.
+    mock_server.chat_status = 503
     result = await StreamingDetector().run(audit_context)
+    _check(result, _scale_of("streaming"))
+    (f,) = result.findings
+    assert (f.id, f.outcome, f.status, f.severity) == (
+        "streaming.failed", "failed", Status.INCONCLUSIVE, Severity.LOW)
+    assert result.score is None and result.status == Status.INCONCLUSIVE
+    # repeated once; a 5xx never asks the non-stream question
+    assert [bool(r.get("stream")) for r in mock_server.requests] == [True, True]
+    assert f.evidence["attempts"] == 2 and f.evidence["non_stream_ok"] is None
+
+
+def _sequence(*outs: CompletionOutcome):
+    """A stub client answering ``outs`` in turn; it records each request's ``stream``."""
+    seen: list[bool] = []
+    queue = list(outs)
+
+    async def complete(spec):
+        seen.append(bool(spec.stream))
+        return queue.pop(0)
+
+    model = SimpleNamespace(reasoning=False, usage_in_stream=True)
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          profile=SimpleNamespace(model=model))
+    return ctx, seen
+
+
+def _error(code: int | None, message: str = "boom", error_type: str = "http_error"):
+    return CompletionOutcome(ok=False, status_code=code, error_message=message,
+                             error_type=error_type)
+
+
+_OK_PLAIN = CompletionOutcome(ok=True, status_code=200, content="One. Two. Three.")
+
+
+async def test_streaming_one_failure_then_a_good_stream_is_judged_normally():
+    good = _stream("word " * 60, ttft=100.0, duration=2000.0, chunks=40)
+    ctx, seen = _sequence(_error(503), good, _OK_PLAIN)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    assert seen == [True, True, False]  # then the same prompt without streaming (#259)
+    assert "streaming.healthy" in {f.id for f in result.findings}
+    assert result.score == 100.0 and result.status == Status.PASS
+
+
+async def test_streaming_a_4xx_naming_streaming_is_unsupported():
+    refusal = _error(400, "stream is not supported for this model")
+    ctx, seen = _sequence(refusal, refusal)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    _check(result, _scale_of("streaming"))
+    (f,) = result.findings
+    assert (f.id, f.outcome, f.status, f.severity, f.cap) == (
+        "streaming.unsupported", "unsupported", Status.FAIL, Severity.MEDIUM, 0.0)
     assert result.score == 0.0 and result.status == Status.FAIL
+    assert seen == [True, True]  # the message names streaming: no non-stream request
+    assert f.title == "Relay does not stream for this model"
+
+
+async def test_streaming_another_4xx_while_non_stream_works_is_unsupported():
+    ctx, seen = _sequence(_error(400, "invalid request"), _error(400, "invalid request"), _OK_PLAIN)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    (f,) = result.findings
+    assert (f.id, f.evidence["non_stream_ok"]) == ("streaming.unsupported", True)
+    assert seen == [True, True, False]
+    assert result.score == 0.0 and result.status == Status.FAIL
+
+
+async def test_streaming_a_4xx_that_also_fails_without_streaming_is_inconclusive():
+    bad = _error(403, "forbidden")
+    ctx, seen = _sequence(bad, bad, bad)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    (f,) = result.findings
+    assert (f.id, f.evidence["non_stream_ok"]) == ("streaming.failed", False)
+    assert seen == [True, True, False]
+    assert result.score is None and result.status == Status.INCONCLUSIVE
+
+
+@pytest.mark.parametrize("failure", [_error(429, "stream rate limit"), _error(408),
+                                     _error(None, "read timeout", "timeout")],
+                         ids=["429", "408", "timeout"])
+async def test_streaming_rate_limits_and_timeouts_are_transport_failures(failure):
+    ctx, seen = _sequence(failure, failure)
+    result = await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+    assert [f.id for f in result.findings] == ["streaming.failed"]
+    assert seen == [True, True] and result.score is None
 
 
 # --------------------------------------------------------------------------- #
@@ -191,8 +273,11 @@ def _stream(content: str, *, ttft: float, duration: float, chunks: int,
 
 
 async def _run_streaming(out: CompletionOutcome, *, reasoning: bool) -> DetectorResult:
-    async def complete(_spec):
-        return out
+    # The non-streamed comparison (#259) takes well over the streamed first token.
+    plain = CompletionOutcome(ok=True, status_code=200, content=out.content, duration_ms=4000.0)
+
+    async def complete(spec):
+        return out if spec.stream else plain
 
     model = SimpleNamespace(reasoning=reasoning, usage_in_stream=True)
     ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
@@ -449,7 +534,8 @@ async def test_judge_high_confidence_with_failed_baseline_is_not_corroborated():
     (f,) = result.findings
     assert (f.outcome, f.severity) == ("confident", Severity.MEDIUM)
     assert f.evidence["baseline_corroborated"] is False
-    assert result.evidence["baseline_compared"] is True
+    assert result.evidence["baseline_asked"] is True
+    assert result.baseline_compared is False
     assert result.evidence["baseline_usable"] is False
     # the unusable baseline is not shown to the judge either
     _, user = judge.calls[0]
@@ -461,6 +547,21 @@ async def test_judge_high_confidence_with_working_baseline_is_high():
     (f,) = result.findings
     assert (f.outcome, f.severity, result.status) == ("confident_corroborated", Severity.HIGH, Status.FAIL)
     assert f.evidence["baseline_corroborated"] is True
+    assert result.baseline_compared is True  # #257: counts for model identity
+
+
+async def test_judge_consistent_verdict_scores_full_points():
+    """A consistent judge must not lower a perfect model-identity dimension (#262)."""
+    o = JUDGE_SCALE.get("quality_judge.verdict", "consistent")
+    assert (o.score, o.status) == (100.0, Status.PASS)
+    target = TargetConfig(base_url="https://r.test/v1", model="m")
+    ctx = AuditContext(
+        target=target, client=_AnswerStub("an answer"), options=AuditOptions(suite="deep"),
+        kb=None, profile=None, judge=_JudgeStub({"verdict": "consistent", "confidence": "high"}),  # type: ignore[arg-type]
+    )
+    result = await QualityJudgeDetector().run(ctx)
+    _check(result, JUDGE_SCALE)
+    assert (result.score, result.status) == (100.0, Status.PASS)
 
 
 async def test_judge_is_told_the_claimed_model():
@@ -510,3 +611,44 @@ async def test_reliability_is_not_scored_when_nothing_reached_the_relay():
     f = next(f for f in result.findings if f.id == "reliability.success_rate")
     assert f.outcome == "not_reached" and f.status == Status.INCONCLUSIVE
     assert result.score is None and result.status == Status.INCONCLUSIVE
+
+
+# --------------------------------------------------------------------------- #
+# reliability: the slow tail is judged relative to the burst (#262)
+# --------------------------------------------------------------------------- #
+async def _timed_burst(durations: list[float]) -> DetectorResult:
+    calls = []
+
+    async def complete(spec):
+        calls.append(spec)
+        return SimpleNamespace(ok=True, duration_ms=durations[len(calls) - 1], error_type=None,
+                               status_code=200, error_class=None)
+
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          options=SimpleNamespace(reliability_requests=len(durations),
+                                                  reliability_concurrency=1))
+    return await ReliabilityDetector().run(ctx)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("durations", "slow"),
+    [
+        # 8-token requests at ~0.8 s with two stuck at 12 s: slow, though far below 30 s
+        ([800.0] * 6 + [12_000.0] * 2, True),
+        # a uniformly slow relay has no tail: not flagged
+        ([9_000.0] * 8, False),
+        # a large ratio below 5 s in absolute terms is noise
+        ([200.0] * 6 + [4_000.0] * 2, False),
+        # above 5 s but under five times the median
+        ([2_000.0] * 6 + [8_000.0] * 2, False),
+    ],
+)
+async def test_reliability_slow_tail_is_relative_to_the_burst(durations, slow):
+    result = await _timed_burst(durations)
+    _check(result, _scale_of("reliability"))
+    found = [f for f in result.findings if f.id == "reliability.latency"]
+    assert bool(found) is slow
+    if slow:
+        (f,) = found
+        assert (f.outcome, f.status, f.severity) == ("slow", Status.WARN, Severity.LOW)
+        assert f.deduction == 15.0 and result.score == 85.0

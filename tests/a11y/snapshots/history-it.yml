@@ -108,6 +108,16 @@
     - combobox "Monitor":
       - option "Tutti" [selected]
       - option "gpt-4o (4)"
+    - text: Versione di valutazione
+    - combobox "Versione di valutazione":
+      - option "Tutti" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Versione dell’audit
+    - combobox "Versione dell’audit":
+      - option "Tutti" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Andamenti":
       - text: Andamenti 2 selezionati su un massimo di 2
       - button "Punteggio" [pressed]
@@ -301,7 +311,7 @@
             - term: Versione
             - definition:
               - code: ekte v<version>
-            - heading "Controlli per dimensione 1 di 10 dimensioni eseguite" [level=3]
+            - heading "Controlli per dimensione 1 di 11 dimensioni eseguite" [level=3]
             - button "Conformità del protocollo"
             - text: L'API rispetta la specifica?
             - meter "Conformità del protocollo L'API rispetta la specifica?"
@@ -319,6 +329,8 @@
             - text: Il consumo di token è gonfiato? Non eseguito
             - button "Affidabilità in concorrenza"
             - text: Stabile sotto carico? Non eseguito
+            - button "Integrità delle risposte"
+            - text: La risposta è inalterata? Non eseguito
             - button "Sicurezza del trasporto"
             - text: Le chiavi sono gestite in sicurezza? Non eseguito
             - button "Prestazioni"
@@ -335,6 +347,7 @@
               - text: ekte fornisce
               - strong: prove riproducibili di scostamento del comportamento e di rischio
               - text: ", non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicamente un fornitore sulla base di una singola esecuzione."
+            - paragraph: "Non è possibile rivalutare: questo report non ha conservato prove: non c’è nulla da riprodurre"
             - button "Riesegui audit"
             - button "Pianifica come monitor"
             - group "Scarica il rapporto":
@@ -367,6 +380,7 @@
           - button "Elimina"
           - button "Annulla"
   - text: 15 di 15 audit mostrati
+  - button "Rivaluta tutto con questa versione"
   - button "Cancella cronologia"
   - status
 - contentinfo:

@@ -15,7 +15,9 @@ is out of date. The English text is canonical.
   progress and warnings go to stderr. Where the result is a report it follows the
   [report schema](schemas.md). `--compact` (audit commands) prints the lean verdict.
 - `--format` always means the report file format (`json|md|html|pdf|all`).
-- `--fail-on-risk` and `--fail-under` gate the exit code (1).
+- `--fail-on-risk` and `--fail-under` gate the exit code (1). `--fail-under` also
+  fails a run that got no rating because too little was judged (coverage below
+  50%, see [Overall score, rating and weights](../guide/methodology.md#overall-score-rating-and-weights)).
 - A renamed option keeps working with a deprecation warning on stderr that names
   the replacement and the removal version (see
   [Deprecated options](#deprecated-options)).
@@ -30,7 +32,7 @@ Every command follows this table.
 | Code | Meaning | When |
 |---|---|---|
 | 0 | success | The command succeeded; any gate passed. |
-| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
+| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under` (or no rating was given because too little was judged), `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
 | 2 | usage or configuration error | Invalid option, value or configuration file, or a missing extra or master key. In `--json` and `--compact` mode an `{"error": {...}}` object is printed on stdout. |
 | 3 | endpoint failure | `ekte models` could not list the models: the endpoint is unreachable or answered with an error. |
 | 4 | internal error | An unexpected error in ekte itself; the traceback is on stderr. Please report it. |
@@ -83,7 +85,7 @@ Audit one relay endpoint and write a report.
 | `--declared-provider` | str |  | Provider hint for KB lookup (openai, anthropic, deepseek, ...). |
 | `--header`, `-H` | str (repeatable) |  | Extra header 'Name: value' (repeatable). |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--judge`, `--no-judge` | flag |  | Enable code+LLM hybrid judging. |
 | `--judge-base-url` | str |  | Trusted judge endpoint base URL. |
 | `--judge-api-key` | str |  | Judge API key (env:VAR ok). |
@@ -97,12 +99,13 @@ Audit one relay endpoint and write a report.
 | `--reliability-requests` | int |  | Reliability probe request count (0 disables). |
 | `--concurrency` | int |  | Reliability probe concurrency. |
 | `--max-context-tokens` | int |  | Cap for the real-context-window probe. |
+| `--max-output-probe-tokens` | int |  | Cap for the max-output probe (default 2048). |
 | `--performance-requests` | int |  | Performance probe requests per endpoint (deep/full/custom; 0 disables). |
 | `--performance-max-tokens` | int |  | Output tokens per performance probe request. |
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
 | `--kb-dir` | path (repeatable) |  | Extra knowledge-base directory (repeatable). |
 | `--no-user-kb` | flag |  | Ignore the knowledge-base entries you added in the web UI (kb.db); packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1. |
-| `--fail-under` | float |  | Exit 1 if overall score < this. |
+| `--fail-under` | float |  | Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%). |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 | `--json` | flag |  | Print the full JSON report to stdout instead of writing files. |
 | `--compact` | flag |  | Print a lean agent/LLM-facing JSON verdict to stdout (much smaller than --json). |
@@ -129,7 +132,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--baseline-name` | str |  | Baseline display name. |
 | `--baseline-api` | str |  | Baseline wire protocol: auto \| openai \| anthropic. |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--judge`, `--no-judge` | flag |  | Enable code+LLM hybrid judging. |
 | `--judge-model` | str |  | Judge model id (defaults to baseline). |
 | `--out-dir` | path |  | Report output directory. |
@@ -137,12 +140,13 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--timeout` | float |  | Base HTTP timeout (seconds); grows with prompt and output size. |
 | `--max-request-time` | float |  | Hard cap for one request (seconds, default 900). |
 | `--max-context-tokens` | int |  | Cap for the context-window probe. |
+| `--max-output-probe-tokens` | int |  | Cap for the max-output probe (default 2048). |
 | `--performance-requests` | int |  | Performance probe requests per endpoint (0 disables; standard suite uses 5). |
 | `--performance-max-tokens` | int |  | Output tokens per performance probe request. |
 | `--performance-streaming`, `--performance-non-streaming` | flag |  | Probe with streaming or non-streaming requests (standard/deep/custom; full measures both). |
 | `--kb-dir` | path (repeatable) |  | Extra knowledge-base directory (repeatable). |
 | `--no-user-kb` | flag |  | Ignore the knowledge-base entries you added in the web UI (kb.db); packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1. |
-| `--fail-under` | float |  | Exit 1 if overall score < this. |
+| `--fail-under` | float |  | Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%). |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this. |
 | `--json` | flag |  | Print the full JSON report to stdout. |
 | `--compact` | flag |  | Print a lean agent/LLM-facing JSON verdict to stdout. |
@@ -313,9 +317,11 @@ Re-score a recorded run with this ekte version, from its evidence file.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `SOURCE` | argument | | The id of a saved run in the history, or a report JSON file (then also --evidence). |
+| `SOURCE` (optional) | argument | | The id of a saved run in the history, or a report JSON file (then also --evidence). Leave out with --all. |
 | `--evidence` | path |  | The evidence file of a report JSON file given as SOURCE. |
-| `--save`, `--no-save` | flag |  | Save the re-scored report to the history as a new run (a saved run only). |
+| `--save`, `--no-save` | flag |  | Save the re-scored report to the history (a saved run only): with --replace in place of the run, else as a new run (deprecated: a later ekte replaces by default). --no-save only prints it. |
+| `--replace` | flag |  | Replace the saved run with the re-scored report: it keeps its id, time and monitor, and its monitor follows the new verdict. |
+| `--all` | flag |  | Re-score every saved run scored by another ekte version, one after another, and replace each; runs without a usable evidence file are skipped with the reason. |
 | `--json` | flag |  | Print the re-scored report as JSON to stdout. |
 
 <a id="secret-export"></a>
@@ -367,7 +373,7 @@ Continuously re-audit a relay on a schedule and alert webhooks on risk.
 | `--declared-provider` | str |  | Provider hint for KB lookup. |
 | `--header`, `-H` | str (repeatable) |  | Extra header 'Name: value' (repeatable). |
 | `--suite` | str |  | smoke \| standard \| deep \| full \| custom. |
-| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| security \| performance. |
+| `--dimension`, `-D` | str (repeatable) |  | Dimension to run (repeatable or comma-separated); implies --suite custom: connectivity \| protocol \| context_window \| model_identity \| capability \| streaming \| billing \| reliability \| integrity \| security \| performance. |
 | `--interval` | int | `3600` | Seconds between re-audit cycles. |
 | `--once` | flag |  | Run a single cycle and exit (no loop). |
 | `--webhook` | str (repeatable) |  | Alert webhook URL (repeatable). |

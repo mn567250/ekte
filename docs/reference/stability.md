@@ -218,7 +218,7 @@ pins each code.
 | Code | Meaning | When |
 |---|---|---|
 | 0 | success | The command succeeded; any gate passed. |
-| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
+| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under` (or no rating was given because too little was judged), `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
 | 2 | usage or configuration error | Invalid option, value or configuration file, or a missing extra or master key. In `--json` and `--compact` mode an `{"error": {...}}` object is printed on stdout. |
 | 3 | endpoint failure | `ekte models` could not list the models: the endpoint is unreachable or answered with an error. (Before 0.32 it exited 1.) |
 | 4 | internal error | An unexpected error in ekte itself; the traceback is on stderr. (Before 0.32 an unexpected crash exited 1.) |
@@ -266,6 +266,8 @@ Public (all `EKTE_`-prefixed variables below):
 | `EKTE_CONTAINER` | Allow a non-loopback bind inside a container |
 | `EKTE_MAX_PARALLEL_AUDITS` | Concurrent audits in the web UI |
 | `EKTE_NO_EVIDENCE` | Keep no raw request/response pairs for runs saved to history |
+| `EKTE_RUN_NONCE` | Fix the per-run value needles, canaries and cache prefixes are derived from (tests, reproducing a run) |
+| `EKTE_AUTO_RESCORE` | `0` turns off the automatic re-score of saved runs on the first start of `ekte serve` after an upgrade |
 
 Also public: any variable you name yourself and pass as `--api-key env:NAME` or
 `api_key: env:NAME`. The `ZING_*` equivalents are deprecated (see
@@ -371,7 +373,7 @@ small on purpose:
 | `GET /api/v1/history/{id}/evidence` | the run's evidence file |
 | `GET /api/v1/history/{id}/evidence/exchanges` | the run's exchanges, or the pairs of one request |
 | `GET /api/v1/history/{id}/evidence/export` | the exchanges as HAR, a curl script or one JSON document |
-| `POST /api/v1/history/{id}/rescore` | re-score a saved run from its evidence; answers with the job |
+| `POST /api/v1/history/{id}/rescore` | re-score a saved run from its evidence; answers with the job. `replace=true` replaces the run in place; without it the result is saved as a new run (deprecated since 0.36.0, see below) |
 
 Request and response shapes, the error format (`{"error": "..."}`) and the
 status codes are in the [developer guide](../dev/web-server.md#http-api-v1) and
@@ -389,6 +391,14 @@ responses carry `X-Ekte-API: v1`.
 The local-only protections (loopback binding by default, Host check, refusal of
 cross-site requests and non-JSON bodies) apply to every path, `/api/v1/`
 included. The API has no authentication: do not expose it beyond the machine.
+
+Deprecated in 0.36.0 (#168): a re-score saved as a **new** History run, by
+`POST /api/v1/history/{id}/rescore` without `replace=true` (the response carries
+`Deprecation: true` and the server logs a warning) and by `ekte rescore ID`
+without `--replace` (a warning on stderr). It keeps working for at least one
+minor release; then the default becomes the replacement in place, which the web
+UI, `ekte rescore --all` and the automatic re-score after an upgrade use already
+([#294](https://github.com/mn567250/ekte/issues/294)).
 
 Removed in the release after 0.30.0: `POST /api/audit/stream`, `POST /api/embed`,
 `POST /api/rerank` and `GET /api/history/trend`. Queue an audit with

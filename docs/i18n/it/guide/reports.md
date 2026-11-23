@@ -11,7 +11,7 @@ predefinito); `--format json|md|html|pdf` scrive un solo formato. `--json` e
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -25,6 +25,12 @@ rilevazioni principali con le raccomandazioni, i punteggi per dimensione e i
 **Dimension details**, le rilevazioni di ogni rilevatore con le prove, la sezione
 prestazioni, il profilo della base di conoscenza usato e le lingue di sonda. Il
 testo controllato dal relay viene oscurato ed escapato prima di essere scritto.
+
+Accanto al punteggio ogni rapporto mostra la **copertura**: la quota del peso
+delle dimensioni eseguite che è stato possibile valutare. Il riepilogo del
+verdetto nomina la dimensione eseguita ma non valutabile, e una copertura bassa
+limita il voto o lo omette («nessuna valutazione: è stato valutato troppo
+poco»); vedi [Punteggio complessivo, voto e pesi](methodology.md#punteggio-complessivo-voto-e-pesi).
 
 ## File delle prove
 
@@ -57,12 +63,25 @@ richieste.
 installata: ripete la stessa verifica, ma risponde a ogni richiesta con la
 risposta registrata (con i tempi registrati) invece di contattare
 l'intermediario, così i controlli migliorati valgono anche per le vecchie
-esecuzioni. Accetta l'id di un'esecuzione salvata (e salva il risultato come
-nuova esecuzione, salvo con `--no-save`) o un file di rapporto con
-`--evidence PATH`. Un controllo che ora chiede qualcosa che l'esecuzione
+esecuzioni. Accetta l'id di un'esecuzione salvata o un file di rapporto con
+`--evidence PATH`. Con `--replace` il risultato sostituisce l'esecuzione
+salvata (stesso id, orario e monitor); senza, viene ancora salvato come nuova
+esecuzione, il che è deprecato e mostra un avviso (una versione successiva di
+ekte sostituirà per impostazione predefinita; `--no-save` non salva nulla). Un controllo che ora chiede qualcosa che l'esecuzione
 registrata non ha mai chiesto resta inconcludente invece di essere valutato su
 un'ipotesi; il campo `rescored_from` del rapporto indica quante richieste sono
 state riprodotte e quali controlli non ne avevano.
+
+`ekte rescore --all` rivaluta una dopo l'altra tutte le esecuzioni salvate
+valutate da un'altra versione di ekte, sostituisce ciascuna e mostra il suo
+verdetto prima e dopo. Un'esecuzione senza un file di prove utilizzabile non
+viene rivalutata: mantiene il suo verdetto e viene saltata con il motivo.
+`ekte serve` fa lo stesso in background al primo avvio dopo un aggiornamento
+(vedi [Interfaccia web](web-ui.md)).
+
+Le esportazioni Markdown, HTML e PDF di un report rivalutato indicano
+entrambe le versioni, quando è stato rivalutato e l’esito precedente;
+l’esito `--compact` le riporta come `rescored`.
 
 Le chiavi e le intestazioni sensibili vengono rimosse prima di scrivere
 qualsiasi cosa (vedi [Privacy](privacy.md)). Ogni riga rispetta

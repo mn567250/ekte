@@ -11,7 +11,7 @@ stdout instead.
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -25,6 +25,12 @@ findings with recommendations, the per-dimension scores and **Dimension
 details**, every detector's findings with evidence, the performance section, the
 knowledge-base profile used and the probe languages. Relay-controlled text is
 redacted and escaped before it is written.
+
+Next to the score every report shows the **coverage**: the share of the weight
+of the dimensions that ran that could be judged. A dimension that ran but could
+not be judged is named in the verdict summary, and low coverage limits the
+rating or withholds it (“not rated: too little was judged”); see
+[Overall score, rating and weights](methodology.md#overall-score-rating-and-weights).
 
 ## Evidence files
 
@@ -53,11 +59,24 @@ one JSON document (`--as json`); `--seq` picks requests.
 `ekte rescore` judges a recorded run again with the installed ekte version:
 it runs the same audit, but answers every request with the recorded response
 (at the recorded timing) instead of contacting the relay, so improved checks
-apply to old runs. It takes a saved run's id (and saves the result as a new
-run unless `--no-save`), or a report file with `--evidence PATH`. A check that
+apply to old runs. It takes a saved run's id, or a report file with `--evidence PATH`. With
+`--replace` the result replaces the saved run in place (same id, time and
+monitor); without it, it is still saved as a new run, which is deprecated and
+prints a warning (a later ekte replaces by default; `--no-save` saves
+nothing). A check that
 now asks something the recorded run never asked reads inconclusive instead of
 being scored on a guess; the report's `rescored_from` says how many requests
 were replayed and which checks had none.
+
+`ekte rescore --all` re-scores every saved run scored by another ekte version,
+one after another, replaces each and prints its verdict before and after. A run
+without a usable evidence file is not re-scored: it keeps its verdict and is
+skipped with the reason. `ekte serve` does the same in the background on its
+first start after an upgrade (see [Web UI](web-ui.md)).
+
+The Markdown, HTML and PDF exports of a re-scored report state both
+versions, when it was re-scored and the verdict before; the `--compact`
+verdict carries them as `rescored`.
 
 Keys and sensitive headers are removed before anything is written (see
 [Privacy](privacy.md)). Each line matches `ekte/schemas/evidence.schema.json`

@@ -234,6 +234,48 @@ def _compact_finding(dimension: str, finding) -> dict:
     return out
 
 
+def rescore_lines(report: AuditReport) -> list[str]:
+    """The ekte versions of a re-scored report (:mod:`ekte.replay`), as plain
+    text for the human views: the version the audit ran with and the one
+    that scored it, when, and the verdict before that re-score; ``[]`` for a
+    report that was never re-scored."""
+    r = report.rescored_from
+    if r is None:
+        return []
+    when = f" on {r.rescored_at}" if r.rescored_at else ""
+    lines = [f"Audit ran with ekte v{r.tool_version or '?'}; re-scored with ekte v{report.tool_version}{when}"]
+    prev = r.previous_verdict
+    if prev is not None:
+        bits = []
+        if prev.risk_level:
+            bits.append(f"risk {prev.risk_level}")
+        if prev.overall_score is not None:
+            bits.append(f"score {_fmt_score(prev.overall_score)}")
+        if prev.rating:
+            bits.append(f"grade {prev.rating}")
+        if bits:
+            lines.append("Before the re-score: " + ", ".join(bits))
+    return lines
+
+
+def _compact_rescore(report: AuditReport) -> dict | None:
+    """The compact verdict's ``rescored`` (versions, time and the verdict
+    before the latest re-score), None for a report never re-scored."""
+    r = report.rescored_from
+    if r is None:
+        return None
+    prev = r.previous_verdict
+    return {
+        "audit_version": r.tool_version,
+        "scoring_version": report.tool_version,
+        "rescored_at": r.rescored_at,
+        "previous_verdict": (
+            {"risk": prev.risk_level, "score": prev.overall_score, "rating": prev.rating}
+            if prev is not None else None
+        ),
+    }
+
+
 def compact_dict(report: AuditReport) -> dict:
     """A small, stable dict an agent can read without ingesting full evidence.
 
@@ -287,6 +329,9 @@ def compact_dict(report: AuditReport) -> dict:
             "risk": v.risk_level.value,
             "score": v.overall_score,
             "rating": v.rating,
+            "coverage": v.coverage,
+            "not_judged": v.not_judged,
+            "rating_limit": v.rating_limit.model_dump() if v.rating_limit else None,
             "confidence": v.confidence,
             "headline": v.headline,
             "summary": v.summary,
@@ -307,6 +352,7 @@ def compact_dict(report: AuditReport) -> dict:
         "judge_used": report.judge_used,
         "knowledge": _compact_knowledge(report.knowledge),
         "warnings": report.warnings or [],
+        **({"rescored": rescored} if (rescored := _compact_rescore(report)) else {}),
     }
 
 
@@ -369,14 +415,23 @@ def render_markdown(report: AuditReport) -> str:
 
     risk_label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
     score = _fmt_score(v.overall_score)
-    rating = v.rating or "—"
+    rating = dimension_details.rating_text(report)
     lines.append(f"# ekte audit — {report.target.model}")
     lines.append("")
     lines.append(
         f"**Risk:** {risk_label}  ·  **Score:** {score}/100  ·  "
+        f"**Coverage:** {dimension_details.coverage_text(report)}  ·  "
         f"**Rating:** {rating}  ·  **Confidence:** {v.confidence}"
     )
     lines.append("")
+    cap_note = dimension_details.overall_cap_note(report)
+    if cap_note:
+        lines.append(f"_Score: {_md(cap_note)}_")
+        lines.append("")
+    coverage_note = dimension_details.coverage_note(report)
+    if coverage_note:
+        lines.append(f"_{_md(coverage_note)}_")
+        lines.append("")
 
     # Metadata line.
     meta = [
@@ -397,6 +452,7 @@ def render_markdown(report: AuditReport) -> str:
         meta.append(f"generated `{report.generated_at}`")
     lines.append("  ·  ".join(meta))
     lines.append(f"\n_ekte v{report.tool_version}_")
+    lines.extend(f"\n_{_md(line)}_" for line in rescore_lines(report))
     lines.append("")
 
     # Verdict.
@@ -551,7 +607,7 @@ def render_html(report: AuditReport) -> str:
     risk_label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
     risk_color = _RISK_COLOR.get(v.risk_level, "var(--ink-muted)")
     score = _fmt_score(v.overall_score)
-    rating = v.rating or "—"
+    rating = dimension_details.rating_text(report)
 
     out: list[str] = []
     out.append("<!DOCTYPE html>")
@@ -569,9 +625,18 @@ def render_html(report: AuditReport) -> str:
     )
     out.append('<div class="scoreline">')
     out.append(f"<span><strong>{_esc(score)}</strong>/100</span>")
+    out.append(
+        f"<span>coverage <strong>{_esc(dimension_details.coverage_text(report))}</strong></span>"
+    )
     out.append(f"<span>rating <strong>{_esc(rating)}</strong></span>")
     out.append(f"<span>confidence <strong>{_esc(v.confidence)}</strong></span>")
     out.append("</div>")
+    cap_note = dimension_details.overall_cap_note(report)
+    if cap_note:
+        out.append(f'<p class="meta score-cap">Score: {_esc(cap_note)}</p>')
+    coverage_note = dimension_details.coverage_note(report)
+    if coverage_note:
+        out.append(f'<p class="meta coverage">{_esc(coverage_note)}</p>')
     # Metadata.
     meta_bits = [
         f"mode <code>{_esc(report.mode)}</code>",
@@ -597,6 +662,7 @@ def render_html(report: AuditReport) -> str:
         meta_bits.append(f"generated <code>{_esc(report.generated_at)}</code>")
     out.append(f'<p class="meta">{" · ".join(meta_bits)}</p>')
     out.append(f'<p class="meta">ekte v{_esc(report.tool_version)}</p>')
+    out.extend(f'<p class="meta">{_esc(line)}</p>' for line in rescore_lines(report))
     out.append("</header>")
 
     # Verdict.

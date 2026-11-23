@@ -92,6 +92,9 @@ class EvidenceHeader(BaseModel):
     judge: RedactedTarget | None = None
     # The run's AuditOptions, so a replay (ekte.replay) can run the same audit.
     options: dict[str, Any] | None = None
+    # The run's nonce (AuditContext.run_nonce), so a replay sends the same
+    # needles, canaries and cache prefixes (None before schema 1.2).
+    run_nonce: str | None = None
 
 
 class EvidenceBody(BaseModel):

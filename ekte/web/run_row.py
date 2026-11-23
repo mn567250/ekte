@@ -27,7 +27,9 @@ copied onto the run's ``history_metrics`` row (``m``) as a number,
   they vary in a series (:data:`VARYING`); ``version_id``,
   ``kb_profile_id`` — the ekte version and knowledge-base profile (NULL for
   none) in ``run_version`` / ``run_kb_profile``, for where they change in a
-  series (:data:`CHANGES`); ``model_in_kb`` — 1 when the run's model is in
+  series (:data:`CHANGES`); ``audit_version_id`` — the ekte version the
+  audit ran with, in ``run_version`` too (:data:`AUDIT_VERSIONS`: it differs
+  from ``version_id`` for a run re-scored by another version); ``model_in_kb`` — 1 when the run's model is in
   the knowledge base; ``watch_id`` — the monitor that ran it
   (``history.watch_id``, NULL for a run started by hand), for the ``watch``
   filter.
@@ -56,7 +58,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from ekte.web import analytics_store
-from ekte.web.analytics import ALL_KEY
+from ekte.web.analytics import ALL_KEY, UNKNOWN_RELAY
 from ekte.web.metrics import grade_value_sql
 from ekte.web.relay_map import GROUP_KEY_SQL
 
@@ -125,6 +127,16 @@ VARYING = {name: Lookup(f"run_{name}", {"value": f"NULLIF(h.{name}, '')"})
 CHANGES = {"tool_version": ("version_id", Lookup("run_version", {"value": "NULLIF(m.tool_version, '')"})),
            "kb_profile": ("kb_profile_id",
                           Lookup("run_kb_profile", {"value": "NULLIF(m.kb_profile_hash, '')"}))}
+# the ekte version the audit ran with, numbered in the scoring version's table
+# (run_version), so equal versions have equal ids: a run re-scored by another
+# version is one whose audit_version_id differs from its version_id (#168)
+AUDIT_VERSIONS = Lookup("run_version", {"value": "NULLIF(m.audit_tool_version, '')"})
+VERSION_ID = {"scoring_version": "m.version_id", "audit_version": "m.audit_version_id"}
+"""Version filter / grouping key -> the run row's id of that version in
+``run_version`` (NULL for none)."""
+RESCORED_SQL = "(m.version_id IS NOT m.audit_version_id)"
+"""1 for a run whose scoring version differs from its audit version (a
+re-score by another ekte version), 0 otherwise (SQL over ``m``)."""
 
 RISK_ORDER = ("clean", "inconclusive", "low", "medium", "high")
 """Risk levels by ``risk_value`` (History's order; a run without one sorts
@@ -149,6 +161,7 @@ RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
     "facet_id": ("INTEGER", FACET_COMBOS),
     **{f"{name}_id": ("INTEGER", lookup) for name, lookup in VARYING.items()},
     **{column: ("INTEGER", lookup) for column, lookup in CHANGES.values()},
+    "audit_version_id": ("INTEGER", AUDIT_VERSIONS),
 }
 """``history_metrics`` column -> (SQL type, the run's value: SQL over
 ``history h`` and ``history_metrics m``, or the :class:`Lookup` that numbers it)."""
@@ -182,12 +195,14 @@ GROUP_ID_SQL: dict[str, str] = {
     "model": "m.model_id",
     "relay_model": f"(m.relay_id << {MODEL_BITS} | m.model_id)",
     "all": "0",
+    **VERSION_ID,
 }
 """Each grouping's integer group id on the run's row ``m`` (every run of a
 group has the one id; ``all``: the constant 0)."""
 
 GROUP_BY_SQL: dict[str, str] = {
     "relay": "m.relay_id", "model": "m.model_id", "relay_model": "m.relay_id, m.model_id", "all": "",
+    **VERSION_ID,
 }
 """What to ``GROUP BY`` for each grouping's id: the columns themselves, in
 ``idx_run_row`` order, so relay and relay × model groups need no sort
@@ -210,6 +225,10 @@ def label_sql(group: str, inner: str) -> str:
         return (f"SELECT rg.relay_key || '|' || mg.model_key AS g, {relay}, mg.model_key AS mk,"
                 f" s.* FROM ({inner}) s JOIN relay_group rg ON rg.id = s.gid >> {MODEL_BITS}"
                 f" JOIN model_group mg ON mg.id = s.gid & {_MODEL_MASK}")
+    if group in VERSION_ID:
+        # the runs without a version are one group of their own (NULL id)
+        return (f"SELECT COALESCE(rv.value, '{UNKNOWN_RELAY}') AS g, s.* FROM ({inner}) s"
+                " LEFT JOIN run_version rv ON rv.id = s.gid")
     return f"SELECT '{ALL_KEY}' AS g, s.* FROM ({inner}) s"
 
 
@@ -265,6 +284,10 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
     holds every column of the run row)."""
     from ekte.knowledge.snapshot import add_link_columns
 
+    # the metrics columns the run columns read, on a database from before a
+    # later step added one (audit_tool_version: step 18): the triggers name them
+    add_link_columns(conn, "history_metrics", {
+        c: analytics_store.METRIC_COLS[c] for c in _sources("m") if c in analytics_store.METRIC_COLS})
     triggers = _trigger_sql()
     stored = dict(conn.execute(
         "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name IN"

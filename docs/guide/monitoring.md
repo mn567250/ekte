@@ -50,6 +50,18 @@ same relay and model, however many other runs were saved since. Alert webhooks
 of a run are sent at the same time, so a slow or dead one does not hold up the
 others. API keys are never sent back to the browser.
 
+**Re-scored runs.** Monitors follow the latest scoring. When a monitor's runs
+are re-scored with a newer ekte (**Re-score with this version** or **Re-score
+all with this version** in History, `ekte rescore --replace` or `--all`, or the
+automatic re-score after an upgrade), each run keeps its place in the monitor's
+trend with its new score, and the next run's regression check compares with
+the re-scored verdict. If the re-scored run is the monitor's latest run, its
+card shows the new verdict (the last run time stays) and its alert rules are
+evaluated on the new verdict: the webhooks get an alert when it reaches the
+threshold or is worse than before the re-score, marked `"rescored": true` with
+the audit and scoring versions in the generic JSON payload. Re-scoring an
+older run of a monitor, or a run of a paused monitor, sends nothing.
+
 **API key storage.** By default ekte **does not store** the monitors' API keys:
 a key you enter stays in the memory of `ekte serve` only and is never written to
 disk. After a restart the **Monitors** page names the monitors that need their

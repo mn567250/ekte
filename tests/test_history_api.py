@@ -467,7 +467,7 @@ def test_status_and_report_detail_revalidate_until_a_write(seeded, client, path)
     url = path.format(rid=rid)
     first, status = _revalidates(client, url)
     assert status == 304
-    # rescores save a new run; a save, like a delete, bumps the data version
+    # a save (or a re-score's replace), like a delete, bumps the data version
     _save(None, score=10.0)
     after = client.get(url, headers={"If-None-Match": first.headers["etag"]})
     assert after.status_code == 200 and after.headers["etag"] != first.headers["etag"]

@@ -87,7 +87,8 @@ EXIT_CODES: dict[int, tuple[str, str]] = {
     EXIT_OK: ("success", "The command succeeded; any gate passed."),
     EXIT_GATE: (
         "gate or check failed",
-        "The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, "
+        "The risk is at or above `--fail-on-risk`, the score is below `--fail-under` "
+        "(or no rating was given because too little was judged), "
         "`kb-import` rejected the file, or `config migrate --check` found an outdated file.",
     ),
     EXIT_USAGE: (
@@ -191,11 +192,17 @@ def _print_evidence(report: AuditReport, path: Path | None) -> None:
 
 
 def _print_summary(report: AuditReport, written: list[Path]) -> None:
+    from ekte.report import dimensions as dims
     from ekte.report.performance import fmt_num
 
     v = report.verdict
     style, label = _RISK_STYLE.get(v.risk_level, ("white", v.risk_level.value))
-    score = "n/a" if v.overall_score is None else f"{v.overall_score}/100 (rating {v.rating})"
+    score = (
+        "n/a" if v.overall_score is None
+        else f"{v.overall_score}/100 (rating {dims.rating_text(report)})"
+    )
+    if v.coverage is not None:
+        score += f"  ·  coverage {dims.coverage_text(report)}"
     head = f"[{style}]{label}[/]  —  {v.headline}"
     body = (
         f"Target : {report.target.name}  ·  model [bold]{report.target.model}[/]"
@@ -302,6 +309,9 @@ def _exit_code(report: AuditReport, fail_under: float | None, fail_on_risk: str 
     v = report.verdict
     if fail_under is not None and v.overall_score is not None and v.overall_score < fail_under:
         return 1
+    # A rating withheld because too little was judged (#249) fails the score gate.
+    if fail_under is not None and v.rating_limit is not None and v.rating_limit.limit is None:
+        return 1
     if fail_on_risk:
         try:
             threshold = RiskLevel(fail_on_risk)
@@ -382,6 +392,7 @@ def _build_options(cfg: dict, **overrides) -> AuditOptions:
         reliability_requests=int(pick("reliability_requests", "reliability_requests", 8)),
         reliability_concurrency=int(pick("concurrency", "concurrency", 3)),
         max_context_probe_tokens=int(pick("max_context_tokens", "max_context_probe_tokens", 200_000)),
+        max_output_probe_tokens=int(pick("max_output_probe_tokens", "max_output_probe_tokens", 2048)),
         performance_requests=int(pick("performance_requests", "performance_requests", 100)),
         performance_max_tokens=int(pick("performance_max_tokens", "performance_max_tokens", 128)),
         performance_streaming=bool(pick("performance_streaming", "performance_streaming", True)),
@@ -624,12 +635,13 @@ def check_command(
     reliability_requests: Annotated[int | None, typer.Option("--reliability-requests", help="Reliability probe request count (0 disables).")] = None,
     concurrency: Annotated[int | None, typer.Option("--concurrency", help="Reliability probe concurrency.")] = None,
     max_context_tokens: Annotated[int | None, typer.Option("--max-context-tokens", help="Cap for the real-context-window probe.")] = None,
+    max_output_probe_tokens: Annotated[int | None, typer.Option("--max-output-probe-tokens", help="Cap for the max-output probe (default 2048).")] = None,
     performance_requests: Annotated[int | None, typer.Option("--performance-requests", help="Performance probe requests per endpoint (deep/full/custom; 0 disables).")] = None,
     performance_max_tokens: Annotated[int | None, typer.Option("--performance-max-tokens", help="Output tokens per performance probe request.")] = None,
     performance_streaming: Annotated[bool | None, typer.Option("--performance-streaming/--performance-non-streaming", help="Probe with streaming or non-streaming requests (standard/deep/custom; full measures both).")] = None,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     no_user_kb: Annotated[bool, typer.Option("--no-user-kb", help=_NO_USER_KB_HELP)] = False,
-    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this.")] = None,
+    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%).")] = None,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the full JSON report to stdout instead of writing files.")] = False,
     compact: Annotated[bool, typer.Option("--compact", help="Print a lean agent/LLM-facing JSON verdict to stdout (much smaller than --json).")] = False,
@@ -648,6 +660,7 @@ def check_command(
             cfg, suite=suite, dimensions=dimension, judge=judge, only=only, skip=skip,
             reliability_requests=reliability_requests, concurrency=concurrency,
             max_context_tokens=max_context_tokens,
+            max_output_probe_tokens=max_output_probe_tokens,
             performance_requests=performance_requests,
             performance_max_tokens=performance_max_tokens,
             performance_streaming=performance_streaming,
@@ -699,12 +712,13 @@ def compare_command(
     timeout: Annotated[float | None, typer.Option("--timeout", help="Base HTTP timeout (seconds); grows with prompt and output size.")] = None,
     max_request_time: Annotated[float | None, typer.Option("--max-request-time", help="Hard cap for one request (seconds, default 900).")] = None,
     max_context_tokens: Annotated[int | None, typer.Option("--max-context-tokens", help="Cap for the context-window probe.")] = None,
+    max_output_probe_tokens: Annotated[int | None, typer.Option("--max-output-probe-tokens", help="Cap for the max-output probe (default 2048).")] = None,
     performance_requests: Annotated[int | None, typer.Option("--performance-requests", help="Performance probe requests per endpoint (0 disables; standard suite uses 5).")] = None,
     performance_max_tokens: Annotated[int | None, typer.Option("--performance-max-tokens", help="Output tokens per performance probe request.")] = None,
     performance_streaming: Annotated[bool | None, typer.Option("--performance-streaming/--performance-non-streaming", help="Probe with streaming or non-streaming requests (standard/deep/custom; full measures both).")] = None,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     no_user_kb: Annotated[bool, typer.Option("--no-user-kb", help=_NO_USER_KB_HELP)] = False,
-    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this.")] = None,
+    fail_under: Annotated[float | None, typer.Option("--fail-under", help="Exit 1 if overall score < this, or if no rating was given because too little was judged (coverage below 50%).")] = None,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this.")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the full JSON report to stdout.")] = False,
     compact: Annotated[bool, typer.Option("--compact", help="Print a lean agent/LLM-facing JSON verdict to stdout.")] = False,
@@ -727,6 +741,7 @@ def compare_command(
         options = _build_options(
             cfg, suite=suite, default_suite="deep", dimensions=dimension, judge=judge,
             max_context_tokens=max_context_tokens,
+            max_output_probe_tokens=max_output_probe_tokens,
             performance_requests=performance_requests,
             performance_max_tokens=performance_max_tokens,
             performance_streaming=performance_streaming,
@@ -937,11 +952,19 @@ def kb_export_command(
     print(export_yaml(provider), end="")
 
 
+def _verdict_text(report: dict | None) -> str:
+    v = (report or {}).get("verdict") or {}
+    score = v.get("overall_score")
+    return f"{v.get('risk_level', '?')} · {score if score is not None else '—'}"
+
+
 @app.command("rescore")
 def rescore_command(
-    source: Annotated[str, typer.Argument(help="The id of a saved run in the history, or a report JSON file (then also --evidence).")],
+    source: Annotated[str | None, typer.Argument(help="The id of a saved run in the history, or a report JSON file (then also --evidence). Leave out with --all.")] = None,
     evidence_file: Annotated[Path | None, typer.Option("--evidence", help="The evidence file of a report JSON file given as SOURCE.")] = None,
-    save: Annotated[bool, typer.Option("--save/--no-save", help="Save the re-scored report to the history as a new run (a saved run only).")] = True,
+    save: Annotated[bool, typer.Option("--save/--no-save", help="Save the re-scored report to the history (a saved run only): with --replace in place of the run, else as a new run (deprecated: a later ekte replaces by default). --no-save only prints it.")] = True,
+    replace: Annotated[bool, typer.Option("--replace", help="Replace the saved run with the re-scored report: it keeps its id, time and monitor, and its monitor follows the new verdict.")] = False,
+    all_runs: Annotated[bool, typer.Option("--all", help="Re-score every saved run scored by another ekte version, one after another, and replace each; runs without a usable evidence file are skipped with the reason.")] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Print the re-scored report as JSON to stdout.")] = False,
 ) -> None:
     """Re-score a recorded run with this ekte version, from its evidence file.
@@ -950,10 +973,22 @@ def rescore_command(
     recorded timing) instead of contacting the relay, so improved checks can
     judge an old run again. A check that now asks something the recorded run
     never asked reads inconclusive. Takes about as long as the original run's
-    requests did.
+    requests did. With --replace (and with --all) a saved run is replaced in
+    place: it keeps its id, time and monitor, and its monitor follows the new
+    verdict.
     """
     from ekte import replay
 
+    if all_runs:
+        if source is not None or evidence_file is not None or as_json or not save:
+            err_console.print("[red]--all takes no SOURCE, --evidence, --json or --no-save "
+                              "(it always replaces each run).[/red]")
+            raise typer.Exit(code=2)
+        _rescore_all()
+        return
+    if source is None:
+        err_console.print("[red]Give a saved run id or a report JSON file, or --all.[/red]")
+        raise typer.Exit(code=2)
     report: dict | None
     report_id: int | None = None
     if source.isdigit() and not Path(source).is_file():
@@ -987,17 +1022,28 @@ def rescore_command(
     except ValueError as exc:
         err_console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
+    replaced = False
     new_id = None
-    if save:
-        from ekte.web import history
+    if save and report_id is not None:
+        from ekte.web import rescore
 
-        new_id = history.save(json.loads(new.model_dump_json()))
+        if replace:
+            try:
+                _run_async(rescore.store(report_id, report, json.loads(new.model_dump_json())))
+                replaced = True
+            except Exception as exc:
+                err_console.print(f"[red]Could not replace saved run {report_id}: {exc}[/red]")
+                raise typer.Exit(code=1) from exc
+        else:
+            from ekte.web import history
+
+            err_console.print(f"[yellow]Deprecated: {rescore.NEW_RUN_DEPRECATED}.[/yellow]")
+            new_id = history.save(json.loads(new.model_dump_json()))
     if as_json:
         print(new.model_dump_json(indent=2))
         return
     _print_summary(new, [])
     r = new.rescored_from
-    old = (report.get("verdict") or {})
     if r is not None:
         missing = sum(r.missing.values())
         console.print(
@@ -1006,10 +1052,32 @@ def rescore_command(
             f"({', '.join(sorted(r.missing)) or 'none'}), {r.unused} recorded exchanges unused."
         )
     console.print(
-        f"Before: {old.get('risk_level', '?')} · {old.get('overall_score', '—')}   "
+        f"Before: {_verdict_text(report)}   "
         f"Now: {new.verdict.risk_level.value} · {new.verdict.overall_score if new.verdict.overall_score is not None else '—'}"
+        + (f"   (saved run {report_id} replaced)" if replaced else "")
         + (f"   (saved as run {new_id})" if new_id and new_id > 0 else "")
     )
+
+
+def _rescore_all() -> None:
+    """``ekte rescore --all``: every saved run scored by another version."""
+    from ekte import __version__
+    from ekte.web import rescore
+
+    def on_run(rid: int, old: dict | None, new: dict | None, refusal: str | None) -> None:
+        if new is None:
+            console.print(f"Run {rid}: skipped: {refusal}")
+            return
+        was = (old or {}).get("tool_version") or "?"
+        console.print(f"Run {rid}: {_verdict_text(old)} (ekte {was}) -> {_verdict_text(new)} (ekte {__version__})")
+
+    counts = _run_async(rescore.rescore_all(on_run))
+    console.print(
+        f"Re-scored {counts['rescored']} run(s) with ekte {__version__}; "
+        f"{counts['skipped']} skipped, {counts['failed']} failed."
+    )
+    if counts["failed"]:
+        raise typer.Exit(code=1)
 
 
 @app.command("evidence-export")

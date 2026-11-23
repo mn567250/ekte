@@ -1,0 +1,12 @@
+{
+ "strings": {
+  "Coverage {1}%: {2} ran but could not be judged.": "Dekning {1} %: kjørt, men kunne ikke vurderes: {2}.",
+  "Not rated: too little was judged (coverage below {1}%).": "Ingen vurdering: for lite ble vurdert (dekning under {1} %).",
+  "Rating limited to {1} because coverage is below {2}%.": "Vurderingen er begrenset til {1} fordi dekningen er under {2} %.",
+  "Rating limited to {1} because a core dimension could not be judged.": "Vurderingen er begrenset til {1} fordi en kjernedimensjon ikke kunne vurderes.",
+  "Not rated: too little was judged": "Ingen vurdering: for lite ble vurdert",
+  "Rating at most {r}": "Vurdering høyst {r}",
+  "Coverage": "Dekning",
+  "The share of the weight of the dimensions that ran that could be judged; a dimension that could not be judged drops out of the score.": "Andelen av vekten til dimensjonene som ble kjørt, som kunne vurderes; en dimensjon som ikke kunne vurderes, faller ut av scoren."
+ }
+}

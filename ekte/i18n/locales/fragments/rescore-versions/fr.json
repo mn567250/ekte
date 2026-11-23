@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "ekte {audit} · re-scored with {scoring}": "ekte {audit} · réévalué avec {scoring}",
+  "before the re-score: {verdict}": "avant la réévaluation : {verdict}",
+  "cannot be re-scored: {reason}": "réévaluation impossible : {reason}",
+  "Cannot be re-scored: {reason}": "Réévaluation impossible : {reason}",
+  "Cannot be re-scored with ekte {v}: {reason}": "Réévaluation impossible avec ekte {v} : {reason}",
+  "score {v}": "score {v}",
+  "grade {v}": "note {v}",
+  "risk: {v}": "risque : {v}",
+  "Re-scored on": "Réévalué le",
+  "Verdict before the re-score": "Verdict avant la réévaluation",
+  "Scoring version": "Version d’évaluation",
+  "Audit version": "Version de l’audit",
+  "scoring version": "version d’évaluation",
+  "audit version": "version de l’audit",
+  "this report kept no evidence: there is nothing to replay": "ce rapport n’a conservé aucune preuve : il n’y a rien à rejouer",
+  "the evidence file is not the one the report names (its SHA-256 differs)": "le fichier de preuves n’est pas celui que le rapport indique (son SHA-256 diffère)",
+  "this evidence file does not record the run's options; it cannot be replayed": "ce fichier de preuves n’enregistre pas les options de l’exécution ; il ne peut pas être rejoué",
+  "this evidence file names no target": "ce fichier de preuves n’indique aucune cible",
+  "the evidence file cannot be read": "le fichier de preuves est illisible",
+  "this evidence file has a schema version this ekte cannot read; update ekte": "ce fichier de preuves a une version de schéma que cette version d’ekte ne sait pas lire ; mettez ekte à jour"
+ }
+}

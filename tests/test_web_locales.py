@@ -582,7 +582,7 @@ def test_lang_js_loads_the_missing_language_bundle(tmp_path):
     # Other languages carry the strings report.js needs for all of them.
     fr = r["common"]["report"]["fr"]
     assert fr["Overall health score {1}/100."] == i18n.ui("fr", "Overall health score {1}/100.")
-    assert len(fr) == 2 and len(r["common"]["report"]["de"]) > 100
+    assert len(fr) == 3 and len(r["common"]["report"]["de"]) > 100
     # The full bundle (no cookie yet) has every language; the cookie is set.
     b = r["full"]["boot"]
     assert (b["lang"], b["cookie"], r["full"]["reloads"], b["pending"]) == ("it", "it", 0, 0)

@@ -11,7 +11,7 @@ défaut) ; `--format json|md|html|pdf` écrit un seul format. `--json` et `--co
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -25,6 +25,11 @@ clés avec leurs recommandations, les scores par dimension et les **Dimension
 details**, les constats de chaque détecteur avec leurs preuves, la section
 performance, le profil de la base de connaissances utilisé et les langues de
 sonde. Le texte contrôlé par le relais est expurgé et échappé avant d'être écrit.
+
+À côté du score, chaque rapport affiche la **couverture** : la part du poids des
+dimensions exécutées qui a pu être évaluée. Le résumé du verdict nomme la
+dimension exécutée sans pouvoir être évaluée, et une couverture faible limite la
+note ou la supprime (« pas de note : trop peu a été évalué ») ; voir [Score global, note et poids](methodology.md#score-global-note-et-poids).
 
 ## Fichiers de preuves
 
@@ -56,13 +61,26 @@ choisit les requêtes.
 `ekte rescore` réévalue une exécution enregistrée avec la version d'ekte
 installée : il refait le même audit, mais répond à chaque requête par la
 réponse enregistrée (au rythme enregistré) au lieu de contacter le relais, de
-sorte que les contrôles améliorés s'appliquent aux anciennes exécutions. Il
-prend l'identifiant d'une exécution enregistrée (et enregistre le résultat
-comme nouvelle exécution, sauf avec `--no-save`) ou un fichier de rapport avec
-`--evidence PATH`. Un contrôle qui demande désormais quelque chose que
+sorte que les contrôles améliorés s'appliquent aux anciennes exécutions. Il prend l'identifiant d'une exécution enregistrée ou un fichier de rapport
+avec `--evidence PATH`. Avec `--replace`, le résultat remplace l'exécution
+enregistrée (même identifiant, même heure, même surveillance) ; sans cette
+option, il est encore enregistré comme nouvelle exécution, ce qui est obsolète
+et affiche un avertissement (une version ultérieure d'ekte remplacera par
+défaut ; `--no-save` n'enregistre rien). Un contrôle qui demande désormais quelque chose que
 l'exécution enregistrée n'a jamais demandé reste non concluant au lieu d'être
 noté sur une supposition ; le champ `rescored_from` du rapport indique combien
 de requêtes ont été rejouées et quels contrôles n'en avaient pas.
+
+`ekte rescore --all` réévalue l'une après l'autre toutes les exécutions
+enregistrées notées par une autre version d'ekte, remplace chacune et affiche
+son verdict avant et après. Une exécution sans fichier de preuves utilisable
+n'est pas réévaluée : elle garde son verdict et est ignorée avec la raison.
+`ekte serve` fait de même en arrière-plan à son premier démarrage après une
+mise à jour (voir [Interface web](web-ui.md)).
+
+Les exports Markdown, HTML et PDF d’un rapport réévalué indiquent les deux
+versions, la date de la réévaluation et le verdict d’avant ; le verdict
+`--compact` les contient sous `rescored`.
 
 Les clés et les en-têtes sensibles sont retirés avant toute écriture (voir
 [Confidentialité](privacy.md)). Chaque ligne respecte

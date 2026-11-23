@@ -51,7 +51,7 @@ SCALE = Scale(
 class PromptCacheDetector(Detector):
     id = "prompt_cache"
     name = "Prompt prefix-cache (timing)"
-    dimension = Dimension.SECURITY
+    dimension = Dimension.INTEGRITY
     min_suite = "deep"
     cost_hint = 3
 
@@ -59,9 +59,12 @@ class PromptCacheDetector(Detector):
         result = self.new_result(scoring=SCALE.scoring())
         tok = ctx.tokenizer_hint()
         # CPU work: keep it off the event loop (it would skew concurrent timings).
-        filler = await asyncio.to_thread(build_filler, _PREFIX_TOKENS, tok)
-        prefix_a = f"{stable_marker('cache-a')}\n{filler}"
-        prefix_b = f"{stable_marker('cache-b')}\n{filler}"
+        # Both prefixes carry the run's nonce (marker and filler), so the "cold"
+        # request is not already warm from an earlier run of the same target.
+        nonce = ctx.run_nonce
+        filler = await asyncio.to_thread(build_filler, _PREFIX_TOKENS, tok, nonce)
+        prefix_a = f"{stable_marker('cache-a', nonce)}\n{filler}"
+        prefix_b = f"{stable_marker('cache-b', nonce)}\n{filler}"
 
         self._failed: CompletionOutcome | None = None  # the first probe that failed
         cold = await self._timed(ctx, prefix_a)
@@ -124,7 +127,7 @@ class PromptCacheDetector(Detector):
                 )
             )
         result.status = Status.INFO
-        result.score = None  # informational — does not move the security score
+        result.score = None  # informational — does not move the integrity score
         return result
 
     async def _timed(self, ctx: AuditContext, prefix: str) -> float | None:

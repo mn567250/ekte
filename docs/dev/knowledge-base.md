@@ -24,6 +24,98 @@ other names in `VENDOR_BRANDS` (`ekte/knowledge/identity.py`, which is also the
 detector's rival-brand list); the import fills empty keywords from these names
 with a warning. Add a new vendor's brand words there as one group.
 
+## Model-specific fingerprints
+
+Most of what the identity check runs holds for every model of a vendor: the
+self-identification, the provider-level fingerprints and often the knowledge
+cutoff. Only a model's own pure-code fingerprints (in the model's
+`fingerprints`, `pure_code_checkable: true`, `max_tokens` at most 512) can
+tell it from a cheaper sibling, so a relay serving `gpt-4o-mini` for `gpt-4o`
+passes everything else. The detector runs a model's own probes before the
+provider's, records how many answered as `model_specific_checks`, and when
+that is 0 (and no baseline or judge was used) reports
+`model_identity.model_specific`: the vendor is consistent, the model was not
+verified. `test_chat_profiles_without_a_model_specific_fingerprint_do_not_grow`
+in `tests/test_knowledge.py` pins, per provider, how many chat profiles have
+none; lower the number when you add one, it must never rise.
+
+The knowledge cutoff needs no fingerprint: the detector asks every model whose
+`knowledge_cutoff` is `YYYY-MM` or `YYYY-MM-DD` for `CUTOFF=YYYY-MM` and
+compares the answer (methodology, `model_identity.cutoff`). Write the cutoff in
+that form when the provider documents the month; a vague value ("~2025",
+"not officially published") switches the probe off for that model, which is
+better than a guessed month.
+
+Adding a model-specific fingerprint:
+
+1. **Find a separating behaviour** on the model's official documentation or by
+   experiment: a fact, format or reasoning step the genuine model gets right
+   and its cheaper siblings do not. The answer must fit in 512 tokens and be
+   checkable with `expect_contains`, `expect_contains_any`,
+   `expect_not_contains` or `expect_regex`. `expect_contains` and
+   `expect_contains_any` match substrings; `expect_not_contains` terms match
+   whole words (`helpers.contains_term`: `meta` is not in `metadata`, `qwen`
+   is in `Qwen2.5`, CJK and token-like terms such as `<|User|>` still match
+   inside text).
+2. **Measure it against the genuine model** through the provider's own API
+   (not a relay) at the probe's `temperature`, several times, and against each
+   sibling you want it to separate. Keep the probe only if the genuine model
+   meets the expectation every time and the siblings miss it. Never commit an
+   expectation you have not measured: a wrong one makes honest relays diverge.
+3. **Record the measurement** on the probe: `separates_from` lists the sibling
+   ids that missed it, `verified` the ISO date of the measurement (required
+   with `separates_from`). Both appear in the finding's evidence. In the pull
+   request, give the provider, the model ids, the dates and the raw answers.
+4. Put the probe in the model's own `fingerprints`, never in the provider's,
+   and lower the model's provider in `_WITHOUT_MODEL_SPECIFIC`.
+
+```yaml
+- id: gpt-4o
+  knowledge_cutoff: "2023-10"
+  fingerprints:
+    - id: example-separating-probe
+      signal: example separating behaviour
+      prompt: "..."
+      pure_code_checkable: true
+      expect_contains: ["..."]
+      max_tokens: 64
+      separates_from: [gpt-4o-mini]
+      verified: "2026-11-01"
+```
+
+In compare mode every fingerprint also goes to the trusted baseline. A probe
+that the baseline misses too is reported as `baseline_also_diverged` (Info, no
+deduction): that is a knowledge-base bug, so fix or remove the probe.
+
+## Tokenizer factors
+
+The context-window probe sizes its haystacks in real tokens, but ekte only
+has a stdlib heuristic count. `FILLER_REAL_PER_HEURISTIC` in
+`ekte/utils/tokenize.py` holds, per `tokenizer:` value of the profiles, how
+many real tokens the probe's filler counts per heuristic token; a family
+without an entry uses 1.2. The entries are data measured offline, never a
+run-time tokenizer import. When you add a tokenizer family whose tokenizer is
+published on Hugging Face, or a family's tokenizer changes, add its sources
+(repository and pinned revision) to `SOURCES` in
+`scripts/measure_tokenizer_factors.py` and run it in a separate virtual
+environment (it needs `tokenizers` and `huggingface_hub`, which are not ekte
+dependencies, and network access to huggingface.co):
+
+```bash
+python -m venv /tmp/tokvenv
+/tmp/tokvenv/bin/pip install -e . tokenizers huggingface_hub
+/tmp/tokvenv/bin/python scripts/measure_tokenizer_factors.py --cache-dir /tmp/tok-cache
+```
+
+It only loads `tokenizer.json` with the `tokenizers` library (no repository
+code). A gated official repository is measured through an ungated mirror whose
+file must have the same SHA-256 (`same_as`); a tokenizer published only as
+tiktoken files is measured through a conversion that must match the official
+vocabulary and split pattern (`tiktoken_of`). Copy the printed factor and
+spread into the table with a comment naming the sources and revisions, and
+list the change in `CHANGELOG.md`: it changes probe sizes. The script is not
+run in CI. `--latest` re-measures the repositories' current revisions.
+
 ## Keeping the knowledge base current
 
 Provider and model data ages quickly, and every verdict depends on it, so ekte

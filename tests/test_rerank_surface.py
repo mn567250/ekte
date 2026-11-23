@@ -124,7 +124,7 @@ async def test_clean_rerank_audit(serve):
     assert report.verdict.risk_level == RiskLevel.CLEAN
     assert {d.dimension for d in report.detectors if d.id in RERANK_IDS} == {
         Dimension.CONNECTIVITY, Dimension.CAPABILITY, Dimension.MODEL_IDENTITY,
-        Dimension.RELIABILITY}
+        Dimension.INTEGRITY}
     assert _finding(report, "rerank.connectivity").evidence["results"] == 4
     known = _finding(report, "rerank.known_answer")
     assert known.outcome == "first" and known.evidence["top_index"] == KNOWN_ANSWER_TOP
@@ -142,6 +142,13 @@ async def test_wrong_ranking_and_echoed_model_are_high_risk(serve):
     assert known.outcome == "missed" and known.severity.value == "high"
     assert _finding(report, "rerank.model_field").outcome == "differs"
     assert report.verdict.risk_level == RiskLevel.HIGH
+
+
+async def test_unplaceable_echoed_model_is_info(serve):
+    serve(RerankServer(served="acme-rerank-turbo"))
+    report = await run_audit(_target(), _opts(suite="smoke"))
+    field = _finding(report, "rerank.model_field")
+    assert (field.outcome, field.status, field.score) == ("unknown", Status.INFO, None)
 
 
 async def test_missing_model_field_is_info(serve):

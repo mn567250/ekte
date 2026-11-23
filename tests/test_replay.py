@@ -73,13 +73,13 @@ def test_a_question_the_recorded_run_never_asked_is_inconclusive(tmp_path, monke
     path = tmp_path / "e.jsonl.zst"
     before = _record(monkeypatch, path)
     lines = [x for x in evidence.exchanges(path) if x["detector"] != "billing"]
-    rp = replay.Replay(lines, ref=EvidenceRef(**before["evidence"]))
+    rp = replay.Replay(lines, ref=EvidenceRef(**before["evidence"]), run_nonce=before["run_nonce"])
     after = asyncio.run(run_audit(_target(), AuditOptions(suite="standard"), replay=rp))
     billing = next(d for d in after.detectors if d.id == "billing")
     assert billing.status == Status.INCONCLUSIVE and billing.score is None
     missing = next(f for f in billing.findings if f.id == replay.MISSING_ID)
-    assert missing.evidence["missing_requests"] == 1 and missing.evidence_seqs == []
-    assert after.rescored_from.missing == {"billing": 1}
+    assert missing.evidence["missing_requests"] == 3 and missing.evidence_seqs == []  # three prompt sizes
+    assert after.rescored_from.missing == {"billing": 3}
     assert all(r.seq >= REPLAY_MISS_SEQ for r in after.performance.requests if r.detector == "billing")
     others = {k: v for k, v in _scores(json.loads(after.model_dump_json())).items() if k != "billing"}
     assert others == {k: v for k, v in _scores(before).items() if k != "billing"}
@@ -167,6 +167,7 @@ def saved(tmp_path, monkeypatch):
 
 
 def test_a_rescored_run_shares_its_original_file(saved):
+    # a re-score saved as a separate run, as ekte did before #168: such rows stay
     from ekte.web import history
 
     rid, path = saved
@@ -194,6 +195,8 @@ def test_api_queues_a_rescore_as_a_job(saved):
         events = [json.loads(x[5:]) for x in r.text.splitlines() if x.startswith("data:")]
         ev = next(e for e in events if e["type"] == "report")
         assert ev["report"]["rescored_from"]["report_id"] == rid
+        # v1 without replace=true: a new run, as documented (deprecated, #168)
+        assert ev["report_id"] != rid and created.headers["deprecation"] == "true"
         assert history.get(ev["report_id"])["rescored_from"]["missing"] == {}
         assert client.post("/api/v1/history/999/rescore").status_code == 404
         plain = history.save({**history.get(rid), "evidence": None})
@@ -211,6 +214,7 @@ def test_cli_rescores_a_saved_run_or_a_report_file(saved, tmp_path):
     assert res.exit_code == 0, res.output
     out = unwrapped(res.output)  # one long line, wrapped by Rich
     assert "requests replayed" in out and "saved as run" in out
+    assert "Deprecated" in out  # a new run without --replace (#168)
     assert history.recent(1)[0]["id"] != rid
 
     report_file = tmp_path / "report.json"

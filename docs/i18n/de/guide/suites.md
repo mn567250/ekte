@@ -29,7 +29,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--dimension/-D` ist wiederholbar oder kommagetrennt und impliziert
 `--suite custom`; in einer Konfigurationsdatei `run.dimensions: [protocol, performance]`.
 Die Dimensionen sind `connectivity`, `protocol`, `context_window`,
-`model_identity`, `capability`, `streaming`, `billing`, `reliability`, `security`
+`model_identity`, `capability`, `streaming`, `billing`, `reliability`, `integrity`, `security`
 und `performance`. In der Weboberfläche öffnet die Suite-Schaltfläche `custom`
 dieselbe Auswahl (**Auszuführende Dimensionen**) auf der Prüfseite
 und bei den Überwachungen.
@@ -64,5 +64,9 @@ vergleichen** in der Weboberfläche) führt dieselben Tests gleichzeitig gegen e
 vertrauenswürdige Referenz des angegebenen Modells aus. Er ist der stärkste Weg
 zur Bestätigung: Identitätsantworten, abgelehnte Anfrageparameter,
 Manipulations-Canaries und Leistung werden Seite an Seite beurteilt, und nur eine
-Referenz lässt die Konfidenz des Urteils *hoch* werden. Ohne `--judge-base-url`
-nutzt der Vergleichsmodus die Referenz als Richter.
+Referenz lässt die Konfidenz des Urteils *hoch* werden: Mindestens zwei
+Kerndimensionen (Modellidentität, Kontextfenster, angegebene Fähigkeiten,
+Abrechnung) müssen tatsächlich mit einer verwertbaren Antwort der Referenz
+verglichen worden sein; ein Richter allein schafft das nie (siehe
+[Konfidenz des Urteils](methodology.md#konfidenz-des-urteils)). Ohne
+`--judge-base-url` nutzt der Vergleichsmodus die Referenz als Richter.

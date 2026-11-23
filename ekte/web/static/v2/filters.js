@@ -95,6 +95,7 @@
     mode: ["模式", "Mode"], api: ["协议", "Protocol"], stream: ["探测请求", "Probe requests"],
     detect: ["协议识别", "Protocol detection"], risk: ["风险", "Risk"], min_score: ["最低健康分", "Min. score"],
     exec: ["执行方式", "Execution"], watch: ["监控", "Monitor"], group: ["分组", "Group by"],
+    scoring_version: ["评分版本", "Scoring version"], audit_version: ["检测版本", "Audit version"],
     state: ["状态", "Status"], alerting: ["告警", "Alerting"],
     from: ["开始日期", "Start date"], to: ["结束日期", "End date"],
   };
@@ -136,6 +137,9 @@
     min_score: { kind: "number", def: "" },
     exec: { kind: "select", def: "", values: ["manual", "monitor"] },
     watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,18}$/ },
+    // the ekte version that scored a run, and the one its audit ran with (issue 168)
+    scoring_version: { kind: "select", def: "", values: null, unknown: true },
+    audit_version: { kind: "select", def: "", values: null, unknown: true },
     group: { kind: "select", def: "relay", values: ["relay", "model", "relay_model", "all"], required: true },
     // Monitors only (ekte/web/watches_api.py): the server decides both per monitor
     state: { kind: "select", def: "", values: ["active", "paused", "draft"], page: true },
@@ -403,8 +407,8 @@
    * PAGES[page], href() keeps exactly these keys in a link to it (range
    * brings from / to). */
   var PAGES = {
-    history: ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec", "watch"],
-    analytics: ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
+    history: ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec", "watch", "scoring_version", "audit_version"],
+    analytics: ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "scoring_version", "audit_version", "group"],
     watches: ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"],
   };
   var PATHS = { history: "/history", analytics: "/analytics", watches: "/watches" };

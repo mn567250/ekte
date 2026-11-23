@@ -67,6 +67,11 @@
     "DetectorResult": {
       "description": "The result of running one detector.",
       "properties": {
+        "baseline_compared": {
+          "default": false,
+          "title": "Baseline Compared",
+          "type": "boolean"
+        },
         "dimension": {
           "$ref": "#/$defs/Dimension"
         },
@@ -192,6 +197,7 @@
         "streaming",
         "billing",
         "reliability",
+        "integrity",
         "security",
         "performance"
       ],
@@ -216,6 +222,17 @@
           "default": "mean_of_detectors",
           "title": "Method",
           "type": "string"
+        },
+        "score_cap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DimensionScoreCap"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "status_override": {
           "anyOf": [
@@ -314,6 +331,37 @@
         "dimension"
       ],
       "title": "DimensionScore",
+      "type": "object"
+    },
+    "DimensionScoreCap": {
+      "description": "Why a dimension scores below the mean of its detectors: a detector with\na HIGH/CRITICAL (non-advisory) finding caps the dimension at its score.",
+      "properties": {
+        "cap": {
+          "title": "Cap",
+          "type": "number"
+        },
+        "detector": {
+          "title": "Detector",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "uncapped_score": {
+          "title": "Uncapped Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "detector",
+        "cap",
+        "uncapped_score"
+      ],
+      "title": "DimensionScoreCap",
       "type": "object"
     },
     "EndpointPerformance": {
@@ -527,7 +575,7 @@
           "type": "string"
         },
         "schema_version": {
-          "default": "1.1",
+          "default": "1.2",
           "title": "Schema Version",
           "type": "string"
         },
@@ -1893,6 +1941,17 @@
           "title": "Missing",
           "type": "object"
         },
+        "previous_verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RescoredVerdict"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "replayed": {
           "default": 0,
           "title": "Replayed",
@@ -1909,6 +1968,18 @@
           ],
           "default": null,
           "title": "Report Id"
+        },
+        "rescored_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rescored At"
         },
         "run_id": {
           "title": "Run Id",
@@ -1937,6 +2008,49 @@
         "evidence_sha256"
       ],
       "title": "RescoreRef",
+      "type": "object"
+    },
+    "RescoredVerdict": {
+      "description": "The verdict a re-scored report had before its latest re-score.",
+      "properties": {
+        "overall_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overall Score"
+        },
+        "rating": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rating"
+        },
+        "risk_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Level"
+        }
+      },
+      "title": "RescoredVerdict",
       "type": "object"
     },
     "RiskLevel": {
@@ -2193,6 +2307,18 @@
           "title": "Confidence",
           "type": "string"
         },
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage"
+        },
         "drivers": {
           "items": {
             "type": "string"
@@ -2210,6 +2336,13 @@
             "type": "string"
           },
           "title": "Key Findings",
+          "type": "array"
+        },
+        "not_judged": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Judged",
           "type": "array"
         },
         "overall_score": {
@@ -2236,17 +2369,114 @@
           "default": null,
           "title": "Rating"
         },
+        "rating_limit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictRatingLimit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "risk_level": {
           "$ref": "#/$defs/RiskLevel",
           "default": "inconclusive"
+        },
+        "score_cap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictScoreCap"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "summary": {
           "default": "",
           "title": "Summary",
           "type": "string"
+        },
+        "uncapped_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uncapped Score"
         }
       },
       "title": "Verdict",
+      "type": "object"
+    },
+    "VerdictRatingLimit": {
+      "description": "Why the rating is lower than the overall score gives, or withheld:\ntoo little of the audit was judged (``Verdict.coverage``), or a core\ndimension ran but could not be judged (``COVERAGE_*`` in ekte/scoring.py).",
+      "properties": {
+        "limit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "unlimited_rating": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unlimited Rating"
+        }
+      },
+      "required": [
+        "reason"
+      ],
+      "title": "VerdictRatingLimit",
+      "type": "object"
+    },
+    "VerdictScoreCap": {
+      "description": "Why the overall score is below the weighted mean of the dimensions:\nthe risk level caps it (``RISK_SCORE_CAPS`` in ekte/scoring.py).",
+      "properties": {
+        "cap": {
+          "title": "Cap",
+          "type": "number"
+        },
+        "findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel"
+        }
+      },
+      "required": [
+        "risk_level",
+        "cap"
+      ],
+      "title": "VerdictScoreCap",
       "type": "object"
     }
   },
@@ -2431,9 +2661,21 @@
       ],
       "default": null
     },
+    "run_nonce": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Nonce"
+    },
     "schema_version": {
-      "default": "1.4",
-      "description": "Version of this schema (MAJOR.MINOR), independent of the ekte version; this schema describes version 1.4. Documents without the field were written before schemas were versioned and match version 1.0.",
+      "default": "1.6",
+      "description": "Version of this schema (MAJOR.MINOR), independent of the ekte version; this schema describes version 1.6. Documents without the field were written before schemas were versioned and match version 1.0.",
       "pattern": "^[0-9]+\\.[0-9]+$",
       "type": "string"
     },
@@ -2497,5 +2739,5 @@
   ],
   "title": "ekte audit report",
   "type": "object",
-  "x-schema-version": "1.4"
+  "x-schema-version": "1.6"
 }

@@ -7,15 +7,36 @@ real relay behaviour.
 
 from __future__ import annotations
 
+import json
+import random
+import re
+
+import pytest
+
+from ekte.detectors import REGISTRY
 from ekte.models import (
+    AuditReport,
     DetectorResult,
     Dimension,
     Finding,
+    RedactedTarget,
     RiskLevel,
     Severity,
     Status,
 )
-from ekte.scoring import build_dimensions, build_verdict, overall_score
+from ekte.report import render_html, render_markdown
+from ekte.scoring import (
+    ADVISORY_CHECKS,
+    COVERAGE_LIMITED_BELOW,
+    COVERAGE_RATING_LIMIT,
+    COVERAGE_UNRATED_BELOW,
+    RISK_SCORE_CAPS,
+    build_dimensions,
+    build_verdict,
+    coverage_pct,
+    overall_score,
+    rating,
+)
 
 
 def _result(
@@ -24,14 +45,17 @@ def _result(
     score: float | None,
     status: Status,
     findings: list[Finding] | None = None,
+    compared: bool = False,
+    detector_id: str | None = None,
 ) -> DetectorResult:
     return DetectorResult(
-        id=f"{dimension.value}-det",
+        id=detector_id or f"{dimension.value}-det",
         name=dimension.value,
         dimension=dimension,
         score=score,
         status=status,
         findings=findings or [],
+        baseline_compared=compared,
     )
 
 
@@ -39,12 +63,16 @@ def _info(dim_id: str) -> Finding:
     return Finding(id=f"{dim_id}.ok", title="All good", status=Status.PASS, severity=Severity.INFO)
 
 
-def _clean_core_detectors() -> list[DetectorResult]:
-    """One passing detector for each core (substitution-revealing) dimension."""
+def _clean_core_detectors(*compared: Dimension) -> list[DetectorResult]:
+    """One passing detector for each core (substitution-revealing) dimension;
+    those in ``compared`` compared the target with the baseline."""
     return [
-        _result(Dimension.MODEL_IDENTITY, score=95.0, status=Status.PASS, findings=[_info("identity")]),
-        _result(Dimension.CONTEXT_WINDOW, score=92.0, status=Status.PASS, findings=[_info("context")]),
-        _result(Dimension.CAPABILITY, score=90.0, status=Status.PASS, findings=[_info("capability")]),
+        _result(d, score=s, status=Status.PASS, findings=[_info(d.value)], compared=d in compared)
+        for d, s in (
+            (Dimension.MODEL_IDENTITY, 95.0),
+            (Dimension.CONTEXT_WINDOW, 92.0),
+            (Dimension.CAPABILITY, 90.0),
+        )
     ]
 
 
@@ -218,8 +246,8 @@ def test_verdict_confidence_low_when_profile_unmatched():
     assert verdict.confidence == "low"
 
 
-def test_verdict_confidence_high_with_baseline_and_full_core():
-    detectors = _clean_core_detectors()
+def test_verdict_confidence_high_with_two_baseline_compared_core_dimensions():
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY, Dimension.CAPABILITY)
     dims = build_dimensions(detectors, reliability=None)
     verdict = build_verdict(
         detectors, dims, profile_matched=True, used_judge=False, used_baseline=True
@@ -227,10 +255,77 @@ def test_verdict_confidence_high_with_baseline_and_full_core():
     assert verdict.confidence == "high"
 
 
+def test_verdict_baseline_without_comparisons_stays_medium():
+    # #257: a configured baseline that no core detector compared against is no
+    # evidence: the confidence describes the evidence, not the configuration.
+    detectors = _clean_core_detectors()
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=True
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_one_baseline_compared_core_dimension_stays_medium():
+    # Two detectors of the same dimension are one dimension; a non-core
+    # dimension (integrity, performance) does not count either.
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY) + [
+        _result(Dimension.MODEL_IDENTITY, score=100.0, status=Status.PASS, compared=True,
+                detector_id="quality_judge"),
+        _result(Dimension.INTEGRITY, score=100.0, status=Status.PASS, compared=True),
+        _result(Dimension.PERFORMANCE, score=100.0, status=Status.PASS, compared=True),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=True, used_baseline=True
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_compared_detector_without_usable_status_does_not_count():
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY) + [
+        _result(Dimension.BILLING, score=None, status=Status.INCONCLUSIVE, compared=True),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=True
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_judge_only_does_not_lift_confidence():
+    # #257: a usable judge verdict without a baseline no longer lifts medium to
+    # high; only a baseline can (the documented rule).
+    detectors = _clean_core_detectors() + [
+        _result(Dimension.MODEL_IDENTITY, score=100.0, status=Status.PASS,
+                detector_id="quality_judge"),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=True, used_baseline=False
+    )
+    assert verdict.confidence == "medium"
+
+
+def test_verdict_baseline_corroborated_judge_counts_for_model_identity():
+    # The judge's baseline-corroborated verdict is the model-identity
+    # comparison; with billing compared too that makes two core dimensions.
+    detectors = _clean_core_detectors() + [
+        _result(Dimension.MODEL_IDENTITY, score=100.0, status=Status.PASS, compared=True,
+                detector_id="quality_judge"),
+        _result(Dimension.BILLING, score=100.0, status=Status.PASS, compared=True),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=True, used_baseline=True
+    )
+    assert verdict.confidence == "high"
+
+
 def test_verdict_fuzzy_kb_match_caps_confidence_at_low():
     # Baseline + full core would be "high", but a fuzzy profile may not be the
     # model's own: confidence stays low and the summary says why.
-    detectors = _clean_core_detectors()
+    detectors = _clean_core_detectors(Dimension.MODEL_IDENTITY, Dimension.CAPABILITY)
     dims = build_dimensions(detectors, reliability=None)
     exact = build_verdict(
         detectors, dims, profile_matched=True, used_judge=False, used_baseline=True,
@@ -388,3 +483,533 @@ def test_verdict_custom_run_of_connectivity_only_is_inconclusive():
     )
     assert verdict.risk_level == RiskLevel.INCONCLUSIVE
     assert verdict.drivers == []
+
+
+# --------------------------------------------------------------------------- #
+# The overall score and rating agree with the risk verdict (#247): a serious
+# finding caps its dimension at its detector's score, and the risk level caps
+# the overall score (high <= 49, medium <= 69), so no report reads "rating A,
+# risk high". Advisory and connectivity findings cap nothing.
+# --------------------------------------------------------------------------- #
+_CHAT = [
+    "connectivity", "protocol", "protocol_request", "protocol_response", "determinism",
+    "context_window", "model_identity", "capability", "vision", "streaming", "billing",
+    "reliability", "security", "injected_prompt", "integrity", "performance",
+]
+
+
+def _clean(surface_ids: list[str] = _CHAT) -> dict[str, DetectorResult]:
+    return {
+        i: DetectorResult(id=i, name=i, dimension=REGISTRY[i].dimension, score=100.0,
+                          status=Status.PASS)
+        for i in surface_ids
+    }
+
+
+def _failing(det: str, fid: str, severity: Severity, score: float) -> DetectorResult:
+    return DetectorResult(
+        id=det, name=det, dimension=REGISTRY[det].dimension, score=score, status=Status.FAIL,
+        findings=[Finding(id=fid, check=fid, title=f"{fid} title", status=Status.FAIL,
+                          severity=severity, summary="")],
+    )
+
+
+def _judge(detectors: list[DetectorResult], surface: str = "chat"):
+    dims = build_dimensions(detectors, None, surface=surface)
+    verdict = build_verdict(detectors, dims, profile_matched=True, used_judge=False,
+                            used_baseline=True, surface=surface)
+    return dims, verdict
+
+
+def _dim(dims, dimension: Dimension):
+    return next(d for d in dims if d.dimension == dimension)
+
+
+# The five rows of the issue: everything else clean.
+_ROWS = [
+    ("integrity", "integrity.tampering", Severity.CRITICAL, 10.0, RiskLevel.HIGH, 94.6),
+    ("billing", "billing.usage-inflation", Severity.HIGH, 55.0, RiskLevel.HIGH, 96.4),
+    ("security", "security.key_echo", Severity.HIGH, 30.0, RiskLevel.MEDIUM, 97.2),
+    ("model_identity", "model_identity.self_id", Severity.HIGH, 20.0, RiskLevel.HIGH, 83.2),
+    ("context_window", "context_window.truncation", Severity.HIGH, 11.0, RiskLevel.HIGH, 83.1),
+]
+
+
+@pytest.mark.parametrize(("det", "fid", "severity", "score", "risk", "uncapped"), _ROWS,
+                         ids=[r[1] for r in _ROWS])
+def test_the_risk_caps_the_overall_score(det, fid, severity, score, risk, uncapped):
+    detectors = _clean()
+    detectors[det] = _failing(det, fid, severity, score)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == risk
+    cap = RISK_SCORE_CAPS[risk]
+    assert v.overall_score == cap and v.rating == rating(cap)
+    assert v.rating not in ("A", "B") and (risk != RiskLevel.HIGH or v.rating == "F")
+    assert v.uncapped_score == uncapped
+    assert v.score_cap is not None
+    assert (v.score_cap.risk_level, v.score_cap.cap, v.score_cap.findings) == (risk, cap, [fid])
+    assert (f"Overall health score {cap}/100. Score capped at {cap:g} because the risk level is "
+            f"{risk.value}; the weighted mean of the dimensions is {uncapped}.") in v.summary
+
+
+def test_a_serious_finding_caps_its_dimension():
+    detectors = _clean()
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.CRITICAL, 10.0)
+    dims, _ = _judge(list(detectors.values()))
+    d = _dim(dims, Dimension.INTEGRITY)
+    assert d.score == 10.0  # not the mean of integrity, injected_prompt, determinism: 70
+    cap = d.breakdown.score_cap
+    assert cap is not None
+    assert (cap.detector, cap.findings, cap.cap, cap.uncapped_score) == (
+        "integrity", ["integrity.tampering"], 10.0, 70.0)
+
+
+def test_the_lowest_capping_detector_wins_and_medium_findings_do_not_cap():
+    detectors = _clean()
+    detectors["protocol"] = _failing("protocol", "protocol.a", Severity.HIGH, 60.0)
+    detectors["protocol_request"] = _failing("protocol_request", "protocol.b", Severity.HIGH, 40.0)
+    detectors["protocol_response"] = _failing("protocol_response", "protocol.c", Severity.MEDIUM, 100.0)
+    dims, _ = _judge(list(detectors.values()))
+    d = _dim(dims, Dimension.PROTOCOL)
+    assert d.score == 40.0
+    assert d.breakdown.score_cap.detector == "protocol_request"
+
+
+def test_no_cap_when_the_capping_detector_scores_above_the_mean():
+    detectors = _clean()
+    detectors["protocol"] = _failing("protocol", "protocol.a", Severity.HIGH, 90.0)
+    detectors["protocol_request"] = DetectorResult(
+        id="protocol_request", name="r", dimension=Dimension.PROTOCOL, score=0.0, status=Status.FAIL)
+    dims, _ = _judge(list(detectors.values()))
+    d = _dim(dims, Dimension.PROTOCOL)
+    assert d.breakdown.score_cap is None and d.score == round((90 + 0 + 100) / 3, 1)
+
+
+def test_plain_http_lowers_only_its_dimension():
+    detectors = _clean()
+    detectors["security"] = _failing("security", "security.tls", Severity.HIGH, 40.0)
+    dims, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.CLEAN
+    assert v.score_cap is None and v.overall_score == v.uncapped_score == 97.6
+    assert v.rating == "A" and "capped" not in v.summary
+    assert _dim(dims, Dimension.SECURITY).score == 40.0
+
+
+@pytest.mark.parametrize("fid", sorted(ADVISORY_CHECKS))
+def test_advisory_findings_cap_no_dimension(fid):
+    det = {"security": "security", "reliability": "reliability",
+           "streaming": "streaming"}[fid.split(".")[0]]
+    detectors = _clean()
+    detectors[det] = _failing(det, fid, Severity.HIGH, 20.0)
+    # a passing sibling in the same dimension, so a cap would show
+    detectors["sibling"] = DetectorResult(id="sibling", name="s", dimension=REGISTRY[det].dimension,
+                                          score=100.0, status=Status.PASS)
+    dims, v = _judge(list(detectors.values()))
+    assert _dim(dims, REGISTRY[det].dimension).breakdown.score_cap is None
+    assert _dim(dims, REGISTRY[det].dimension).score == 60.0
+    assert v.score_cap is None
+
+
+def test_connectivity_findings_cap_nothing():
+    detectors = _clean()
+    detectors["connectivity"] = _failing("connectivity", "connectivity.down", Severity.CRITICAL, 0.0)
+    detectors["sibling"] = DetectorResult(id="sibling", name="s", dimension=Dimension.CONNECTIVITY,
+                                          score=100.0, status=Status.PASS)
+    dims, v = _judge(list(detectors.values()))
+    assert _dim(dims, Dimension.CONNECTIVITY).breakdown.score_cap is None
+    assert _dim(dims, Dimension.CONNECTIVITY).score == 50.0
+    assert v.risk_level == RiskLevel.CLEAN and v.score_cap is None
+
+
+def test_low_clean_and_inconclusive_risks_are_uncapped():
+    detectors = _clean()
+    detectors["streaming"] = _failing("streaming", "streaming.x", Severity.MEDIUM, 0.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.LOW and v.score_cap is None
+    assert v.overall_score == v.uncapped_score
+    # inconclusive: only connectivity ran
+    _, v = _judge([_failing("connectivity", "connectivity.down", Severity.CRITICAL, 0.0)])
+    assert v.risk_level == RiskLevel.INCONCLUSIVE and v.score_cap is None
+
+
+@pytest.mark.parametrize("surface", ["chat", "embedding", "rerank"])
+def test_no_combination_reads_a_or_b_with_high_risk(surface):
+    ids = [i for i, d in REGISTRY.items() if d.surface == surface]
+    rng = random.Random(247)
+    severities = list(Severity)
+    for _ in range(400):
+        detectors = []
+        for i in ids:
+            det = REGISTRY[i]
+            findings = [
+                Finding(id=f"{i}.f{n}", title="t", status=Status.FAIL, severity=rng.choice(severities))
+                for n in range(rng.randint(0, 2))
+            ]
+            detectors.append(DetectorResult(
+                id=i, name=i, dimension=det.dimension, score=rng.choice([None, 0.0, 30.0, 70.0, 100.0]),
+                status=Status.FAIL if findings else Status.PASS, findings=findings))
+        _, v = _judge(detectors, surface)
+        if v.risk_level == RiskLevel.HIGH:
+            assert v.rating not in ("A", "B", "C", "D"), v
+        if v.risk_level == RiskLevel.MEDIUM:
+            assert v.rating not in ("A", "B", "C"), v
+
+
+# --------------------------------------------------------------------------- #
+# A failed or unsupported stream is an advisory, and the "two HIGH" rule needs
+# two different detectors (#255).
+# --------------------------------------------------------------------------- #
+def _streaming(fid: str, outcome: str, status: Status, severity: Severity,
+               score: float | None) -> DetectorResult:
+    return DetectorResult(
+        id="streaming", name="streaming", dimension=Dimension.STREAMING, score=score, status=status,
+        findings=[Finding(id=fid, check=fid, title=f"{fid} title", status=status,
+                          severity=severity, outcome=outcome, summary="")],
+    )
+
+
+def test_one_failed_stream_is_inconclusive_and_leaves_the_risk_alone():
+    detectors = _clean()
+    detectors["streaming"] = _streaming("streaming.failed", "failed", Status.INCONCLUSIVE,
+                                        Severity.LOW, None)
+    dims, v = _judge(list(detectors.values()))
+    assert _dim(dims, Dimension.STREAMING).score is None
+    assert v.risk_level == RiskLevel.CLEAN and v.score_cap is None and v.drivers == []
+
+
+def test_a_relay_that_does_not_stream_scores_0_without_raising_the_risk():
+    detectors = _clean()
+    detectors["streaming"] = _streaming("streaming.unsupported", "unsupported", Status.FAIL,
+                                        Severity.MEDIUM, 0.0)
+    dims, v = _judge(list(detectors.values()))
+    d = _dim(dims, Dimension.STREAMING)
+    assert (d.score, d.status) == (0.0, Status.FAIL)
+    assert v.risk_level == RiskLevel.CLEAN and v.score_cap is None
+    assert "streaming.unsupported title" in v.key_findings
+    assert "a stream that failed or is not supported" in v.summary
+    # ... and it adds nothing to what the other findings give
+    detectors["billing"] = _failing("billing", "billing.x", Severity.MEDIUM, 70.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM and v.drivers == ["billing"]
+
+
+def test_a_failed_stream_and_an_echoed_key_are_no_longer_high():
+    # The issue's reproduction, with the pre-#255 HIGH failed stream of an older report.
+    detectors = _clean()
+    detectors["streaming"] = _streaming("streaming.failed", "failed", Status.FAIL,
+                                        Severity.HIGH, 0.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.CLEAN
+    detectors["security"] = _failing("security", "security.key_echo", Severity.HIGH, 30.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM and v.drivers == ["security"]
+    assert "Streaming authenticity" not in v.headline
+
+
+def test_two_high_findings_of_one_non_core_detector_are_medium():
+    detectors = _clean()
+    det = _failing("integrity", "integrity.a", Severity.HIGH, 20.0)
+    det.findings.append(Finding(id="integrity.b", check="integrity.b", title="integrity.b title",
+                                status=Status.FAIL, severity=Severity.HIGH, summary=""))
+    detectors["integrity"] = det
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM
+    assert v.score_cap is not None and v.score_cap.findings == ["integrity.a", "integrity.b"]
+
+
+def test_high_findings_of_two_detectors_are_still_high():
+    detectors = _clean()
+    detectors["security"] = _failing("security", "security.key_echo", Severity.HIGH, 30.0)
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.HIGH, 20.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.HIGH
+    assert v.drivers == ["integrity", "security"]
+    # two detectors of one dimension count as two detectors too
+    detectors = _clean()
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.HIGH, 20.0)
+    detectors["injected_prompt"] = _failing("injected_prompt", "injected_prompt.x",
+                                            Severity.HIGH, 20.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.HIGH
+
+
+def test_an_advisory_high_does_not_pair_with_another_high():
+    detectors = _clean()
+    detectors["security"] = _failing("security", "security.tls", Severity.HIGH, 40.0)
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.HIGH, 20.0)
+    _, v = _judge(list(detectors.values()))
+    assert v.risk_level == RiskLevel.MEDIUM and v.drivers == ["integrity"]
+
+
+def _report(detectors: list[DetectorResult]) -> AuditReport:
+    dims, v = _judge(detectors)
+    return AuditReport(
+        tool_version="test", mode="check", suite="standard",
+        target=RedactedTarget(name="t", kind="target", base_url="u", model="m"),
+        verdict=v, dimensions=dims, detectors=detectors,
+    )
+
+
+def _tampered() -> AuditReport:
+    detectors = _clean()
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.CRITICAL, 10.0)
+    return _report(list(detectors.values()))
+
+
+def test_markdown_and_html_show_both_caps():
+    report = _tampered()
+    md = render_markdown(report)
+    assert "_Score: Capped at 49 by the high risk (weighted mean of the dimensions 94.6); " in md
+    assert "integrity.tampering" in md
+    assert ("→ 70. Capped at 10, the score of integrity, by its HIGH/CRITICAL finding "
+            "(integrity.tampering)") in md.replace("\\_", "_")
+    page = render_html(report)
+    assert 'class="meta score-cap">Score: Capped at 49 by the high risk' in page
+    assert "Capped at 10, the score of integrity" in page
+
+
+def test_pdf_shows_both_caps():
+    pytest.importorskip("reportlab")
+    from reportlab.platypus import Paragraph
+
+    from ekte.report.pdf import _dimension_details, _header
+
+    def texts(flowables) -> str:
+        return " ".join(fl.getPlainText() for fl in flowables if isinstance(fl, Paragraph))
+
+    report = _tampered()
+    assert "Score: Capped at 49 by the high risk" in texts(_header(report))
+    assert "Capped at 10, the score of integrity" in texts(_dimension_details(report))
+
+
+def test_reports_without_caps_validate_and_render():
+    # a 1.5 report: no uncapped_score / score_cap
+    report = AuditReport.model_validate(json.loads(_report(list(_clean().values())).model_dump_json(
+        exclude={"verdict": {"uncapped_score", "score_cap"}})))
+    assert report.verdict.score_cap is None
+    assert "Capped" not in render_markdown(report)
+    assert not re.search(r"score-cap", render_html(report))
+
+
+# --------------------------------------------------------------------------- #
+# Coverage limits the rating (#249): a dimension that ran but could not be
+# judged drops out of the weighted mean, so the rating says how much was
+# judged: below 50% of the weight of the dimensions that ran there is no
+# rating, below 80% (or with a core dimension not judged) it is at most B.
+# --------------------------------------------------------------------------- #
+def _unjudged(det: str, status: Status = Status.INCONCLUSIVE) -> DetectorResult:
+    return DetectorResult(id=det, name=det, dimension=REGISTRY[det].dimension, score=None,
+                          status=status)
+
+
+def test_an_unjudged_context_window_no_longer_rates_a():
+    detectors = _clean()
+    detectors["context_window"] = _unjudged("context_window")
+    _, v = _judge(list(detectors.values()))
+    assert v.overall_score == 100.0 and v.risk_level == RiskLevel.CLEAN
+    assert v.coverage == 0.81 and v.not_judged == ["context_window"]
+    assert v.rating == COVERAGE_RATING_LIMIT == "B"
+    assert v.rating_limit is not None
+    assert (v.rating_limit.reason, v.rating_limit.limit, v.rating_limit.unlimited_rating) == (
+        "core_not_judged", "B", "A")
+    assert ("Coverage 81%: Context window ran but could not be judged. Rating limited to B "
+            "because a core dimension could not be judged.") in v.summary
+
+
+def test_only_identity_and_security_judged_is_not_rated():
+    detectors = {
+        i: d if d.dimension in (Dimension.MODEL_IDENTITY, Dimension.SECURITY) else _unjudged(i)
+        for i, d in _clean().items()
+    }
+    _, v = _judge(list(detectors.values()))
+    assert v.overall_score == 100.0
+    assert v.coverage == 0.25 and v.rating is None
+    assert v.rating_limit is not None
+    assert (v.rating_limit.reason, v.rating_limit.limit) == ("low_coverage", None)
+    assert "context_window" in v.not_judged and "model_identity" not in v.not_judged
+    assert "Not rated: too little was judged (coverage below 50%)." in v.summary
+
+
+def test_low_coverage_limits_the_rating_to_b():
+    # protocol, streaming, reliability, integrity, security, performance: 32 of 100
+    peripheral = (Dimension.PROTOCOL, Dimension.STREAMING, Dimension.RELIABILITY,
+                  Dimension.INTEGRITY, Dimension.SECURITY, Dimension.PERFORMANCE)
+    detectors = {i: _unjudged(i) if d.dimension in peripheral else d for i, d in _clean().items()}
+    _, v = _judge(list(detectors.values()))
+    assert v.coverage == 0.68 and v.rating == "B"
+    assert v.rating_limit is not None and v.rating_limit.reason == "low_coverage"
+    assert "Rating limited to B because coverage is below 80%." in v.summary
+
+
+def test_a_crashed_dimension_is_not_judged_and_info_only_does_not_count():
+    detectors = _clean()
+    detectors["streaming"] = _unjudged("streaming", Status.ERROR)
+    _, v = _judge(list(detectors.values()))
+    assert v.not_judged == ["streaming"] and v.coverage == 0.94
+    assert v.rating == "A" and v.rating_limit is None  # 94%, no core dimension missing
+    # a dimension whose detectors only reported information (nothing claimed) does not count
+    detectors = _clean()
+    detectors["context_window"] = _unjudged("context_window", Status.INFO)
+    _, v = _judge(list(detectors.values()))
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating == "A"
+
+
+def test_full_coverage_keeps_the_rating():
+    _, v = _judge(list(_clean().values()))
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating_limit is None
+    assert v.rating == "A" and "Coverage" not in v.summary
+
+
+def test_custom_run_of_two_scored_dimensions_keeps_coverage_and_rating():
+    detectors = [_clean()["billing"], _clean()["streaming"]]
+    selected = ["billing", "streaming"]
+    dims = build_dimensions(detectors, None, selected=selected)
+    v = build_verdict(detectors, dims, profile_matched=True, used_judge=False,
+                      used_baseline=True, selected=selected)
+    assert v.coverage == 1.0 and v.rating == "A" and v.rating_limit is None
+
+
+def test_dimensions_not_in_the_suite_do_not_reduce_coverage():
+    # a smoke run: connectivity and security only
+    detectors = [_clean()["connectivity"], _clean()["security"]]
+    _, v = _judge(detectors)
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating == "A"
+    # nothing ran: no coverage
+    _, v = _judge([])
+    assert v.coverage is None and v.rating is None and v.rating_limit is None
+
+
+def test_no_rating_limit_when_the_rating_is_already_lower():
+    detectors = _clean()
+    detectors["integrity"] = _failing("integrity", "integrity.tampering", Severity.CRITICAL, 10.0)
+    detectors["context_window"] = _unjudged("context_window")
+    _, v = _judge(list(detectors.values()))
+    assert v.rating == "F" and v.rating_limit is None and v.not_judged == ["context_window"]
+
+
+def test_coverage_thresholds_and_percentages():
+    assert (COVERAGE_UNRATED_BELOW, COVERAGE_LIMITED_BELOW) == (0.5, 0.8)
+    assert coverage_pct(0.29) == 29 and coverage_pct(0.7999) == 79 and coverage_pct(1.0) == 100
+
+
+@pytest.mark.parametrize("surface", ["embedding", "rerank"])
+def test_an_unjudged_identity_limits_other_surfaces(surface):
+    ids = [i for i, d in REGISTRY.items() if d.surface == surface]
+    detectors = [
+        _unjudged(i) if REGISTRY[i].dimension == Dimension.MODEL_IDENTITY
+        else DetectorResult(id=i, name=i, dimension=REGISTRY[i].dimension, score=100.0,
+                            status=Status.PASS)
+        for i in ids
+    ]
+    _, v = _judge(detectors, surface)
+    assert "model_identity" in v.not_judged and v.rating not in ("A", None)
+
+
+def _unjudged_report(only: tuple[Dimension, ...] | None = None) -> AuditReport:
+    if only is None:
+        detectors = _clean()
+        detectors["context_window"] = _unjudged("context_window")
+    else:
+        detectors = {i: d if d.dimension in only else _unjudged(i) for i, d in _clean().items()}
+    return _report(list(detectors.values()))
+
+
+def test_reports_show_coverage_and_the_rating_limit():
+    from ekte.report import compact_dict
+
+    report = _unjudged_report()
+    md = render_markdown(report)
+    assert "**Coverage:** 81%  ·  **Rating:** B" in md
+    assert ("_Coverage 81%: not judged (ran without a usable result): Context window; rating at "
+            "most B (a core dimension could not be judged; the score alone gives A)._") in md
+    page = render_html(report)
+    assert "<span>coverage <strong>81%</strong></span>" in page
+    assert 'class="meta coverage">Coverage 81%: not judged' in page
+    c = compact_dict(report)["verdict"]
+    assert (c["coverage"], c["not_judged"], c["rating"]) == (0.81, ["context_window"], "B")
+    assert c["rating_limit"] == {"reason": "core_not_judged", "limit": "B", "unlimited_rating": "A"}
+    # not rated
+    report = _unjudged_report((Dimension.MODEL_IDENTITY, Dimension.SECURITY))
+    md = render_markdown(report)
+    assert "**Coverage:** 25%  ·  **Rating:** not rated: too little was judged" in md
+    assert "no rating (coverage below 50%; the score alone gives A)" in md
+    assert "rating <strong>not rated: too little was judged</strong>" in render_html(report)
+
+
+def test_pdf_shows_coverage():
+    pytest.importorskip("reportlab")
+    from reportlab.platypus import Paragraph
+
+    from ekte.report.pdf import _header
+
+    text = " ".join(fl.getPlainText() for fl in _header(_unjudged_report((
+        Dimension.MODEL_IDENTITY, Dimension.SECURITY))) if isinstance(fl, Paragraph))
+    assert "coverage 25%" in text and "rating not rated: too little was judged" in text
+    assert "Coverage 25%: not judged" in text
+
+
+def test_reports_without_coverage_validate_and_render():
+    # a report written before coverage existed
+    report = AuditReport.model_validate(json.loads(_report(list(_clean().values())).model_dump_json(
+        exclude={"verdict": {"coverage", "not_judged", "rating_limit"}})))
+    assert report.verdict.coverage is None
+    assert "**Coverage:** —" in render_markdown(report)
+    assert 'class="meta coverage"' not in render_html(report)
+
+
+def test_a_smoke_run_against_an_honest_relay_has_full_coverage(monkeypatch):
+    import asyncio
+
+    from ekte.clients import make_client as real
+    from ekte.config import AuditOptions
+    from ekte.models import TargetConfig
+    from ekte.runner import run_audit
+    from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
+
+    server = MockServer()
+    monkeypatch.setattr(
+        "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport))
+    target = TargetConfig(name="t", kind="target", base_url=BASE_URL, model=DEFAULT_MODEL)
+    report = asyncio.run(run_audit(target, AuditOptions(suite="smoke")))
+    v = report.verdict
+    assert v.coverage == 1.0 and v.not_judged == [] and v.rating_limit is None
+    assert v.rating == rating(v.overall_score)
+
+
+# --------------------------------------------------------------------------- #
+# compare mode end to end: confidence follows the comparisons (#257)
+# --------------------------------------------------------------------------- #
+async def _compare_run(monkeypatch, dimensions: list[str]) -> AuditReport:
+    from ekte.clients import make_client as real
+    from ekte.config import AuditOptions
+    from ekte.models import TargetConfig
+    from ekte.runner import run_audit
+    from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
+
+    server = MockServer()
+    monkeypatch.setattr(
+        "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport)
+    )
+    return await run_audit(
+        TargetConfig(name="t", kind="target", base_url=BASE_URL, model=DEFAULT_MODEL),
+        AuditOptions(suite="custom", dimensions=dimensions),
+        baseline=TargetConfig(name="b", kind="baseline", base_url=BASE_URL, model=DEFAULT_MODEL),
+        mode="compare",
+    )
+
+
+async def test_compare_run_without_baseline_comparisons_is_medium(monkeypatch):
+    # Context window and capability pass on their own; neither asks the
+    # baseline, so the configured baseline proves nothing.
+    report = await _compare_run(monkeypatch, ["context_window", "capability"])
+    assert not any(d.baseline_compared for d in report.detectors)
+    assert report.verdict.confidence == "medium"
+
+
+async def test_compare_run_with_two_compared_core_dimensions_is_high(monkeypatch):
+    report = await _compare_run(
+        monkeypatch, ["model_identity", "billing", "context_window", "capability"]
+    )
+    compared = {d.dimension for d in report.detectors if d.baseline_compared}
+    assert {Dimension.MODEL_IDENTITY, Dimension.BILLING} <= compared
+    assert report.verdict.confidence == "high"

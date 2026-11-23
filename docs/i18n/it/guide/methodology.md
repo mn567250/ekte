@@ -52,15 +52,22 @@ elencano i soggetti sotto il loro controllo.
 
 ### Punteggio e stato di una dimensione
 
-ekte assegna un punteggio a dieci dimensioni. Il punteggio di una dimensione è
+ekte assegna un punteggio a undici dimensioni. Il punteggio di una dimensione è
 la **media a pari peso dei punteggi dei suoi rilevatori**: un rilevatore con
 molti controlli non pesa più di uno con pochi, e un rilevatore senza punteggio
-numerico resta escluso. Il suo stato è il peggiore stato concluso dai suoi
+numerico resta escluso. Un rilevatore con una rilevazione di gravità
+ALTA/CRITICA **limita** la dimensione al proprio punteggio, così i rilevatori
+superati accanto non annullano un fallimento nella media: un rilevatore di
+manomissione a 10 accanto a tre rilevatori di integrità puliti dà 10
+all'integrità delle risposte, non 77,5 (vale il più basso di questi rilevatori).
+Gli avvisi di trasporto (vedi [Verdetto di rischio](#verdetto-di-rischio)) e la
+dimensione connettività non limitano nulla. Il suo stato è il peggiore stato concluso dai suoi
 rilevatori, tranne che una rilevazione di gravità ALTA/CRITICA impone
 **Fallito** e una rilevazione di gravità MEDIA porta **Superato** ad **Avviso**,
 qualunque sia il punteggio. Ogni rapporto registra questo calcolo per dimensione
 (`DimensionScore.breakdown`: il punteggio di ogni rilevatore, se è stato
-conteggiato, ed eventuali cambi di stato con le rilevazioni che li hanno
+conteggiato, il limite del punteggio con il rilevatore e le rilevazioni che lo
+hanno causato, ed eventuali cambi di stato con le rilevazioni che li hanno
 causati) e lo mostra in **Dimension details** (Markdown/HTML/PDF) e nelle righe
 espandibili dei **Controlli per dimensione** dell'interfaccia web. Un
 rilevatore che va in errore compare con stato **Errore** e non interrompe mai
@@ -72,20 +79,47 @@ Il **punteggio di salute complessivo** è la media ponderata delle dimensioni ch
 hanno prodotto un punteggio (`DIMENSION_WEIGHTS` in `ekte/scoring.py`). Una
 dimensione che non è stata eseguita (fuori dalla suite, o non selezionata in
 un'esecuzione `custom`) esce dal calcolo e i pesi restanti vengono
-rinormalizzati. Il voto è A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) o F.
+rinormalizzati. Il [livello di rischio](#verdetto-di-rischio) poi **limita** il
+punteggio (`RISK_SCORE_CAPS` in `ekte/scoring.py`): al massimo **49** con `high`
+e **69** con `medium`; `low`, `clean` e `inconclusive` lo lasciano invariato. Il
+voto deriva dal punteggio limitato ed è A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60)
+o F, quindi un rischio alto dà sempre F e uno medio al massimo D, e
+`--fail-under` valuta il punteggio limitato. Quando il limite si applica, il
+riepilogo lo dice, `verdict.uncapped_score` conserva la media ponderata e
+`verdict.score_cap` registra il livello di rischio, il limite e le rilevazioni
+che hanno determinato il rischio; i rapporti lo mostrano accanto al punteggio.
+
+Anche una dimensione **eseguita ma non valutabile** (rilevatori non
+conclusivi o andati in errore, nessun punteggio) esce dalla media ponderata,
+così il punteggio da solo sembrerebbe dire che è stata superata. La
+**copertura** dice quanto è stato valutato: la quota del peso delle dimensioni
+eseguite che ha prodotto un punteggio (`verdict.coverage`, 0–1;
+`verdict.not_judged` elenca le altre). Non contano le dimensioni fuori dalla
+suite o non selezionate, né una dimensione i cui rilevatori hanno solo dato
+informazioni (per esempio senza finestra di contesto dichiarata). La copertura
+**limita la valutazione** (`COVERAGE_*` in `ekte/scoring.py`): sotto il
+**50%** non c’è valutazione («nessuna valutazione: è stato valutato troppo
+poco»), sotto l’**80%** è al massimo **B**, e così anche quando una dimensione
+principale è stata eseguita ma non valutata (una sonda della finestra di
+contesto senza risposta lascia l’81% di copertura, ma la valutazione resta al
+massimo B). `verdict.rating_limit` registra il motivo e la valutazione che
+darebbe il solo punteggio; il riepilogo nomina le dimensioni non valutate e i
+report mostrano la copertura accanto al punteggio. `--fail-under` fallisce
+anche per un’esecuzione senza valutazione.
 
 | Dimensione | Id | Peso | Ruolo |
 |---|---|---|---|
 | Identità del modello | `model_identity` | 21 | centrale |
 | Finestra di contesto | `context_window` | 19 | centrale |
 | Capacità dichiarate | `capability` | 13 | centrale |
-| Conformità del protocollo | `protocol` | 8 |  |
 | Fatturazione e consumo | `billing` | 8 | centrale |
 | Connettività | `connectivity` | 7 |  |
+| Conformità del protocollo | `protocol` | 6 |  |
 | Autenticità dello streaming | `streaming` | 6 |  |
 | Affidabilità in concorrenza | `reliability` | 6 |  |
-| Sicurezza del trasporto | `security` | 6 |  |
-| Prestazioni | `performance` | 6 |  |
+| Integrità delle risposte | `integrity` | 6 |  |
+| Sicurezza del trasporto | `security` | 4 |  |
+| Prestazioni | `performance` | 4 |  |
 
 Il verdetto si basa sulle dimensioni che sono state **eseguite**: un'esecuzione
 `custom` controlla solo la propria selezione. Contano due gruppi di dimensioni:
@@ -104,18 +138,17 @@ Il livello di rischio dipende dalla **gravità delle rilevazioni**, non dal
 punteggio. Le rilevazioni della dimensione connettività sono escluse: un relay
 irraggiungibile o limitato non ha potuto essere valutato, e questo non prova che
 risponda un altro modello. Sono esclusi anche gli **avvisi di trasporto** (`ADVISORY_CHECKS` in
-`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): HTTP in chiaro, errori o lentezza
-sotto carico dicono come si raggiunge il relay, non quale modello serve.
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`, `streaming.failed`, `streaming.unsupported`): HTTP in chiaro, errori o lentezza
+sotto carico, una richiesta in streaming non riuscita due volte o un relay che non fa streaming per il modello dicono come si raggiunge il relay, non quale modello serve.
 Abbassano comunque punteggio e stato della loro dimensione, compaiono dopo le
 rilevazioni di sostituzione tra quelle principali e il riepilogo li indica come
-avvisi (da gravità Media in su). La manomissione delle risposte (integrità) e una chiave API restituita
-continuano ad alzare il rischio.
+avvisi (da gravità Media in su). Una chiave API restituita continua ad alzare il rischio, così come le rilevazioni della dimensione Integrità delle risposte (manomissione, prompt di sistema iniettato, cache delle risposte): non è una dimensione centrale, quindi è la sola gravità a determinare il rischio.
 
 | Rischio | Etichetta nell'interfaccia | Quando |
 |---|---|---|
 | `inconclusive` | Segnale insufficiente | Niente di utilizzabile da giudicare: se è stata eseguita una dimensione di profilo, nessuna ha prodotto un risultato utilizzabile (Superato, Avviso o Fallito) — relay irraggiungibile o modello senza profilo; altrimenti nessuna dimensione oltre alla connettività ne ha prodotto uno |
-| `high` | Probabilmente sostituito | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o due o più rilevazioni ALTE |
-| `medium` | Scostamenti rilevati | Esattamente una rilevazione ALTA fuori dalle dimensioni centrali, o una rilevazione MEDIA in una dimensione centrale |
+| `high` | Probabilmente sostituito | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o rilevazioni ALTE di due o più rilevatori diversi |
+| `medium` | Scostamenti rilevati | Rilevazioni ALTE fuori dalle dimensioni centrali di un solo rilevatore, o una rilevazione MEDIA in una dimensione centrale |
 | `low` | Per lo più coerente | Qualsiasi altra rilevazione MEDIA |
 | `clean` | Coerente | Nessuno dei casi precedenti |
 
@@ -136,19 +169,34 @@ sull'identità del modello dice che l'identità del modello non è stata verific
 - **Media** — almeno due dimensioni centrali hanno prodotto un risultato
   utilizzabile (o, in un'esecuzione senza dimensioni centrali, almeno due
   dimensioni lo hanno fatto);
-- **Alta** — è stato usato un riferimento *e* ogni dimensione centrale eseguita
-  ha prodotto un risultato utilizzabile, oppure l'affidabilità era media e il
-  giudice LLM ha restituito un verdetto utilizzabile.
+- **Alta** — è stato usato un riferimento, ogni dimensione centrale eseguita
+  ha prodotto un risultato utilizzabile *e* almeno due dimensioni centrali
+  hanno un rilevatore che ha davvero confrontato l'obiettivo con una risposta
+  utilizzabile del riferimento (`baseline_compared` nel report) e ha prodotto
+  un risultato utilizzabile. Configurare un riferimento non basta: un
+  riferimento che ha dato errore, o che nessun rilevatore centrale ha
+  interrogato, lascia l'affidabilità a media. Un verdetto del giudice da solo
+  non alza mai l'affidabilità; un verdetto del giudice corroborato dal
+  riferimento conta come il confronto dell'identità del modello.
+
+I rilevatori centrali confrontano con il riferimento quando risponde:
+`model_identity` (un'impronta o la sonda della data limite a cui hanno
+risposto entrambi i lati), `quality_judge` (il riferimento ha risposto a ogni
+sonda ed è stato mostrato al giudice), `billing` (token del prompt contati da
+un riferimento dello stesso modello sullo stesso protocollo) e `capability`
+(il riferimento ha risposto a una sonda che l'obiettivo ha rifiutato).
+`context_window` non interroga mai il riferimento. Fuori dal nucleo, anche
+`integrity`, `protocol_request` e `performance` registrano
+`baseline_compared`, ma non conta per l'affidabilità.
 
 ## Suite, rilevatori e modalità
 
 | Rilevatore | Id | Dimensione | Dalla suite |
 |---|---|---|---|
 | Connettività e completamento di base | `connectivity` | Connettività | `smoke` |
-| Conformità alla compatibilità OpenAI | `protocol` | Conformità del protocollo | `standard` |
+| Conformità al protocollo di comunicazione | `protocol` | Conformità del protocollo | `standard` |
 | Supporto degli attributi di richiesta | `protocol_request` | Conformità del protocollo | `standard` |
 | Disponibilità degli attributi di risposta | `protocol_response` | Conformità del protocollo | `standard` |
-| Determinismo e correttezza della cache | `determinism` | Conformità del protocollo | `deep` |
 | Finestra di contesto reale e troncamento | `context_window` | Finestra di contesto | `deep` |
 | Identità del modello e impronta di declassamento | `model_identity` | Identità del modello | `standard` |
 | Valutazione di qualità / declassamento da parte di un LLM giudice | `quality_judge` | Identità del modello | `deep` (solo con `--judge`) |
@@ -158,9 +206,10 @@ sull'identità del modello dice che l'identità del modello non è stata verific
 | Verifica della fatturazione dei token | `billing` | Fatturazione e consumo | `standard` |
 | Affidabilità e latenza in concorrenza | `reliability` | Affidabilità in concorrenza | `standard` |
 | Segnali di trasporto e gestione dei segreti | `security` | Sicurezza del trasporto | `smoke` |
-| Rilevamento di prompt di sistema iniettato | `injected_prompt` | Sicurezza del trasporto | `deep` |
-| Integrità delle risposte / manomissione | `integrity` | Sicurezza del trasporto | `deep` |
-| Cache del prefisso del prompt (tempi) | `prompt_cache` | Sicurezza del trasporto | `deep` |
+| Determinismo e correttezza della cache | `determinism` | Integrità delle risposte | `deep` |
+| Rilevamento di prompt di sistema iniettato | `injected_prompt` | Integrità delle risposte | `deep` |
+| Integrità delle risposte / manomissione | `integrity` | Integrità delle risposte | `deep` |
+| Cache del prefisso del prompt (tempi) | `prompt_cache` | Integrità delle risposte | `deep` |
 | Sonda delle prestazioni | `performance` | Prestazioni | `deep` (in `standard` solo con un riferimento, 5 richieste) |
 
 - **smoke** esegue connettività e sicurezza; **standard** aggiunge i rilevatori
@@ -180,11 +229,15 @@ sull'identità del modello dice che l'identità del modello non è stata verific
   modalità di confronto usa il riferimento come giudice.
 - **Modalità di confronto** (`ekte compare`) dà alle sonde un riferimento
   affidabile: `model_identity` registra l'autoidentificazione del riferimento
-  accanto a quella dell'obiettivo, `protocol_request` reinvia al riferimento i
+  accanto a quella dell'obiettivo e invia anche ogni impronta e la sonda della
+  data limite al riferimento, `protocol_request` reinvia al riferimento i
   parametri rifiutati, `integrity` porta a CRITICA una sostituzione che il
-  riferimento non fa, `quality_judge` mostra entrambi i lati al giudice e
-  `performance` sonda i due endpoint a turno. L'affidabilità può essere alta
-  solo con un riferimento.
+  riferimento non fa, `quality_judge` mostra entrambi i lati al giudice,
+  `billing` confronta i token del prompt, `capability` reinvia una sonda
+  rifiutata e `performance` sonda i due endpoint a turno. L'affidabilità può
+  essere alta solo con un riferimento, e solo quando almeno due dimensioni
+  centrali sono state davvero confrontate con esso (vedi
+  [Affidabilità del verdetto](#affidabilità-del-verdetto)).
 - **Base di conoscenza:** il profilo del modello dichiarato
   (`ekte/knowledge/data/*.yaml` più le tue voci in `kb.db`) fornisce la finestra
   di contesto dichiarata, l'output massimo, il tokenizer, le capacità, le parole
@@ -214,6 +267,11 @@ sull'identità del modello dice che l'identità del modello non è stata verific
   vengono mai ripetute. Una volta noto che un endpoint ragiona (il suo profilo
   indica `reasoning: true`, o dopo la sua prima ripetizione di questo tipo), le
   sonde brevi partono subito con il limite di 4.096 token invece che due volte.
+  I controlli che trattano diversamente un modello di ragionamento
+  (fatturazione, determinismo, output massimo, attributi della richiesta, streaming) lo
+  riconoscono tutti allo stesso modo: lo dice il profilo, il client l'ha
+  appreso da una tale ripetizione, oppure una risposta riporta token di
+  ragionamento.
 - **Parametri della richiesta:** i modelli di ragionamento rifiutano alcuni
   parametri: su Chat Completions `max_tokens` (vogliono `max_completion_tokens`)
   e, in ogni protocollo, i parametri di campionamento come `temperature`. Il
@@ -261,10 +319,9 @@ risposto. Le sue rilevazioni non alzano mai il verdetto di rischio.
 
 **Rileva.** Relay il cui middleware rompe il contratto del protocollo (turni
 persi, sequenze di stop ignorate, errori malformati, campi di risposta mancanti
-o a zero, parametri di richiesta rimossi) e, tramite il determinismo,
-`cache.ignore-temperature`. Copre in parte `capability.json-tool-fakery`.
+o a zero, parametri di richiesta rimossi). Copre in parte `capability.json-tool-fakery`.
 
-### `protocol` — Conformità alla compatibilità OpenAI
+### `protocol` — Conformità al protocollo di comunicazione
 
 **Come funziona.** Tre sonde: una conversazione a più turni che deve ricordare
 un colore da un turno precedente; una sequenza `stop` che deve troncare
@@ -343,29 +400,6 @@ lo rifiuta. Strumenti e modalità JSON restano a `capability`, `stop` a
 |  | Rifiutato, ma il modello stesso non lo supporta; non conteggiato. | Info | Non conteggiato |
 |  | Errore del server o nessuna risposta; non conteggiato. | Non conclusivo · Bassa | Non conteggiato |
 
-### `determinism` — Determinismo e correttezza della cache
-
-**Come funziona.** Quattro prompt creativi identici a `temperature=1.0` (senza
-seed): un modello autentico varia; un output identico byte per byte in tutti i
-campioni indica una cache delle risposte che ignora il campionamento. Il
-verdetto è soppresso per i modelli di ragionamento, che ignorano legittimamente
-la temperatura. Due domande fattuali identiche a `temperature=0` sono solo
-informative.
-
-Per concludere che c'è una cache, almeno tre dei quattro campioni devono essere
-utilizzabili (e tutti quelli utilizzabili identici); con meno, la verifica non è
-conclusiva.
-
-| Controllo | Esito | Stato | Effetto |
-|---|---|---|---|
-| `determinism.temp1_variability` | I campioni ripetuti con temperature=1.0 erano diversi, come in un vero campionamento. | Superato | 100 pt |
-|  | I campioni erano identici, ma i modelli di ragionamento ignorano legittimamente temperature. | Info | 100 pt |
-|  | Tutti i campioni utilizzabili (almeno 3) a temperature=1.0 erano identici byte per byte, il che suggerisce una cache delle risposte. | Avviso · Media | 55 pt |
-|  | Meno di 3 campioni utilizzabili a temperature=1.0 su cui basare un giudizio. | Non conclusivo · Bassa | Non conteggiato |
-| `determinism.temp0_stability` | Risposte identiche con temperature=0 (previsto); solo informativo, non conteggiato. | Info | Non conteggiato |
-|  | Le risposte differivano con temperature=0; solo informativo, non conteggiato. | Info | Non conteggiato |
-|  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
-
 **Avvertenze.** I gateway possono aggiungere campi specifici del fornitore;
 vengono segnalati solo campi obbligatori mancanti o non validi. La traduzione
 tra i dialetti Anthropic e OpenAI rimodella legittimamente alcune strutture.
@@ -386,16 +420,24 @@ il modello deve restituirlo.
 
 - **Finestra sondata.** La sonda arriva fino a `upper` = la finestra
   dichiarata, limitata da `--max-context-tokens` (200K predefinito). Ogni
-  verdetto è giudicato rispetto a `upper`, mai rispetto alla parte di una
-  finestra dichiarata più grande che sta oltre il limite.
+  verdetto è giudicato rispetto al gradino più alto (il 90% di `upper`, sotto),
+  mai rispetto alla parte di una finestra dichiarata più grande che sta oltre il
+  limite.
 - **Le dimensioni sono token reali.** La stima dei token integrata in ekte
-  sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
-  rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
-  ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
-  resta entro N token reali. Le dimensioni nelle prove (`size`,
-  `effective_window`, `top_rung`) sono questi budget di token reali; le righe
-  della scala riportano anche la stima con cui è stato costruito un prompt
-  (`heuristic_tokens`).
+  sottostima questo riempimento rispetto ai tokenizer reali, quindi ogni prompt
+  viene costruito a dimensione ÷ il fattore della famiglia di tokenizer secondo
+  la stima (ago e domanda inclusi): un gradino di dimensione N resta entro N
+  token reali. I fattori sono stati misurati offline con i tokenizer pubblicati
+  (issue #261):
+  `o200k_base` / `o200k_harmony` 1,12, `moonshot-bpe` 1,14, `deepseek-bpe` 1,15,
+  `cl100k_base` / `llama-3.3` 1,16, `glm` 1,22, `nemotron-3` 1,38, `gemma` 1,39,
+  `cohere` 1,40, `qwen` 1,41.
+  Le famiglie il cui tokenizer non è pubblicato (`claude-bpe-*`, `gemini`,
+  `grok`) usano 1,2. Il fattore usato è `real_per_heuristic` nelle prove. Le dimensioni nelle
+  prove (`size`, `effective_window`, `top_rung`) sono questi budget di token
+  reali; le righe della scala riportano anche la stima con cui è stato
+  costruito un prompt (`heuristic_tokens`) e i token di prompt che l'endpoint
+  ha dichiarato per esso (`prompt_tokens`).
 
 1. Una scala di al più sette dimensioni, dimezzata a partire da un **gradino
    più alto al 90% di `upper`** (nessun gradino raggiunge la finestra intera,
@@ -428,18 +470,26 @@ il modello deve restituirlo.
    l'ago è un fallimento.
 
 La finestra misurata (la dimensione richiamata più grande) viene confrontata con
-`upper`: un richiamo al gradino più alto è coerente (oppure, se la finestra
-dichiarata supera il limite, **verificata fino al limite**: la finestra oltre
-non è stata provata); sotto, il verdetto detrae la quota del gradino più alto
-non richiamata — un avviso dalla metà di `upper` in su, un fallimento sotto.
-Senza finestra dichiarata la misura viene riportata ma non valutata.
+il gradino più alto: un richiamo al gradino più alto è coerente (oppure, se la
+finestra dichiarata supera il limite, **verificata fino al limite**: la finestra
+oltre non è stata provata); sotto, il verdetto detrae la quota del gradino più
+alto non richiamata (`top_rung_share`) — un avviso dalla metà del gradino più
+alto in su, un fallimento sotto. Verdetto e detrazione hanno lo stesso
+riferimento, quindi un avviso non detrae mai più di 50 punti. Se è fallito solo
+il gradino più alto e l'endpoint ha dichiarato per la dimensione richiamata più
+grande oltre il 5% di token di prompt in più del suo budget, la sonda **ha
+sforato** (il tokenizer dell'endpoint conta il riempimento più denso di quanto
+il fattore preveda): la finestra oltre viene riportata come non provata (Info),
+mai come corta né come rifiuto sotto la dichiarazione. Senza finestra
+dichiarata la misura viene riportata ma non valutata.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `context_window.window` (Finestra di contesto effettiva) | Il richiamo ha tenuto al gradino più alto (90% della finestra sondata): nessuna detrazione. | Superato | Nessuna detrazione |
 |  | Richiamo verificato fino al limite della sonda; la finestra dichiarata oltre non è stata provata. | Superato | Nessuna detrazione |
-|  | Il richiamo ha tenuto fino al 50-90% della finestra sondata; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
-|  | Il richiamo è fallito sotto la metà della finestra sondata; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
+|  | Solo il gradino più alto è fallito e l'endpoint ha contato il prompt più grande richiamato oltre il 5% sopra il suo budget: la sonda ha sforato, la finestra oltre non è stata provata. | Info | Nessuna detrazione |
+|  | Il richiamo ha tenuto da metà del gradino più alto in su, ma non al gradino più alto; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
+|  | Il richiamo è fallito sotto la metà del gradino più alto; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
 |  | Nemmeno la dimensione di sonda più piccola ha richiamato l'ago. | Fallito · Alta | −100 pt |
 | `context_window.lost_in_middle` | L'inizio e la fine sono stati richiamati, ma la parte centrale no, per due volte. | Avviso · Media | −15 pt |
 | `context_window.rejected_below_claim` | Un prompt ben al di sotto della finestra dichiarata è stato rifiutato come troppo lungo. | Fallito · Alta | Nessuna detrazione |
@@ -469,7 +519,14 @@ quando cambiano il comportamento.
 
 ### `model_identity` — Identità del modello e impronta di declassamento
 
-**Come funziona.** Tre segnali indipendenti:
+**Come funziona.** Ciò che viene eseguito dipende dal profilo del modello
+dichiarato: l'autoidentificazione e il campo `model` restituito sempre, la sonda
+della data limite delle conoscenze quando il `knowledge_cutoff` del profilo
+indica un mese, e le impronte di solo codice del profilo, prima quelle del
+modello. Solo le impronte proprie del modello lo distinguono da un modello più
+economico dello stesso fornitore (`gpt-4o` servito da `gpt-4o-mini`); i
+controlli del marchio e le impronte comuni al fornitore valgono per ogni suo
+modello, e la data limite è spesso condivisa.
 
 1. **Autoidentificazione** a `temperature=0`, confrontata a parole intere con le
    parole chiave di identità del profilo (il marchio autentico) e con un elenco
@@ -492,19 +549,51 @@ quando cambiano il comportamento.
    «Step-2»); nelle risposte delle impronte non contano mai, quindi
    «let me think step by step» non è un marchio concorrente. Un produttore
    a cui appartiene una di queste parole la mantiene come propria.
-2. **Impronte comportamentali** dalla base di conoscenza (data limite delle
-   conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
-   lingua, …): fino a sei sonde di solo codice, verificate con
+2. **Impronte comportamentali** dalla base di conoscenza: fino a sei sonde di solo codice, verificate con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; output limitato a 512 token. Una sonda che
+   `expect_regex`; output limitato a 512 token. I termini di `expect_not_contains` valgono solo come parole intere (`meta`
+   non si trova in `metadata`; può seguire una versione, come in `Qwen2.5`). Una sonda che
    richiede più output (ad esempio una verifica dell'output massimo) viene
    saltata, indicata come Info, e un'altra sonda ne prende il posto.
    Un'impronta che si discosta
    toglie la sua quota di peso su 100 punti (al più 25); da sola resta BASSA,
    due o più aggiungono una rilevazione aggregata MEDIA.
-3. **Campo `model` restituito** da una chiamata semplice: suffissi di snapshot e
-   alias sono tollerati; una parola di fascia inferiore (`mini`, `flash`,
-   `lite`, `8b`, …) o una famiglia diversa viene segnalata.
+   In modalità confronto ogni sonda va anche al riferimento: uno scostamento che
+   il riferimento non condivide è corroborato (MEDIA); uno che il riferimento
+   condivide è un problema della base di conoscenza, non una prova contro il
+   relay, ed è registrato come Info senza detrazione (prova
+   `baseline_also_diverged`). Un marchio concorrente resta ALTA in ogni caso.
+   Cosa viene eseguito dipende dalla base di conoscenza: solo pochi profili
+   inclusi hanno sonde di solo codice proprie; la maggior parte ha solo quelle
+   del proprio fornitore, quasi sempre un secondo prompt di autoidentificazione,
+   un fatto datato o un artefatto del tokenizer a cui ogni modello del fornitore
+   risponde allo stesso modo, e circa un terzo non ne ha nessuna. I modelli di
+   uno stesso fornitore quindi di solito non si distinguono senza un giudice o un
+   riferimento (vedi `model_identity.model_specific` più sotto).
+3. **Data limite delle conoscenze** (`model_identity.cutoff`), quando il
+   `knowledge_cutoff` del profilo è `YYYY-MM` o `YYYY-MM-DD`: si chiede al
+   modello la sua data limite nel formato `CUTOFF=YYYY-MM`. Entro 6 mesi da
+   quella del profilo è coerente; oltre 12 mesi prima, come risponderebbe un
+   modello più vecchio del fornitore, è un avviso BASSA che toglie punti come
+   un'impronta di peso 1 e conta per la rilevazione aggregata; ogni altra
+   differenza è registrata come Info; una risposta senza quel formato è non
+   conclusiva. Una data limite dichiarata dal modello è una prova debole, quindi
+   questo controllo non è mai ALTA; in modalità confronto il riferimento la
+   conferma o la smentisce come un'impronta.
+4. **Campo `model` restituito** da una chiamata semplice, confrontato con il
+   modello dichiarato e con l'id inviato (un alias di deployment può differire
+   dalla dichiarazione). Entrambi gli id vengono prima normalizzati: minuscole,
+   senza prefisso `provider/` o `vendor.` (`openai/`, `models/`,
+   `anthropic.`), senza `:tag`, `-v2:0` di Bedrock o data di snapshot. Poi
+   decide la base di conoscenza: un id che si risolve nel profilo del modello
+   dichiarato è coerente (esatto, alias o snapshot), uno che si risolve in un
+   altro profilo diverge, e le evidenze nominano entrambi i profili. Un id che
+   la base di conoscenza non sa identificare viene segnalato se porta una
+   parola di fascia inferiore assente dalla richiesta (`mini`, `flash`,
+   `lite`, `8b`, …, solo come parola intera, quindi `mini` non viene trovato
+   in `gemini`), nomina un'altra famiglia o porta un altro numero di versione
+   (`gpt-4o` → `gpt-3.5-turbo`); un id diverso che nulla di questo spiega
+   viene registrato come sconosciuto, senza detrazione.
 
 Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 È inoltre non conclusivo e senza punteggio (`model_identity.no_evidence`)
@@ -513,6 +602,13 @@ utilizzabile e il campo `model` restituito non diverge: un relay che
 rifiuta o svuota ogni richiesta non fornisce prove d'identità, e l'eco del
 nome richiesto da solo non prova nulla. Prove parziali vengono valutate
 normalmente.
+
+Quando nessuna delle impronte proprie del modello ha risposto e non sono stati
+usati né riferimento né giudice, una rilevazione Info
+(`model_identity.model_specific`, prova `model_specific_checks: 0`) indica che
+le risposte sono coerenti con il fornitore ma che il modello specifico non è
+stato verificato. Ogni risultato registra `model_specific_checks`.
+Lo dicono anche il riepilogo del verdetto e la motivazione della dimensione identità del modello.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
@@ -523,13 +619,23 @@ normalmente.
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo | Nessuna detrazione |
 | `model_identity.fp` (Impronte comportamentali) | La risposta corrispondeva al comportamento nativo del modello dichiarato. | Superato | Nessuna detrazione |
 |  | La risposta si è discostata dal comportamento nativo: toglie la quota di peso della sonda su 100 punti. | Avviso · Bassa | fino a −25 pt |
+|  | La risposta si è discostata dal comportamento nativo mentre quella della baseline vi corrispondeva: sottrae la quota di peso della sonda su 100 punti. | Avviso · Media | fino a −25 pt |
+|  | La risposta si è discostata, ma anche quella della baseline: un problema della base di conoscenza, non una prova contro il relay; nessuna detrazione. | Info | Nessuna detrazione |
 |  | La risposta ha nominato un marchio concorrente e non quello autentico: toglie la quota di peso della sonda. | Fallito · Alta | fino a −25 pt · tetto 20 |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo | Nessuna detrazione |
 |  | La sonda richiede più output del limite di identità di 512 token; non eseguita. | Info | Nessuna detrazione |
+| `model_identity.cutoff` | Il limite di conoscenza dichiarato è entro 6 mesi da quello del modello dichiarato. | Superato | Nessuna detrazione |
+|  | Il limite di conoscenza dichiarato è di oltre 12 mesi precedente a quello del modello dichiarato: sottrae la sua quota di peso su 100 punti come un'impronta. | Avviso · Bassa | fino a −25 pt |
+|  | Il limite di conoscenza dichiarato è di oltre 12 mesi precedente mentre quello della baseline è coerente: sottrae la sua quota di peso su 100 punti. | Avviso · Media | fino a −25 pt |
+|  | Il limite di conoscenza dichiarato è di oltre 12 mesi precedente, ma anche quello della baseline: un problema della base di conoscenza, non una prova contro il relay; nessuna detrazione. | Info | Nessuna detrazione |
+|  | Il limite di conoscenza dichiarato si discosta di oltre 6 mesi, ma non è di oltre 12 mesi precedente: registrato, non giudicato. | Info | Nessuna detrazione |
+|  | Nessuna risposta nel formato CUTOFF=YYYY-MM da giudicare. | Non conclusivo | Nessuna detrazione |
 | `model_identity.fp_aggregate` | Due o più impronte comportamentali si sono discostate. | Avviso · Media | Nessuna detrazione |
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |
+|  | Il campo model restituito indica un altro id che ekte non sa identificare: registrato, non giudicato. | Info | Nessuna detrazione |
 |  | La risposta non aveva un campo model utilizzabile. | Non conclusivo | Nessuna detrazione |
+| `model_identity.model_specific` | Nessun controllo ha potuto distinguere il modello dichiarato dagli altri modelli del suo fornitore e non sono stati usati né baseline né giudice: il fornitore è coerente, il modello specifico non è stato verificato. | Info | Nessuna detrazione |
 | `model_identity.no_evidence` | Né l'autoidentificazione né alcuna impronta hanno dato una risposta utilizzabile e il campo model non divergeva: non valutato. | Non conclusivo | Nessuna detrazione |
 
 ### `quality_judge` — Valutazione di qualità / declassamento da parte di un LLM giudice
@@ -548,7 +654,7 @@ lasciato sonde senza risposta.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
-| `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 95 pt |
+| `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 100 pt |
 |  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa, media o non indicata). | Avviso · Media | 50 pt |
 |  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessun riferimento utilizzabile). | Avviso · Media | 25 pt |
 |  | Il giudice è sicuro e un riferimento affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |
@@ -585,12 +691,27 @@ alle capacità del profilo:
   OpenAI vengono segnalati come motore non OpenAI.
 - **Modalità JSON:** `response_format: json_object` deve restituire un oggetto
   analizzabile con il valore richiesto.
+- **Ripetizione:** una chiamata a strumento o un oggetto JSON dichiarati che non
+  tornano vengono richiesti ancora una volta prima di contare come non
+  consegnati: la richiesta dello strumento con `tool_choice: "required"`
+  (Anthropic: `{"type": "any"}`), la richiesta in modalità JSON invariata. Una
+  chiamata a strumento nella ripetizione è consegnata (evidenza
+  `needed_required: true`); un 4xx sulla sola richiesta forzata (alcuni modelli
+  rifiutano l'uso forzato degli strumenti) ripiega sulla prima risposta.
 - **Schema rigoroso:** un `json_schema` rigoroso; la conformità viene verificata
   se il modello la dichiara e solo annotata (informativa) se no. Saltato senza
   profilo.
 - **Output massimo:** una generazione lunga limitata a min(output massimo
-  dichiarato, 2048) token; raggiungere il limite o una lunghezza plausibile è
-  superato, fermarsi sotto un quarto viene segnalato.
+  dichiarato, `--max-output-probe-tokens`) token, 2048 per impostazione
+  predefinita. Una risposta troncata con `finish_reason: length` raggiunge il
+  limite solo se è tornato almeno l'80 % dei token richiesti: i token di
+  completion riportati, altrimenti una stima dal testo; per un modello di
+  ragionamento i token di ragionamento contano come forniti. Troncata al di
+  sotto, il relay limita l'output, e il controllo fallisce. Una lunghezza
+  plausibile è superata, fermarsi sotto un quarto viene segnalato. Se i token
+  di completion riportati e la stima del testo di un modello senza
+  ragionamento differiscono di oltre 3 volte, l'evidenza lo annota (la
+  fatturazione giudica il conteggio).
 
 Un'osservazione senza una dichiarazione da verificare — nessuna chiamata a
 strumento o oggetto JSON quando la funzione non è dichiarata, o qualsiasi esito
@@ -598,24 +719,44 @@ dello schema rigoroso quando il profilo dice che il modello non ha schemi
 rigorosi — viene annotata ma non conteggiata: un modello non perde mai punti per
 ciò che nessuno dichiara.
 
+Una sonda a cui il relay risponde con un 4xx (esclusi 401, 403, 408 e 429)
+benché il profilo dichiari la funzione è una capacità rifiutata: conta come una
+non fornita, e il suo riepilogo riporta il codice di stato e il messaggio di
+errore. Conta solo se il relay risponde alla stessa richiesta senza il parametro
+della funzione (una richiesta in più, inviata solo finché nessun'altra sonda è
+tornata) e un riferimento configurato sullo stesso protocollo non rifiuta anche
+la sonda; altrimenti vale come nessuna risposta utilizzabile, o come un limite
+del modello. Un 4xx per una funzione che nessuno dichiara viene annotato ma non
+conteggiato.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `capability.tools` | È tornata una chiamata a strumento per una richiesta esplicita di strumento. | Superato | 100 pt |
 |  | Le chiamate a strumenti sono dichiarate ma non è tornata alcuna chiamata. | Fallito · Media | 0 pt |
 |  | Non è tornata alcuna chiamata a strumento, e la capacità non è dichiarata. | Info | Non conteggiato |
+|  | La chiamata di strumenti è dichiarata ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.tools.encoding` | Gli argomenti dello strumento sono arrivati come oggetto, non come la stringa JSON di OpenAI. | Avviso · Bassa | Non conteggiato |
 | `capability.json_mode` | La modalità JSON ha restituito un oggetto analizzabile con il valore richiesto. | Superato | 100 pt |
 |  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | La modalità JSON è dichiarata ma non è tornato un oggetto valido con il valore. | Fallito · Media | 0 pt |
+|  | La modalità JSON è dichiarata ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.json_schema` | Lo schema rigoroso è dichiarato e la risposta lo rispettava. | Superato | 100 pt |
 |  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | Non conteggiato |
 |  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | Non conteggiato |
 |  | Lo schema rigoroso è dichiarato ma la risposta non lo rispettava. | Avviso · Bassa | 40 pt |
+|  | Lo schema rigoroso è dichiarato ma il relay ha rifiutato la sonda con un 4xx. | Fallito · Media | 0 pt |
+|  | Rifiutato con un 4xx, e anche il riferimento lo rifiuta: un limite del modello. | Info | Non conteggiato |
+|  | Rifiutato con un 4xx; la capacità non è dichiarata. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.max_output` | L'output è proseguito fino al limite di token richiesto. | Superato | 100 pt |
+|  | L'output è stato troncato con finish_reason length molto al di sotto del limite richiesto: il relay limita i token di output. | Fallito · Media | 0 pt |
 |  | L'output si è fermato prima del limite con una lunghezza plausibile. | Superato | 90 pt |
 |  | L'output si è fermato sotto un quarto della lunghezza richiesta. | Avviso · Bassa | 70 pt |
 |  | L'output si è fermato sotto un quarto della richiesta nonostante un massimo dichiarato elevato. | Avviso · Bassa | 60 pt |
@@ -651,18 +792,36 @@ latenza.
 
 **Come funziona.** Una richiesta in streaming (`max_tokens` 256,
 `stream_options.include_usage`) di cui si registra l'orario di arrivo di ogni
-frammento. Tre segnali di buffering: **pochi frammenti** (due o meno) e **primo
-token tardivo** (TTFT oltre il 90 % della durata totale), valutati solo quando
-sono arrivati almeno 220 caratteri, e **intervalli uniformi** (quattro o più
-frammenti con intervalli quasi uguali, CV < 0,1, e sotto i 2 ms: scaricati in
-blocco). Un flusso senza frammento di utilizzo viene segnalato a parte.
+frammento, poi lo stesso prompt una volta senza streaming (stesso `max_tokens`,
+temperatura 0). Quattro segnali di buffering, tutti valutati solo quando sono
+arrivati almeno 220 caratteri:
+
+- **pochi frammenti**: due o meno;
+- **primo token tardivo**: TTFT oltre il 90 % della durata dello stream, o oltre
+  il 75 % quando scatta anche il segnale successivo;
+- **primo token dopo il tempo dell'intera risposta**
+  (`streaming.ttft_vs_total`): il TTFT in streaming è almeno l'80 % del tempo
+  impiegato dalla richiesta senza streaming, quindi la risposta era completa
+  prima che partisse il primo frammento. Rileva una risposta bufferizzata e
+  riprodotta frammento per frammento con un ritardo di «digitazione», che mostra
+  molti frammenti e intervalli distribuiti. Nessun confronto se una delle due
+  chiamate è fallita o se la risposta senza streaming ha richiesto meno di un
+  secondo (i tempi di due chiamate sono allora soprattutto rumore di rete);
+- **raffica** (`streaming.uniform_gaps`, l'id che portano i report salvati):
+  quattro o più frammenti con almeno l'80 % degli intervalli sotto i 2 ms:
+  scaricati in blocco.
 
 Il TTFT è il primo token di contenuto visibile. Per un modello di ragionamento
-(secondo la base di conoscenza, o che riporta token di ragionamento nell'usage), che
-riflette prima di rispondere, un primo token tardivo viene quindi solo annotato
-e non conteggiato come buffering; i segnali pochi frammenti e intervalli uniformi
-contano ancora. Uno stream riuscito ma senza contenuti non è conclusivo e non
-viene valutato.
+(lo dice il profilo, il client l'ha appreso o una risposta riporta token di
+ragionamento), che riflette prima di rispondere, un primo token tardivo viene
+quindi solo annotato e non conteggiato come buffering, e il confronto senza
+streaming viene saltato; i segnali pochi frammenti e raffica contano ancora. Un
+flusso senza frammento di utilizzo viene segnalato a parte. Uno stream riuscito
+ma senza contenuti non è conclusivo e non viene valutato. In modalità di
+confronto, il TTFT in streaming del riferimento e il suo tempo senza streaming
+per lo stesso prompt vengono registrati nelle evidenze (`baseline`), senza
+punteggio.
+Una richiesta in streaming non riuscita viene ripetuta una volta. Se fallisce di nuovo con un 4xx che nomina lo streaming, o con un altro 4xx mentre lo stesso prompt senza streaming riesce, il relay non fa streaming per questo modello (`streaming.unsupported`, punteggio 0). Ogni altro errore (un 5xx, un timeout, un limite di frequenza o un 4xx che riceve anche il prompt senza streaming) è un errore di trasporto: `streaming.failed`, non conclusivo e non valutato. Entrambi sono avvisi di trasporto (vedi [Verdetto di rischio](#verdetto-di-rischio)): abbassano questa dimensione, mai il rischio di sostituzione.
 Se il modello trasmette il suo ragionamento (delta di ragionamento, blocchi di thinking, eventi di ragionamento della Responses API), si misura invece il primo token di qualunque tipo: uno stream genuino inizia presto a ragionare, quindi uno stream in cui ragionamento e risposta arrivano entrambi alla fine è bufferizzato anche per un modello di ragionamento.
 
 | Controllo | Esito | Stato | Effetto |
@@ -671,13 +830,18 @@ Se il modello trasmette il suo ragionamento (delta di ragionamento, blocchi di t
 | `streaming.few_chunks` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.late_ttft` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.reasoning_ttft` | Primo token tardivo di un modello di ragionamento (riflette prima di rispondere): informativo, non conteggiato come buffering. | Info | Nessuna detrazione |
+| `streaming.ttft_vs_total` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.uniform_gaps` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.no_usage` | Nessun chunk di utilizzo nello stream: toglie 15 punti se nulla è in buffer. | Avviso · Bassa | fino a −15 pt |
-| `streaming.no_content` | Lo stream è riuscito ma non ha fornito contenuti da giudicare; non valutato. | Non conclusivo · Bassa | Non conteggiato |
-| `streaming.failed` | La richiesta in streaming non è riuscita. | Fallito · Alta | tetto 0 |
+| `streaming.no_content` | Lo stream è riuscito ma non ha fornito contenuti da giudicare; non valutato. | Non conclusivo · Bassa | Nessuna detrazione |
+| `streaming.unsupported` | Il relay non fa streaming per questo modello. | Fallito · Media | tetto 0 |
+| `streaming.failed` | La richiesta in streaming non è riuscita due volte (5xx, timeout o un altro errore di trasporto); non valutato. | Non conclusivo · Bassa | Nessuna detrazione |
 
 Cioè: autentico 100 · utilizzo mancante 85 · un segnale di buffering 60 · due o
-più 40 · fallito 0 · nessun contenuto: nessun punteggio.
+più 40 · non supportato 0 · fallito due volte o nessun contenuto: nessun punteggio.
+«Nessuna detrazione» nelle righe `streaming.no_content` e `streaming.failed` è
+la dicitura della scala a detrazioni; in entrambi i casi il rilevatore lascia il
+risultato senza punteggio, quindi non conta per la dimensione.
 
 **Avvertenze.** Output brevi, un modello piccolo e veloce o il jitter di rete
 possono sembrare una raffica. Un upstream che non supporta lo streaming
@@ -693,23 +857,47 @@ fa davvero streaming.
 gonfiati), `billing.missing-usage` (`usage` mancante, parziale o incoerente) e,
 come segnale di conferma, `prompt.injected-system-prompt`.
 
-**Come funziona.** Una chiamata deterministica (un paragrafo noto da
-riassumere, `temperature=0`). Il prompt e la risposta visibile vengono contati
-in modo indipendente con un'euristica sensibile alla lingua (circa ±25 %), per
-ogni famiglia di modelli: ekte non usa alcuna libreria di tokenizer e non ne
-scarica. Token di prompt riportati oltre 2,5× la stima e più di 50 token sopra
-contano come gonfiamento. I token di completion di un modello di ragionamento
+**Come funziona.** Tre chiamate deterministiche: lo stesso compito di
+riassunto a tre dimensioni di prompt (circa 150, 600 e 2400 token di paragrafi
+fissi, `temperature=0`). I prompt e le risposte visibili vengono contati in
+modo indipendente con un'euristica sensibile alla lingua (circa ±25 %; conta
+dal 12 al 15 % in meno dei tokenizer reali), per ogni famiglia di modelli: ekte
+non usa alcuna libreria di tokenizer e non ne scarica. I token di prompt
+riportati vengono interpolati rispetto alla stima: la pendenza è il fattore
+proporzionale, l'intercetta un sovraccarico fisso. Una pendenza fino a 1,35 è
+superata (il conteggio per difetto dell'euristica più un tokenizer denso), da
+1,35 a 1,6 è un avviso, oltre 1,6 un fallimento. Un sovraccarico fisso con una
+pendenza normale non è gonfiamento: sotto i 30 token è informativo, da 30 token
+è un avviso basso che rimanda a `injected_prompt`. In modalità di confronto,
+con un riferimento dello stesso modello sullo stesso protocollo, gli stessi tre
+prompt vanno al riferimento e i `prompt_tokens` vengono confrontati
+direttamente: più del 3 % o di 5 token sopra il riferimento (il maggiore dei
+due) è un fallimento, e questo sostituisce il verdetto sulla pendenza. Se solo
+una delle tre chiamate restituisce conteggi utilizzabili, subentra il controllo
+sulla singola richiesta, con una nota che la pendenza non è stata misurata:
+token di prompt oltre 2,5× la stima e più di 50 token sopra contano come
+gonfiamento. I token di completion di un modello di ragionamento (secondo la
+base di conoscenza, o perché la risposta riporta token di ragionamento)
 includono legittimamente token di ragionamento nascosti e non vengono
 segnalati; altrimenti token di completion oltre 3× la stima e più di 80 token
-sopra sono un avviso lieve, mai un fallimento, perché la stima di una risposta
-breve è imprecisa. `total` deve essere `prompt + completion` (±2), e un totale
-senza ripartizione viene segnalato. Un conteggio inferiore (sotto la metà della
-stima) è informativo (non danneggia l'acquirente).
+per risposta sopra sono un avviso lieve, mai un fallimento, perché la stima di
+una risposta breve è imprecisa. `total` deve essere `prompt + completion` (±2),
+e un totale senza ripartizione viene segnalato. Un conteggio inferiore (sotto
+la metà della stima) è informativo (non danneggia l'acquirente).
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `billing.request-failed` | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Nessuna detrazione |
 | `billing.missing-usage` | La risposta non riportava alcun utilizzo di token. | Avviso · Media | tetto 75 |
+| `billing.prompt-vs-baseline` | I token di prompt dichiarati coincidono con quelli del riferimento per gli stessi prompt. | Superato | Nessuna detrazione |
+| `billing.prompt-vs-baseline` | I token di prompt dichiarati superano quelli del riferimento per gli stessi prompt. | Fallito · Alta | tetto 55 |
+| `billing.prompt-vs-baseline` | I token di prompt dichiarati sono inferiori a quelli del riferimento (non danneggia l'acquirente). | Info | Nessuna detrazione |
+| `billing.prompt-slope` | I token di prompt dichiarati crescono in proporzione alla stima (pendenza fino a 1,35). | Superato | Nessuna detrazione |
+| `billing.prompt-slope` | I token di prompt dichiarati crescono da 1,35 a 1,6 volte più in fretta della stima. | Avviso · Media | tetto 70 |
+| `billing.prompt-slope` | I token di prompt dichiarati crescono oltre 1,6 volte più in fretta della stima. | Fallito · Alta | tetto 55 |
+| `billing.prompt-slope` | Solo una dimensione di prompt ha restituito conteggi utilizzabili; non è stato possibile misurare la pendenza. | Info | Nessuna detrazione |
+| `billing.fixed-overhead` | Un piccolo sovraccarico fisso di token di prompt (meno di 30 token), come quello aggiunto dai template di chat. | Info | Nessuna detrazione |
+| `billing.fixed-overhead` | Un sovraccarico fisso di token di prompt di 30 token o più a ogni richiesta. | Avviso · Bassa | tetto 90 |
 | `billing.usage-inflation` | I token di prompt dichiarati superano di molto la stima indipendente. | Fallito · Alta | tetto 55 |
 | `billing.usage-inflation-completion` | I token di completion dichiarati sono molto sopra una stima euristica. | Avviso · Media | tetto 70 |
 | `billing.reasoning-tokens` | I token di completion superano il testo visibile, come previsto per un modello di ragionamento. | Info | Nessuna detrazione |
@@ -722,11 +910,16 @@ stima) è informativo (non danneggia l'acquirente).
 Una richiesta di sonda fallita lascia il rilevatore senza punteggio.
 
 **Avvertenze.** I template di chat e i token speciali aggiungono un piccolo
-scarto fisso; non ci si aspetta una corrispondenza esatta. Se il modello servito
+scarto fisso; non ci si aspetta una corrispondenza esatta. Senza riferimento la tolleranza
+lascia passare un'inflazione moderata: un'inflazione proporzionale che mantiene
+la pendenza a 1,35 o meno (circa un quinto sopra il conteggio reale, dato che
+l'euristica conta in difetto) non viene segnalata, né, nel ripiego con una sola
+richiesta, token di prompt sotto 2,5× la stima. La modalità confronto con un
+riferimento dello stesso modello rileva più del 3 %. Se il modello servito
 differisce da quello dichiarato, il tokenizer «giusto» è sconosciuto. I token di
-ragionamento nascosti non si possono contare dall'esterno. Una sonda misura una
-dimensione; un moltiplicatore che cresce con la dimensione richiede esecuzioni
-ripetute o la modalità di confronto.
+ragionamento nascosti non si possono contare dall'esterno. Tre dimensioni fino
+a circa 2400 token separano un fattore proporzionale da un sovraccarico fisso;
+un moltiplicatore che scatta solo con prompt molto più grandi resta invisibile.
 
 ---
 
@@ -740,7 +933,7 @@ arranca con un parallelismo modesto.
 (`--concurrency`, 3 predefinita). Il tasso di successo è calcolato sulle
 richieste effettivamente tentate: un HTTP 429 è una limitazione onesta e viene
 conteggiato a parte. Il punteggio toglie la quota fallita; una latenza p95
-oltre i 30 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
+oltre cinque volte la mediana della stessa raffica e oltre i 5 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
 temporaneo sulle 8 predefinite), o al massimo il 10% di un burst più grande, è un
 Avviso finché almeno l'80% riesce; di più è Fallito. Lo stato del rilevatore è il
 peggiore tra le sue rilevazioni. Sono avvisi di trasporto: non alzano mai il
@@ -753,7 +946,7 @@ verdetto di rischio.
 |  | Sono fallite più richieste; toglie la quota fallita. | Fallito · Media | fino a −100 pt |
 |  | Tutte le richieste sono state limitate (HTTP 429): non conteggiato. | Non conclusivo · Bassa | Nessuna detrazione |
 |  | Nessuna richiesta ha raggiunto il relay (fallita in ekte o sul percorso di rete): non valutato. | Non conclusivo · Bassa | Nessuna detrazione |
-| `reliability.latency` | Latenza p95 oltre 30 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
+| `reliability.latency` | Latenza p95 oltre cinque volte la mediana della raffica e oltre 5 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
 | `reliability.rate_limited` | Parte della raffica è stata limitata: limitazione legittima, non conteggiata. | Info | Nessuna detrazione |
 | `reliability.skipped` | La sonda di affidabilità era disattivata. | Info | Nessuna detrazione |
 
@@ -770,11 +963,126 @@ trapelati) sono nella roadmap.
 
 ---
 
+## `integrity` — Integrità delle risposte
+
+**Rileva.** `integrity.response-tampering`, `prompt.injected-system-prompt`, `cache.ignore-temperature` e indizi di `privacy.prompt-logging-leakage` (cache per prefisso): se la risposta è quella del modello, inalterata e generata al momento. Sulle superfici di embedding e rerank la dimensione contiene il controllo di determinismo. Non è una dimensione centrale: le sue rilevazioni determinano il rischio solo con la loro gravità.
+
+### `injected_prompt` — Rilevamento di prompt di sistema iniettato
+
+**Come funziona.** Due indizi indipendenti. (1) Un **overhead fisso di token in
+input**: due messaggi utente di dimensioni diverse senza messaggio di sistema; i
+`prompt_tokens` riportati meno la stima indipendente devono restare piccoli. Un
+overhead di almeno 30 token che resta costante (entro 16) in entrambe le
+dimensioni indica un prompt nascosto anteposto e non un gonfiamento
+proporzionale. (2) Una **sonda di fuga** che chiede al modello di ripetere ogni
+istruzione precedente. La risposta è una fuga solo se contiene contenuto simile
+a istruzioni: un passaggio tra virgolette o in citazione a blocco, oppure almeno
+due frasi all'imperativo di seconda persona («You are …», «Always …», «Do not
+…») al di fuori di una negazione. `NONE`, o una negazione nelle prime due frasi
+(«non ci sono istruzioni di sistema»), non è una fuga; qualsiasi altra risposta,
+come un rifiuto, è incerta e non conta nemmeno come fuga. Le evidenze conservano
+il tipo di risposta (`leak_answer_kind`) e i suoi primi 300 caratteri. Una fuga
+da sola è informativa e non conteggiata, perché i modelli inventano prompt di
+sistema. Solo entrambi insieme arrivano a MEDIA.
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `injected_prompt.verdict` (Prompt di sistema iniettato) | Il sovraccarico di token in ingresso è piccolo e non sono trapelate istruzioni nascoste. | Superato | 100 pt |
+|  | Su richiesta è trapelato un testo simile a istruzioni (non conteggiato: i modelli inventano). | Info | Non conteggiato |
+|  | Un grande sovraccarico fisso di token in ingresso, costante al variare del messaggio. | Avviso · Bassa | 75 pt |
+|  | Un sovraccarico fisso di token in ingresso e un preambolo trapelato, insieme. | Avviso · Media | 55 pt |
+|  | Nessun conteggio utilizzabile di token di prompt per misurare il sovraccarico. | Non conclusivo | Non conteggiato |
+
+### `integrity` — Integrità delle risposte / manomissione
+
+**Come funziona.** Canary a risposta nota con i valori presi di mira da un
+proxy che manomette devono tornare letteralmente: due sintetici (un URL di
+installazione e un pacchetto `pip install` fissato), un installer noto
+(`curl -fsSL https://sh.rustup.rs | sh`), un pacchetto popolare con versione
+fissata (`pip install requests==2.32.3`), una riga
+`git clone https://github.com/pallets/flask.git` e un indirizzo Bitcoin
+di formato valido derivato dal valore casuale dell'esecuzione, quindi non un
+valore fisso che un relay possa mettere in una lista di eccezioni, e diverso a
+ogni esecuzione (una nuova valutazione riusa il valore registrato). Il
+canary `git clone` è inviato in streaming e, quando il profilo dichiara la
+chiamata di strumenti, un URL di installer è inviato come argomento di una
+chiamata a strumento (il modello deve chiamare uno strumento con l'URL esatto),
+così si controllano anche il testo in streaming e gli argomenti degli strumenti.
+I canary girano in parallelo, al massimo tre alla volta, e il detector invia al
+massimo otto richieste al target. Un'eco esatta è superata, la mancanza di eco
+(parafrasi, rifiuto) è non conclusiva, e solo una **sostituzione del valore** che
+preserva la struttura conta come manomissione; un indirizzo di wallet cambiato
+conta solo se è a sua volta un indirizzo valido, quindi un carattere copiato male
+non è una sostituzione.
+In modalità di confronto, una sostituzione che il riferimento affidabile non fa è
+CRITICA. Conferma solo un riferimento che restituisce il canary intatto: se va in
+errore o non restituisce nulla di utilizzabile non conferma nulla (prova
+`baseline_unavailable`).
+Senza un riferimento utilizzabile, il canary sostituito viene inviato ancora una
+volta sullo stesso canale: sostituito di nuovo (con lo stesso valore o un altro) è
+ALTA, e il rischio è almeno medio; intatto alla ripetizione, o senza ripetizione
+utilizzabile, resta MEDIA (prova `repeat_intact`).
+Una risposta troncata al limite di output è non conclusiva, non una sostituzione.
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `integrity.verdict` (Integrità delle risposte) | I canary a risposta nota sono tornati intatti. | Superato | 100 pt |
+|  | Un valore canary è stato sostituito una volta, senza conferma né da un riferimento né da una ripetizione. | Fallito · Media | 45 pt |
+|  | Un valore canary è stato sostituito di nuovo quando lo stesso canary è stato inviato una seconda volta. | Fallito · Alta | 20 pt |
+|  | Un valore canary è stato sostituito mentre il riferimento affidabile lo ha mantenuto intatto. | Fallito · Critica | 10 pt |
+|  | Nessun canary è stato ripetuto alla lettera, quindi la manomissione non è valutabile. | Non conclusivo | Non conteggiato |
+
+### `determinism` — Determinismo e correttezza della cache
+
+**Come funziona.** Quattro prompt creativi identici a `temperature=1.0` (senza
+seed): un modello autentico varia; un output identico byte per byte in tutti i
+campioni indica una cache delle risposte che ignora il campionamento. Il
+verdetto è soppresso per i modelli di ragionamento, che ignorano legittimamente
+la temperatura. Due domande fattuali identiche a `temperature=0` sono solo
+informative.
+
+Per concludere che c'è una cache, almeno tre dei quattro campioni devono essere
+utilizzabili (e tutti quelli utilizzabili identici); con meno, la verifica non è
+conclusiva.
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `determinism.temp1_variability` | I campioni ripetuti con temperature=1.0 erano diversi, come in un vero campionamento. | Superato | 100 pt |
+|  | I campioni erano identici, ma i modelli di ragionamento ignorano legittimamente temperature. | Info | 100 pt |
+|  | Tutti i campioni utilizzabili (almeno 3) a temperature=1.0 erano identici byte per byte, il che suggerisce una cache delle risposte. | Avviso · Media | 55 pt |
+|  | Meno di 3 campioni utilizzabili a temperature=1.0 su cui basare un giudizio. | Non conclusivo · Bassa | Non conteggiato |
+| `determinism.temp0_stability` | Risposte identiche con temperature=0 (previsto); solo informativo, non conteggiato. | Info | Non conteggiato |
+|  | Le risposte differivano con temperature=0; solo informativo, non conteggiato. | Info | Non conteggiato |
+|  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
+
+### `prompt_cache` — Cache del prefisso del prompt (tempi)
+
+**Come funziona.** Un prefisso univoco di circa 1.200 token viene inviato due
+volte in streaming (a freddo, poi a caldo) e un prefisso di controllo diverso
+una volta. Se il TTFT a caldo è sotto la metà del TTFT a freddo e di quello di
+controllo, e almeno 150 ms più veloce che a freddo, la cache per prefisso è
+attiva. Sempre informativo: la cache per prefisso è un'ottimizzazione legittima.
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `prompt_cache.verdict` (Cache per prefisso di prompt) | Un prefisso di prompt ripetuto è tornato molto più velocemente: la cache per prefisso è attiva. | Info | Non conteggiato |
+|  | Un prefisso di prompt ripetuto non è stato nettamente più veloce. | Info | Non conteggiato |
+|  | Una o più sonde di temporizzazione non hanno restituito un tempo utilizzabile. | Non conclusivo | Non conteggiato |
+
+**Avvertenze.** I modelli inventano falsi «prompt di sistema» quando si chiede
+loro di rivelarli; una fuga da sola resta BASSA. La traduzione tra dialetti
+rimodella il JSON delle chiamate a strumenti; conta solo una sostituzione del
+*valore*. Una manomissione condizionale (solo per certe parole chiave, certi
+client o dopo un riscaldamento) può sfuggire a un numero finito di sonde. Il
+logging black-box è **indimostrabile** dal client, e ekte non può mostrare una
+cache condivisa *tra utenti* con una sola chiave: l'assenza di un segnale
+temporale non prova che i prompt non vengano registrati.
+
+---
+
 ## `security` — Sicurezza del trasporto
 
-**Rileva.** `prompt.injected-system-prompt`, `integrity.response-tampering`,
-indizi di `privacy.prompt-logging-leakage` (cache per prefisso) e l'igiene di
-base di trasporto e segreti.
+**Rileva.** L'igiene di base di trasporto e segreti: HTTP in chiaro, una chiave API restituita nella risposta e intestazioni di risposta che rivelano l'upstream.
 
 ### `security` — Segnali di trasporto e gestione dei segreti
 
@@ -800,67 +1108,6 @@ e non alza mai il verdetto di rischio.
 |  | Gli header di risposta rivelano l'upstream o il proxy (solo informativo). | Info · Bassa | Nessuna detrazione |
 |  | Nessun header di risposta da ispezionare. | Non conclusivo | Nessuna detrazione |
 | `security.note` | Il logging dei prompt e le chiavi upstream condivise non sono dimostrabili dall'esterno. | Info | Nessuna detrazione |
-
-### `injected_prompt` — Rilevamento di prompt di sistema iniettato
-
-**Come funziona.** Due indizi indipendenti. (1) Un **overhead fisso di token in
-input**: due messaggi utente di dimensioni diverse senza messaggio di sistema; i
-`prompt_tokens` riportati meno la stima indipendente devono restare piccoli. Un
-overhead di almeno 30 token che resta costante (entro 16) in entrambe le
-dimensioni indica un prompt nascosto anteposto e non un gonfiamento
-proporzionale. (2) Una **sonda di fuga** che chiede al modello di ripetere ogni
-istruzione precedente. Solo entrambi insieme arrivano a MEDIA.
-
-| Controllo | Esito | Stato | Effetto |
-|---|---|---|---|
-| `injected_prompt.verdict` (Prompt di sistema iniettato) | Il sovraccarico di token in ingresso è piccolo e non sono trapelate istruzioni nascoste. | Superato | 100 pt |
-|  | Su richiesta è trapelato un testo simile a istruzioni (debole da solo). | Info · Bassa | 85 pt |
-|  | Un grande sovraccarico fisso di token in ingresso, costante al variare del messaggio. | Avviso · Bassa | 75 pt |
-|  | Un sovraccarico fisso di token in ingresso e un preambolo trapelato, insieme. | Avviso · Media | 55 pt |
-|  | Nessun conteggio utilizzabile di token di prompt per misurare il sovraccarico. | Non conclusivo | Non conteggiato |
-
-### `integrity` — Integrità delle risposte / manomissione
-
-**Come funziona.** Canary a risposta nota con valori sensibili — un URL di
-installazione e un pacchetto `pip install` fissato — devono tornare
-letteralmente. Un'eco esatta è superata, la mancanza di eco (parafrasi, rifiuto)
-è non conclusiva, e solo una **sostituzione del valore** che preserva la
-struttura conta come manomissione. In modalità di confronto, una sostituzione
-che il riferimento affidabile non fa è CRITICA.
-Conferma solo un riferimento che restituisce il canary intatto: se va in errore
-o non restituisce nulla di utilizzabile non conferma nulla, e la sostituzione
-resta MEDIA (prova `baseline_unavailable`).
-Una risposta troncata al limite di output è non conclusiva, non una sostituzione.
-
-| Controllo | Esito | Stato | Effetto |
-|---|---|---|---|
-| `integrity.verdict` (Integrità delle risposte) | I canary a risposta nota sono tornati intatti. | Superato | 100 pt |
-|  | Un valore canary è stato sostituito (non ancora confermato da un riferimento). | Fallito · Media | 45 pt |
-|  | Un valore canary è stato sostituito mentre il riferimento affidabile lo ha mantenuto intatto. | Fallito · Critica | 10 pt |
-|  | Nessun canary è stato ripetuto alla lettera, quindi la manomissione non è valutabile. | Non conclusivo | Non conteggiato |
-
-### `prompt_cache` — Cache del prefisso del prompt (tempi)
-
-**Come funziona.** Un prefisso univoco di circa 1.200 token viene inviato due
-volte in streaming (a freddo, poi a caldo) e un prefisso di controllo diverso
-una volta. Se il TTFT a caldo è sotto la metà del TTFT a freddo e di quello di
-controllo, e almeno 150 ms più veloce che a freddo, la cache per prefisso è
-attiva. Sempre informativo: la cache per prefisso è un'ottimizzazione legittima.
-
-| Controllo | Esito | Stato | Effetto |
-|---|---|---|---|
-| `prompt_cache.verdict` (Cache per prefisso di prompt) | Un prefisso di prompt ripetuto è tornato molto più velocemente: la cache per prefisso è attiva. | Info | Non conteggiato |
-|  | Un prefisso di prompt ripetuto non è stato nettamente più veloce. | Info | Non conteggiato |
-|  | Una o più sonde di temporizzazione non hanno restituito un tempo utilizzabile. | Non conclusivo | Non conteggiato |
-
-**Avvertenze.** I modelli inventano falsi «prompt di sistema» quando si chiede
-loro di rivelarli; una fuga da sola resta BASSA. La traduzione tra dialetti
-rimodella il JSON delle chiamate a strumenti; conta solo una sostituzione del
-*valore*. Una manomissione condizionale (solo per certe parole chiave, certi
-client o dopo un riscaldamento) può sfuggire a un numero finito di sonde. Il
-logging black-box è **indimostrabile** dal client, e ekte non può mostrare una
-cache condivisa *tra utenti* con una sola chiave: l'assenza di un segnale
-temporale non prova che i prompt non vengano registrati.
 
 ---
 
@@ -948,23 +1195,34 @@ momento. Gli intervalli della base di conoscenza sono mediane volutamente ampie
 delle API native, e un obiettivo più lento viene annotato, mai conteggiato. Tutte le
 rilevazioni sono al massimo di gravità BASSA: questa dimensione muove il
 punteggio, mai il verdetto di rischio.
+Il confronto con il riferimento (`performance.reference`) viene eseguito solo
+in modalità confronto o per un profilo con un intervallo
+`performance.decode_tps`, che pochi profili inclusi hanno; per gli altri
+modelli non compare.
 
 ## Superficie di embedding
 
 La **superficie** di una verifica (`chat` per impostazione predefinita, o
 `embedding`) sceglie i rilevatori; la suite fissa sempre la profondità. Una
 verifica di embedding invia solo richieste `POST /embeddings` e riutilizza le
-dimensioni della chat e il punteggio comune 0–100 e voto A–F, con pesi per
-superficie. Una dimensione che non corrisponde (identità del modello, ALTA) rende
+dimensioni della chat e il punteggio comune 0–100 e voto A–F, con pesi propri
+(`SURFACE_WEIGHTS` in `ekte/scoring.py`). Una dimensione che non corrisponde (identità del modello, ALTA) rende
 il rischio ALTO, come un modello sostituito nella chat.
 
-| Controllo | Id | Dimensione | Cosa verifica |
+| Dimensione | Id | Peso | Ruolo |
+|---|---|---|---|
+| Identità del modello | `model_identity` | 40 | centrale |
+| Prestazioni | `performance` | 20 |  |
+| Capacità dichiarate | `capability` | 15 |  |
+| Integrità delle risposte | `integrity` | 15 |  |
+| Connettività | `connectivity` | 10 |  |
+
+| Rilevatore | Id | Dimensione | Cosa verifica |
 |---|---|---|---|
 | Connettività | `embed.connectivity` | Connettività | l'endpoint restituisce vettori ben formati |
-| Dimensione del vettore | `embed.dimension` | Identità del modello | lunghezza restituita contro la dimensione nativa del modello dichiarato (base di conoscenza, o `claimed_dimensions`) |
-| Modello restituito | `embed.model_field` | Identità del modello | il campo `model` della risposta nomina il modello dichiarato |
+| Identità del modello | `embed.identity` | Identità del modello | `embed.dimension`: lunghezza restituita contro la dimensione nativa del modello dichiarato (base di conoscenza, o `claimed_dimensions`); `embed.model_field`: il campo `model` della risposta nomina il modello dichiarato |
 | Deriva dei vettori | `embed.drift` | Identità del modello | il vettore dell'input fisso della sonda contro l'esecuzione salvata precedente |
-| Determinismo | `embed.determinism` | Affidabilità in concorrenza | lo stesso input due volte dà coseno ≥ 0,9999 |
+| Determinismo | `embed.determinism` | Integrità delle risposte | lo stesso input due volte dà coseno ≥ 0,9999 |
 | Distinzione | `embed.distinctness` | Capacità dichiarate | input non correlati danno coseno inferiore a 0,98 |
 | Sonda delle prestazioni | `performance.embed` | Prestazioni | latenza, avvio a freddo, throughput, scalabilità a lotti |
 
@@ -990,24 +1248,110 @@ quella di una richiesta singola: da 0,6x in su il lotto viene diviso o serializz
 (lineare, WARN BASSA). Non c'è un riferimento di velocità nella base di
 conoscenza; la velocità grezza conta solo rispetto a un riferimento.
 
+**Scale dei punteggi** dei rilevatori di embedding (`SCALE` in `ekte/detectors/embed_*.py`). Ogni rilevatore assegna la media dei suoi controlli conteggiati.
+
+### `embed.connectivity` — Connettività dell'endpoint di embedding
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `embed.connectivity` | L'endpoint di embedding ha restituito vettori. | Superato | 100 pt |
+|  | L'endpoint di embedding ha risposto senza un vettore per input. | Fallito · Alta | 0 pt |
+|  | La richiesta di embedding non è riuscita. | Fallito · Alta | 0 pt |
+
+### `embed.identity` — Identità del modello di embedding
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `embed.dimension` | La lunghezza dei vettori corrisponde al modello dichiarato. | Superato | 100 pt |
+|  | La lunghezza dei vettori differisce da quella del modello dichiarato (viene servito un altro modello). | Fallito · Alta | 0 pt |
+|  | La lunghezza dei vettori del modello dichiarato è sconosciuta; viene registrata la lunghezza osservata. | Info | Non conteggiato |
+|  | Nessun vettore restituito da misurare. | Non conclusivo | Non conteggiato |
+| `embed.model_field` | Il relay restituisce il modello richiesto. | Superato | 100 pt |
+|  | Il relay restituisce un modello diverso da quello richiesto. | Avviso · Media | 50 pt |
+|  | Il relay restituisce un altro id di modello che ekte non sa identificare: registrato, non giudicato. | Info | Non conteggiato |
+|  | Il relay non restituisce alcun campo model. | Info | Non conteggiato |
+
+### `embed.drift` — Deriva dei vettori di embedding
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `embed.drift` | Il vettore dell'input fisso corrisponde all'esecuzione precedente. | Superato | 100 pt |
+|  | Il vettore dell'input fisso si è spostato dall'esecuzione precedente (coseno da 0,95 a 0,995). | Avviso · Media | 60 pt |
+|  | Il vettore dell'input fisso è cambiato dall'esecuzione precedente (coseno sotto 0,95, o altra lunghezza): il modello è stato sostituito. | Fallito · Alta | 0 pt |
+|  | Nessuna esecuzione precedente con cui confrontare; il vettore di questa esecuzione è il riferimento. | Info | Non conteggiato |
+|  | Nessun vettore restituito per l'input fisso. | Non conclusivo | Non conteggiato |
+
+### `embed.determinism` — Determinismo degli embedding
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `embed.determinism` | Lo stesso input due volte dà lo stesso vettore. | Superato | 100 pt |
+|  | Lo stesso input due volte dà vettori diversi. | Avviso · Media | 50 pt |
+|  | Nessun vettore restituito da confrontare. | Non conclusivo | Non conteggiato |
+
+### `embed.distinctness` — Distinzione degli embedding
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `embed.distinctness` | Input non correlati danno vettori nettamente diversi. | Superato | 100 pt |
+|  | Input non correlati danno vettori quasi identici (un backend degenere o fittizio). | Avviso · Alta | 30 pt |
+|  | Nessun vettore restituito da confrontare. | Non conclusivo | Non conteggiato |
+
+### `performance.embed` — Misura delle prestazioni degli embedding
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `performance.summary` | Latenza e throughput degli embedding sono stati misurati. | Info | Non conteggiato |
+|  | Nessuna delle richieste di sonda è riuscita. | Non conclusivo | Non conteggiato |
+| `performance.latency_consistency` | La latenza è costante (rapporto di coda al massimo 1,3). | Superato | 100 pt |
+|  | La latenza è stabile (rapporto di coda al massimo 1,75). | Superato | 85 pt |
+|  | La latenza varia sensibilmente (rapporto di coda al massimo 2,5). | Avviso · Bassa | 65 pt |
+|  | La latenza è irregolare (rapporto di coda oltre 2,5). | Fallito · Bassa | 40 pt |
+|  | Troppi pochi campioni per giudicare la costanza della latenza. | Info | Non conteggiato |
+| `performance.throughput_consistency` | Il throughput è costante (rapporto di coda al massimo 1,3). | Superato | 100 pt |
+|  | Il throughput è stabile (rapporto di coda al massimo 1,75). | Superato | 85 pt |
+|  | Il throughput varia sensibilmente (rapporto di coda al massimo 2,5). | Avviso · Bassa | 65 pt |
+|  | Il throughput è irregolare (rapporto di coda oltre 2,5). | Fallito · Bassa | 40 pt |
+|  | Troppi pochi campioni per giudicare la costanza del throughput. | Info | Non conteggiato |
+| `performance.errors` | Al massimo il 2% delle richieste della sonda è fallito. | Superato | 100 pt |
+|  | Fino al 10% delle richieste della sonda è fallito o scaduto. | Avviso · Bassa | 80 pt |
+|  | Molte richieste della sonda sono fallite o scadute. | Fallito · Bassa | 50 pt |
+| `performance.load_stability` | La latenza regge sotto carico concorrente (al massimo 1,5x). | Superato | 100 pt |
+|  | La latenza aumenta sotto carico concorrente (fino a 3x). | Avviso · Bassa | 80 pt |
+|  | La latenza peggiora nettamente sotto carico concorrente (oltre 3x). | Fallito · Bassa | 55 pt |
+| `performance.batch_scaling` | Un batch di 16 input costa molto meno per input delle richieste singole. | Superato | 100 pt |
+|  | Un batch di 16 input costa per input circa quanto le richieste singole (coerente con un relay che divide o serializza i batch). | Avviso · Bassa | 60 pt |
+|  | Troppo pochi campioni di batch per giudicare come la latenza cresce con la dimensione del batch. | Info | Non conteggiato |
+| `performance.cache_hit` | Input di misura univoci hanno restituito vettori ripetuti (esclusi dalle statistiche). | Avviso · Bassa | 60 pt |
+|  | Il riferimento ha restituito vettori ripetuti per input di misura univoci (non valutato). | Info | Non conteggiato |
+| `performance.relay_overhead` | Latenza confrontata con la baseline affidabile (solo informativo). | Info | Non conteggiato |
+| `performance.skipped` | La sonda delle prestazioni era disattivata. | Info | Non conteggiato |
+
 ---
 
 ## Superficie di rerank
 
 Una verifica di rerank (`surface` `rerank`) invia solo richieste `POST /rerank` ed
-è valutata sulla scala comune 0–100 e voto A–F con pesi propri: identità del
-modello 30, capacità dichiarate 30, prestazioni 20, affidabilità in concorrenza
-10, connettività 10. Una classifica a risposta nota sbagliata (capacità
+è valutata sulla scala comune 0–100 e voto A–F con pesi propri
+(`SURFACE_WEIGHTS` in `ekte/scoring.py`). Una classifica a risposta nota sbagliata (capacità
 dichiarate, ALTA) o un modello sostituito (identità del modello, ALTA) rende il
 rischio ALTO.
 
-| Controllo | Id | Dimensione | Cosa verifica |
+| Dimensione | Id | Peso | Ruolo |
+|---|---|---|---|
+| Identità del modello | `model_identity` | 30 | centrale |
+| Capacità dichiarate | `capability` | 30 | centrale |
+| Prestazioni | `performance` | 20 |  |
+| Integrità delle risposte | `integrity` | 10 |  |
+| Connettività | `connectivity` | 10 |  |
+
+| Rilevatore | Id | Dimensione | Cosa verifica |
 |---|---|---|---|
 | Connettività | `rerank.connectivity` | Connettività | l'endpoint restituisce una classifica ben formata |
 | Risposta nota | `rerank.known_answer` | Capacità dichiarate | una sonda con un documento chiaramente pertinente lo mette primo |
-| Modello restituito | `rerank.identity` | Identità del modello | il campo `model` della risposta nomina il modello dichiarato |
+| Modello restituito | `rerank.identity` | Identità del modello | `rerank.model_field`: il campo `model` della risposta nomina il modello dichiarato |
 | Deriva della classifica | `rerank.drift` | Identità del modello | classifica e punteggi della sonda fissa contro l'esecuzione salvata precedente |
-| Determinismo | `rerank.determinism` | Affidabilità in concorrenza | la stessa query due volte dà la stessa classifica e gli stessi punteggi |
+| Determinismo | `rerank.determinism` | Integrità delle risposte | la stessa query due volte dà la stessa classifica e gli stessi punteggi |
 | Sonda delle prestazioni | `performance.rerank` | Prestazioni | latenza, avvio a freddo, documenti/s, scalabilità con il numero di documenti |
 
 **Deriva della classifica.** Ogni esecuzione conserva la classifica e i punteggi
@@ -1030,6 +1374,82 @@ documenti costa per documento 0,6x o più di una con 4, il relay divide o serial
 i documenti (lineare, WARN BASSA). Non c'è un riferimento di velocità nella base di
 conoscenza; la velocità grezza conta solo rispetto a un riferimento.
 
+**Scale dei punteggi** dei rilevatori di rerank (`SCALE` in `ekte/detectors/rerank_*.py`). Ogni rilevatore assegna la media dei suoi controlli conteggiati.
+
+### `rerank.connectivity` — Connettività dell'endpoint di rerank
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `rerank.connectivity` | L'endpoint di rerank ha restituito una classifica. | Superato | 100 pt |
+|  | L'endpoint di rerank ha risposto senza un punteggio per documento. | Fallito · Alta | 0 pt |
+|  | La richiesta di rerank non è riuscita. | Fallito · Alta | 0 pt |
+
+### `rerank.identity` — Identità del modello di rerank
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `rerank.model_field` | Il relay restituisce il modello richiesto. | Superato | 100 pt |
+|  | Il relay restituisce un modello diverso da quello richiesto. | Avviso · Media | 50 pt |
+|  | Il relay restituisce un altro id di modello che ekte non sa identificare: registrato, non giudicato. | Info | Non conteggiato |
+|  | Il relay non restituisce alcun campo model. | Info | Non conteggiato |
+|  | La richiesta di rerank non è riuscita; non c'è alcun campo del modello da verificare. | Non conclusivo | Non conteggiato |
+
+### `rerank.drift` — Deriva del rerank
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `rerank.drift` | Classifica e punteggi della sonda fissa corrispondono all'esecuzione precedente. | Superato | 100 pt |
+|  | I punteggi della sonda fissa si sono spostati dall'esecuzione precedente (da 0,01 a 0,1 sulla scala dei punteggi), con la stessa classifica. | Avviso · Media | 60 pt |
+|  | La classifica della sonda fissa è cambiata dall'esecuzione precedente, o i suoi punteggi si sono spostati di oltre 0,1 sulla scala dei punteggi: il modello è stato sostituito. | Fallito · Alta | 0 pt |
+|  | Nessuna esecuzione precedente con cui confrontare; la classifica di questa esecuzione è il riferimento. | Info | Non conteggiato |
+|  | Non è stata restituita alcuna classifica per la sonda fissa. | Non conclusivo | Non conteggiato |
+
+### `rerank.determinism` — Determinismo del rerank
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `rerank.determinism` | La stessa query due volte dà la stessa classifica e gli stessi punteggi. | Superato | 100 pt |
+|  | La stessa query due volte dà una classifica o punteggi diversi. | Avviso · Media | 50 pt |
+|  | Non sono state restituite classifiche da confrontare. | Non conclusivo | Non conteggiato |
+
+### `rerank.known_answer` — Sonda di rerank a risposta nota
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `rerank.known_answer` | Il documento chiaramente pertinente è al primo posto. | Superato | 100 pt |
+|  | Un altro documento è classificato sopra quello chiaramente pertinente. | Fallito · Alta | 0 pt |
+|  | Non è stata restituita alcuna classifica da verificare. | Non conclusivo | Non conteggiato |
+
+### `performance.rerank` — Misura delle prestazioni del reranking
+
+| Controllo | Esito | Stato | Effetto |
+|---|---|---|---|
+| `performance.summary` | Latenza e throughput del reranking sono stati misurati. | Info | Non conteggiato |
+|  | Nessuna delle richieste di sonda è riuscita. | Non conclusivo | Non conteggiato |
+| `performance.latency_consistency` | La latenza è costante (rapporto di coda al massimo 1,3). | Superato | 100 pt |
+|  | La latenza è stabile (rapporto di coda al massimo 1,75). | Superato | 85 pt |
+|  | La latenza varia sensibilmente (rapporto di coda al massimo 2,5). | Avviso · Bassa | 65 pt |
+|  | La latenza è irregolare (rapporto di coda oltre 2,5). | Fallito · Bassa | 40 pt |
+|  | Troppi pochi campioni per giudicare la costanza della latenza. | Info | Non conteggiato |
+| `performance.throughput_consistency` | Il throughput è costante (rapporto di coda al massimo 1,3). | Superato | 100 pt |
+|  | Il throughput è stabile (rapporto di coda al massimo 1,75). | Superato | 85 pt |
+|  | Il throughput varia sensibilmente (rapporto di coda al massimo 2,5). | Avviso · Bassa | 65 pt |
+|  | Il throughput è irregolare (rapporto di coda oltre 2,5). | Fallito · Bassa | 40 pt |
+|  | Troppi pochi campioni per giudicare la costanza del throughput. | Info | Non conteggiato |
+| `performance.errors` | Al massimo il 2% delle richieste della sonda è fallito. | Superato | 100 pt |
+|  | Fino al 10% delle richieste della sonda è fallito o scaduto. | Avviso · Bassa | 80 pt |
+|  | Molte richieste della sonda sono fallite o scadute. | Fallito · Bassa | 50 pt |
+| `performance.load_stability` | La latenza regge sotto carico concorrente (al massimo 1,5x). | Superato | 100 pt |
+|  | La latenza aumenta sotto carico concorrente (fino a 3x). | Avviso · Bassa | 80 pt |
+|  | La latenza peggiora nettamente sotto carico concorrente (oltre 3x). | Fallito · Bassa | 55 pt |
+| `performance.document_scaling` | Una query su 32 documenti costa per documento molto meno di una su 4. | Superato | 100 pt |
+|  | Una query su 32 documenti costa per documento circa quanto una su 4 (compatibile con un relay che divide o serializza i documenti). | Avviso · Bassa | 60 pt |
+|  | Troppo pochi campioni per giudicare come la latenza cresce con il numero di documenti. | Info | Non conteggiato |
+| `performance.cache_hit` | Query di prova uniche hanno restituito punteggi ripetuti (escluse dalle statistiche). | Avviso · Bassa | 60 pt |
+|  | La baseline ha restituito punteggi ripetuti per query di prova uniche (non valutato). | Info | Non conteggiato |
+| `performance.relay_overhead` | Latenza confrontata con la baseline affidabile (solo informativo). | Info | Non conteggiato |
+| `performance.skipped` | La sonda delle prestazioni era disattivata. | Info | Non conteggiato |
+
 ---
 
 ## Corrispondenza trucco → rilevatore
@@ -1045,7 +1465,7 @@ I 16 trucchi dei relay individuati dalla ricerca si distribuiscono così in ekte
 | 5 | `context.window-truncation` | high | `context_window` | scala con ago al bordo + ricerca binaria; misurata vs dichiarata |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | profondità 0,1/0,5/0,9 a una dimensione media |
 | 7 | `stream.fake-streaming` | medium | `streaming` | numero di frammenti, momento del primo token, uniformità degli intervalli |
-| 8 | `billing.usage-inflation` | high | `billing` | stima euristica indipendente dei token di una sonda nota |
+| 8 | `billing.usage-inflation` | high | `billing` | pendenza dei token di prompt riportati su tre dimensioni di prompt rispetto a una stima euristica; in modalità di confronto, i conteggi esatti del riferimento |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | presenza, ripartizione e aritmetica dell'utilizzo; frammento di utilizzo del flusso |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | cache per prefisso tramite TTFT (informativo); condivisione tra utenti e logging restano indimostrabili con una chiave |
 | 11 | `infra.shared-upstream-key` | high | — | roadmap (quota che cala a riposo, ID di richiesta upstream trapelati) |
@@ -1053,7 +1473,7 @@ I 16 trucchi dei relay individuati dalla ricerca si distribuiscono così in ekte
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | overhead fisso di token in input (due dimensioni) + sonda di fuga |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | tasso di successo (429 a parte), latenza di coda, stabilità sotto carico; la misura nel tempo è nella roadmap |
 | 15 | `capability.json-tool-fakery` | medium | `capability`, `protocol_request` | strumenti, modalità JSON, schema rigoroso, parametri; una sonda ciascuno, non tassi |
-| 16 | `integrity.response-tampering` | critical | `integrity` | canary di URL/pacchetto a risposta nota; CRITICA quando un riferimento lo conferma |
+| 16 | `integrity.response-tampering` | critical | `integrity` | canary a risposta nota (URL di installazione sintetici e noti, pacchetti con versione fissata, una riga `git clone`, un indirizzo di wallet derivato per endpoint) nell'output normale, in streaming e negli argomenti degli strumenti; MEDIA per una sola sostituzione che né un riferimento né una ripetizione confermano, ALTA quando una ripetizione sostituisce di nuovo, CRITICA quando un riferimento lo conferma |
 
 ---
 
@@ -1080,11 +1500,20 @@ alta.
 `temperature=0` e prompt vincolati. Ogni rilevazione porta le proprie prove
 (input, valori osservati, conteggi, tempi) e ogni rapporto registra il profilo,
 le lingue dei prompt e le impostazioni con cui è stato eseguito, così che un
-risultato si possa verificare in modo indipendente. Un relay può accorgersi dei
+risultato si possa verificare in modo indipendente. Aghi, canary e prefissi di cache derivano da un valore casuale estratto una
+volta per esecuzione (`run_nonce` nel rapporto e nel file delle prove), quindi
+due esecuzioni non inviano mai le stesse sonde: un relay che riconosce i test
+non può rispondere da una tabella, e una cache delle risposte non può ripetere
+a un monitoraggio le risposte di un'esecuzione precedente. Un'esecuzione resta
+coerente, una nuova valutazione riusa il valore registrato e `EKTE_RUN_NONCE`
+lo fissa. I prompt la cui formulazione è la misura (impronte, il paragrafo di
+fatturazione, le sonde del prompt iniettato) restano fissi.
+Un relay può accorgersi dei
 test: riesegui in altri momenti e preferisci la modalità di confronto con un
 riferimento affidabile dello **snapshot esatto dichiarato** — è il modo più
 solido per separare il comportamento del modello da quello del relay, e l'unico
-per arrivare ad alta affidabilità.
+per arrivare ad alta affidabilità (almeno due dimensioni centrali confrontate
+con il riferimento; vedi [Affidabilità del verdetto](#affidabilità-del-verdetto)).
 
 **Divulgazione responsabile.** **Non accusare pubblicamente un fornitore** sulla
 base di un rapporto di ekte. Prima di agire: riesegui con più campioni e in

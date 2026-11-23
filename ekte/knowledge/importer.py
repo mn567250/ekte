@@ -130,15 +130,23 @@ def _pydantic_errors(result: ScanResult, prefix: str, exc: ValidationError) -> N
 def _structure_problem(text: str, loader: Any = None) -> str | None:
     """Why ``text`` is refused before it is loaded (anchors, nesting), from its parser events."""
     depth = 0
-    for event in yamlio.parse(text, loader):
-        if isinstance(event, yaml.AliasEvent) or getattr(event, "anchor", None):
-            return "YAML anchors/aliases (& and *) are not allowed"
-        if isinstance(event, yaml.CollectionStartEvent):
-            depth += 1
-            if depth > MAX_NESTING:
-                return f"nested more than {MAX_NESTING} levels deep"
-        elif isinstance(event, yaml.CollectionEndEvent):
-            depth -= 1
+    nested = f"nested more than {MAX_NESTING} levels deep"
+    try:
+        for event in yamlio.parse(text, loader):
+            if isinstance(event, yaml.AliasEvent) or getattr(event, "anchor", None):
+                return "YAML anchors/aliases (& and *) are not allowed"
+            if isinstance(event, yaml.CollectionStartEvent):
+                depth += 1
+                if depth > MAX_NESTING:
+                    return nested
+            elif isinstance(event, yaml.CollectionEndEvent):
+                depth -= 1
+    except yaml.YAMLError as exc:
+        # libyaml >= 0.2.6 (PyYAML 6.0.4 wheels) refuses deep nesting itself while
+        # scanning ahead, before this count reaches MAX_NESTING: the same refusal.
+        if "nesting depth" in str(getattr(exc, "problem", None) or exc):
+            return nested
+        raise
     return None
 
 

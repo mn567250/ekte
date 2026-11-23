@@ -15,7 +15,7 @@ models:
   family: command-a
   context_window_tokens: 128000
   max_output_tokens: 64000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2025-04-01'
   tokenizer: cohere
   modalities:
   - text
@@ -54,7 +54,7 @@ models:
   family: command-a
   context_window_tokens: 256000
   max_output_tokens: 8000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06-01'
   tokenizer: cohere
   modalities:
   - text
@@ -91,7 +91,7 @@ models:
   family: command-a
   context_window_tokens: 256000
   max_output_tokens: 32000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06-01'
   tokenizer: cohere
   modalities:
   - text
@@ -128,7 +128,7 @@ models:
   family: command-a
   context_window_tokens: 16000
   max_output_tokens: 8000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06-01'
   tokenizer: cohere
   modalities:
   - text
@@ -165,7 +165,7 @@ models:
   family: command-a
   context_window_tokens: 128000
   max_output_tokens: 8000
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06-01'
   tokenizer: cohere
   modalities:
   - text
@@ -203,7 +203,7 @@ models:
   family: command-r
   context_window_tokens: -1
   max_output_tokens: -1
-  knowledge_cutoff: null
+  knowledge_cutoff: '2024-06-01'
   tokenizer: cohere
   modalities:
   - text
@@ -370,3 +370,4 @@ sources:
 - https://huggingface.co/CohereLabs/command-a-translate-08-2025
 - https://huggingface.co/CohereLabs/command-a-vision-07-2025
 - https://huggingface.co/CohereLabs/c4ai-command-r7b-12-2024
+- https://docs.cohere.com/docs/command-r7b

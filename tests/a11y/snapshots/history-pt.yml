@@ -108,6 +108,16 @@
     - combobox "Monitor":
       - option "Todos" [selected]
       - option "gpt-4o (4)"
+    - text: Versão de avaliação
+    - combobox "Versão de avaliação":
+      - option "Todos" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Versão da auditoria
+    - combobox "Versão da auditoria":
+      - option "Todos" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Tendências":
       - text: Tendências 2 de no máximo 2 selecionados
       - button "Pontuação" [pressed]
@@ -301,7 +311,7 @@
             - term: Versão
             - definition:
               - code: ekte v<version>
-            - heading "Verificações por dimensão 1 de 10 dimensões executadas" [level=3]
+            - heading "Verificações por dimensão 1 de 11 dimensões executadas" [level=3]
             - button "Conformidade do protocolo"
             - text: A API cumpre a especificação?
             - meter "Conformidade do protocolo A API cumpre a especificação?"
@@ -319,6 +329,8 @@
             - text: O consumo de tokens está inflacionado? Não executado
             - button "Fiabilidade em concorrência"
             - text: Estável sob carga? Não executado
+            - button "Integridade das respostas"
+            - text: A resposta chega inalterada? Não executado
             - button "Segurança do transporte"
             - text: As chaves são tratadas com segurança? Não executado
             - button "Desempenho"
@@ -335,6 +347,7 @@
               - text: O ekte fornece
               - strong: evidências reprodutíveis de desvio de comportamento e de risco
               - text: ", não uma prova jurídica ou criptográfica de fraude. Os intermediários podem encaminhar de forma probabilística; pondere por si o tamanho da amostra, as definições de faturação e a lei local, e nunca acuse publicamente um fornecedor com base numa única execução."
+            - paragraph: "Não é possível reavaliar: este relatório não guardou evidências: não há nada a reproduzir"
             - button "Executar auditoria novamente"
             - button "Agendar como monitor"
             - group "Transferir relatório":
@@ -367,6 +380,7 @@
           - button "Eliminar"
           - button "Cancelar"
   - text: A mostrar 15 de 15 auditorias
+  - button "Reavaliar tudo com esta versão"
   - button "Limpar histórico"
   - status
 - contentinfo:

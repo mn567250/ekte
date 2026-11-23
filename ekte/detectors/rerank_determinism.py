@@ -32,7 +32,7 @@ SCALE = Scale(
 class RerankDeterminismDetector(RerankDetector):
     id = "rerank.determinism"
     name = "Rerank determinism"
-    dimension = Dimension.RELIABILITY
+    dimension = Dimension.INTEGRITY
     cost_hint = 2
 
     async def run(self, ctx: AuditContext) -> DetectorResult:

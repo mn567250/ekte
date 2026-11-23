@@ -15,6 +15,7 @@ from ekte.models import (
     DimensionBreakdown,
     DimensionContribution,
     DimensionScore,
+    DimensionScoreCap,
     Finding,
     ReliabilitySummary,
     RiskLevel,
@@ -22,6 +23,8 @@ from ekte.models import (
     Status,
     StatusOverride,
     Verdict,
+    VerdictRatingLimit,
+    VerdictScoreCap,
 )
 
 # Weights sum to 100. The substitution/truncation-revealing dimensions dominate.
@@ -29,15 +32,16 @@ from ekte.models import (
 # score, so a dimension that did not run (or was not selected) drops out.
 DIMENSION_WEIGHTS: dict[Dimension, float] = {
     Dimension.CONNECTIVITY: 7.0,
-    Dimension.PROTOCOL: 8.0,
+    Dimension.PROTOCOL: 6.0,
     Dimension.CONTEXT_WINDOW: 19.0,
     Dimension.MODEL_IDENTITY: 21.0,
     Dimension.CAPABILITY: 13.0,
     Dimension.STREAMING: 6.0,
     Dimension.BILLING: 8.0,
     Dimension.RELIABILITY: 6.0,
-    Dimension.SECURITY: 6.0,
-    Dimension.PERFORMANCE: 6.0,
+    Dimension.INTEGRITY: 6.0,
+    Dimension.SECURITY: 4.0,
+    Dimension.PERFORMANCE: 4.0,
 }
 
 # Dimensions judged against the claimed model's knowledge-base profile: when
@@ -53,6 +57,9 @@ _PROFILE_DIMENSIONS = (
 # (货不对板): a different model, a smaller context window, missing capabilities
 # or inflated billing. One HIGH finding here makes the risk HIGH.
 _CORE_DIMENSIONS = (*_PROFILE_DIMENSIONS, Dimension.BILLING)
+# Response integrity (tampering, an injected system prompt, a response cache)
+# is neither a profile nor a core dimension: its findings set the risk through
+# their severity alone.
 
 # Pure transport/reachability dimensions. A HIGH here (relay down, throttled,
 # transient 5xx) means we could not assess the model — NOT that the relay serves a
@@ -67,7 +74,7 @@ _EMBEDDING_WEIGHTS: dict[Dimension, float] = {
     Dimension.CONNECTIVITY: 10.0,
     Dimension.MODEL_IDENTITY: 40.0,
     Dimension.CAPABILITY: 15.0,
-    Dimension.RELIABILITY: 15.0,
+    Dimension.INTEGRITY: 15.0,
     Dimension.PERFORMANCE: 20.0,
 }
 
@@ -77,7 +84,7 @@ _RERANK_WEIGHTS: dict[Dimension, float] = {
     Dimension.MODEL_IDENTITY: 30.0,
     Dimension.CAPABILITY: 30.0,
     Dimension.PERFORMANCE: 20.0,
-    Dimension.RELIABILITY: 10.0,
+    Dimension.INTEGRITY: 10.0,
     Dimension.CONNECTIVITY: 10.0,
 }
 
@@ -116,16 +123,49 @@ def _dims_for(table: dict[str, tuple[Dimension, ...]], surface: str | None) -> s
 
 # Transport/advisory checks (by finding check id): how the relay is reached and
 # how it holds up under load, not WHICH model it serves. Plain HTTP, a flaky
-# burst or a slow tail lower their dimension's score and status and are listed
-# as advisories in the verdict, but never escalate the substitution risk ladder
-# — a self-hosted ``http://localhost`` endpoint must not read as "diverges from
-# the claimed model". Integrity tampering and an echoed API key (other SECURITY
-# checks) still escalate.
+# burst, a slow tail, a stream request that failed twice or a relay that does
+# not stream for this model (#255) lower their dimension's score and status and
+# are listed as advisories in the verdict, but never escalate the substitution
+# risk ladder — a self-hosted ``http://localhost`` endpoint must not read as
+# "diverges from the claimed model". An echoed API key (the other SECURITY
+# check) and the INTEGRITY findings (tampering, an injected prompt, a cache)
+# still escalate.
 ADVISORY_CHECKS = frozenset({
     "security.tls",
     "reliability.success_rate",
     "reliability.latency",
+    "streaming.failed",
+    "streaming.unsupported",
 })
+
+# The highest overall score each risk level allows (#247): a relay with strong
+# evidence that it does not deliver what it advertises must not read as a
+# healthy "A". Low, clean and inconclusive risks leave the score as it is; the
+# rating follows from the capped score, so high risk is at best F and medium at
+# best D. The uncapped weighted mean stays in ``Verdict.uncapped_score``.
+RISK_SCORE_CAPS: dict[RiskLevel, float] = {
+    RiskLevel.HIGH: 49.0,
+    RiskLevel.MEDIUM: 69.0,
+}
+
+# Coverage limits the rating (#249): a dimension that ran but could not be
+# judged (its detectors inconclusive or crashed, no score) drops out of the
+# weighted mean, so the score alone would read as if it had passed. Coverage is
+# the judged share of the weight of the dimensions that ran; below
+# ``COVERAGE_UNRATED_BELOW`` there is no rating ("not rated: too little was
+# judged"), below ``COVERAGE_LIMITED_BELOW`` the rating is at most
+# ``COVERAGE_RATING_LIMIT``, and so it is when a core dimension (what the relay
+# advertises: model identity, context window, capability, billing) ran but could
+# not be judged. Dimensions not in the suite or not selected do not count.
+COVERAGE_UNRATED_BELOW = 0.5
+COVERAGE_LIMITED_BELOW = 0.8
+COVERAGE_RATING_LIMIT = "B"
+
+# Findings of these severities cap their dimension's score at the score of
+# their detector (advisory checks and the transport dimensions excepted, as
+# on the risk ladder), so one failed detector is not averaged away by its
+# passing siblings.
+_CAPPING_SEVERITIES = (Severity.HIGH, Severity.CRITICAL)
 
 # Knowledge-base matches too loose to vouch for the profile the audit judged
 # against: the verdict confidence is capped at "low".
@@ -133,6 +173,13 @@ _WEAK_MATCHES = frozenset({"fuzzy"})
 
 # Statuses that count as a dimension having produced a usable result.
 _USABLE_STATUSES = (Status.PASS, Status.WARN, Status.FAIL)
+# Confidence "high" needs this many core dimensions whose detectors compared
+# the target with the trusted baseline (fewer on a surface with fewer core
+# dimensions) (#257).
+HIGH_CONFIDENCE_COMPARED_DIMENSIONS = 2
+# Detector statuses that do not make a dimension count for coverage: it was
+# skipped, or it only reported information (e.g. nothing claimed to check).
+_NOT_ATTEMPTED = (Status.NOT_RUN, Status.INFO)
 
 _SEVERITY_ORDER = [
     Severity.INFO,
@@ -160,6 +207,26 @@ _STATUS_BADNESS = {
 
 def _all_findings(detectors: list[DetectorResult]) -> list[tuple[DetectorResult, Finding]]:
     return [(d, f) for d in detectors for f in d.findings]
+
+
+# The verdict summary and the model-identity dimension reason say so when the
+# identity checks only showed the vendor (issue #251): model_identity ran no
+# model-specific check (evidence ``model_specific_checks: 0``) and, without a
+# baseline or judge, reported ``model_identity.model_specific``.
+VENDOR_ONLY_NOTE = (
+    "The answers fit the claimed model's vendor, but no check could tell that model from "
+    "the vendor's other models and neither a baseline nor a judge was used: the specific "
+    "model was not verified."
+)
+
+
+def _vendor_only(detectors: list[DetectorResult]) -> bool:
+    return any(
+        d.id == "model_identity"
+        and d.evidence.get("model_specific_checks") == 0
+        and any(f.id == "model_identity.model_specific" for f in d.findings)
+        for d in detectors
+    )
 
 
 def is_advisory(finding: Finding) -> bool:
@@ -201,10 +268,14 @@ def build_dimensions(
     """Score every dimension of ``surface``. ``selected`` (a custom suite's
     dimensions) marks the rest as not selected rather than not run."""
     dimensions: list[DimensionScore] = []
+    infra_dims = _dims_for(_SURFACE_INFRA_DIMENSIONS, surface)
     for dim, weight in weights_for(surface).items():
         members = [d for d in detectors if d.dimension == dim]
         scored = [d.score for d in members if d.score is not None]
         score = round(sum(scored) / len(scored), 1) if scored else None
+        score_cap = None if dim in infra_dims else _dimension_cap(members, score)
+        if score_cap is not None:
+            score = score_cap.cap
 
         # Status reflects what the detectors themselves concluded — we do NOT
         # re-derive FAIL purely from a soft score, which would over-escalate.
@@ -236,6 +307,7 @@ def build_dimensions(
             ],
             detector_status=detector_status,
             status_override=override,
+            score_cap=score_cap,
         )
 
         if selected is not None and dim.value not in selected:
@@ -250,6 +322,11 @@ def build_dimensions(
                 f for det in members for f in det.findings
                 if f.status in (Status.FAIL, Status.WARN)
             ]))[:200] or "All checks passed."
+            if dim == Dimension.MODEL_IDENTITY and _vendor_only(members):
+                reason = (
+                    VENDOR_ONLY_NOTE if reason == "All checks passed."
+                    else f"{reason}; {VENDOR_ONLY_NOTE}"
+                )
         dimensions.append(
             DimensionScore(
                 dimension=dim,
@@ -261,6 +338,86 @@ def build_dimensions(
             )
         )
     return dimensions
+
+
+def _dimension_cap(
+    members: list[DetectorResult], score: float | None
+) -> DimensionScoreCap | None:
+    """The cap on a dimension whose mean ``score`` is above the score of a
+    detector with a HIGH/CRITICAL non-advisory finding (the lowest such
+    detector caps it); None when no such detector scores below the mean."""
+    if score is None:
+        return None
+    capping = []
+    for det in members:
+        ids = [
+            f.id for f in det.findings
+            if f.severity in _CAPPING_SEVERITIES and not is_advisory(f)
+        ]
+        if det.score is not None and ids:
+            capping.append((det.score, det, list(dict.fromkeys(ids))))
+    if not capping:
+        return None
+    cap, det, ids = min(capping, key=lambda c: c[0])
+    cap = round(cap, 1)
+    if cap >= score:
+        return None
+    return DimensionScoreCap(detector=det.id, findings=ids, cap=cap, uncapped_score=score)
+
+
+def coverage(
+    dimensions: list[DimensionScore], *, selected: list[str] | None = None
+) -> tuple[float | None, list[Dimension]]:
+    """The judged share of the weight of the dimensions that ran, and the
+    dimensions that ran but were not judged (scoring order). A dimension ran
+    when it has a score or a detector that was neither skipped nor only
+    informational; it was judged when it has a score or its detectors reached
+    a usable status. Not selected / not in the suite does not count; the share
+    is None when no dimension ran."""
+    ran = judged = 0.0
+    missing: list[Dimension] = []
+    for d in dimensions:
+        if selected is not None and d.dimension.value not in selected:
+            continue
+        statuses = [c.status for c in d.breakdown.detectors] if d.breakdown else []
+        if d.score is None and all(st in _NOT_ATTEMPTED for st in statuses):
+            continue
+        ran += d.weight
+        detector_status = d.breakdown.detector_status if d.breakdown else d.status
+        if d.score is not None or detector_status in _USABLE_STATUSES:
+            judged += d.weight
+        else:
+            missing.append(d.dimension)
+    return (round(judged / ran, 4) if ran else None), missing
+
+
+def coverage_pct(share: float) -> int:
+    """A coverage share as a whole percentage, rounded down so that a share
+    below a threshold never reads as the threshold."""
+    return int(round(share * 100, 6) // 1)
+
+
+def _rating_limit(
+    unlimited: str | None, share: float | None, core_missing: bool
+) -> VerdictRatingLimit | None:
+    """The limit coverage puts on ``unlimited`` (None: none applies)."""
+    if unlimited is None or share is None:
+        return None
+    if share < COVERAGE_UNRATED_BELOW:
+        return VerdictRatingLimit(reason="low_coverage", limit=None, unlimited_rating=unlimited)
+    reason = (
+        "low_coverage" if share < COVERAGE_LIMITED_BELOW
+        else "core_not_judged" if core_missing else None
+    )
+    if reason is None or _grade_index(unlimited) <= _grade_index(COVERAGE_RATING_LIMIT):
+        return None
+    return VerdictRatingLimit(
+        reason=reason, limit=COVERAGE_RATING_LIMIT, unlimited_rating=unlimited
+    )
+
+
+def _grade_index(letter: str) -> int:
+    return GRADE_SCALE.index(letter) if letter in GRADE_SCALE else -1
 
 
 def overall_score(dimensions: list[DimensionScore]) -> float | None:
@@ -309,7 +466,7 @@ def build_verdict(
     profile (``exact``/``alias``/``fuzzy``…); a fuzzy match caps the
     confidence at "low". ``surface`` picks the profile / core / infra
     dimension sets."""
-    score = overall_score(dimensions)
+    uncapped = overall_score(dimensions)
     pairs = _all_findings(detectors)
     weak_match = profile_matched and match_confidence in _WEAK_MATCHES
 
@@ -343,9 +500,6 @@ def build_verdict(
         if d.dimension not in infra_dims and d.status in _USABLE_STATUSES
     }
     profile_dims = _dims_for(_SURFACE_PROFILE_DIMENSIONS, surface)
-    judge_effective = any(
-        d.id == "quality_judge" and d.status in _USABLE_STATUSES for d in detectors
-    )
 
     # --- risk classification: driven by FINDING SEVERITY, not score alone --- #
     # ekte only reaches HIGH on hard, high-severity evidence — a single soft
@@ -358,10 +512,13 @@ def build_verdict(
         # Peripheral findings are still carried in the report as advisories.
         risk = RiskLevel.INCONCLUSIVE
         causes: list[tuple[DetectorResult, Finding]] = []
-    elif critical or core_high or len(high) >= 2:
+    elif critical or core_high or len({d.id for d, _ in high}) >= 2:
+        # Two HIGH findings outside the core make the risk high only when they
+        # come from two different detectors (#255): one detector repeating
+        # itself is one piece of evidence. Advisories never reach ``high``.
         risk = RiskLevel.HIGH
         causes = critical + core_high or high
-    elif high or core_medium:  # exactly one high-severity finding outside the core dimensions
+    elif high or core_medium:  # high-severity findings of one detector outside the core
         risk = RiskLevel.MEDIUM
         causes = high + core_medium
     elif medium:
@@ -372,22 +529,47 @@ def build_verdict(
         causes = []
     drivers = _in_order({d.dimension for d, _ in causes})
 
+    # --- the risk caps the score (#247) ------------------------------------ #
+    score = uncapped
+    score_cap = None
+    limit = RISK_SCORE_CAPS.get(risk)
+    if uncapped is not None and limit is not None and uncapped > limit:
+        score = limit
+        score_cap = VerdictScoreCap(
+            risk_level=risk, cap=limit, findings=list(dict.fromkeys(f.id for _, f in causes))
+        )
+
+    # --- coverage limits the rating (#249) --------------------------------- #
+    share, missing = coverage(dimensions, selected=selected)
+    rating_limit = _rating_limit(rating(score), share, bool(set(missing) & core_dims))
+    final_rating = rating(score) if rating_limit is None else rating_limit.limit
+
     # --- confidence -------------------------------------------------------- #
     core_attempted = attempted & core_dims
     core_checked = checked & core_dims
+    # Core dimensions with evidence measured against the trusted baseline: a
+    # detector that actually compared with a usable baseline answer and has a
+    # usable status (#257). Configuring a baseline, or a judge on its own, is
+    # not evidence; a judge verdict the baseline corroborated counts for model
+    # identity through ``quality_judge.baseline_compared``.
+    core_compared = {
+        d.dimension
+        for d in detectors
+        if d.dimension in core_dims and d.baseline_compared and d.status in _USABLE_STATUSES
+    }
     if attempted & profile_dims and (not profile_matched or weak_match):
         # Unprofiled, or a fuzzy match whose profile may not be the model's.
         confidence = "low"
-    elif used_baseline and core_checked and core_checked == core_attempted:
+    elif (
+        used_baseline
+        and core_checked == core_attempted
+        and len(core_compared) >= min(HIGH_CONFIDENCE_COMPARED_DIMENSIONS, len(core_dims))
+    ):
         confidence = "high"
     elif len(core_checked) >= 2 or (not core_attempted and len(checked) >= 2):
         confidence = "medium"
     else:
         confidence = "low"
-    # Only let an *effective* judge (one that produced a usable verdict, not merely a
-    # constructed client) lift confidence.
-    if judge_effective and confidence == "medium":
-        confidence = "high"
 
     identity_checked = Dimension.MODEL_IDENTITY in checked
     headline = _headline(risk, confidence, drivers, identity_checked=identity_checked)
@@ -400,13 +582,19 @@ def build_verdict(
         selected=selected,
         weak_match=weak_match and profile_used,
         advisories=bool(advisories),
+        score_cap=score_cap,
+        uncapped=uncapped,
+        vendor_only=_vendor_only(detectors) and not used_baseline and not used_judge,
+        coverage=share,
+        not_judged=missing,
+        rating_limit=rating_limit,
     )
     # Substitution findings first; transport/reliability advisories after them.
     key = _titles([f for _, f in critical + high + medium] + advisories)[:6]
 
     return Verdict(
         overall_score=score,
-        rating=rating(score),
+        rating=final_rating,
         risk_level=risk,
         headline=headline,
         confidence=confidence,
@@ -414,6 +602,11 @@ def build_verdict(
         key_findings=key,
         drivers=[d.value for d in drivers],
         checked=[d.value for d in _in_order(checked)],
+        uncapped_score=uncapped,
+        score_cap=score_cap,
+        coverage=share,
+        not_judged=[d.value for d in missing],
+        rating_limit=rating_limit,
     )
 
 
@@ -432,6 +625,7 @@ DIMENSION_NAMES: dict[Dimension, str] = {
     Dimension.STREAMING: "Streaming authenticity",
     Dimension.BILLING: "Billing & usage",
     Dimension.RELIABILITY: "Concurrency reliability",
+    Dimension.INTEGRITY: "Response integrity",
     Dimension.SECURITY: "Transport security",
     Dimension.PERFORMANCE: "Performance",
 }
@@ -482,10 +676,38 @@ def _summary(
     selected: list[str] | None = None,
     weak_match: bool = False,
     advisories: bool = False,
+    score_cap: VerdictScoreCap | None = None,
+    uncapped: float | None = None,
+    vendor_only: bool = False,
+    coverage: float | None = None,
+    not_judged: list[Dimension] | None = None,
+    rating_limit: VerdictRatingLimit | None = None,
 ) -> str:
     bits: list[str] = []
     if score is not None:
         bits.append(f"Overall health score {score}/100.")
+    if score_cap is not None:
+        bits.append(
+            f"Score capped at {score_cap.cap:g} because the risk level is "
+            f"{score_cap.risk_level.value}; the weighted mean of the dimensions is {uncapped}."
+        )
+    if coverage is not None and not_judged:
+        names = ", ".join(DIMENSION_NAMES[d] for d in not_judged)
+        bits.append(f"Coverage {coverage_pct(coverage)}%: {names} ran but could not be judged.")
+    if rating_limit is not None and rating_limit.limit is None:
+        bits.append(
+            "Not rated: too little was judged "
+            f"(coverage below {coverage_pct(COVERAGE_UNRATED_BELOW)}%)."
+        )
+    elif rating_limit is not None and rating_limit.reason == "low_coverage":
+        bits.append(
+            f"Rating limited to {rating_limit.limit} because coverage is below "
+            f"{coverage_pct(COVERAGE_LIMITED_BELOW)}%."
+        )
+    elif rating_limit is not None:
+        bits.append(
+            f"Rating limited to {rating_limit.limit} because a core dimension could not be judged."
+        )
     if selected is not None:
         bits.append(f"Custom run: {scored} of {len(selected)} selected dimensions scored.")
         if Dimension.MODEL_IDENTITY.value not in selected:
@@ -514,10 +736,13 @@ def _summary(
             "The claimed model only fuzzily matched a knowledge-base profile, so "
             "confidence is capped at low — pass the exact model id or add a KB alias."
         )
+    if vendor_only:
+        bits.append(VENDOR_ONLY_NOTE)
     if advisories:
         bits.append(
-            "Transport and reliability findings (plain HTTP, failures or slowness under "
-            "load) are advisories: they lower the score but not the substitution risk."
+            "Transport, reliability and streaming-support findings (plain HTTP, failures "
+            "or slowness under load, a stream that failed or is not supported) are "
+            "advisories: they lower the score but not the substitution risk."
         )
     if not used_baseline and risk in (RiskLevel.MEDIUM, RiskLevel.HIGH):
         bits.append("Run `ekte compare` against a trusted baseline to strengthen the verdict.")

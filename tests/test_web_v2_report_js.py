@@ -84,11 +84,12 @@ def test_report_severity_dots_meters_and_summary(tmp_path):
         assert glyph == out["icons"][glyph_for[colour]], colour
     assert "Severity: High." in html and "Severity: Medium." in html
     # dimensions: meters for those that ran; every dimension listed and
-    # expandable, the fixture's missing performance one included as not run
+    # expandable; the fixture predates the performance and integrity dimensions,
+    # which are listed as not run
     assert html.count('role="meter"') == 8
     assert 'aria-valuenow="93"' in html or 'aria-valuenow="92"' in html
-    assert "8 of 10 dimensions run" in html and "findings" in html
-    assert html.count('class="dtog"') == 10 and html.count('<div class="zr-dimw off">') == 2
+    assert "8 of 11 dimensions run" in html and "findings" in html
+    assert html.count('class="dtog"') == 11 and html.count('<div class="zr-dimw off">') == 3
     assert "Context window" in html and "Performance" in html
     # the risk pill uses the shared vocabulary; the summary drops score + disclaimer
     assert "Likely substituted" in html
@@ -253,7 +254,7 @@ async def test_dimension_rows_expand_into_scoring_details(tmp_path):
     html = _render(tmp_path, "en", report)["html"]
     # one disclosure per dimension (run or not), collapsed, controlling its panel
     toggles = re.findall(r'<button type="button" class="dtog" aria-expanded="false" aria-controls="(zr-dd-\d+)">', html)
-    assert len(toggles) == 10 and all(f'id="{t}" role="region"' in html for t in toggles)
+    assert len(toggles) == 11 and all(f'id="{t}" role="region"' in html for t in toggles)
     assert html.count('role="meter"') == 1
     panel = _text(_panel(html))
     assert "Score: mean of 2 detectors, equal weight." in panel
@@ -309,7 +310,7 @@ def test_old_reports_still_expand(tmp_path):
     # reports from before the breakdown/scale existed: detectors and findings
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     html = _render(tmp_path, "en", report)["html"]
-    assert html.count('class="dtog"') == 10
+    assert html.count('class="dtog"') == 11
     assert "Score: mean of" in html or "Score from one detector." in html
     assert "Status: the worst status" not in html  # needs the breakdown
     assert not re.search(r"\d pts\b", _text(html))  # no points without a published scale
@@ -810,3 +811,105 @@ def test_report_without_warnings_has_no_warnings_section(tmp_path):
             report["warnings"] = warnings
         html = _render(tmp_path, "en", report)["html"]
         assert "zr-warns" not in html and "<h3>Warnings" not in html
+
+
+def _capped_report() -> dict:
+    # a tampering relay (#247): the integrity dimension and the overall score are capped
+    from tests.test_scoring import _tampered
+
+    return json.loads(_tampered().model_dump_json())
+
+
+@needs_node
+def test_report_shows_the_score_caps(tmp_path):
+    report = _capped_report()
+    html = _render(tmp_path, "en", report)["html"]
+    text = " ".join(_text(html).split())
+    # the overall cap under the tiles, with the weighted mean and the finding that set the risk
+    assert ("Score capped at 49 because the risk level is “Likely substituted” (weighted mean of "
+            "the dimensions: 94.6). Findings that set the risk: integrity.tampering title.") in text
+    # the summary drops its own cap sentence (shown under the tiles)
+    summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
+    assert "capped" not in summary and "Findings: 1 critical." in summary
+    # the dimension details name the capping detector and finding
+    assert ("Mean 70, capped at 10, the score of integrity, by its high or critical findings: "
+            "integrity.tampering title.") in text
+
+
+@needs_node
+@pytest.mark.parametrize(("lang", "words"), [
+    ("de", ("Score auf 49 begrenzt", "Mittelwert 70, begrenzt auf 10")),
+    ("zh", ("综合分上限为 49", "平均分 70，上限为 10")),
+])
+def test_score_caps_are_translated(tmp_path, lang, words):
+    html = _render(tmp_path, lang, _capped_report())["html"]
+    text = " ".join(_text(html).split())
+    for w in words:
+        assert w in text, (lang, w)
+    assert "capped" not in text and "weighted mean" not in text
+    summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
+    assert "49" not in summary
+
+
+def test_backend_cap_sentence_is_translated():
+    # the verdict summary's cap sentence, translated as backend text (locales.js pattern)
+    from ekte import i18n
+
+    sentence = "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}."
+    for code in ("de", "es", "fr", "it", "nb", "pt", "zh"):
+        tr = i18n.ui(code, sentence)
+        assert tr != sentence and all(p in tr for p in ("{1}", "{2}", "{3}")), code
+
+
+def _unjudged_report(only=None) -> dict:
+    # coverage (#249): context window ran but could not be judged, or only `only` was judged
+    from tests.test_scoring import _unjudged_report as build
+
+    return json.loads(build(only).model_dump_json())
+
+
+@needs_node
+def test_report_shows_coverage_and_the_rating_limit(tmp_path):
+    html = _render(tmp_path, "en", _unjudged_report())["html"]
+    text = " ".join(_text(html).split())
+    # the coverage tile next to the score, and the limit under the score
+    assert "drops out of the score. 81 %" in text
+    assert "(Rating B) Rating at most B" in text
+    assert "Coverage 81%: Context window ran but could not be judged." in text
+
+
+@needs_node
+def test_report_says_not_rated(tmp_path):
+    from ekte.models import Dimension
+
+    report = _unjudged_report((Dimension.MODEL_IDENTITY, Dimension.SECURITY))
+    html = _render(tmp_path, "en", report)["html"]
+    text = " ".join(_text(html).split())
+    assert "Not rated: too little was judged" in text and "Coverage 25" in text
+
+
+@needs_node
+@pytest.mark.parametrize(("lang", "words"), [
+    ("de", ("Abdeckung", "Note höchstens B", "ausgeführt, aber nicht beurteilbar: Kontextfenster")),
+    ("zh", ("覆盖率", "评级最高为 B", "评级上限为 B")),
+])
+def test_coverage_is_translated(tmp_path, lang, words):
+    text = " ".join(_text(_render(tmp_path, lang, _unjudged_report())["html"]).split())
+    for w in words:
+        assert w in text, (lang, w, text)
+    assert "could not be judged" not in text
+
+
+def test_backend_coverage_sentences_are_translated():
+    from ekte import i18n
+
+    for sentence in (
+        "Coverage {1}%: {2} ran but could not be judged.",
+        "Not rated: too little was judged (coverage below {1}%).",
+        "Rating limited to {1} because coverage is below {2}%.",
+        "Rating limited to {1} because a core dimension could not be judged.",
+    ):
+        holders = re.findall(r"\{\d\}", sentence)
+        for code in ("de", "es", "fr", "it", "nb", "pt", "zh"):
+            tr = i18n.ui(code, sentence)
+            assert tr != sentence and all(p in tr for p in holders), (code, sentence)

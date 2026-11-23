@@ -88,8 +88,26 @@ par, og hele kjøringen, kan også lastes ned som HAR eller som et curl-skript
 som sender forespørslene på nytt (`EKTE_API_KEY` gir nøkkelen).
 
 **Vurder på nytt med denne versjonen** på en lagret kjøring med bevis spiller
-den av på samme måte og lagrer resultatet som en ny kjøring i **Historikk**;
-rapporten sier hvilken kjøring som ble spilt av.
+den av på samme måte og erstatter rapporten til kjøringen: kjøringen beholder
+id, tid og overvåking, og rapporten sier hvilken ekte-versjon som registrerte
+den og hvilken som vurderte den. **Vurder alle på nytt med denne versjonen**
+(under listen) gjør dette, én etter én, for hver kjøring en annen ekte-versjon
+har vurdert. En kjøring uten brukbar bevisfil vurderes ikke på nytt: den
+beholder vurderingen sin. Ved første oppstart etter en oppgradering vurderer
+`ekte serve` kjøringene en eldre versjon har vurdert på nytt i bakgrunnen
+(`EKTE_AUTO_RESCORE=0` slår det av); et varsel over listen viser hvor langt
+den har kommet.
+
+**Revisjons- og vurderingsversjon.** En kjøring som er vurdert på nytt,
+oppgir to ekte-versjoner: den revisjonen kjørte med, og den som vurderte den.
+I **Historikk** står det for eksempel «ekte 0.33.1 · ny vurdering med 0.35.0»
+ved en slik kjøring, fulgt av resultatet før den nye vurderingen. En kjøring
+som en samlet ny vurdering ikke kunne vurdere på nytt, oppgir hvorfor (for
+eksempel ingen bevisfil), og rapporten forklarer hvorfor **Vurder på nytt med
+denne versjonen** mangler. **Historikk** og **Analyse** filtrerer på begge
+versjonene (**Vurderingsversjon**, **Revisjonsversjon**), og rangeringen i
+**Analyse** sorterer også etter dem, med hvor mange kjøringer av hver versjon
+en annen versjon har vurdert på nytt.
 
 **Analyse.** `/analytics` gjør den lokale historikken om til sammenligninger:
 nøkkeltall for valgt periode (kjøringer, medianscore, andel høy risiko,

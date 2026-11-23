@@ -29,7 +29,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--suite custom`; i en konfigurasjonsfil bruker du
 `run.dimensions: [protocol, performance]`. Dimensjonene er `connectivity`,
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
-`billing`, `reliability`, `security` og `performance`. I nettgrensesnittet åpner
+`billing`, `reliability`, `integrity`, `security` og `performance`. I nettgrensesnittet åpner
 knappen for testsettet `custom` det samme valget (**Dimensjoner som skal
 kjøres**) på revisjonssiden og på overvåkingene.
 
@@ -61,5 +61,8 @@ referanse** i nettgrensesnittet) kjører de samme probene mot en pålitelig
 referanse for den oppgitte modellen samtidig. Det er den sterkeste veien til
 bekreftelse: identitetssvar, avviste forespørselsparametere, kanarier for
 manipulering og ytelse vurderes side om side, og bare en referanse lar
-konklusjonens sikkerhet nå *høy*. Uten `--judge-base-url` bruker
-sammenligningsmodus referansen som dommer.
+konklusjonens sikkerhet nå *høy*: minst to kjernedimensjoner
+(modellidentitet, kontekstvindu, påståtte egenskaper, fakturering) må faktisk
+være sammenlignet med et brukbart svar fra referansen; en dommer alene klarer
+det aldri (se [Sikkerhet i konklusjonen](methodology.md#sikkerhet-i-konklusjonen)).
+Uten `--judge-base-url` bruker sammenligningsmodus referansen som dommer.

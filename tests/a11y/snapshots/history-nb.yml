@@ -108,6 +108,16 @@
     - combobox "Overvåking":
       - option "Alle" [selected]
       - option "gpt-4o (4)"
+    - text: Vurderingsversjon
+    - combobox "Vurderingsversjon":
+      - option "Alle" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Revisjonsversjon
+    - combobox "Revisjonsversjon":
+      - option "Alle" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Trender":
       - text: Trender 2 av maks 2 valgt
       - button "Score" [pressed]
@@ -301,7 +311,7 @@
             - term: Versjon
             - definition:
               - code: ekte v<version>
-            - heading "Kontroller per dimensjon 1 av 10 dimensjoner kjørt" [level=3]
+            - heading "Kontroller per dimensjon 1 av 11 dimensjoner kjørt" [level=3]
             - button "Protokollsamsvar"
             - text: Følger API-et spesifikasjonen?
             - meter "Protokollsamsvar Følger API-et spesifikasjonen?"
@@ -319,6 +329,8 @@
             - text: Er tokenforbruket blåst opp? Ikke kjørt
             - button "Pålitelighet ved samtidighet"
             - text: Stabil under last? Ikke kjørt
+            - button "Svarintegritet"
+            - text: Er svaret uendret? Ikke kjørt
             - button "Transportsikkerhet"
             - text: Håndteres nøkler trygt? Ikke kjørt
             - button "Ytelse"
@@ -335,6 +347,7 @@
               - text: ekte gir
               - strong: reproduserbare bevis på avvikende atferd og risiko
               - text: ", ikke juridiske eller kryptografiske bevis på svindel. Releer kan rute tilfeldig; vurder selv utvalgsstørrelse, faktureringsinnstillinger og lokal lovgivning, og anklag aldri en leverandør offentlig på grunnlag av én enkelt kjøring."
+            - paragraph: "Kan ikke vurderes på nytt: denne rapporten tok ikke vare på bevis: det er ingenting å spille av"
             - button "Kjør revisjonen på nytt"
             - button "Planlegg som overvåking"
             - group "Last ned rapport":
@@ -367,6 +380,7 @@
           - button "Slett"
           - button "Avbryt"
   - text: Viser 15 av 15 revisjoner
+  - button "Vurder alle på nytt med denne versjonen"
   - button "Tøm historikken"
   - status
 - contentinfo:

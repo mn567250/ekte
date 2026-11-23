@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "ekte {audit} · re-scored with {scoring}": "ekte {audit} · neu bewertet mit {scoring}",
+  "before the re-score: {verdict}": "vor der Neubewertung: {verdict}",
+  "cannot be re-scored: {reason}": "kann nicht neu bewertet werden: {reason}",
+  "Cannot be re-scored: {reason}": "Kann nicht neu bewertet werden: {reason}",
+  "Cannot be re-scored with ekte {v}: {reason}": "Kann mit ekte {v} nicht neu bewertet werden: {reason}",
+  "score {v}": "Score {v}",
+  "grade {v}": "Note {v}",
+  "risk: {v}": "Risiko: {v}",
+  "Re-scored on": "Neu bewertet am",
+  "Verdict before the re-score": "Ergebnis vor der Neubewertung",
+  "Scoring version": "Bewertungsversion",
+  "Audit version": "Prüfversion",
+  "scoring version": "Bewertungsversion",
+  "audit version": "Prüfversion",
+  "this report kept no evidence: there is nothing to replay": "dieser Bericht hat keine Belege aufbewahrt: es gibt nichts wiederzugeben",
+  "the evidence file is not the one the report names (its SHA-256 differs)": "die Belegdatei ist nicht die, die der Bericht nennt (ihr SHA-256 weicht ab)",
+  "this evidence file does not record the run's options; it cannot be replayed": "diese Belegdatei enthält die Optionen des Laufs nicht; sie kann nicht wiedergegeben werden",
+  "this evidence file names no target": "diese Belegdatei nennt kein Ziel",
+  "the evidence file cannot be read": "die Belegdatei kann nicht gelesen werden",
+  "this evidence file has a schema version this ekte cannot read; update ekte": "diese Belegdatei hat eine Schemaversion, die dieses ekte nicht lesen kann; aktualisieren Sie ekte"
+ }
+}

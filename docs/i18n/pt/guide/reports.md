@@ -11,7 +11,7 @@ por omissão); `--format json|md|html|pdf` escreve um único formato. `--json` e
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -25,6 +25,11 @@ constatações principais com recomendações, as pontuações por dimensão e o
 **Dimension details**, as constatações de cada detetor com as suas evidências, a
 secção de desempenho, o perfil da base de conhecimento usado e os idiomas de
 sonda. O texto controlado pelo relay é ocultado e escapado antes de ser escrito.
+
+Ao lado da pontuação, cada relatório mostra a **cobertura**: a parcela do peso
+das dimensões executadas que pôde ser avaliada. O resumo do veredito nomeia a
+dimensão executada que não pôde ser avaliada, e uma cobertura baixa limita a
+nota ou omite-a («sem classificação: foi avaliado muito pouco»); ver [Pontuação global, nota e pesos](methodology.md#pontuação-global-nota-e-pesos).
 
 ## Ficheiros de evidências
 
@@ -55,13 +60,26 @@ pedidos.
 `ekte rescore` reavalia uma execução registada com a versão do ekte
 instalada: repete a mesma auditoria, mas responde a cada pedido com a resposta
 registada (ao ritmo registado) em vez de contactar o intermediário, para que as
-verificações melhoradas se apliquem a execuções antigas. Aceita o id de uma
-execução guardada (e guarda o resultado como nova execução, exceto com
-`--no-save`) ou um ficheiro de relatório com `--evidence PATH`. Uma
+verificações melhoradas se apliquem a execuções antigas. Aceita o id de uma execução guardada ou um ficheiro de relatório com
+`--evidence PATH`. Com `--replace` o resultado substitui a execução guardada
+(mesmo id, hora e monitor); sem essa opção continua a ser guardado como nova
+execução, o que está obsoleto e mostra um aviso (uma versão posterior do ekte
+substituirá por omissão; `--no-save` não guarda nada). Uma
 verificação que agora pergunta algo que a execução registada nunca perguntou
 fica inconclusiva em vez de ser pontuada com base num palpite; o campo
 `rescored_from` do relatório indica quantos pedidos foram reproduzidos e que
 verificações não tinham nenhum.
+
+`ekte rescore --all` reavalia, uma após outra, todas as execuções guardadas
+avaliadas por outra versão do ekte, substitui cada uma e mostra o veredito
+antes e depois. Uma execução sem um ficheiro de evidências utilizável não é
+reavaliada: mantém o veredito e é ignorada com o motivo. O `ekte serve` faz o
+mesmo em segundo plano no primeiro arranque após uma atualização (ver
+[Interface web](web-ui.md)).
+
+As exportações em Markdown, HTML e PDF de um relatório reavaliado indicam
+as duas versões, quando foi reavaliado e o veredito anterior; o veredito
+`--compact` traz essas informações como `rescored`.
 
 As chaves e os cabeçalhos sensíveis são removidos antes de qualquer escrita
 (ver [Privacidade](privacy.md)). Cada linha corresponde a

@@ -15,10 +15,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
-REPORT_SCHEMA_VERSION = "1.4"
-WEBHOOK_SCHEMA_VERSION = "1.0"
+REPORT_SCHEMA_VERSION = "1.6"
+WEBHOOK_SCHEMA_VERSION = "1.1"
 # Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
-EVIDENCE_SCHEMA_VERSION = "1.1"
+EVIDENCE_SCHEMA_VERSION = "1.2"
 
 
 # --------------------------------------------------------------------------- #
@@ -55,6 +55,7 @@ class Dimension(str, Enum):  # noqa: UP042 (StrEnum would change str()/format())
     STREAMING = "streaming"
     BILLING = "billing"
     RELIABILITY = "reliability"
+    INTEGRITY = "integrity"
     SECURITY = "security"
     PERFORMANCE = "performance"
 
@@ -287,6 +288,10 @@ class DetectorResult(BaseModel):
     error: str | None = None
     # True when this detector required an LLM judge to produce its verdict.
     used_judge: bool = False
+    # True when this detector actually compared the target with a usable answer
+    # of the trusted baseline (compare mode). Configuring a baseline is not
+    # enough: only these comparisons let the verdict confidence reach "high".
+    baseline_compared: bool = False
     # How ``score`` was derived; None for detectors that do not publish it yet.
     scoring: DetectorScoring | None = None
 
@@ -324,6 +329,18 @@ class StatusOverride(BaseModel):
     findings: list[str] = Field(default_factory=list)  # ids of those findings
 
 
+class DimensionScoreCap(BaseModel):
+    """Why a dimension scores below the mean of its detectors: a detector with
+    a HIGH/CRITICAL (non-advisory) finding caps the dimension at its score."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    detector: str  # DetectorResult.id of the capping detector
+    findings: list[str] = Field(default_factory=list)  # its HIGH/CRITICAL finding ids
+    cap: float  # the capping detector's score, now the dimension score
+    uncapped_score: float  # the equal-weight mean before the cap
+
+
 class DimensionBreakdown(BaseModel):
     """How a dimension's score and status were derived from its detectors."""
 
@@ -335,6 +352,9 @@ class DimensionBreakdown(BaseModel):
     # Worst status the detectors concluded, before any severity override.
     detector_status: Status = Status.NOT_RUN
     status_override: StatusOverride | None = None
+    # Set when a serious finding capped the score below the mean (report
+    # schema 1.6; absent in older reports and when no cap applied).
+    score_cap: DimensionScoreCap | None = None
 
 
 class DimensionScore(BaseModel):
@@ -638,6 +658,29 @@ class RunOutcomes(BaseModel):
     impaired_rate: float | None = None
 
 
+class VerdictScoreCap(BaseModel):
+    """Why the overall score is below the weighted mean of the dimensions:
+    the risk level caps it (``RISK_SCORE_CAPS`` in ekte/scoring.py)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    risk_level: RiskLevel  # the risk level whose cap applied
+    cap: float  # the highest overall score that risk level allows
+    findings: list[str] = Field(default_factory=list)  # ids of the findings that set the risk
+
+
+class VerdictRatingLimit(BaseModel):
+    """Why the rating is lower than the overall score gives, or withheld:
+    too little of the audit was judged (``Verdict.coverage``), or a core
+    dimension ran but could not be judged (``COVERAGE_*`` in ekte/scoring.py)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str  # "low_coverage" | "core_not_judged"
+    limit: str | None = None  # the best rating allowed; None: no rating (withheld)
+    unlimited_rating: str | None = None  # the rating the overall score alone gives
+
+
 class Verdict(BaseModel):
     """The headline judgement a user reads first."""
 
@@ -655,6 +698,20 @@ class Verdict(BaseModel):
     # they were recorded.
     drivers: list[str] = Field(default_factory=list)
     checked: list[str] = Field(default_factory=list)
+    # The weighted mean of the dimension scores before the risk cap, and the
+    # cap when it lowered ``overall_score`` (report schema 1.6; None in older
+    # reports, ``score_cap`` also None when no cap applied).
+    uncapped_score: float | None = None
+    score_cap: VerdictScoreCap | None = None
+    # Coverage: the share (0..1) of the dimension weight that was judged, over
+    # the dimensions that ran (not selected / not in the suite / informational
+    # only do not count); ``not_judged`` lists the dimensions that ran but
+    # produced no usable result, and ``rating_limit`` says when coverage
+    # lowered or withheld ``rating`` (report schema 1.6; None / empty in older
+    # reports, ``coverage`` also None when no dimension ran).
+    coverage: float | None = None
+    not_judged: list[str] = Field(default_factory=list)
+    rating_limit: VerdictRatingLimit | None = None
 
 
 class RedactedTarget(BaseModel):
@@ -749,19 +806,36 @@ class EvidenceRef(BaseModel):
     complete: bool = True
 
 
+class RescoredVerdict(BaseModel):
+    """The verdict a re-scored report had before its latest re-score."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    risk_level: str | None = None
+    overall_score: float | None = None
+    rating: str | None = None
+
+
 class RescoreRef(BaseModel):
     """What a re-scored report was replayed from (see :mod:`ekte.replay`)."""
 
     model_config = ConfigDict(extra="forbid")
 
     # The recorded run: its evidence file's run id and hash, and the ekte
-    # version and time of the original report.
+    # version and time of the original recording. A report re-scored again
+    # keeps these from its first re-score: they always name the audit itself,
+    # never an earlier scoring.
     run_id: str
     evidence_sha256: str
     tool_version: str | None = None
     generated_at: str | None = None
-    # The original report's history id, when it was re-scored from history.
+    # The history id of the run, when it was re-scored from history (a
+    # re-score replaces that run in place, so this is its own id).
     report_id: int | None = None
+    # When this scoring was made (the report's own generated_at), and the
+    # verdict the report had before it (report schema 1.6).
+    rescored_at: str | None = None
+    previous_verdict: RescoredVerdict | None = None
     # Requests answered from the file, requests nothing in the file answered
     # (per detector; such a detector reads inconclusive), recorded exchanges
     # no request asked for.
@@ -832,3 +906,7 @@ class AuditReport(BaseModel):
     # Set when this report re-scores a recorded run with this ekte version,
     # replaying its evidence instead of contacting the relay.
     rescored_from: RescoreRef | None = None
+    # The run's random value: every needle, canary and cache prefix the run
+    # sent is derived from it, so two runs never send the same probes. A
+    # replay reuses it. None in reports from before it existed (fixed seeds).
+    run_nonce: str | None = None

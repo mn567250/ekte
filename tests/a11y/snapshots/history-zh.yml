@@ -108,6 +108,16 @@
     - combobox "监控":
       - option "全部" [selected]
       - option "gpt-4o (4)"
+    - text: 评分版本
+    - combobox "评分版本":
+      - option "全部" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: 检测版本
+    - combobox "检测版本":
+      - option "全部" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "趋势图":
       - text: 趋势图 已选 2 个，最多 2 个
       - button "健康分" [pressed]
@@ -301,7 +311,7 @@
             - term: 版本
             - definition:
               - code: ekte v<version>
-            - heading "逐项体检 1 / 10 个维度已运行" [level=3]
+            - heading "逐项体检 1 / 11 个维度已运行" [level=3]
             - button "协议兼容"
             - text: 接口是否规范？
             - meter "协议兼容 接口是否规范？"
@@ -319,6 +329,8 @@
             - text: token 有没有虚报？ 未运行
             - button "并发可靠"
             - text: 压力下稳不稳？ 未运行
+            - button "响应完整性"
+            - text: 响应是否原样未改？ 未运行
             - button "传输安全"
             - text: 密钥是否安全？ 未运行
             - button "性能表现"
@@ -335,6 +347,7 @@
               - text: ekte 出具的是
               - strong: 行为偏离与风险的可复现证据
               - text: ，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。
+            - paragraph: 无法重新评分：这份报告没有保留证据：没有可重放的内容
             - button "重新检测"
             - button "设为监控"
             - group "下载报告":
@@ -367,6 +380,7 @@
           - button "删除"
           - button "取消"
   - text: 显示 15 / 15 条记录
+  - button "用当前版本重新评分全部"
   - button "清空历史"
   - status
 - contentinfo:

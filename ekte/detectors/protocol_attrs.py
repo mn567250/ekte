@@ -20,6 +20,7 @@ from ekte.clients import detect_api
 from ekte.context import AuditContext
 from ekte.detectors import advice
 from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import is_reasoning
 from ekte.detectors.scale import Scale
 from ekte.detectors.wire_attrs import (
     CALL,
@@ -75,7 +76,7 @@ class ProtocolResponseDetector(Detector):
             temperature=None,
             capture_raw=True,
         )
-        if ctx.profile and ctx.profile.model.reasoning and protocol == "openai":
+        if is_reasoning(ctx) and protocol == "openai":
             spec.extra_body["max_completion_tokens"] = 1024
         else:
             spec.max_tokens = 256
@@ -133,7 +134,10 @@ class ProtocolRequestDetector(Detector):
     async def run(self, ctx: AuditContext) -> DetectorResult:
         protocol = detect_api(ctx.target)
         model = ctx.profile.model if ctx.profile else None
-        params = request_params(protocol, reasoning=bool(model and model.reasoning))
+        # The profile or the client's learned state (an unprofiled endpoint
+        # that already needed the reasoning repeat): helpers.is_reasoning.
+        reasoning = is_reasoning(ctx)
+        params = request_params(protocol, reasoning=reasoning)
         result = self.new_result(scoring=REQUEST_SCALE.scoring())
         result.evidence["protocol"] = protocol
         sem = asyncio.Semaphore(_CONCURRENCY)
@@ -142,7 +146,7 @@ class ProtocolRequestDetector(Detector):
         # think before they answer.
         limit: dict[str, Any] = (
             {"max_tokens": None, "extra_body": {"max_completion_tokens": 256}}
-            if protocol == "openai" and model and model.reasoning
+            if protocol == "openai" and reasoning
             else {"max_tokens": 16}
         )
 
@@ -192,12 +196,14 @@ class ProtocolRequestDetector(Detector):
                 *(send(ctx.baseline_client, p.spec) for p in rejected)
             )
             baseline = {p.name: o for p, o in zip(rejected, base_outs, strict=True)}
+            # Only an answer classify_param can use (accepted or rejected) compares.
+            result.baseline_compared = any(o.ok or is_rejection(o) for o in base_outs)
 
         unsupported = set(model.unsupported_params) if model else set()
         table: dict[str, str] = {}
         for p in params:
             out, batched = outcomes[p.name]
-            known = p.name in unsupported or bool(model and model.reasoning and p.sampling)
+            known = p.name in unsupported or (reasoning and p.sampling)
             key = classify_param(p, out, known_unsupported=known, baseline=baseline.get(p.name))
             table[p.name] = key
             result.findings.append(self._finding(p, key, out, batched))

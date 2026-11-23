@@ -11,7 +11,7 @@ Standard); `--format json|md|html|pdf` schreibt ein einzelnes Format. `--json` u
 ╭─ ✗ Likely substituted — Strong evidence the relay does not deliver the claimed model… ─╮
 │ Target : my-relay · model gpt-4o · provider openai                            │
 │ Mode   : check · suite deep                                                   │
-│ Score  : 53.5/100 (rating F) · confidence medium                             │
+│ Score  : 53.5/100 (rating F) · coverage 100% · confidence medium             │
 │                                                                               │
 │ Overall health score 53.5/100. Findings: 3 high. …                            │
 ╰───────────────────────────────────────────────────────────────────────────────╯
@@ -25,6 +25,12 @@ wichtigsten Befunde mit Empfehlungen, die Bewertungen je Dimension und
 **Dimension details**, die Befunde jedes Detektors mit Belegen, den
 Leistungsabschnitt, das verwendete Wissensbasis-Profil und die Testsprachen. Vom
 Relay kontrollierter Text wird vor dem Schreiben geschwärzt und maskiert.
+
+Neben dem Score zeigt jeder Bericht die **Abdeckung**: den Anteil am Gewicht
+der ausgeführten Dimensionen, der beurteilt werden konnte. Eine Dimension, die
+lief, aber nicht beurteilt werden konnte, nennt die Zusammenfassung des Urteils,
+und eine geringe Abdeckung begrenzt die Note oder lässt sie weg („keine Note: zu
+wenig wurde beurteilt“); siehe [Gesamtbewertung, Note und Gewichte](methodology.md#gesamtbewertung-note-und-gewichte).
 
 ## Belegdateien
 
@@ -55,13 +61,26 @@ JSON-Dokument (`--as json`); `--seq` wählt Anfragen aus.
 `ekte rescore` bewertet einen aufgezeichneten Lauf mit der installierten
 ekte-Version neu: Es führt dieselbe Prüfung aus, beantwortet aber jede Anfrage
 mit der aufgezeichneten Antwort (im aufgezeichneten Takt), statt das Relay zu
-kontaktieren, sodass verbesserte Prüfungen auch für alte Läufe gelten. Es nimmt
-die Id eines gespeicherten Laufs (und speichert das Ergebnis als neuen Lauf,
-außer mit `--no-save`) oder eine Berichtsdatei mit `--evidence PATH`. Eine
+kontaktieren, sodass verbesserte Prüfungen auch für alte Läufe gelten. Es nimmt die Id eines gespeicherten Laufs oder eine Berichtsdatei mit
+`--evidence PATH`. Mit `--replace` ersetzt das Ergebnis den gespeicherten Lauf
+(gleiche Id, Zeit und Überwachung); ohne wird es weiterhin als neuer Lauf
+gespeichert, was veraltet ist und eine Warnung ausgibt (ein späteres ekte
+ersetzt standardmäßig; `--no-save` speichert nichts). Eine
 Prüfung, die jetzt etwas fragt, das der aufgezeichnete Lauf nie gefragt hat,
 bleibt ohne klares Ergebnis, statt auf eine Vermutung hin bewertet zu werden;
 `rescored_from` im Bericht nennt, wie viele Anfragen wiedergegeben wurden und
 welche Prüfungen keine hatten.
+
+`ekte rescore --all` bewertet jeden gespeicherten Lauf, den eine andere
+ekte-Version bewertet hat, nacheinander neu, ersetzt ihn und zeigt sein Urteil
+vorher und nachher. Ein Lauf ohne verwendbare Belegdatei wird nicht neu
+bewertet: Er behält sein Urteil und wird mit Begründung übersprungen.
+`ekte serve` tut dasselbe beim ersten Start nach einem Update im Hintergrund
+(siehe [Web-Oberfläche](web-ui.md)).
+
+Die Markdown-, HTML- und PDF-Exporte eines neu bewerteten Berichts nennen
+beide Versionen, den Zeitpunkt der Neubewertung und das Ergebnis davor; das
+`--compact`-Ergebnis enthält sie als `rescored`.
 
 Schlüssel und sensible Header werden vor dem Schreiben entfernt (siehe
 [Datenschutz](privacy.md)). Jede Zeile entspricht

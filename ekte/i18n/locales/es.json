@@ -85,7 +85,9 @@
   "Connectivity": "Conectividad",
   "Reliably reachable?": "¿Accesible de forma fiable?",
   "Concurrency reliability": "Fiabilidad en concurrencia",
+  "Response integrity": "Integridad de las respuestas",
   "Stable under load?": "¿Estable bajo carga?",
+  "Is the response unaltered?": "¿La respuesta llega sin alterar?",
   "Streaming authenticity": "Autenticidad del streaming",
   "Real streaming or faked?": "¿Streaming real o simulado?",
   "Transport security": "Seguridad del transporte",
@@ -98,6 +100,7 @@
   "Real streaming, or buffered and faked?": "¿Streaming real, o almacenado en búfer y simulado?",
   "Is token usage over-reported?": "¿Se declara de más el uso de tokens?",
   "Success rate and latency under load": "Tasa de éxito y latencia bajo carga",
+  "Is the response tampered with, injected into or cached?": "¿Se manipula la respuesta, se le inyecta contenido o se sirve desde una caché?",
   "Transport encryption and key handling": "Cifrado del transporte y manejo de claves",
   "Capabilities": "Capacidades",
   "Billing": "Facturación",
@@ -279,6 +282,7 @@
   "Model identity & downgrade fingerprinting": "Identidad del modelo y huella de degradación",
   "Prompt prefix-cache (timing)": "Caché de prefijo de prompt (tiempos)",
   "OpenAI-compatibility conformance": "Conformidad de compatibilidad con OpenAI",
+  "Wire-protocol conformance": "Conformidad con el protocolo de comunicación",
   "LLM-judged quality / downgrade assessment": "Evaluación de calidad / degradación por un LLM juez",
   "Concurrent reliability & latency": "Fiabilidad y latencia en concurrencia",
   "Transport & secret-handling signals": "Señales de transporte y manejo de secretos",
@@ -311,26 +315,31 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Aumente --timeout / --max-request-time, o reduzca --max-context-tokens, para medir la ventana completa.",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Revise el error (p. ej., un parámetro de solicitud que este endpoint rechaza) y vuelva a ejecutar para medir la ventana.",
   "Raise --max-context-tokens to exercise the full declared window.": "Aumente --max-context-tokens para probar la ventana declarada completa.",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "Trate la ventana por encima del mayor prompt recordado como no verificada; un factor de tokens medido para esta familia de tokenizadores permitiría a la sonda alcanzarla.",
   "Compare against a trusted baseline to confirm.": "Compare con una referencia de confianza para confirmarlo.",
   "The relay likely truncates or summarizes long prompts.": "Es probable que el intermediario trunque o resuma los prompts largos.",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} << {declared} declarados (proporción {ratio}, se sospecha truncado silencioso). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} inferior a los {declared} declarados (proporción {ratio}, el recuerdo se degrada antes del límite). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} << {declared} declarados (proporción {top_rung_share} del peldaño superior de {top_rung} tokens, se sospecha truncado silencioso). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} inferior a los {declared} declarados (proporción {top_rung_share} del peldaño superior de {top_rung} tokens, el recuerdo se degrada antes del límite). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ni siquiera un prompt de ~{smallest_probed} tokens se recuerda; la ventana útil es muy inferior a los {declared} declarados. Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "No hay ventana declarada con la que comparar; ventana efectiva medida ~{effective_window} tokens. Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "El servidor descarta en silencio el inicio de los prompts largos; aumenta su ajuste de longitud de contexto o considera la ventana declarada como no verificada.",
   "Re-run once the endpoint reliably returns completions.": "Vuelva a ejecutar cuando el endpoint devuelva completados de forma fiable.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Trátelo como una señal de desviación, no como prueba; corrobórelo con los detectores de huella e identidad antes de actuar.",
   "Verify the relay supports stream=true for this model.": "Compruebe que el intermediario admite stream=true para este modelo.",
+  "Re-run the audit; if it keeps failing, check the relay's status for this model.": "Repita la auditoría; si sigue fallando, compruebe el estado del intermediario para este modelo.",
   "Verify the relay streams content deltas for this model.": "Verifique que el relay transmita deltas de contenido para este modelo.",
   "Run `ekte compare` against a trusted baseline to corroborate.": "Ejecute `ekte compare` contra una referencia de confianza para corroborarlo.",
   "A response naming a different vendor strongly suggests model substitution.": "Una respuesta que nombra a otro proveedor sugiere claramente una sustitución de modelo.",
   "Run `ekte compare` against a trusted baseline to disambiguate.": "Ejecute `ekte compare` contra una referencia de confianza para despejar la duda.",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "Un id de modelo de gama inferior o de otra familia en la respuesta sugiere un enrutamiento a un sustituto.",
+  "Ask the relay what the echoed id names, or add it to the knowledge base as an alias.": "Pregunte al relay qué modelo designa el id devuelto, o añádalo como alias a la base de conocimiento.",
   "Lower --concurrency or --reliability-requests and re-run.": "Reduzca --concurrency o --reliability-requests y vuelva a ejecutar.",
   "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "Revisa la ruta de red de ekte al relay (proxy, DNS, cortafuegos) y vuelve a ejecutar.",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Revise el pool de conexiones del intermediario y la estabilidad del upstream bajo carga paralela (la limitación HTTP 429 se excluye de esta tasa).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Si la facturación es por token, confirme con el proveedor cómo se mide el uso.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Contraste la facturación con un prompt de tamaño conocido; posible sobrefacturación por token.",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "Compare los tokens de prompt facturados con los de la referencia; el relay declara tokens de entrada de más.",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "Una sobrecarga fija tan grande sugiere un prompt de sistema oculto; ejecute la comprobación injected_prompt (suite deep) para examinarlo.",
   "Confirm with the provider how prompt/completion tokens are metered.": "Confirme con el proveedor cómo se miden los tokens de prompt/completion.",
   "Cross-check billing against output length; possible per-token overbilling.": "Contraste la facturación con la longitud de la salida; posible sobrefacturación por token.",
   "Compare token accounting against a trusted baseline of the same model.": "Compare el recuento de tokens con una referencia de confianza del mismo modelo.",
@@ -342,6 +351,9 @@
   "Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe.": "La generación larga puede quedarse por debajo del máximo declarado; confírmelo con una sonda más larga.",
   "Confirm the served engine actually supports function calling.": "Compruebe que el motor servido admite realmente llamadas a funciones.",
   "Verify the served engine honors response_format=json_object.": "Compruebe que el motor servido respeta response_format=json_object.",
+  "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "El relay rechaza un parámetro de la solicitud que el modelo declarado admite; pida al proveedor que lo reenvíe o use un endpoint que ofrezca la función.",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "El relay limita max_tokens por debajo de lo solicitado; las respuestas largas se truncarán. Pida al proveedor que reenvíe max_tokens o use un endpoint que lo respete.",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "Cortada (finish_reason=length) en ~{delivered_tokens} de los {requested_max_tokens} tokens solicitados: el relay limita los tokens de salida.",
   "Behavior is consistent with the claimed model.": "El comportamiento coincide con el modelo declarado.",
   "Mostly consistent with the claimed model; minor concerns.": "Mayormente coherente con el modelo declarado; dudas menores.",
   "Some behavior diverges from the claimed model — investigate.": "Parte del comportamiento se desvía del modelo declarado — investíguelo.",
@@ -370,10 +382,14 @@
   "Expected 4 non-empty vectors, got {returned_vectors}.": "Se esperaban 4 vectores no vacíos y se recibieron {returned_vectors}.",
   "POST /rerank failed (HTTP {status_code}).": "POST /rerank falló (HTTP {status_code}).",
   "Invalid request got no HTTP response ({error_type}); could not confirm OpenAI-style client-error handling.": "La solicitud inválida no recibió respuesta HTTP ({error_type}); no se pudo confirmar el manejo de errores de cliente al estilo OpenAI.",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}), and the baseline rejects it too (HTTP {baseline_status_code}): a limit of the model; not counted.": "El relay rechazó la sonda con HTTP {status_code} ({relay_error}), y la referencia también la rechaza (HTTP {baseline_status_code}): un límite del modelo; no se cuenta.",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}); the capability is not claimed, so this is not counted.": "El relay rechazó la sonda con HTTP {status_code} ({relay_error}); la capacidad no se declara, así que no se cuenta.",
+  "The capability is claimed, but the relay rejected the probe with HTTP {status_code}: {relay_error}": "La capacidad se declara, pero el relay rechazó la sonda con HTTP {status_code}: {relay_error}",
   "Request failed (HTTP {status_code}, type {error_type}).": "La petición falló (HTTP {status_code}, tipo {error_type}).",
   "Request failed (HTTP {status_code}).": "La petición falló (HTTP {status_code}).",
   "Request failed (type {error_type}).": "La petición falló (tipo {error_type}).",
   "Overall health score {1}/100.": "Puntuación de salud global {1}/100.",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "Puntuación limitada a {1} porque el nivel de riesgo es «{2}»; la media ponderada de las dimensiones es {3}.",
   "Findings: {1}.": "Hallazgos: {1}.",
   "No significant divergence findings.": "No se encontraron desviaciones significativas.",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "El modelo declarado no está en la base de conocimiento, así que las comprobaciones de identidad/capacidades son limitadas — use --declared-provider o añada un perfil a la KB.",
@@ -487,7 +503,10 @@
   "Some checks do not match what is advertised: {dims} — verify": "Algunas comprobaciones no coinciden con lo anunciado: {dims} — verifíquelo",
   "No problems in the checked dimensions (model identity not verified)": "Sin problemas en las dimensiones comprobadas (identidad del modelo no verificada)",
   "A few minor issues in the checked dimensions (model identity not verified)": "Algunos problemas menores en las dimensiones comprobadas (identidad del modelo no verificada)",
-  "It does not deliver what it advertises": "No ofrece lo que anuncia"
+  "It does not deliver what it advertises": "No ofrece lo que anuncia",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "Ejecute ekte compare contra una referencia de confianza del modelo declarado (o añada --judge) para distinguirlo de modelos más baratos del mismo proveedor.",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "Nada que cambiar en el relay: el modelo genuino tampoco cumple esta expectativa. Informe de la sonda para que se corrija la base de conocimiento.",
+  "self-reported knowledge cutoff": "fecha de corte de conocimiento declarada"
  },
  "findings": {
   "connectivity.models": [
@@ -552,15 +571,15 @@
   ],
   "context_window.truncation": [
    "Ventana de contexto real muy inferior a la declarada",
-   "Ventana de contexto real ~{effective_window} << ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, se sospecha truncado silencioso)."
+   "Ventana de contexto real ~{effective_window} << ventana probada de {upper} tokens (declarada {declared}; proporción {top_rung_share} del peldaño superior de {top_rung} tokens, se sospecha truncado silencioso)."
   ],
   "context_window.short": [
    "Ventana de contexto real inferior a la declarada",
-   "Ventana de contexto real ~{effective_window} por debajo de la ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, el recuerdo se degrada antes del límite)."
+   "Ventana de contexto real ~{effective_window} por debajo de la ventana probada de {upper} tokens (declarada {declared}; proporción {top_rung_share} del peldaño superior de {top_rung} tokens, el recuerdo se degrada antes del límite)."
   ],
   "context_window.consistent": [
    "Ventana de contexto medida coherente con la declarada",
-   "La aguja se sigue recordando a ~{effective_window} tokens, cerca de los {declared} declarados (proporción {ratio})."
+   "La aguja se sigue recordando a ~{effective_window} tokens, cerca de los {declared} declarados (proporción {top_rung_share} del peldaño superior de {top_rung} tokens)."
   ],
   "context_window.measured": [
    "Ventana de contexto efectiva medida",
@@ -569,6 +588,10 @@
   "context_window.verified_to_cap": [
    "Ventana de contexto verificada hasta el tope de la sonda",
    "La aguja se recordó a ~{effective_window} tokens, el peldaño superior bajo el tope de sonda de {probe_cap} tokens; la ventana declarada de {declared} tokens por encima no se probó."
+  ],
+  "context_window.overshot": [
+   "La sonda de ventana de contexto excedió su presupuesto de tokens",
+   "El endpoint contó el prompt de ~{effective_window} tokens como {reported_prompt_tokens} tokens de prompt ({overshoot} veces su presupuesto) y solo falló el peldaño superior de {top_rung} tokens: la sonda se excedió, así que la ventana por encima de ~{reported_prompt_tokens} tokens no se probó (no es evidencia de una ventana inferior a los {declared} declarados)."
   ],
   "context_window.probe_error": [
    "La sonda de ventana de contexto recibió un error",
@@ -621,7 +644,11 @@
   ],
   "streaming.failed": [
    "La petición en streaming falló",
-   "La petición en streaming falló (HTTP {status_code}, tipo {error_type}); compruebe que el modelo admite stream=true."
+   "La petición en streaming falló dos veces (HTTP {status_code}, tipo {error_type}); no se pudo evaluar el streaming: repita la auditoría."
+  ],
+  "streaming.unsupported": [
+   "El relay no hace streaming para este modelo",
+   "El relay rechazó dos veces la petición en streaming (HTTP {status_code}, tipo {error_type}); compruebe que admite stream=true para este modelo."
   ],
   "streaming.no_content": [
    "El stream no entregó contenido",
@@ -639,9 +666,13 @@
    "Primer token tardío de un modelo de razonamiento",
    "El primer token visible llegó a los {ttft_ms} ms de {duration_ms} ms en total; el modelo razona antes de responder, así que no cuenta como búfer."
   ],
+  "streaming.ttft_vs_total": [
+   "Primer token solo tras el tiempo de una respuesta completa sin streaming",
+   "El primer token en streaming llegó tras {ttft_ms} ms, ~{ttft_vs_total} de los {non_stream_ms} ms que tarda el mismo prompt sin streaming: la respuesta estaba completa antes de enviar el primer fragmento."
+  ],
   "streaming.uniform_gaps": [
-   "Intervalos entre fragmentos uniformes y casi nulos",
-   "{chunk_count} fragmentos, intervalo medio ~{mean_delta_ms} ms, CV {delta_cv} — los fragmentos parecen volcados de golpe."
+   "Los fragmentos llegaron de golpe",
+   "{burst_gaps} de {gaps} intervalos entre {chunk_count} fragmentos están por debajo de 2 ms: los fragmentos se volcaron de golpe."
   ],
   "streaming.no_usage": [
    "Ningún fragmento usage en el flujo",
@@ -658,6 +689,22 @@
   "billing.missing-usage": [
    "No se devolvieron estadísticas de uso",
    "La respuesta no incluye uso de tokens; la facturación no se puede verificar (¿usage presente?: {usage_present})."
+  ],
+  "billing.prompt-vs-baseline": [
+   "Tokens de prompt frente a la referencia",
+   "Para el mismo prompt, el objetivo declaró {target_prompt} tokens de prompt y la referencia {baseline_prompt}."
+  ],
+  "billing.prompt-slope": [
+   "Crecimiento de los tokens de prompt frente a la estimación",
+   "En {sizes} tamaños de prompt, los tokens de prompt declarados crecen {slope} veces más rápido que la estimación independiente (desplazamiento fijo de {intercept} tokens)."
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "Pendiente de tokens de prompt no medida",
+   "Solo un tamaño de prompt devolvió recuentos utilizables (declarado {reported_prompt}, estimado ~{estimated_prompt}); no se pudo medir la pendiente, por lo que se aplica el margen de una sola solicitud."
+  ],
+  "billing.fixed-overhead": [
+   "Sobrecarga fija de tokens de prompt",
+   "Cada solicitud lleva unos {intercept} tokens de prompt más que la estimación, sea cual sea su tamaño (pendiente {slope})."
   ],
   "billing.usage-inflation": [
    "Tokens de prompt declarados muy por encima de la estimación",
@@ -745,7 +792,7 @@
   ],
   "integrity.tampering": [
    "Detectada sustitución de valores controlada por el intermediario",
-   "Las sondas de respuesta conocida vuelven con la estructura intacta pero con valores sustituidos (¿corroborado por la referencia?: {baseline_corroborated}); un proxy que reescribe URL/nombres de paquetes es un riesgo de cadena de suministro, deje de usarlo."
+   "Las sondas de respuesta conocida vuelven con la estructura intacta pero con valores sustituidos (¿corroborado por la referencia?: {baseline_corroborated}; ¿sustituido de nuevo al repetir?: {repeat_substituted}); un proxy que reescribe URL/nombres de paquetes es un riesgo de cadena de suministro, deje de usarlo."
   ],
   "integrity.intact": [
    "Sondas de respuesta conocida devueltas intactas",
@@ -870,6 +917,14 @@
   "performance.reference": [
    "Rendimiento frente a la referencia",
    "Rendimiento del objetivo {target_tps_p50} tok/s, referencia {reference_range} tok/s."
+  ],
+  "model_identity.cutoff": [
+   "Fecha de corte de conocimiento",
+   "Comparación de la fecha de corte declarada con la del modelo declarado ({claimed_cutoff})."
+  ],
+  "model_identity.model_specific": [
+   "Modelo concreto no verificado",
+   "Las respuestas son coherentes con el proveedor ({vendor}), pero ninguna comprobación distingue {model} de sus otros modelos; el modelo concreto no se verificó."
   ]
  }
 }

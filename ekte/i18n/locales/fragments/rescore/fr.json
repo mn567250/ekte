@@ -1,0 +1,14 @@
+{
+ "strings": {
+  "Re-scoring with this version…": "Réévaluation avec cette version…",
+  "Re-scored with this version.": "Réévalué avec cette version.",
+  "{done} of {total} runs · {skipped} skipped (no usable evidence)": "{done} sur {total} exécutions · {skipped} ignorées (aucune preuve utilisable)",
+  "Re-scoring saved runs after the upgrade to ekte {v}": "Réévaluation des exécutions enregistrées après la mise à jour vers ekte {v}",
+  "Re-scoring saved runs with ekte {v}": "Réévaluation des exécutions enregistrées avec ekte {v}",
+  "Re-scored {n} runs with ekte {v}": "{n} exécutions réévaluées avec ekte {v}",
+  "Re-score all with this version": "Tout réévaluer avec cette version",
+  "Before the re-score: risk unchanged ({1})": "Avant la réévaluation : risque inchangé ({1})",
+  "Before the re-score: {1} → {2} ({3})": "Avant la réévaluation : {1} → {2} ({3})",
+  "Re-scored with ekte {1} (audit ran with ekte {2})": "Réévalué avec ekte {1} (audit effectué avec ekte {2})"
+ }
+}

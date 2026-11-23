@@ -17,6 +17,7 @@
   "Model identity & downgrade fingerprinting": "模型身份与降级指纹",
   "Prompt prefix-cache (timing)": "提示前缀缓存（时序）",
   "OpenAI-compatibility conformance": "OpenAI 兼容性规范",
+  "Wire-protocol conformance": "通信协议规范",
   "LLM-judged quality / downgrade assessment": "LLM 评委质量 / 降级评估",
   "Concurrent reliability & latency": "并发可靠性与延迟",
   "Transport & secret-handling signals": "传输与密钥处理信号",
@@ -32,6 +33,7 @@
   "Medium": "中",
   "High": "高",
   "Overall health score {1}/100.": "综合健康分 {1}/100。",
+  "Score capped at {1} because the risk level is {2}; the weighted mean of the dimensions is {3}.": "综合分上限为 {1}，因为风险等级为「{2}」；各维度加权平均分为 {3}。",
   "Findings: {1}.": "关注点：{1}。",
   ", ": "，",
   "critical": "严重",
@@ -55,26 +57,31 @@
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "请调高 --timeout / --max-request-time，或调低 --max-context-tokens，以测量完整窗口。",
   "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "请检查该错误（例如该端点拒绝的某个请求参数），然后重新运行以测量窗口。",
   "Raise --max-context-tokens to exercise the full declared window.": "请调高 --max-context-tokens 以测试完整的声明窗口。",
+  "Treat the window above the largest recalled prompt as unverified; a measured token factor for this tokenizer family would let the probe reach it.": "请将最大的已回忆提示以上的窗口视为未经核实；为该分词器系列测得的 token 系数可让探测覆盖它。",
   "Compare against a trusted baseline to confirm.": "请对照可信基线加以确认。",
   "The relay likely truncates or summarizes long prompts.": "该中转站很可能截断或摘要长提示词。",
-  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} << 声称的 {declared}（占比 {ratio}，疑似静默截断）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
-  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} 低于声称的 {declared}（占比 {ratio}，在到达上限前回忆已退化）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "Real context window ~{effective_window} << declared {declared} ({top_rung_share} of the {top_rung}-token top rung, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} << 声称的 {declared}（占 {top_rung} token 最高探测档的 {top_rung_share}，疑似静默截断）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "Real context window ~{effective_window} is below the declared {declared} ({top_rung_share} of the {top_rung}-token top rung, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} 低于声称的 {declared}（占 {top_rung} token 最高探测档的 {top_rung_share}，在到达上限前回忆已退化）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
   "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "连 ~{smallest_probed} token 的提示都无法回忆；可用窗口远小于声称的 {declared}。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
   "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "无声称窗口可对比；实测有效窗口 ~{effective_window} token。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
   "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "服务端会静默丢弃长提示的开头；请调大其上下文长度设置，或将声称的窗口视为未经验证。",
   "Re-run once the endpoint reliably returns completions.": "待端点能稳定返回补全后再重跑。",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "请视为偏离信号而非证据；行动前先用指纹与身份检测佐证。",
   "Verify the relay supports stream=true for this model.": "确认该中转站对此模型支持 stream=true。",
+  "Re-run the audit; if it keeps failing, check the relay's status for this model.": "重新运行审计；如果仍然失败，请检查该中转站对此模型的服务状态。",
   "Verify the relay streams content deltas for this model.": "确认该中转站对此模型以流式返回内容增量。",
   "Run `ekte compare` against a trusted baseline to corroborate.": "用 `ekte compare` 对照可信基线加以佐证。",
   "A response naming a different vendor strongly suggests model substitution.": "回复中提到其他厂商，强烈暗示模型被替换。",
   "Run `ekte compare` against a trusted baseline to disambiguate.": "用 `ekte compare` 对照可信基线以消除歧义。",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "响应中出现更低档位或不同系列的模型 id，暗示请求被路由到替身。",
+  "Ask the relay what the echoed id names, or add it to the knowledge base as an alias.": "请向中转站确认回显的 id 指的是哪个模型，或将其作为别名加入知识库。",
   "Lower --concurrency or --reliability-requests and re-run.": "调低 --concurrency 或 --reliability-requests 后重跑。",
   "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "检查 ekte 到中转站的网络路径（代理、DNS、防火墙）后重跑。",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "检查中转站在并发压力下的连接池与上游稳定性（HTTP 429 限流不计入此成功率）。",
   "Confirm with the provider how usage is metered if billing is per-token.": "若按 token 计费，请向服务商确认用量如何计量。",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "用已知长度的提示词核对计费；可能存在按 token 多计费。",
+  "Compare billed prompt tokens with the baseline's; the relay over-reports input tokens.": "将计费的提示 token 与基线对比；该中转站多报了输入 token。",
+  "A fixed overhead this large suggests a hidden system prompt; run the injected_prompt check (deep suite) to examine it.": "如此大的固定开销表明可能存在隐藏的系统提示词；请运行 injected_prompt 检查（deep 套件）进一步核实。",
   "Confirm with the provider how prompt/completion tokens are metered.": "请向服务商确认 prompt/completion token 如何计量。",
   "Cross-check billing against output length; possible per-token overbilling.": "对照输出长度核对计费；可能存在按 token 多计费。",
   "Compare token accounting against a trusted baseline of the same model.": "将 token 计量与同款模型的可信基线对比。",
@@ -86,6 +93,9 @@
   "Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe.": "长文本生成可能达不到声称的上限；请用更长的探针确认。",
   "Confirm the served engine actually supports function calling.": "确认所提供的引擎确实支持函数调用。",
   "Verify the served engine honors response_format=json_object.": "确认所提供的引擎遵守 response_format=json_object。",
+  "The relay refuses a request parameter the claimed model supports; ask the provider to forward it, or use an endpoint that serves the feature.": "中转拒绝了声称模型所支持的请求参数；请要求服务商转发该参数，或改用提供该功能的端点。",
+  "The relay caps max_tokens below what was requested; long answers will be truncated. Ask the provider to forward max_tokens, or use an endpoint that honors it.": "中转把 max_tokens 限制在请求值之下，长回答会被截断。请要求服务商转发 max_tokens，或改用遵守该参数的端点。",
+  "Cut off (finish_reason=length) at ~{delivered_tokens} of the requested {requested_max_tokens} tokens: the relay limits output tokens.": "在请求的 {requested_max_tokens} token 中约 {delivered_tokens} 处即被截断（finish_reason=length）：中转限制了输出 token。",
   "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified.": "usage 仅给出 total={reported_total}（prompt={reported_prompt}，completion={reported_completion}）；按 token 计费所依赖的分项缺失、无法核验。",
   "JSON mode honored; parsed keys: {parsed_keys|list}.": "JSON 模式生效；解析出的键：{parsed_keys|list}。",
   "Tool call delivered ({tool_name}); arguments returned as {arguments_type}.": "已返回工具调用（{tool_name}）；参数类型为 {arguments_type}。",
@@ -102,6 +112,9 @@
   "Expected 4 non-empty vectors, got {returned_vectors}.": "预期 4 个非空向量，实际收到 {returned_vectors} 个。",
   "POST /rerank failed (HTTP {status_code}).": "POST /rerank 失败（HTTP {status_code}）。",
   "Invalid request got no HTTP response ({error_type}); could not confirm OpenAI-style client-error handling.": "非法请求没有收到 HTTP 响应（{error_type}）；无法确认是否按 OpenAI 风格处理客户端错误。",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}), and the baseline rejects it too (HTTP {baseline_status_code}): a limit of the model; not counted.": "中转以 HTTP {status_code} 拒绝了探测（{relay_error}），基线也拒绝（HTTP {baseline_status_code}）：属于模型本身的限制；不计分。",
+  "The relay rejected the probe with HTTP {status_code} ({relay_error}); the capability is not claimed, so this is not counted.": "中转以 HTTP {status_code} 拒绝了探测（{relay_error}）；未声称支持该能力，因此不计分。",
+  "The capability is claimed, but the relay rejected the probe with HTTP {status_code}: {relay_error}": "声称支持该能力，但中转以 HTTP {status_code} 拒绝了探测：{relay_error}",
   "Request failed (HTTP {status_code}, type {error_type}).": "请求失败（HTTP {status_code}，类型 {error_type}）。",
   "Request failed (HTTP {status_code}).": "请求失败（HTTP {status_code}）。",
   "Request failed (type {error_type}).": "请求失败（类型 {error_type}）。",
@@ -149,6 +162,7 @@
   "Capability claims": "能力声明",
   "Billing & usage": "计费用量",
   "Concurrency reliability": "并发可靠",
+  "Response integrity": "响应完整性",
   "Transport security": "传输安全",
   "Performance": "性能",
   "Language": "语言",
@@ -190,7 +204,10 @@
   "Configured monitors": "已配置的监控",
   "Loading…": "加载中…",
   "Performance probe requests": "性能探测请求",
-  "Non-streaming": "非流式"
+  "Non-streaming": "非流式",
+  "Run ekte compare against a trusted baseline of the claimed model (or add --judge) to tell it from cheaper models of the same vendor.": "请用 ekte compare 对照所声明模型的可信基准运行（或加上 --judge），以便与同厂商更便宜的模型区分。",
+  "Nothing to change on the relay: the genuine model misses this expectation too. Report the probe so the knowledge base can be corrected.": "中转站无需改动：真实模型同样不满足这一预期。请反馈该探针，以便修正知识库。",
+  "self-reported knowledge cutoff": "自报的知识截止日期"
  },
  "findings": {
   "connectivity.models": [
@@ -255,15 +272,15 @@
   ],
   "context_window.truncation": [
    "真实上下文窗口远小于声称值",
-   "真实上下文窗口 ~{effective_window} << 实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，疑似静默截断）。"
+   "真实上下文窗口 ~{effective_window} << 实际探测的 {upper} token 窗口（声称 {declared}；占 {top_rung} token 最高探测档的 {top_rung_share}，疑似静默截断）。"
   ],
   "context_window.short": [
    "真实上下文窗口低于声称值",
-   "真实上下文窗口 ~{effective_window} 低于实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，在到达上限前回忆已退化）。"
+   "真实上下文窗口 ~{effective_window} 低于实际探测的 {upper} token 窗口（声称 {declared}；占 {top_rung} token 最高探测档的 {top_rung_share}，在到达上限前回忆已退化）。"
   ],
   "context_window.consistent": [
    "实测上下文窗口与声称一致",
-   "在 ~{effective_window} token 处仍能回忆出针，接近声称的 {declared}（占比 {ratio}）。"
+   "在 ~{effective_window} token 处仍能回忆出针，接近声称的 {declared}（占 {top_rung} token 最高探测档的 {top_rung_share}）。"
   ],
   "context_window.measured": [
    "实测有效上下文窗口",
@@ -272,6 +289,10 @@
   "context_window.verified_to_cap": [
    "上下文窗口已在探测上限内验证",
    "在 ~{effective_window} token 处仍能回忆出针（{probe_cap} token 探测上限下的最高档）；上限以上的声称窗口 {declared} 未被测试。"
+  ],
+  "context_window.overshot": [
+   "上下文窗口探测超出了 token 预算",
+   "端点把 ~{effective_window} token 的提示计为 {reported_prompt_tokens} 个 prompt token（预算的 {overshoot} 倍），且只有 {top_rung} token 的最高探测档失败：探测超出了预算，~{reported_prompt_tokens} token 以上的窗口未被测试（并非窗口小于声称的 {declared} 的证据）。"
   ],
   "context_window.probe_error": [
    "上下文窗口探测收到错误响应",
@@ -319,7 +340,11 @@
   ],
   "streaming.failed": [
    "流式请求失败",
-   "流式请求失败（HTTP {status_code}，类型 {error_type}）；请确认该模型支持 stream=true。"
+   "流式请求两次失败（HTTP {status_code}，类型 {error_type}）；无法评估流式输出，请重新运行审计。"
+  ],
+  "streaming.unsupported": [
+   "中转站不为该模型提供流式输出",
+   "中转站两次拒绝了流式请求（HTTP {status_code}，类型 {error_type}）；请确认它为该模型支持 stream=true。"
   ],
   "streaming.no_content": [
    "流式响应没有内容",
@@ -337,9 +362,13 @@
    "推理模型的首 token 较晚",
    "首个可见 token 在第 {ttft_ms} ms 到达（总时长 {duration_ms} ms）；该模型会先推理再回答，因此不计为缓冲。"
   ],
+  "streaming.ttft_vs_total": [
+   "首 token 要等到一次完整非流式回答的时长之后才到达",
+   "首个流式 token 在 {ttft_ms} ms 后才到达，约为同一提示非流式耗时 {non_stream_ms} ms 的 {ttft_vs_total}：首个分片发出前回答就已完整生成。"
+  ],
   "streaming.uniform_gaps": [
-   "分片间隔均匀且接近零",
-   "{chunk_count} 个分片，平均间隔 ~{mean_delta_ms} ms、CV {delta_cv} —— 分片像是被一次性倾倒。"
+   "分片集中突发到达",
+   "{chunk_count} 个分片之间的 {gaps} 个间隔中有 {burst_gaps} 个低于 2 ms：分片是被一次性倾倒的。"
   ],
   "streaming.no_usage": [
    "流中没有 usage 分片",
@@ -356,6 +385,22 @@
   "billing.missing-usage": [
    "未返回任何用量统计",
    "响应未包含 token usage；计费无法独立核验（usage 是否存在：{usage_present}）。"
+  ],
+  "billing.prompt-vs-baseline": [
+   "prompt token 与基线对比",
+   "对同一提示词，目标上报 {target_prompt} 个 prompt token，基线上报 {baseline_prompt} 个。"
+  ],
+  "billing.prompt-slope": [
+   "prompt token 增长与估算对比",
+   "在 {sizes} 种提示长度下，上报 prompt token 的增长速度是独立估算的 {slope} 倍（固定偏移 {intercept} 个 token）。"
+  ],
+  "billing.prompt-slope-unmeasured": [
+   "未能测量 prompt token 斜率",
+   "只有一种提示长度返回了可用计数（上报 {reported_prompt}，估算 ~{estimated_prompt}）；无法测量斜率，因此采用单次请求的容差。"
+  ],
+  "billing.fixed-overhead": [
+   "固定 prompt token 开销",
+   "无论长度如何，每次请求都比估算多出约 {intercept} 个 prompt token（斜率 {slope}）。"
   ],
   "billing.usage-inflation": [
    "上报的 prompt token 远超估算",
@@ -443,7 +488,7 @@
   ],
   "integrity.tampering": [
    "检测到由中继控制的值替换",
-   "已知答案的探针返回时结构保留但值被替换（是否经基线佐证：{baseline_corroborated}）；代理改写 URL/包名属供应链风险，应停止使用。"
+   "已知答案的探针返回时结构保留但值被替换（是否经基线佐证：{baseline_corroborated}；重复发送时是否再次被替换：{repeat_substituted}）；代理改写 URL/包名属供应链风险，应停止使用。"
   ],
   "integrity.intact": [
    "已知答案探针原样返回",
@@ -573,6 +618,14 @@
   "performance.reference": [
    "与参考值对比的吞吐",
    "目标吞吐 {target_tps_p50} tok/s，参考值 {reference_range} tok/s。"
+  ],
+  "model_identity.cutoff": [
+   "知识截止日期",
+   "将自报的知识截止日期与所声明模型的（{claimed_cutoff}）比较。"
+  ],
+  "model_identity.model_specific": [
+   "具体模型未经验证",
+   "回答与厂商（{vendor}）一致，但没有检查能把 {model} 与该厂商的其他模型区分开；具体模型未经验证。"
   ]
  }
 }

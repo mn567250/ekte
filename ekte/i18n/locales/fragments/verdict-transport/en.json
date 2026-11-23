@@ -3,6 +3,7 @@
   "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "Plain HTTP to a local or private-network host; the API key does not cross the internet.",
   "Use https:// if this endpoint is reachable from other machines.": "Use https:// if this endpoint is reachable from other machines.",
   "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.": "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.",
-  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk."
+  "Transport, reliability and streaming-support findings (plain HTTP, failures or slowness under load, a stream that failed or is not supported) are advisories: they lower the score but not the substitution risk.": "Transport, reliability and streaming-support findings (plain HTTP, failures or slowness under load, a stream that failed or is not supported) are advisories: they lower the score but not the substitution risk.",
+  "The answers fit the claimed model's vendor, but no check could tell that model from the vendor's other models and neither a baseline nor a judge was used: the specific model was not verified.": "The answers fit the claimed model's vendor, but no check could tell that model from the vendor's other models and neither a baseline nor a judge was used: the specific model was not verified."
  }
 }

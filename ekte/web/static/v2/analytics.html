@@ -349,11 +349,13 @@
   var FORMAT_UNIT = { percent: "ratio", ratio_percent: "ratio", ms: "ms", tok_s: "tok/s", score: "score", grade: "grade",
     count: "count", tokens: "tokens", seconds: "s" };
   function unitOf(format) { return FORMAT_UNIT[format] || format; }
-  var GROUP_L = { relay: ["中转站", "Relay"], model: ["模型", "Model"], relay_model: ["中转站 × 模型", "Relay × model"], all: ["全部", "All"] };
+  var GROUP_L = { relay: ["中转站", "Relay"], model: ["模型", "Model"], relay_model: ["中转站 × 模型", "Relay × model"], all: ["全部", "All"],
+    scoring_version: ["评分版本", "Scoring version"], audit_version: ["检测版本", "Audit version"] };
   var groupName = function (g) { return T((GROUP_L[g] || GROUP_L.relay)[0], (GROUP_L[g] || GROUP_L.relay)[1]); };
   // the same names inside a sentence ("Summary by relay"); groupName is for
   // labels and column headers
-  var GROUP_N = { relay: ["中转站", "relay"], model: ["模型", "model"], relay_model: ["中转站 × 模型", "relay × model"], all: ["全部", "all"] };
+  var GROUP_N = { relay: ["中转站", "relay"], model: ["模型", "model"], relay_model: ["中转站 × 模型", "relay × model"], all: ["全部", "all"],
+    scoring_version: ["评分版本", "scoring version"], audit_version: ["检测版本", "audit version"] };
   var groupNoun = function (g) { return T((GROUP_N[g] || GROUP_N.relay)[0], (GROUP_N[g] || GROUP_N.relay)[1]); };
   // "1 run" / "{n} runs" (legends)
   var runsText = function (n) { return n === 1 ? T("1 次检测", "1 run") : Tf("{n} 次检测", "{n} runs", { n: n }); };
@@ -417,7 +419,8 @@
   // per outcome and the impaired share are "More columns"
   var ERR_BASE = ["calls", "success_rate", "relay_error_rate", "rate_limited_rate", "timeout_rate"];
   var BILL_METRICS = ["billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"];
-  var BOARD_BY = ["relay", "model", "relay_model"];
+  // by ekte version too (issue 168): the version that scored the runs, or the one the audits ran with
+  var BOARD_BY = ["relay", "model", "relay_model", "scoring_version", "audit_version"];
   var DEFAULTS = {
     tab: "overview", os: "kpi", ts: "cmp", rs: "err",
     "trend.metric": "score", "trend.bucket": "day", "trend.key": [], "trend.ahead": "0",
@@ -1238,13 +1241,17 @@
     var cols = [labelCol(groupName(b.by)), runsCol()].concat((b.metrics || []).map(function (m) {
       return { key: m.id, label: metricName(m.id, "short_label_key"), num: true,
         value: function (r) { return metricValue(r.metrics[m.id]); }, cell: function (r) { return cell(r.metrics[m.id], m.unit, r.runs); } };
-    }), [{ key: "last_run", label: T("最近一次检测", "Last run"),
+    }), b.by === "scoring_version" || b.by === "audit_version" ? [{
+      // the runs whose scoring version differs from their audit version (re-scored by another ekte)
+      key: "rescored", label: T("已重新评分", "Re-scored"), num: true, value: function (r) { return r.rescored || 0; },
+      cell: function (r) { return '<td class="n">' + esc(EkteFmt.num(r.rescored || 0)) + "</td>"; } }] : [],
+    [{ key: "last_run", label: T("最近一次检测", "Last run"),
       value: function (r) { var t = Date.parse(r.last_run || ""); return isNaN(t) ? null : t; },
       cell: function (r) { return '<td class="when">' + esc(r.last_run ? dfmt({ dateStyle: "medium", timeStyle: "short" }, new Date(r.last_run)) : "—") + "</td>"; } }]);
     // without a sort of the viewer's: the server's order, best median score first
     body.innerHTML = (b.rows.some(function (r) { return r.low_n; }) ? fewNote(fewRows()) : "") +
       dataTable({ id: "lb", cap: "lbcap", wrap: "lbtab", sortKey: "lb.sort", cols: cols, rows: b.rows, rowClass: lowRow,
-        colsKey: "lb.cols", base: ["label", "runs"].concat((b.metrics || []).slice(0, 4).map(function (m) { return m.id; })),
+        colsKey: "lb.cols", base: ["label", "runs"].concat((b.metrics || []).slice(0, 4).map(function (m) { return m.id; }), ["rescored"]),
         caption: Tf("排行：{group}（{period}）", "Ranking: {group} ({period})", { group: groupName(b.by), period: periodOf(b) }) });
   }
 
