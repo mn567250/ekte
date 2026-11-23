@@ -20,6 +20,21 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### CI tests the locked dependencies; nightly early warning with the latest ones (internal, [#299](https://github.com/mn567250/ekte/issues/299))
+
+- The test, performance budget and accessibility jobs install with
+  `uv sync --locked` instead of `pip install -e`, so a pull request is tested
+  with the versions in `uv.lock`, and CI fails when `uv.lock` is out of date
+  with `pyproject.toml`. Before, pip ignored the lockfile: a Dependabot pull
+  request that did not touch PyYAML failed on PyYAML 6.0.4 while `uv.lock`
+  pinned 6.0.3.
+- A new nightly (and manual) job, "test latest dependencies", runs `ruff`,
+  `mypy` and `pytest` on Python 3.11 and 3.14 with the newest versions
+  `pyproject.toml` allows, as an early warning for upstream releases that
+  break ekte. It lists what is newer than `uv.lock` in its job summary and
+  never runs on pull requests.
+- `uv.lock`: PyYAML 6.0.3 → 6.0.4.
+
 ### History, Analytics and reports show the audit and the scoring version ([#168](https://github.com/mn567250/ekte/issues/168))
 
 A re-scored run's verdict comes from a newer ekte than the one that ran its
