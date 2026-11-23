@@ -323,6 +323,11 @@ HASH_DIFFERS = "the evidence file is not the one the report names (its SHA-256 d
 NO_OPTIONS = "this evidence file does not record the run's options; it cannot be replayed"
 NO_TARGET = "this evidence file names no target"
 UNREADABLE = "the evidence file cannot be read"
+# Known only after the replay: every check lacked recorded answers (#304).
+NO_SCORE = (
+    "the recorded run has no answer to the requests this ekte's checks send, "
+    "so a re-score would have no score; run a new audit to score it"
+)
 
 
 def refusal(report: dict[str, Any], path: Path) -> str | None:

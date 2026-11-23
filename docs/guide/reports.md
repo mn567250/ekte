@@ -71,7 +71,9 @@ were replayed and which checks had none.
 `ekte rescore --all` re-scores every saved run scored by another ekte version,
 one after another, replaces each and prints its verdict before and after. A run
 without a usable evidence file is not re-scored: it keeps its verdict and is
-skipped with the reason. `ekte serve` does the same in the background on its
+skipped with the reason. So is a run whose re-score would have no score at all
+(none of its checks has a recorded answer, as for a run from before them);
+`ekte rescore ID` refuses to save such a re-score. `ekte serve` does the same in the background on its
 first start after an upgrade (see [Web UI](web-ui.md)).
 
 The Markdown, HTML and PDF exports of a re-scored report state both

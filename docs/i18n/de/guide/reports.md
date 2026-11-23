@@ -75,6 +75,9 @@ welche Prüfungen keine hatten.
 ekte-Version bewertet hat, nacheinander neu, ersetzt ihn und zeigt sein Urteil
 vorher und nachher. Ein Lauf ohne verwendbare Belegdatei wird nicht neu
 bewertet: Er behält sein Urteil und wird mit Begründung übersprungen.
+Ebenso ein Lauf, dessen Neubewertung gar keine Punktzahl hätte (keine seiner
+Prüfungen hat eine aufgezeichnete Antwort, etwa bei einem Lauf von vor diesen
+Prüfungen); `ekte rescore ID` speichert eine solche Neubewertung nicht.
 `ekte serve` tut dasselbe beim ersten Start nach einem Update im Hintergrund
 (siehe [Web-Oberfläche](web-ui.md)).
 

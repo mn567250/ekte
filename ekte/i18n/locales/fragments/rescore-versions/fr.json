@@ -19,6 +19,7 @@
   "this evidence file does not record the run's options; it cannot be replayed": "ce fichier de preuves n’enregistre pas les options de l’exécution ; il ne peut pas être rejoué",
   "this evidence file names no target": "ce fichier de preuves n’indique aucune cible",
   "the evidence file cannot be read": "le fichier de preuves est illisible",
-  "this evidence file has a schema version this ekte cannot read; update ekte": "ce fichier de preuves a une version de schéma que cette version d’ekte ne sait pas lire ; mettez ekte à jour"
+  "this evidence file has a schema version this ekte cannot read; update ekte": "ce fichier de preuves a une version de schéma que cette version d’ekte ne sait pas lire ; mettez ekte à jour",
+  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "l’exécution enregistrée n’a aucune réponse aux requêtes qu’envoient les vérifications de cette version d’ekte : une nouvelle notation n’aurait pas de score ; lancez un nouvel audit pour la noter"
  }
 }

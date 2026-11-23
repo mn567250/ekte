@@ -964,7 +964,7 @@ def rescore_command(
     evidence_file: Annotated[Path | None, typer.Option("--evidence", help="The evidence file of a report JSON file given as SOURCE.")] = None,
     save: Annotated[bool, typer.Option("--save/--no-save", help="Save the re-scored report to the history (a saved run only): with --replace in place of the run, else as a new run (deprecated: a later ekte replaces by default). --no-save only prints it.")] = True,
     replace: Annotated[bool, typer.Option("--replace", help="Replace the saved run with the re-scored report: it keeps its id, time and monitor, and its monitor follows the new verdict.")] = False,
-    all_runs: Annotated[bool, typer.Option("--all", help="Re-score every saved run scored by another ekte version, one after another, and replace each; runs without a usable evidence file are skipped with the reason.")] = False,
+    all_runs: Annotated[bool, typer.Option("--all", help="Re-score every saved run scored by another ekte version, one after another, and replace each; runs without a usable evidence file, and runs whose re-score would have no score, are skipped with the reason.")] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Print the re-scored report as JSON to stdout.")] = False,
 ) -> None:
     """Re-score a recorded run with this ekte version, from its evidence file.
@@ -1027,6 +1027,11 @@ def rescore_command(
     if save and report_id is not None:
         from ekte.web import rescore
 
+        try:  # a re-score without a score is never stored (#304)
+            rescore.require_score(report_id, json.loads(new.model_dump_json()))
+        except rescore.Refused as exc:
+            err_console.print(f"[red]Saved run {report_id} not re-scored: {exc}.[/red]")
+            raise typer.Exit(code=2) from exc
         if replace:
             try:
                 _run_async(rescore.store(report_id, report, json.loads(new.model_dump_json())))

@@ -19,6 +19,7 @@
   "this evidence file does not record the run's options; it cannot be replayed": "this evidence file does not record the run's options; it cannot be replayed",
   "this evidence file names no target": "this evidence file names no target",
   "the evidence file cannot be read": "the evidence file cannot be read",
-  "this evidence file has a schema version this ekte cannot read; update ekte": "this evidence file has a schema version this ekte cannot read; update ekte"
+  "this evidence file has a schema version this ekte cannot read; update ekte": "this evidence file has a schema version this ekte cannot read; update ekte",
+  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it"
  }
 }

@@ -93,7 +93,9 @@ id, tid og overvåking, og rapporten sier hvilken ekte-versjon som registrerte
 den og hvilken som vurderte den. **Vurder alle på nytt med denne versjonen**
 (under listen) gjør dette, én etter én, for hver kjøring en annen ekte-versjon
 har vurdert. En kjøring uten brukbar bevisfil vurderes ikke på nytt: den
-beholder vurderingen sin. Ved første oppstart etter en oppgradering vurderer
+beholder vurderingen sin, og det samme gjør en kjøring der en ny vurdering ikke
+ville fått noen poengsum (ingen av kontrollene har et registrert svar);
+kjøringen viser hvorfor. Ved første oppstart etter en oppgradering vurderer
 `ekte serve` kjøringene en eldre versjon har vurdert på nytt i bakgrunnen
 (`EKTE_AUTO_RESCORE=0` slår det av); et varsel over listen viser hvor langt
 den har kommet.

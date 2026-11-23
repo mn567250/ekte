@@ -99,7 +99,9 @@ garde son identifiant, son heure et sa surveillance, et son rapport indique
 quelle version d'ekte l'a enregistrée et laquelle l'a notée. **Tout réévaluer
 avec cette version** (sous la liste) fait de même, l'une après l'autre, pour
 chaque exécution notée par une autre version d'ekte. Une exécution sans fichier
-de preuves utilisable n'est pas réévaluée : elle garde son verdict. À son
+de preuves utilisable n'est pas réévaluée : elle garde son verdict, tout comme
+une exécution dont la réévaluation n'aurait aucun score (aucune de ses
+vérifications n'a de réponse enregistrée) ; l'exécution en indique la raison. À son
 premier démarrage après une mise à jour, `ekte serve` réévalue en arrière-plan
 les exécutions notées par une version plus ancienne (`EKTE_AUTO_RESCORE=0` le
 désactive) ; un avis au-dessus de la liste montre l'avancement.

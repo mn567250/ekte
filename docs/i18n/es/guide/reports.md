@@ -76,6 +76,9 @@ peticiones se reprodujeron y qué comprobaciones no tenían ninguna.
 guardadas que puntuó otra versión de ekte, sustituye cada una y muestra su
 veredicto antes y después. Una ejecución sin un archivo de evidencia utilizable
 no se vuelve a puntuar: conserva su veredicto y se omite indicando el motivo.
+Lo mismo ocurre con una ejecución cuya nueva puntuación no tendría puntuación
+alguna (ninguna de sus comprobaciones tiene una respuesta grabada, como en una
+ejecución anterior a ellas); `ekte rescore ID` no guarda esa nueva puntuación.
 `ekte serve` hace lo mismo en segundo plano en su primer arranque tras una
 actualización (consulta [Interfaz web](web-ui.md)).
 

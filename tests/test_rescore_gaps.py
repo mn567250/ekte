@@ -160,3 +160,137 @@ def test_an_old_reliability_selection_is_rescored_as_integrity(data, monkeypatch
     r = new["rescored_from"]
     assert r["missing"] == {} and r["unused"] == 0
 
+
+
+# --------------------------------------------------------------------------- #
+# #304: a re-score without a score is skipped with a refusal reason
+# --------------------------------------------------------------------------- #
+def _header_only(lines):
+    """No exchange at all: every request of the re-score lacks an answer."""
+    return lines[:1]
+
+
+@pytest.fixture
+def sent(monkeypatch):
+    calls: list[dict] = []
+
+    async def fake_send(url, report, **kw):
+        calls.append({"url": url, "report": report, **kw})
+        return True
+
+    monkeypatch.setattr("ekte.notify.send", fake_send)
+    return calls
+
+
+def _unscored_on_a_monitor(monkeypatch):
+    """A saved run of a monitor whose evidence answers nothing this ekte asks."""
+    import time
+
+    from ekte.web import history, watches
+
+    wid = watches.create({"name": "w", "base_url": "http://relay/v1", "api_key": "", "model": "m",
+                          "alert_on": "low", "webhooks": ["https://hooks.example/x"]})
+    path = evidence.data_dir_path(evidence.new_run_id())
+    report = _rewrite(path, _record(monkeypatch, path, suite="smoke"), _header_only)
+    report["tool_version"] = "0.1.0"
+    rid = history.save(report, watch_id=wid)
+    risk, score = report["verdict"]["risk_level"], report["verdict"]["overall_score"]
+    assert score is not None
+    ran = time.time()
+    watches.mark_run(wid, risk, score, rid, ran)
+    return rid, wid, history.get(rid), (risk, score, ran)
+
+
+def _unchanged(rid, wid, stored, card):
+    from ekte.web import history, watches
+
+    assert history.get(rid) == stored
+    w = watches.get_settings(wid)
+    assert (w["last_risk"], w["last_score"], w["last_run_ts"]) == card
+    assert history.refusals()[rid]["refusal"] == replay.NO_SCORE
+
+
+def test_rescore_all_skips_a_run_that_would_have_no_score(data, monkeypatch, sent):
+    from ekte.web import rescore
+
+    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    seen = {}
+
+    def on_run(r, old, new, refusal):
+        seen[r] = (new, refusal)
+
+    counts = asyncio.run(rescore.rescore_all(on_run))
+    assert counts == {"rescored": 0, "skipped": 1, "failed": 0}
+    assert seen == {rid: (None, replay.NO_SCORE)}
+    _unchanged(rid, wid, stored, card)
+    assert sent == []
+    # recorded for this version: not looked at again
+    assert asyncio.run(rescore.rescore_all(on_run)) == {"rescored": 0, "skipped": 0, "failed": 0}
+
+
+def test_the_upgrade_rescore_counts_it_skipped_and_finishes(data, monkeypatch, sent, caplog):
+    import time
+
+    from fastapi.testclient import TestClient
+
+    from ekte.web import history, rescore
+    from ekte.web.server import create_app
+
+    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    scored = _saved_chat(monkeypatch, suite="smoke")
+    monkeypatch.setenv("EKTE_AUTO_RESCORE", "1")
+    with caplog.at_level(logging.WARNING), \
+            TestClient(create_app(), base_url="http://localhost") as client:
+        end = time.time() + 60
+        while time.time() < end:
+            info = client.get("/api/rescore").json()
+            if not info["active"] and info.get("finished"):
+                break
+            time.sleep(0.1)
+    assert (info["rescored"], info["skipped"], info["failed"]) == (1, 1, 0)
+    assert "audit job" not in caplog.text and "Traceback" not in caplog.text
+    msgs = [r.getMessage() for r in caplog.records]
+    assert f"re-score of run {rid} not stored: {replay.NO_SCORE}" in msgs
+    assert not [m for m in msgs if m.startswith(f"re-score of run {rid}: ")]
+    _unchanged(rid, wid, stored, card)
+    assert history.get(scored)["rescored_from"] is not None
+    assert history.get_meta(rescore.META_KEY) is not None  # finished for this version
+    assert sent == []
+
+
+def test_a_single_rescore_job_is_refused_with_the_reason(data, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from ekte.web.server import create_app
+
+    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    monkeypatch.setenv("EKTE_AUTO_RESCORE", "0")
+    with TestClient(create_app(), base_url="http://localhost") as client:
+        job = client.post(f"/api/v1/history/{rid}/rescore?replace=true").json()
+        client.get(f"/api/v1/jobs/{job['id']}/events")  # until it ends
+        got = client.get(f"/api/v1/jobs/{job['id']}").json()
+    assert got["status"] == "error" and got["error"] == replay.NO_SCORE
+    assert got["report_id"] is None
+    _unchanged(rid, wid, stored, card)
+
+
+def test_cli_rescore_refuses_to_store_a_run_without_a_score(data, monkeypatch):
+    from typer.testing import CliRunner
+
+    from ekte.cli import app
+
+    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    res = CliRunner().invoke(app, ["rescore", str(rid), "--replace"])
+    assert res.exit_code == 2, res.output
+    assert "not re-scored" in res.output
+    _unchanged(rid, wid, stored, card)
+    # only printed, nothing stored: shown as it is
+    res = CliRunner().invoke(app, ["rescore", str(rid), "--no-save"])
+    assert res.exit_code == 0, res.output
+
+
+def test_the_refusal_text_is_translated():
+    from ekte import i18n
+
+    for lang, d in i18n._load().items():
+        assert replay.NO_SCORE in d.get("strings", {}), lang

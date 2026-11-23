@@ -100,7 +100,9 @@ behält Id, Zeit und Überwachung, und sein Bericht nennt die ekte-Version, die
 ihn aufgezeichnet, und die, die ihn bewertet hat. **Alle mit dieser Version neu
 bewerten** (unter der Liste) tut das nacheinander für jeden Lauf, den eine
 andere ekte-Version bewertet hat. Ein Lauf ohne verwendbare Belegdatei wird
-nicht neu bewertet: Er behält sein Urteil. Beim ersten Start nach einem Update
+nicht neu bewertet: Er behält sein Urteil, ebenso ein Lauf, dessen Neubewertung
+gar keine Punktzahl hätte (keine seiner Prüfungen hat eine aufgezeichnete
+Antwort); der Lauf nennt den Grund. Beim ersten Start nach einem Update
 bewertet `ekte serve` die Läufe, die eine ältere Version bewertet hat, im
 Hintergrund neu (`EKTE_AUTO_RESCORE=0` schaltet das ab); ein Hinweis über der
 Liste zeigt den Fortschritt.

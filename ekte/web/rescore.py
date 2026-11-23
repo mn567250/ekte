@@ -6,6 +6,10 @@ A saved run that kept a usable evidence file is re-scored by replaying it
 evidence file. A run without a usable evidence file is never re-scored: it
 keeps its verdict, and a bulk re-score records the reason
 (:func:`ekte.replay.refusal`) with it (:func:`ekte.web.history.record_refusal`).
+A re-score that ends without an overall score (every check lacked recorded
+answers) is not stored either (:func:`require_score`, #304): the run keeps
+its verdict and the reason (:data:`ekte.replay.NO_SCORE`) is recorded the
+same way; a job ends refused with it, and a bulk re-score counts it skipped.
 
 Monitors follow the latest scoring. When the re-scored run is its monitor's
 last run (``last_report_id``), the monitor card's ``last_risk`` /
@@ -42,6 +46,7 @@ from pathlib import Path
 from typing import Any
 
 from ekte import __version__, legacy
+from ekte.web.jobs import PublicRefusal
 
 _log = logging.getLogger("ekte.web")
 
@@ -51,7 +56,7 @@ META_KEY = "rescore_version"
 NOT_FOUND = "no such saved run"
 
 
-class Refused(ValueError):
+class Refused(PublicRefusal, ValueError):
     """The run cannot be re-scored (the reason is one of replay's fixed texts)."""
 
 
@@ -161,6 +166,20 @@ async def store(rid: int, old: dict[str, Any], new: dict[str, Any]) -> int:
     return rid
 
 
+def require_score(rid: int, new: dict[str, Any], version: str = __version__) -> None:
+    """Refuse to store re-score ``new`` of run ``rid`` when it has no overall
+    score (every check lacked recorded answers, #304): the run keeps its
+    verdict, and the reason is recorded with it (blocking)."""
+    from ekte import replay
+    from ekte.web import history
+
+    if _verdict(new)[1] is not None:
+        return
+    history.record_refusal(rid, version, replay.NO_SCORE)
+    _log.warning("re-score of run %s not stored: %s", rid, replay.NO_SCORE)
+    raise Refused(replay.NO_SCORE)
+
+
 def log_missing(rid: int, new: Any) -> None:
     """Log one line when the re-score of run ``rid`` (``new``: its
     AuditReport) had requests without a recorded answer (#302)."""
@@ -180,8 +199,9 @@ async def rescore_run(rid: int, *, on_event: Any = None) -> tuple[dict[str, Any]
     if reason is not None or old is None or path is None:
         raise Refused(reason or NOT_FOUND)
     out = await replay.rescore(old, path, report_id=rid, on_event=on_event)
-    log_missing(rid, out)
     new = json.loads(out.model_dump_json())
+    await asyncio.to_thread(require_score, rid, new)
+    log_missing(rid, out)
     await store(rid, old, new)
     return old, new
 
@@ -223,8 +243,10 @@ def submit_job(rid: int, report: dict[str, Any], path: Path, *, replace: bool = 
 
     async def run(emit: jobs.Emit) -> dict[str, Any]:
         out = await replay.rescore(report, path, report_id=rid, on_event=emit)
+        new = json.loads(out.model_dump_json())
+        await asyncio.to_thread(require_score, rid, new)  # the job ends refused
         log_missing(rid, out)
-        return json.loads(out.model_dump_json())
+        return new
 
     async def save(new: dict[str, Any]) -> int:
         return await store(rid, report, new)
@@ -303,6 +325,8 @@ class Bulk:
                     st["job"] = None
                     if job.status == "done":
                         st["rescored"] += 1
+                    elif job.refused:  # no score: recorded with the run
+                        st["skipped"] += 1
                     else:
                         st["failed"] += 1
                 st["done"] += 1

@@ -19,6 +19,7 @@
   "this evidence file does not record the run's options; it cannot be replayed": "denne bevisfilen registrerer ikke kjøringens innstillinger; den kan ikke spilles av",
   "this evidence file names no target": "denne bevisfilen oppgir ikke noe mål",
   "the evidence file cannot be read": "bevisfilen kan ikke leses",
-  "this evidence file has a schema version this ekte cannot read; update ekte": "denne bevisfilen har en skjemaversjon denne ekte-versjonen ikke kan lese; oppdater ekte"
+  "this evidence file has a schema version this ekte cannot read; update ekte": "denne bevisfilen har en skjemaversjon denne ekte-versjonen ikke kan lese; oppdater ekte",
+  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "den registrerte kjøringen har ikke svar på forespørslene som kontrollene i denne ekte-versjonen sender, så en ny poengsetting ville ikke fått noen poengsum; kjør en ny revisjon for å gi den poeng"
  }
 }

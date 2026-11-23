@@ -88,7 +88,9 @@ same way and replaces the run's report in place: the run keeps its id, time and
 monitor, and its report says which ekte version recorded it and which one
 scored it. **Re-score all with this version** (below the list) does this for
 every run scored by another ekte version, one run after another. A run without
-a usable evidence file is not re-scored: it keeps its verdict. On its first
+a usable evidence file is not re-scored: it keeps its verdict, and so does a run
+whose re-score would have no score at all (none of its checks has a recorded
+answer); the run says why. On its first
 start after an upgrade, `ekte serve` re-scores the runs an older version scored
 in the background (`EKTE_AUTO_RESCORE=0` turns this off); a notice above the
 list shows how far it is.

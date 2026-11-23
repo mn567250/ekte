@@ -99,7 +99,9 @@ conserva su id, su hora y su monitor, y su informe indica qué versión de ekte
 la registró y cuál la puntuó. **Volver a puntuar todo con esta versión** (bajo
 la lista) hace esto, una tras otra, con cada ejecución que puntuó otra versión
 de ekte. Una ejecución sin un archivo de evidencia utilizable no se vuelve a
-puntuar: conserva su veredicto. En su primer arranque tras una actualización,
+puntuar: conserva su veredicto, igual que una ejecución cuya nueva puntuación no
+tendría puntuación alguna (ninguna de sus comprobaciones tiene una respuesta
+grabada); la ejecución indica el motivo. En su primer arranque tras una actualización,
 `ekte serve` vuelve a puntuar en segundo plano las ejecuciones que puntuó una
 versión anterior (`EKTE_AUTO_RESCORE=0` lo desactiva); un aviso sobre la lista
 muestra el progreso.
