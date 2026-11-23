@@ -9,6 +9,8 @@
  *     download: { name: "ekte-report" },   // optional: JSON / Markdown / HTML / PDF buttons
  *     historyId: 42,   // optional: the saved run; with report.evidence its raw
  *                      // request/response pairs open under each finding's evidence
+ *     note: "…",       // optional: plain text (or a function returning it, called on
+ *                      // every render) shown with the actions: why one is missing
  *   })
  *     renders `report` (the audit stream's "report" event, or a history row's
  *     report) into `el`, wires its interactions, and re-renders it in place when
@@ -933,9 +935,28 @@
       if (!isNaN(dt))
         meta.push(item(T("时间", "Time"), esc(intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(dt))));
     }
-    meta.push(item(T("版本", "Version"), code("ekte v" + (r.tool_version || "?"))));
-    // a re-score: the recorded run it replayed, and what had no recorded answer
+    // a re-score: the version the audit ran with and the one that scored it
+    // (issue 168), when, the verdict before it, the recorded run it replayed, and
+    // what had no recorded answer
     var rs = r.rescored_from;
+    var dateTime = function (s) {
+      var d = s ? new Date(s) : null;
+      return d && !isNaN(d) ? intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(d) : null;
+    };
+    meta.push(item(T("版本", "Version"), rs
+      ? esc(Tf("ekte {audit} · 用 {scoring} 重新评分", "ekte {audit} · re-scored with {scoring}", {
+          audit: "v" + (rs.tool_version || "?"), scoring: "v" + (r.tool_version || "?") }))
+      : code("ekte v" + (r.tool_version || "?"))));
+    if (rs && dateTime(rs.rescored_at))
+      meta.push(item(T("重新评分时间", "Re-scored on"), esc(dateTime(rs.rescored_at))));
+    var pv = rs && rs.previous_verdict;
+    if (pv) {
+      var was = [];
+      if (pv.risk_level) was.push(Tf("风险：{v}", "risk: {v}", { v: label("RISK_LEVEL", riskStep(pv.risk_level).key) }));
+      if (pv.overall_score != null) was.push(Tf("健康分 {v}", "score {v}", { v: num(pv.overall_score, 1) }));
+      if (pv.rating) was.push(Tf("评级 {v}", "grade {v}", { v: pv.rating }));
+      if (was.length) meta.push(item(T("重新评分前的结论", "Verdict before the re-score"), esc(was.join(" · "))));
+    }
     if (rs) {
       var when = rs.generated_at ? new Date(rs.generated_at) : null;
       var missed = Object.keys(rs.missing || {}).reduce(function (a, k) { return a + rs.missing[k]; }, 0);
@@ -950,7 +971,9 @@
         }))));
     }
 
-    // the actions row (ekte.css .actions): the primary action last
+    // the actions row (ekte.css .actions): the primary action last, after
+    // the note on a missing one (text, or a function giving it in the language)
+    var note = typeof opts.note === "function" ? opts.note() : opts.note;
     var acts = opts.actions || [];
     var actions = acts.map(function (a, i) { return { a: a, i: i }; })
       .filter(function (x) { return !x.a.primary; })
@@ -1016,7 +1039,7 @@
         "ekte provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
       ) +
       "</p>" +
-      (actions ? '<div class="actions">' + actions + "</div>" : "") +
+      (actions || note ? '<div class="actions">' + (note ? '<p class="hint">' + esc(note) + "</p>" : "") + actions + "</div>" : "") +
       dl +
       "</footer></article>"
     );

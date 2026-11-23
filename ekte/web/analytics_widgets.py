@@ -37,6 +37,7 @@ from ekte.web.analytics import (
     BLOCKS,
     BUCKETS,
     FOLDS,
+    GROUPS,
     INTEGRITY_CHECKS,
     JUDGED,
     MAX_METRICS,
@@ -55,7 +56,7 @@ BOARD_METRICS = (
     "score", "success_rate", "error_rate", "latency_p50", "ttft_p50", "decode_tps",
     "billing_ratio_prompt", "billing_ratio_completion", "model_mismatch_rate", "risk_high_share",
 )
-BOARD_GROUPS = ("relay", "model", "relay_model")
+BOARD_GROUPS = ("relay", "model", "relay_model", *query.VERSION_GROUPS)
 TREND_BUCKETS = ("hour", "day", "week")
 # The outcome classes of the errors widget.
 ERROR_CLASSES = errorclass.OUTCOMES
@@ -332,9 +333,11 @@ def _rows(conn: Any, q: query.Query, wanted: list[Metric], group: str | None = N
 
 def widget_leaderboard(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/leaderboard``: one row per ``board.by`` (relay,
-    model, relay_model; default relay) with :data:`BOARD_METRICS`, best
-    median score first (rows without a score last). Rank the relays of one
-    model with ``model=<m>&board.by=relay``."""
+    model, relay_model, scoring_version, audit_version; default relay) with
+    :data:`BOARD_METRICS`, best median score first (rows without a score
+    last). Rank the relays of one model with ``model=<m>&board.by=relay``. A
+    row per ekte version also counts its runs re-scored by another version
+    (``rescored``)."""
     w = _widget(params, "board", ("by",))
     conn, q = _setup(params)
     by = _str_choice(w, "by", "board.by", BOARD_GROUPS, "relay")
@@ -352,8 +355,10 @@ def widget_leaderboard(params: Any) -> dict[str, Any]:
 def widget_breakdown(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/breakdown``: some metrics (``breakdown.metric``,
     repeatable, 1 to :data:`MAX_METRICS`; ``dim:<key>`` included) per group
-    (``group``) over the whole range, with quartiles, busiest group first."""
-    w = _widget(params, "breakdown", (), ("metric",))
+    (``breakdown.by``: a ``group`` value or an ekte version,
+    ``scoring_version`` / ``audit_version``; default ``group``) over the
+    whole range, with quartiles, busiest group first."""
+    w = _widget(params, "breakdown", ("by",), ("metric",))
     conn, q = _setup(params)
     wanted: list[Metric] = []
     for mid in w["metric"]:
@@ -364,8 +369,9 @@ def widget_breakdown(params: Any) -> dict[str, Any]:
         raise query.QueryError("give at least one breakdown.metric")
     if len(wanted) > MAX_METRICS:
         raise query.QueryError(f"at most {MAX_METRICS} breakdown.metric")
-    rows = _rows(conn, q, wanted, quantiles=True)
-    return {**_head(q), "group": q.group, "metrics": [m.public() for m in wanted],
+    by = _str_choice(w, "by", "breakdown.by", (*GROUPS, *query.VERSION_GROUPS), q.group)
+    rows = _rows(conn, q, wanted, by, quantiles=True)
+    return {**_head(q), "group": by, "metrics": [m.public() for m in wanted],
             "runs": sum(r["runs"] for r in rows), "rows": rows}
 
 
@@ -582,7 +588,8 @@ def widget_integrity(params: Any) -> dict[str, Any]:
 # field each sets.
 _FIELDS: dict[str, str] = {
     "surface": "surface", "relay": "relays", "model": "models",
-    **{k: k for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec", "watch")},
+    **{k: k for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec", "watch",
+                      "scoring_version", "audit_version")},
 }
 OPTION_KEYS = tuple(_FIELDS)
 
@@ -618,7 +625,8 @@ def filter_options(params: Any) -> dict[str, Any]:
     values (monitor ids, as integers) their monitor's ``label``, read from
     ``watches.db`` once (:func:`watch_labels`), and ``deleted: true`` for a
     monitor that no longer exists (labelled ``Deleted monitor #<id>``, which
-    the page translates); ``span`` is the first and last run time under every filter
+    the page translates); ``scoring_version`` / ``audit_version`` the ekte
+    versions (``-`` for runs without one); ``span`` is the first and last run time under every filter
     but ``from`` / ``to``; ``dimensions`` the dimension keys of the selected
     runs (for ``dim:<key>`` metrics). Unlike the widgets no surface is
     defaulted: ``surface_default`` names the one they would use.
@@ -638,7 +646,8 @@ def filter_options(params: Any) -> dict[str, Any]:
         start=None, end=None, **{f: () if f in ("relays", "models") else None for f in _FIELDS.values()}))
     base = base.and_where("m.relay_id IS NOT NULL")  # the runs with a relay, as the join to it
     cols = ", ".join(["m.history_id AS id", "m.started_us AS t", "m.relay_id AS rid", "m.facet_id AS fid",
-                      "m.model_id AS mid", "m.watch_id AS wid"])
+                      "m.model_id AS mid", "m.watch_id AS wid",
+                      *(f"{column} AS {key}" for key, column in run_row.VERSION_ID.items())])
 
     def values(key: str) -> tuple[Any, ...]:
         value = getattr(q, _FIELDS[key])
@@ -659,6 +668,9 @@ def filter_options(params: Any) -> dict[str, Any]:
             on_r[key] = (f"mid IN (SELECT id FROM model_group WHERE model_key IN ({marks(len(vs))}))", vs)
         elif key == "watch":
             on_r[key] = ("wid = ?", vs)
+        elif key in run_row.VERSION_ID:
+            on_r[key] = (f"{key} IS NULL", ()) if vs == (query.UNKNOWN,) else (
+                f"{key} IN (SELECT id FROM run_version WHERE value IN ({marks(len(vs))}))", vs)
         else:
             column = run_row.COLUMNS[key]
             on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
@@ -701,6 +713,11 @@ def filter_options(params: Any) -> dict[str, Any]:
     branch("SELECT 'watch', s.wid, NULL, NULL, NULL, s.n"
            " FROM (SELECT wid, COUNT(*) AS n FROM r{w} GROUP BY wid) s WHERE s.wid IS NOT NULL",
            on_r, "watch")
+    for key in run_row.VERSION_ID:
+        # the runs without a version as "-" (unknown)
+        branch(f"SELECT '{key}', COALESCE(v.value, '{query.UNKNOWN}'), NULL, NULL, NULL, s.n"
+               f" FROM (SELECT {key} AS vid, COUNT(*) AS n FROM r{{w}} GROUP BY 1) s"
+               " LEFT JOIN run_version v ON v.id = s.vid", on_r, key)
     branch("SELECT ':span', MIN(t0), MAX(t1), NULL, NULL, 0 FROM c{w}", on_c, ":time")
     branch("SELECT ':runs', NULL, NULL, NULL, NULL, COALESCE(SUM(n), 0) FROM c{w}", on_c)
     # a dimension key is listed once one selected run has it (in run order: usually the first)

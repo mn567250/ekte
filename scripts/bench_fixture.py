@@ -199,7 +199,7 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
                 surface, 0,
             ))
             m_rows.append((
-                rid, analytics_store.format_ts(started), 0, _version(started),
+                rid, analytics_store.format_ts(started), 0, _version(started), _version(started), None, None,
                 _kb_hash(rng, started), None, model,
                 normalize_url(url), rng.uniform(60, 600), out.success_rate, out.error_rate,
                 out.timeout_rate, out.rate_limited_rate, out.impaired_rate, out.requests_total,

@@ -77,6 +77,10 @@ reavaliada: mantém o veredito e é ignorada com o motivo. O `ekte serve` faz o
 mesmo em segundo plano no primeiro arranque após uma atualização (ver
 [Interface web](web-ui.md)).
 
+As exportações em Markdown, HTML e PDF de um relatório reavaliado indicam
+as duas versões, quando foi reavaliado e o veredito anterior; o veredito
+`--compact` traz essas informações como `rescored`.
+
 As chaves e os cabeçalhos sensíveis são removidos antes de qualquer escrita
 (ver [Privacidade](privacy.md)). Cada linha corresponde a
 `ekte/schemas/evidence.schema.json` ([Esquemas](../../../reference/schemas.md)).

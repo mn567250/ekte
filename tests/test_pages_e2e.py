@@ -156,8 +156,10 @@ def test_dod_02_one_panel_with_the_fields_that_apply_and_filters_in_the_url():
     keys dropped."""
     pages = _node("return F.PAGES;")
     shared = {"surface", "relay", "model", "suite", "api", "stream"}
-    assert set(pages["history"]) == shared | {"q", "range", "mode", "detect", "risk", "min_score", "exec", "watch"}
-    assert set(pages["analytics"]) == shared | {"range", "exec", "watch", "group"}
+    assert set(pages["history"]) == shared | {"q", "range", "mode", "detect", "risk", "min_score", "exec", "watch",
+                                               "scoring_version", "audit_version"}
+    assert set(pages["analytics"]) == shared | {"range", "exec", "watch", "scoring_version", "audit_version",
+                                                "group"}
     assert set(pages["watches"]) == shared | {"q", "state", "alerting"}
     for page in ("history", "analytics", "watches"):
         src = (STATIC / f"{page}.html").read_text(encoding="utf-8")

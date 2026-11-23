@@ -177,7 +177,8 @@ FILTER_KEYS: dict[str, str | None] = {
     "start": "range", "end": "range", "range": "range", "surface": "surface",
     "relays": "relay", "models": "model", "suite": "suite", "mode": "mode", "api": "api",
     "stream": "stream", "detect": "detect", "risk": "risk", "min_score": "min_score",
-    "exec": "exec", "watch": "watch", "text": "q", "group": None, "tz": None,
+    "exec": "exec", "watch": "watch", "scoring_version": "scoring_version",
+    "audit_version": "audit_version", "text": "q", "group": None, "tz": None,
 }
 
 
@@ -324,7 +325,41 @@ ROW_COLUMNS: tuple[str, ...] = (
         "rating", "kb_match", "watch_id", "api", "api_auto", "stream_mode")),
     "COALESCE(h.surface, 'chat') AS surface", "m.started_at", "m.started_at_estimated",
     "rm.relay_key", "rm.kind AS relay_kind", "rm.in_kb AS relay_in_kb", "m.latency_p50_ms", "m.ttft_p50_ms", "m.decode_tps_p50", "m.error_rate",
+    "m.tool_version", "m.audit_tool_version", "m.rescored_at", "m.previous_verdict",
+    "rs.refusal AS rescore_refusal", "rs.version AS rescore_refusal_version",
 )
+
+
+def _previous_verdict(raw: Any) -> dict[str, Any] | None:
+    """The stored verdict before a run's latest re-score (JSON text of
+    ``history_metrics.previous_verdict``), with its risk's colour family."""
+    try:
+        prev = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        prev = None
+    if not isinstance(prev, dict):
+        return None
+    risk = prev.get("risk_level") or None
+    return {"risk_level": risk, "score": prev.get("overall_score"), "grade": prev.get("rating") or None,
+            "family": RISK_FAMILY.get(risk or "inconclusive", "grey")}
+
+
+def _versions(d: Mapping[str, Any]) -> dict[str, Any]:
+    """A run's ekte versions (#168): the scoring version (``tool_version``),
+    the audit version (``rescored_from.tool_version`` of a re-scored run),
+    whether it was re-scored (by another version, or re-scored in place),
+    when, the verdict before, and why a bulk re-score could not re-score it
+    (``history_rescore``; None when nothing was recorded)."""
+    scoring, audit = d["tool_version"] or None, d["audit_tool_version"] or None
+    refusal = d["rescore_refusal"]
+    return {
+        "scoring_version": scoring, "audit_version": audit,
+        "rescored": bool(d["rescored_at"]) or (scoring is not None and audit is not None and scoring != audit),
+        "rescored_at": d["rescored_at"] or None,
+        "previous_verdict": _previous_verdict(d["previous_verdict"]),
+        "rescore_refusal": ({"reason": str(refusal), "version": d["rescore_refusal_version"]}
+                            if refusal else None),
+    }
 
 
 def _row(d: Mapping[str, Any]) -> dict[str, Any]:
@@ -355,6 +390,7 @@ def _row(d: Mapping[str, Any]) -> dict[str, Any]:
         "watch_id": d["watch_id"], "exec": "manual" if d["watch_id"] is None else "monitor",
         "latency_p50_ms": d["latency_p50_ms"], "ttft_p50_ms": d["ttft_p50_ms"],
         "decode_tps_p50": d["decode_tps_p50"], "error_rate": d["error_rate"],
+        **_versions(d),
     }
 
 
@@ -367,6 +403,7 @@ def _rows(conn: sqlite3.Connection, ids: Sequence[int],
     cur = conn.execute(
         f"SELECT {', '.join(ROW_COLUMNS)} FROM history h"
         f" JOIN history_metrics m ON m.history_id = h.id {JOIN_SQL}"
+        " LEFT JOIN history_rescore rs ON rs.history_id = h.id"
         f" WHERE h.id IN ({', '.join('?' * len(ids))})", tuple(ids))
     names = [c[0] for c in cur.description]
     out = {int(r[0]): _row(dict(zip(names, r, strict=True))) for r in cur.fetchall()}

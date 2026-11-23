@@ -34,7 +34,7 @@ body(F).then((out) => console.log(JSON.stringify(out === undefined ? null : out)
 """
 
 ALL = ["q", "range", "surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk",
-       "min_score", "exec", "watch", "group", "state", "alerting"]
+       "min_score", "exec", "watch", "scoring_version", "audit_version", "group", "state", "alerting"]
 
 
 def run(body: str, tz: str | None = None) -> Any:
@@ -547,8 +547,9 @@ def test_pages_hold_the_field_matrix():
     pages = run("return F.PAGES;")
     assert pages == {
         "history": ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk",
-                    "min_score", "range", "exec", "watch"],
-        "analytics": ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch", "group"],
+                    "min_score", "range", "exec", "watch", "scoring_version", "audit_version"],
+        "analytics": ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "watch",
+                      "scoring_version", "audit_version", "group"],
         "watches": ["q", "surface", "relay", "model", "suite", "api", "stream", "state", "alerting"],
     }
     assert all(k in ALL for keys in pages.values() for k in keys)

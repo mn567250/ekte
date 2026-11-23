@@ -78,6 +78,10 @@ n'est pas réévaluée : elle garde son verdict et est ignorée avec la raison.
 `ekte serve` fait de même en arrière-plan à son premier démarrage après une
 mise à jour (voir [Interface web](web-ui.md)).
 
+Les exports Markdown, HTML et PDF d’un rapport réévalué indiquent les deux
+versions, la date de la réévaluation et le verdict d’avant ; le verdict
+`--compact` les contient sous `rescored`.
+
 Les clés et les en-têtes sensibles sont retirés avant toute écriture (voir
 [Confidentialité](privacy.md)). Chaque ligne respecte
 `ekte/schemas/evidence.schema.json` ([Schémas](../../../reference/schemas.md)).

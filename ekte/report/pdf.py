@@ -59,6 +59,7 @@ from ekte.report.render import (
     _knowledge_lines,
     _run_config_meta,
     reliability_lines,
+    rescore_lines,
 )
 
 # --------------------------------------------------------------------------- #
@@ -340,6 +341,7 @@ def _header(report: AuditReport) -> list[Flowable]:
         meta.append(_t("generated ") + _code(report.generated_at))
     out.append(_p(_t(" · ").join(meta), "meta"))
     out.append(_p(_t(f"ekte v{report.tool_version}"), "meta"))
+    out.extend(_p(_t(line), "meta") for line in rescore_lines(report))
     return out
 
 

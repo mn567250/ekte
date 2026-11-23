@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "ekte {audit} · re-scored with {scoring}": "ekte {audit} · rivalutato con {scoring}",
+  "before the re-score: {verdict}": "prima della rivalutazione: {verdict}",
+  "cannot be re-scored: {reason}": "non è possibile rivalutare: {reason}",
+  "Cannot be re-scored: {reason}": "Non è possibile rivalutare: {reason}",
+  "Cannot be re-scored with ekte {v}: {reason}": "Non è possibile rivalutare con ekte {v}: {reason}",
+  "score {v}": "punteggio {v}",
+  "grade {v}": "voto {v}",
+  "risk: {v}": "rischio: {v}",
+  "Re-scored on": "Rivalutato il",
+  "Verdict before the re-score": "Esito prima della rivalutazione",
+  "Scoring version": "Versione di valutazione",
+  "Audit version": "Versione dell’audit",
+  "scoring version": "versione di valutazione",
+  "audit version": "versione dell’audit",
+  "this report kept no evidence: there is nothing to replay": "questo report non ha conservato prove: non c’è nulla da riprodurre",
+  "the evidence file is not the one the report names (its SHA-256 differs)": "il file di prove non è quello indicato dal report (il suo SHA-256 è diverso)",
+  "this evidence file does not record the run's options; it cannot be replayed": "questo file di prove non registra le opzioni dell’esecuzione; non può essere riprodotto",
+  "this evidence file names no target": "questo file di prove non indica alcun obiettivo",
+  "the evidence file cannot be read": "impossibile leggere il file di prove",
+  "this evidence file has a schema version this ekte cannot read; update ekte": "questo file di prove ha una versione di schema che questo ekte non sa leggere; aggiorna ekte"
+ }
+}

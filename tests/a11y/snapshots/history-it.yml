@@ -108,6 +108,16 @@
     - combobox "Monitor":
       - option "Tutti" [selected]
       - option "gpt-4o (4)"
+    - text: Versione di valutazione
+    - combobox "Versione di valutazione":
+      - option "Tutti" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Versione dell’audit
+    - combobox "Versione dell’audit":
+      - option "Tutti" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Andamenti":
       - text: Andamenti 2 selezionati su un massimo di 2
       - button "Punteggio" [pressed]
@@ -337,6 +347,7 @@
               - text: ekte fornisce
               - strong: prove riproducibili di scostamento del comportamento e di rischio
               - text: ", non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicamente un fornitore sulla base di una singola esecuzione."
+            - paragraph: "Non è possibile rivalutare: questo report non ha conservato prove: non c’è nulla da riprodurre"
             - button "Riesegui audit"
             - button "Pianifica come monitor"
             - group "Scarica il rapporto":

@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "ekte {audit} · re-scored with {scoring}": "ekte {audit} · re-scored with {scoring}",
+  "before the re-score: {verdict}": "before the re-score: {verdict}",
+  "cannot be re-scored: {reason}": "cannot be re-scored: {reason}",
+  "Cannot be re-scored: {reason}": "Cannot be re-scored: {reason}",
+  "Cannot be re-scored with ekte {v}: {reason}": "Cannot be re-scored with ekte {v}: {reason}",
+  "score {v}": "score {v}",
+  "grade {v}": "grade {v}",
+  "risk: {v}": "risk: {v}",
+  "Re-scored on": "Re-scored on",
+  "Verdict before the re-score": "Verdict before the re-score",
+  "Scoring version": "Scoring version",
+  "Audit version": "Audit version",
+  "scoring version": "scoring version",
+  "audit version": "audit version",
+  "this report kept no evidence: there is nothing to replay": "this report kept no evidence: there is nothing to replay",
+  "the evidence file is not the one the report names (its SHA-256 differs)": "the evidence file is not the one the report names (its SHA-256 differs)",
+  "this evidence file does not record the run's options; it cannot be replayed": "this evidence file does not record the run's options; it cannot be replayed",
+  "this evidence file names no target": "this evidence file names no target",
+  "the evidence file cannot be read": "the evidence file cannot be read",
+  "this evidence file has a schema version this ekte cannot read; update ekte": "this evidence file has a schema version this ekte cannot read; update ekte"
+ }
+}

@@ -79,6 +79,10 @@ viene rivalutata: mantiene il suo verdetto e viene saltata con il motivo.
 `ekte serve` fa lo stesso in background al primo avvio dopo un aggiornamento
 (vedi [Interfaccia web](web-ui.md)).
 
+Le esportazioni Markdown, HTML e PDF di un report rivalutato indicano
+entrambe le versioni, quando è stato rivalutato e l’esito precedente;
+l’esito `--compact` le riporta come `rescored`.
+
 Le chiavi e le intestazioni sensibili vengono rimosse prima di scrivere
 qualsiasi cosa (vedi [Privacy](privacy.md)). Ogni riga rispetta
 `ekte/schemas/evidence.schema.json` ([Schemi](../../../reference/schemas.md)).

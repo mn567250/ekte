@@ -93,6 +93,16 @@ start after an upgrade, `ekte serve` re-scores the runs an older version scored
 in the background (`EKTE_AUTO_RESCORE=0` turns this off); a notice above the
 list shows how far it is.
 
+**Audit and scoring version.** A re-scored run names two ekte versions: the
+one its audit ran with and the one that scored it. In **History** such a run
+reads, for example, "ekte 0.33.1 · re-scored with 0.35.0", followed by its
+verdict before the re-score. A run a bulk re-score could not re-score says why
+(for example, no evidence file), and its report explains why **Re-score with
+this version** is missing. **History** and **Analytics** filter by either
+version (**Scoring version**, **Audit version**), and the **Analytics**
+leaderboard also ranks by them, with how many runs of each version were
+re-scored by another one.
+
 **Analytics.** `/analytics` turns the local history into
 comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change

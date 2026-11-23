@@ -74,6 +74,10 @@ without a usable evidence file is not re-scored: it keeps its verdict and is
 skipped with the reason. `ekte serve` does the same in the background on its
 first start after an upgrade (see [Web UI](web-ui.md)).
 
+The Markdown, HTML and PDF exports of a re-scored report state both
+versions, when it was re-scored and the verdict before; the `--compact`
+verdict carries them as `rescored`.
+
 Keys and sensitive headers are removed before anything is written (see
 [Privacy](privacy.md)). Each line matches `ekte/schemas/evidence.schema.json`
 ([Schemas](../reference/schemas.md)). In the web UI, **Show evidence** under a

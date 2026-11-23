@@ -78,6 +78,10 @@ bewertet: Er behält sein Urteil und wird mit Begründung übersprungen.
 `ekte serve` tut dasselbe beim ersten Start nach einem Update im Hintergrund
 (siehe [Web-Oberfläche](web-ui.md)).
 
+Die Markdown-, HTML- und PDF-Exporte eines neu bewerteten Berichts nennen
+beide Versionen, den Zeitpunkt der Neubewertung und das Ergebnis davor; das
+`--compact`-Ergebnis enthält sie als `rescored`.
+
 Schlüssel und sensible Header werden vor dem Schreiben entfernt (siehe
 [Datenschutz](privacy.md)). Jede Zeile entspricht
 `ekte/schemas/evidence.schema.json` ([Schemas](../../../reference/schemas.md)).

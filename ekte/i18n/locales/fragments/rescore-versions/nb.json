@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "ekte {audit} · re-scored with {scoring}": "ekte {audit} · ny vurdering med {scoring}",
+  "before the re-score: {verdict}": "før den nye vurderingen: {verdict}",
+  "cannot be re-scored: {reason}": "kan ikke vurderes på nytt: {reason}",
+  "Cannot be re-scored: {reason}": "Kan ikke vurderes på nytt: {reason}",
+  "Cannot be re-scored with ekte {v}: {reason}": "Kan ikke vurderes på nytt med ekte {v}: {reason}",
+  "score {v}": "score {v}",
+  "grade {v}": "karakter {v}",
+  "risk: {v}": "risiko: {v}",
+  "Re-scored on": "Vurdert på nytt",
+  "Verdict before the re-score": "Resultat før den nye vurderingen",
+  "Scoring version": "Vurderingsversjon",
+  "Audit version": "Revisjonsversjon",
+  "scoring version": "vurderingsversjon",
+  "audit version": "revisjonsversjon",
+  "this report kept no evidence: there is nothing to replay": "denne rapporten tok ikke vare på bevis: det er ingenting å spille av",
+  "the evidence file is not the one the report names (its SHA-256 differs)": "bevisfilen er ikke den rapporten viser til (SHA-256 er ulik)",
+  "this evidence file does not record the run's options; it cannot be replayed": "denne bevisfilen registrerer ikke kjøringens innstillinger; den kan ikke spilles av",
+  "this evidence file names no target": "denne bevisfilen oppgir ikke noe mål",
+  "the evidence file cannot be read": "bevisfilen kan ikke leses",
+  "this evidence file has a schema version this ekte cannot read; update ekte": "denne bevisfilen har en skjemaversjon denne ekte-versjonen ikke kan lese; oppdater ekte"
+ }
+}

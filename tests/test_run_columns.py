@@ -160,8 +160,8 @@ def _strip_run_row(conn: sqlite3.Connection, *, outcomes: bool) -> None:
         conn.execute(f"DROP INDEX {name}")
     for col in [*(_COLS if outcomes else ()), *run_row.RUN_COLUMNS]:
         conn.execute(f"ALTER TABLE history_metrics DROP COLUMN {col}")
-    for lookup in run_row.LOOKUPS:
-        conn.execute(f"DROP TABLE {lookup.table}")
+    for lookup in run_row.LOOKUPS:  # (two may share a table: run_version)
+        conn.execute(f"DROP TABLE IF EXISTS {lookup.table}")
 
 
 def test_a_v11_database_gets_the_run_columns(data):  # noqa: F811

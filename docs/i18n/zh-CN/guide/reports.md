@@ -56,6 +56,9 @@ zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
 没有可用证据文件的检测不会重新评分：它保留原结论，并注明原因后跳过。
 `ekte serve` 在升级后首次启动时会在后台做同样的事（见 [Web 界面](web-ui.md)）。
 
+重新评分过的报告在 Markdown、HTML 和 PDF 导出中会注明两个版本、重新评分的时间和之前的结论；
+`--compact` 结论把它们放在 `rescored` 中。
+
 密钥和敏感请求头在写入前即被去除（见[隐私](privacy.md)）。每一行都符合
 `ekte/schemas/evidence.schema.json`（[Schema](../../../reference/schemas.md)）。在 Web 界面中，
 已保存检测的某个发现下的 **查看证据** 会列出其背后检测项的请求，并可打开每个原始请求和响应。

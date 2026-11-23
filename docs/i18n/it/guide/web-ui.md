@@ -104,6 +104,18 @@ dopo un aggiornamento, `ekte serve` rivaluta in background le esecuzioni
 valutate da una versione precedente (`EKTE_AUTO_RESCORE=0` lo disattiva); un
 avviso sopra l'elenco mostra l'avanzamento.
 
+**Versione dell’audit e versione di valutazione.** Un’esecuzione
+rivalutata indica due versioni di ekte: quella con cui è stato eseguito il suo
+audit e quella che l’ha valutata. In **Cronologia** un’esecuzione di questo
+tipo riporta per esempio «ekte 0.33.1 · rivalutato con 0.35.0», seguito
+dall’esito prima della rivalutazione. Un’esecuzione che una rivalutazione in
+blocco non ha potuto rivalutare ne indica il motivo (per esempio, nessun file
+di prove), e il suo report spiega perché manca **Rivaluta con questa
+versione**. **Cronologia** e **Analisi** filtrano per l’una o l’altra versione
+(**Versione di valutazione**, **Versione dell’audit**), e la classifica di
+**Analisi** ordina anche per esse, con quante esecuzioni di ogni versione sono
+state rivalutate da un’altra.
+
 **Analisi.** `/analytics` trasforma la cronologia
 locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio
 mediano, quota ad alto rischio, tasso di successo, TTFT, velocità di output,

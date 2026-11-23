@@ -1201,7 +1201,28 @@
     if (r.api) bits.push(r.api + (r.detect ? " (" + detectLabel(r.detect) + ")" : ""));
     if (r.stream_mode && surfaceOf(r) === "chat") bits.push(streamLabel(r.stream_mode));
     if (typeof r.latency_p50_ms === "number") bits.push("p50 " + EkteFmt.unit(r.latency_p50_ms, "ms"));
+    bits = bits.concat(versionBits(r));
     return '<span class="mi">' + bits.map(function (b) { return "<span>" + esc(b) + "</span>"; }).join(" ") + "</span>";
+  }
+  // A re-scored run (issue 168): the version the audit ran with, the one that
+  // scored it and the verdict before; a run a bulk re-score could not
+  // re-score: why (the server's fixed text, translated)
+  function versionBits(r) {
+    var out = [];
+    if (r.rescored)
+      out.push(Tf("ekte {audit} · 用 {scoring} 重新评分", "ekte {audit} · re-scored with {scoring}",
+        { audit: r.audit_version || "?", scoring: r.scoring_version || "?" }));
+    var pv = r.previous_verdict;
+    if (r.rescored && pv) {
+      var was = [];
+      if (pv.risk_level) was.push(EKTE_I18N.label("RISK_LEVEL", pv.risk_level));
+      if (typeof pv.score === "number") was.push(Tf("健康分 {v}", "score {v}", { v: EkteFmt.num(pv.score, 1) }));
+      if (pv.grade) was.push(Tf("评级 {v}", "grade {v}", { v: pv.grade }));
+      if (was.length) out.push(Tf("重新评分前：{verdict}", "before the re-score: {verdict}", { verdict: was.join(", ") }));
+    }
+    if (r.rescore_refusal)
+      out.push(Tf("无法重新评分：{reason}", "cannot be re-scored: {reason}", { reason: EKTE_LANG.server(r.rescore_refusal.reason) }));
+    return out;
   }
   function fam(r, k) { return (r.family && r.family[k]) || "grey"; }
 
@@ -1365,6 +1386,8 @@
     var el = document.createElement("div");
     var id = panel.getAttribute("data-id");
     var row = state.rows[id];
+    var refusal = row && row.rescore_refusal;
+    var rescorable = !!(report && report.evidence) && !refusal;
     el.className = "rep";
     panel.innerHTML = "";
     panel.appendChild(el);
@@ -1373,10 +1396,20 @@
         { zh: "设为监控", en: "Schedule as monitor", primary: true, onClick: function () { schedule(id); } },
       ]).concat([
         { zh: "重新检测", en: "Re-run audit", onClick: function () { rerun(id); } },
-      ]).concat(report && report.evidence ? [
+      ]).concat(rescorable ? [
         // replays the run's recorded requests and responses: no relay contacted
         { zh: "用当前版本重新评分", en: "Re-score with this version", onClick: function () { rescore(id); } },
       ] : []),
+      // why "Re-score with this version" is missing (issue 168): no evidence, or a
+      // bulk re-score found the evidence unusable
+      // (a function: worded again when the language changes)
+      note: rescorable ? null : function () {
+        return refusal
+          ? Tf("无法用 ekte {v} 重新评分：{reason}", "Cannot be re-scored with ekte {v}: {reason}",
+            { v: refusal.version || "?", reason: EKTE_LANG.server(refusal.reason) })
+          : Tf("无法重新评分：{reason}", "Cannot be re-scored: {reason}",
+            { reason: EKTE_LANG.server("this report kept no evidence: there is nothing to replay") });
+      },
       download: { name: "ekte-report-" + panel.getAttribute("data-id") },
       // the saved run: its raw request/response pairs open under each finding
       historyId: id,
