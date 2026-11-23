@@ -9,6 +9,7 @@
   "Re-score all with this version": "Rivaluta tutto con questa versione",
   "Before the re-score: risk unchanged ({1})": "Prima della nuova valutazione: rischio invariato ({1})",
   "Before the re-score: {1} → {2} ({3})": "Prima della nuova valutazione: {1} → {2} ({3})",
-  "Re-scored with ekte {1} (audit ran with ekte {2})": "Rivalutato con ekte {1} (audit eseguito con ekte {2})"
+  "Re-scored with ekte {1} (audit ran with ekte {2})": "Rivalutato con ekte {1} (audit eseguito con ekte {2})",
+  "Not re-scored: ": "Non rivalutata: "
  }
 }

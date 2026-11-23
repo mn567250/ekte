@@ -9,6 +9,7 @@
   "Re-score all with this version": "Vurder alle på nytt med denne versjonen",
   "Before the re-score: risk unchanged ({1})": "Før den nye vurderingen: risiko uendret ({1})",
   "Before the re-score: {1} → {2} ({3})": "Før den nye vurderingen: {1} → {2} ({3})",
-  "Re-scored with ekte {1} (audit ran with ekte {2})": "Vurdert på nytt med ekte {1} (revisjonen kjørte med ekte {2})"
+  "Re-scored with ekte {1} (audit ran with ekte {2})": "Vurdert på nytt med ekte {1} (revisjonen kjørte med ekte {2})",
+  "Not re-scored: ": "Ikke vurdert på nytt: "
  }
 }

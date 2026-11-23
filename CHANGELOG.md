@@ -20,6 +20,21 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: a refused re-score reads "Not re-scored", not "Audit failed" ([#306](https://github.com/mn567250/ekte/issues/306))
+
+- A re-score that would have no score is refused since
+  [#304](https://github.com/mn567250/ekte/issues/304), and the run keeps its
+  verdict. The Running list still showed that job as **"Audit failed: <reason>"**
+  in red. It now reads **"Not re-scored: <reason>"** as a notice; real failures
+  keep "Audit failed". The new text is translated in every language.
+- **History:** after **Re-score with this version** is refused, the run's row
+  and its open report show the recorded reason at once (before, only after a
+  reload), the report drops its **Re-score with this version** action, and the
+  message is a notice rather than an error.
+- **API:** a job (`GET /api/v1/jobs`, `GET /api/v1/jobs/{id}`) has a new field
+  `refused`: `true` when it ended with status `error` on a refusal rather than
+  a failure (`error` is then the fixed reason).
+
 ### Re-score: one line per run for requests without a recorded answer ([#302](https://github.com/mn567250/ekte/issues/302))
 
 - A request that a re-score sends but the recorded run never sent (a check

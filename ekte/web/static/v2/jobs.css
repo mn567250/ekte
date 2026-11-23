@@ -10,6 +10,8 @@
 .job .js { font-size: var(--t-sm); color: var(--ink-muted); margin-top: 6px; }
 .job .js b { color: var(--ink); }
 .job.err .js { color: var(--danger); }
+/* a refused job (issue 306): a notice, not an error; the default .js colour */
+.job.refused .js { color: var(--ink); }
 .job .jprog { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: var(--t-sm); font-weight: 700; color: var(--info); }
 .job .jprog .bar { flex: 1; height: 6px; border-radius: var(--r-pill); background: var(--info-tint); overflow: hidden; }
 .job .jprog .bar > span { display: block; height: 100%; background: var(--info); border-radius: var(--r-pill); transition: width var(--dur-slow) var(--ease-out); }

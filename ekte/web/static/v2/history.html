@@ -198,6 +198,7 @@
      persistent, hoverable and dismissible (WCAG 1.4.13) */
   .rmsg { margin: 2px 10px 10px; font-size: var(--t-sm); font-weight: 600; color: var(--danger); }
   .rmsg:empty { display: none; }
+  .rmsg.note { color: var(--ink); } /* a refusal (issue 306): a notice, not an error */
   .rdel:hover { color: var(--danger); background: var(--danger-tint); border-color: var(--danger); }
 
   /* inline confirmation (row delete + clear all) */
@@ -1280,14 +1281,29 @@
         return waitJob(job.id);
       })
       .then(function (job) {
-        if (job.status !== "done") throw new Error(job.error || job.status);
+        if (job.status !== "done") {
+          var err = new Error(job.error || job.status);
+          err.refused = !!job.refused;
+          throw err;
+        }
         tell(T("已用当前版本重新评分。", "Re-scored with this version."));
         delete state.reports[String(id)];
         var panel = host.querySelector('.panel[data-id="' + CSS.escape(String(id)) + '"]');
         if (panel && !panel.hidden) fetchReport(panel, String(id));
       })
       .catch(function (e) {
-        tell(T("无法重新评分：", "Could not re-score: ") + EKTE_LANG.server(String((e && e.message) || e)));
+        var text = function () {
+          return T("无法重新评分：", "Could not re-score: ") + EKTE_LANG.server(String((e && e.message) || e));
+        };
+        if (!(e && e.refused)) { tell(text()); return; }
+        // refused (issue 306): the server recorded the reason with the run, so the
+        // row and its open report show it now, not only after a reload
+        load().then(function () {
+          var again = document.getElementById("m-" + id);
+          if (again) { again.textContent = text(); again.classList.add("note"); }
+          var panel = host.querySelector('.panel[data-id="' + CSS.escape(String(id)) + '"]');
+          if (panel && !panel.hidden && state.reports[String(id)]) mount(panel, state.reports[String(id)]);
+        });
       });
   }
   // a job, polled until it has ended
