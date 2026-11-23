@@ -15,6 +15,13 @@ backfill use (the same split as :mod:`ekte.knowledge.snapshot`).
   (``max(start_ms + duration_ms)``), else ``generated_at`` itself.
 * ``tool_version``, ``kb_profile_hash``, ``kb_provider``, ``kb_model_id`` —
   the ekte version and knowledge-base profile the run was scored with.
+* ``audit_tool_version`` — the ekte version the audit itself ran with
+  (:func:`ekte.notify.audit_version`: a re-scored run's
+  ``rescored_from.tool_version``, else ``tool_version``); it differs from
+  ``tool_version`` for a run re-scored by another version (:mod:`ekte.replay`).
+  ``rescored_at`` and ``previous_verdict`` (JSON: ``risk_level``,
+  ``overall_score``, ``rating``) are the latest re-score's time and the
+  verdict before it (``rescored_from``; NULL for a run never re-scored).
 * ``base_url_norm`` — the target base URL as
   :func:`ekte.knowledge.relays.normalize_url` gives it (relay grouping).
 * ``duration_sec`` — summed detector durations (as ``history.run_duration_sec``).
@@ -77,20 +84,25 @@ from typing import Any
 from ekte import errorclass
 from ekte.knowledge.relays import normalize_url
 from ekte.models import RequestRecord, RunOutcomes
+from ekte.notify import audit_version
 from ekte.perf.outcomes import from_counts, run_outcomes
 from ekte.perf.summary import decode_tps_tails
 
 # Bump when extract_metrics() changes what it extracts: the backfill then
 # re-extracts every row written by an older version, without a schema change.
 # 2: decode_tps_p5, decode_tps_p95; 3: model_mismatch of embedding runs;
-# 4: outcome rates over every target request record, history_outcomes
-EXTRACT_VERSION = 4
+# 4: outcome rates over every target request record, history_outcomes;
+# 5: audit_tool_version, rescored_at, previous_verdict (#168)
+EXTRACT_VERSION = 5
 
 # Column name -> SQL type of history_metrics (after history_id), in order.
 METRIC_COLS: dict[str, str] = {
     "started_at": "TEXT",
     "started_at_estimated": "INTEGER",
     "tool_version": "TEXT",
+    "audit_tool_version": "TEXT",
+    "rescored_at": "TEXT",
+    "previous_verdict": "TEXT",
     "kb_profile_hash": "TEXT",
     "kb_provider": "TEXT",
     "kb_model_id": "TEXT",
@@ -656,6 +668,17 @@ def outcome_rows(outcomes: RunOutcomes | None) -> list[dict[str, Any]]:
     ]
 
 
+def _previous_verdict(rescored: dict[str, Any]) -> str | None:
+    """A re-score's ``previous_verdict`` (risk level, score, grade) as
+    compact JSON, None when it has none."""
+    prev = _dict(rescored.get("previous_verdict"))
+    out = {"risk_level": _str(prev.get("risk_level")), "overall_score": _num(prev.get("overall_score")),
+           "rating": _str(prev.get("rating"))}
+    if all(v is None for v in out.values()):
+        return None
+    return json.dumps(out, separators=(",", ":"))
+
+
 def extract_metrics(
     report: Any,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
@@ -680,6 +703,7 @@ def extract_metrics(
     burst = _dict(side.get("concurrency"))
     burst_tps = _num(burst.get("aggregate_tps_local"))
     outcomes = _outcomes(report, records)
+    rescored = _dict(report.get("rescored_from"))
 
     counts = {"high": 0, "medium": 0, "low": 0}
     for det in detectors:
@@ -694,6 +718,9 @@ def extract_metrics(
         "started_at": start,
         "started_at_estimated": estimated,
         "tool_version": _str(report.get("tool_version")),
+        "audit_tool_version": _str(audit_version(report)),
+        "rescored_at": _str(rescored.get("rescored_at")) if rescored else None,
+        "previous_verdict": _previous_verdict(rescored),
         "kb_profile_hash": _str(knowledge.get("profile_hash")),
         "kb_provider": _str(knowledge.get("provider")),
         "kb_model_id": _str(knowledge.get("model_id")),

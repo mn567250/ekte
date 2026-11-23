@@ -81,8 +81,17 @@ request records and analytics rows are those of the new scoring.
 automatic re-score after an upgrade, :mod:`ekte.web.rescore`) could not
 re-score it (:func:`ekte.replay.refusal`'s text), so History can say so;
 ``meta`` key ``rescore_version`` holds the ekte version the automatic
-re-score after an upgrade finished for. Step 18 is reserved for the
-analytics' ``audit_tool_version`` (#168).
+re-score after an upgrade finished for.
+
+Audit and scoring version (schema version 18): ``history_metrics`` holds,
+next to ``tool_version`` (the version that scored the run), the version the
+audit itself ran with (``audit_tool_version``), the latest re-score's time
+(``rescored_at``) and the verdict before it (``previous_verdict``), filled
+for the runs already saved by the analytics backfill (``EXTRACT_VERSION``
+5); the run row numbers the audit version (``audit_version_id``, in
+``run_version`` with the scoring version's ``version_id``), so Analytics and
+History filter and group by either, and a run re-scored by another version
+is one whose two ids differ.
 
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
@@ -342,6 +351,22 @@ def _v17(conn: sqlite3.Connection) -> None:
     )
 
 
+def _v18(conn: sqlite3.Connection) -> None:
+    """The ekte version the audit ran with, the latest re-score's time and
+    the verdict before it (``history_metrics.audit_tool_version``,
+    ``rescored_at``, ``previous_verdict``; filled by the analytics backfill,
+    which re-extracts every row of an older EXTRACT_VERSION), and the audit
+    version's id on the run row (``audit_version_id``)."""
+    from ekte.web import run_row
+
+    kb_snapshot.add_link_columns(
+        conn,
+        "history_metrics",
+        {"audit_tool_version": "TEXT", "rescored_at": "TEXT", "previous_verdict": "TEXT"},
+    )
+    run_row.ensure_run_columns(conn)
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -360,6 +385,7 @@ MIGRATIONS = (
     dbmigrate.Migration(15, _v15),
     dbmigrate.Migration(16, _v16),
     dbmigrate.Migration(17, _v17),
+    dbmigrate.Migration(18, _v18),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 

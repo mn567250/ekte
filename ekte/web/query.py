@@ -57,12 +57,22 @@ Key                           Values
 ``exec``                      ``manual`` (started by hand), ``monitor`` (by a monitor)
 ``watch``                     a monitor id (a positive integer): the runs of exactly that
                               monitor (``history.watch_id``), also after it was deleted
+``scoring_version``           the ekte version that scored the run (``tool_version``; the
+                              re-score's for a re-scored run), or ``-`` for none
+``audit_version``             the ekte version the audit itself ran with
+                              (``rescored_from.tool_version`` of a re-scored run, else
+                              ``tool_version``), or ``-`` for none
 ``q``                         free text, matched as a substring, case-insensitively for
                               ASCII (SQL ``LIKE``; ``%``, ``_`` and ``\\`` are literal),
                               against base URL, relay label, claimed model, model, suite,
                               mode and api
 ``group``                     ``relay`` (default), ``model``, ``relay_model``, ``all``
 ============================  ==============================================================
+
+A widget may also group by ``scoring_version`` or ``audit_version``
+(:data:`VERSION_GROUPS`, e.g. the leaderboard's ``board.by``): one group per
+version, ``(unknown)`` for runs without one; such a group also counts its
+runs re-scored by another version (``rescored``).
 
 Keys with a dot are a widget's own (``<widget>.<key>``, e.g. ``trend.metric``,
 ``runs.sort``, ``runs.after``) and are ignored here; any other key is an
@@ -142,8 +152,10 @@ RISKS = tuple(r.value for r in RiskLevel)
 MAX_PARAM = analytics.MAX_PARAM
 # Keys that take one value, and the ones that may repeat.
 SINGLE_KEYS = ("from", "to", "range", "tz", "surface", "suite", "mode", "api", "stream", "detect",
-               "risk", "min_score", "exec", "watch", "q", "group")
+               "risk", "min_score", "exec", "watch", "scoring_version", "audit_version", "q", "group")
 MULTI_KEYS = ("relay", "model")
+# The groupings by ekte version a widget may ask for (not a ``group`` value).
+VERSION_GROUPS = tuple(run_row.VERSION_ID)
 # page_runs()
 SORTS = ("time", "score", "risk", "grade")
 PAGE_LIMIT = 20
@@ -188,6 +200,8 @@ class Query:
     min_score: float | None = None
     exec: str | None = None
     watch: int | None = None
+    scoring_version: str | None = None
+    audit_version: str | None = None
     text: str | None = None
     group: str = "relay"
     range: str | None = None
@@ -225,6 +239,7 @@ class Query:
             "detect": self.detect, "risk": self.risk,
             "min_score": _num_text(self.min_score) if self.min_score is not None else None,
             "exec": self.exec, "watch": str(self.watch) if self.watch is not None else None,
+            "scoring_version": self.scoring_version, "audit_version": self.audit_version,
             "q": self.text, "group": self.group,
             "range": self.range if self.days else None,
             "tz": self.tz if self.tz != DEFAULT_TZ else None,
@@ -407,6 +422,7 @@ def parse_query(params: Params, *, now: datetime | None = None) -> Query:
         min_score=min_score,
         exec=_choice("exec", single.get("exec"), EXECS),
         watch=_watch(single.get("watch")),
+        scoring_version=single.get("scoring_version"), audit_version=single.get("audit_version"),
         text=single.get("q"),
         group=_choice("group", single.get("group"), GROUPS) or "relay",
         range=day_range, tz=tz,
@@ -624,6 +640,12 @@ def select_runs(q: Query) -> RunSelection:
         add(*_in_table("m.model_id", "model_group", "model_key", q.models))
     if q.watch is not None:
         add("m.watch_id = ?", q.watch)
+    for column, version in ((run_row.VERSION_ID["scoring_version"], q.scoring_version),
+                            (run_row.VERSION_ID["audit_version"], q.audit_version)):
+        if version == UNKNOWN:
+            add(f"{column} IS NULL")
+        elif version is not None:
+            add(*_in_table(column, "run_version", "value", (version,)))
     if q.min_score is not None:
         add("m.score >= ?", q.min_score)
     if q.text is not None:
@@ -826,9 +848,12 @@ def _metrics(metrics: Iterable[str | Metric], surface: str | None) -> list[Metri
 
 
 def _group(group: str | None, q: Query) -> str:
+    """The grouping: ``group`` (a widget's own: :data:`GROUPS` or
+    :data:`VERSION_GROUPS`), else ``q.group``."""
+    allowed = (*GROUPS, *VERSION_GROUPS) if group else GROUPS
     group = group or q.group
-    if group not in GROUPS:
-        raise QueryError(f"group must be one of {', '.join(GROUPS)}")
+    if group not in allowed:
+        raise QueryError(f"group must be one of {', '.join(allowed)}")
     return group
 
 
@@ -854,6 +879,8 @@ def _grouped(
             "COUNT(*) AS runs", "MIN(m.started_us) AS t_min", "MAX(m.started_us) AS t_max"]
     if group == "model":
         cols.append("MAX(m.model_in_kb) AS mkb")
+    if group in VERSION_GROUPS:
+        cols.append(f"SUM({run_row.RESCORED_SQL}) AS rsc")
     cols += [f"{e} AS x{i}" for i, e in enumerate(extra)]
     cols += [f"{a} AS a{i}" for i, a in enumerate(a for s in specs for a in s.aggs)]
     joins = "".join(s.join for s in specs)
@@ -907,6 +934,9 @@ def group_ids(conn: sqlite3.Connection, group: str, keys: Iterable[str]) -> list
 
     if group == "relay":
         return sorted(lookup("relay_group", "relay_key", keys).values())
+    if group in VERSION_GROUPS:
+        # (unknown) is the runs without a version: no id to name them by
+        return sorted(lookup("run_version", "value", keys).values())
     if group == "model":
         return sorted(lookup("model_group", "model_key", keys).values())
     # key = relay_key || '|' || model: every (relay, model) split that spells a key
@@ -950,6 +980,9 @@ def _describe(group: str, row: Mapping[str, Any]) -> dict[str, Any]:
     if group == "relay_model":
         return {"key": str(row["g"]), "label": f"{row['rl']} · {row['mk']}", "in_kb": bool(row["rin"]),
                 "kind": "relay_model", "relay": str(row["rk"]), "model": str(row["mk"])}
+    if group in VERSION_GROUPS:
+        return {"key": str(row["g"]), "label": str(row["g"]), "in_kb": False, "kind": group,
+                "rescored": int(row["rsc"] or 0)}
     return {"key": ALL_KEY, "label": ALL_KEY, "in_kb": False, "kind": "all"}
 
 
