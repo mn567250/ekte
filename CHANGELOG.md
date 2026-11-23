@@ -31,6 +31,9 @@ ekte has three eras:
   and its open report show the recorded reason at once (before, only after a
   reload), the report drops its **Re-score with this version** action, and the
   message is a notice rather than an error.
+- **History:** the other re-score messages under a run are no longer red
+  either: "Re-scoring with this version…" is a notice and "Re-scored with this
+  version." is green. Errors stay red.
 - **API:** a job (`GET /api/v1/jobs`, `GET /api/v1/jobs/{id}`) has a new field
   `refused`: `true` when it ended with status `error` on a refusal rather than
   a failure (`error` is then the fixed reason).
