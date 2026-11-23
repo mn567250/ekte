@@ -108,6 +108,16 @@
     - combobox "Überwachung":
       - option "Alle" [selected]
       - option "gpt-4o (4)"
+    - text: Bewertungsversion
+    - combobox "Bewertungsversion":
+      - option "Alle" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Prüfversion
+    - combobox "Prüfversion":
+      - option "Alle" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Trends":
       - text: Trends 2 von höchstens 2 ausgewählt
       - button "Score" [pressed]
@@ -337,6 +347,7 @@
               - text: ekte liefert
               - strong: reproduzierbare Belege für Verhaltensabweichungen und Risiken
               - text: ", keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie öffentlich auf Grundlage eines einzigen Laufs."
+            - paragraph: "Kann nicht neu bewertet werden: dieser Bericht hat keine Belege aufbewahrt: es gibt nichts wiederzugeben"
             - button "Audit erneut ausführen"
             - button "Als Überwachung einplanen"
             - group "Bericht herunterladen":

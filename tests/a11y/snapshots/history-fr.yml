@@ -108,6 +108,16 @@
     - combobox "Surveillance":
       - option "Tous" [selected]
       - option "gpt-4o (4)"
+    - text: Version d’évaluation
+    - combobox "Version d’évaluation":
+      - option "Tous" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Version de l’audit
+    - combobox "Version de l’audit":
+      - option "Tous" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - group "Tendances":
       - text: Tendances 2 sélectionné(s) sur 2 au maximum
       - button "Score" [pressed]
@@ -337,6 +347,7 @@
               - text: ekte fournit des
               - strong: preuves reproductibles d'écart de comportement et de risque
               - text: ", pas une preuve juridique ou cryptographique de fraude. Les relais peuvent router de façon probabiliste ; tenez compte vous-même de la taille de l'échantillon, des paramètres de facturation et du droit local, et n'accusez jamais publiquement un fournisseur sur la base d'une seule exécution."
+            - paragraph: "Réévaluation impossible : ce rapport n’a conservé aucune preuve : il n’y a rien à rejouer"
             - button "Relancer l’audit"
             - button "Planifier comme surveillance"
             - group "Télécharger le rapport":

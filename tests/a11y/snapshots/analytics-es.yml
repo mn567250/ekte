@@ -87,6 +87,16 @@
     - combobox "Monitor":
       - option "Todos" [selected]
       - option "gpt-4o (4)"
+    - text: Versión de puntuación
+    - combobox "Versión de puntuación":
+      - option "Todos" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: Versión de la auditoría
+    - combobox "Versión de la auditoría":
+      - option "Todos" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - text: Agrupar por
     - combobox "Agrupar por":
       - option "Relay" [selected]

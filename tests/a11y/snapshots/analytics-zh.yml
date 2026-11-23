@@ -87,6 +87,16 @@
     - combobox "监控":
       - option "全部" [selected]
       - option "gpt-4o (4)"
+    - text: 评分版本
+    - combobox "评分版本":
+      - option "全部" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
+    - text: 检测版本
+    - combobox "检测版本":
+      - option "全部" [selected]
+      - option "0.11.0 (10)"
+      - option "0.10.0 (5)"
     - text: 分组
     - combobox "分组":
       - option "中转站" [selected]
