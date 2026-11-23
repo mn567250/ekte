@@ -369,6 +369,7 @@
           - button "Supprimer"
           - button "Annuler"
   - text: 15 audits affichés sur 15
+  - button "Tout réévaluer avec cette version"
   - button "Effacer l'historique"
   - status
 - contentinfo:

@@ -94,8 +94,15 @@ repose. Chaque paire, et toute l'exécution, se télécharge aussi en HAR ou en
 script curl qui renvoie les requêtes (`EKTE_API_KEY` fournit la clé).
 
 **Réévaluer avec cette version** sur une exécution enregistrée avec preuves la
-rejoue de la même façon et enregistre le résultat comme nouvelle exécution dans
-l'**Historique** ; son rapport indique quelle exécution a été rejouée.
+rejoue de la même façon et remplace le rapport de l'exécution : l'exécution
+garde son identifiant, son heure et sa surveillance, et son rapport indique
+quelle version d'ekte l'a enregistrée et laquelle l'a notée. **Tout réévaluer
+avec cette version** (sous la liste) fait de même, l'une après l'autre, pour
+chaque exécution notée par une autre version d'ekte. Une exécution sans fichier
+de preuves utilisable n'est pas réévaluée : elle garde son verdict. À son
+premier démarrage après une mise à jour, `ekte serve` réévalue en arrière-plan
+les exécutions notées par une version plus ancienne (`EKTE_AUTO_RESCORE=0` le
+désactive) ; un avis au-dessus de la liste montre l'avancement.
 
 **Analyses.** `/analytics` transforme l'historique
 local en comparaisons : des indicateurs pour la période choisie (exécutions,

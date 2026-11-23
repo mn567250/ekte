@@ -9,7 +9,7 @@ The English text is canonical; this document is not translated.
 | Document | Schema file | Version field | Current |
 |---|---|---|---|
 | Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../../ekte/schemas/report.schema.json) | `schema_version` | 1.6 |
-| Generic webhook payload (`ekte watch`, monitors) | [`ekte/schemas/webhook.schema.json`](../../ekte/schemas/webhook.schema.json) | `schema_version` | 1.0 |
+| Generic webhook payload (`ekte watch`, monitors) | [`ekte/schemas/webhook.schema.json`](../../ekte/schemas/webhook.schema.json) | `schema_version` | 1.1 |
 | Evidence file line (`--evidence`, history runs) | [`ekte/schemas/evidence.schema.json`](../../ekte/schemas/evidence.schema.json) | `schema_version` of the header line | 1.2 |
 
 The files are generated from the code that produces the documents (the
@@ -56,7 +56,7 @@ platforms' formats and carry no `schema_version`.
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "tool": "ekte",
   "event": "audit_alert",
   "language": "en",
@@ -69,9 +69,20 @@ platforms' formats and carry no `schema_version`.
   "claimed_model": "gpt-4o",
   "key_findings": ["Self-identifies as a rival brand"],
   "previous_risk_level": null,
-  "regressed": false
+  "regressed": false,
+  "rescored": false,
+  "audit_tool_version": "0.35.0",
+  "scoring_tool_version": "0.35.0"
 }
 ```
+
+Webhook schema 1.1 added `rescored`, `audit_tool_version` and
+`scoring_tool_version`. `rescored` is `true` for an alert sent because a
+monitor's latest run was re-scored from its evidence (a re-score from History,
+`ekte rescore`, or the automatic re-score after an upgrade) instead of being
+audited again; `audit_tool_version` is the ekte version the audit ran with,
+`scoring_tool_version` the version that produced the verdict (they differ for a
+re-scored run).
 
 ## Validating
 
@@ -137,7 +148,12 @@ version, its requests answered from the evidence file) carries
 `rescored_from`: the recorded run's `run_id` and `evidence_sha256`, its
 `tool_version`, `generated_at` and `report_id`, and `replayed`, `missing` (per
 detector: requests nothing in the file answered; such a detector is
-inconclusive) and `unused`. Its `evidence` is the recorded run's file, and its
+inconclusive) and `unused`. Since report schema 1.6 it also carries
+`rescored_at` (when this scoring was made) and `previous_verdict`
+(`risk_level`, `overall_score` and `rating` before this re-score). A report
+re-scored again keeps `run_id`, `tool_version` and `generated_at` of the
+recorded audit, never of the previous scoring; `report_id` is the History run
+itself, which a re-score replaces in place. Its `evidence` is the recorded run's file, and its
 request records keep that run's `seq`s (a request without a recorded answer
 gets a `seq` from 1000000 up).
 

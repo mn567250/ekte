@@ -369,6 +369,7 @@
           - button "Eliminar"
           - button "Cancelar"
   - text: A mostrar 15 de 15 auditorias
+  - button "Reavaliar tudo com esta versão"
   - button "Limpar histórico"
   - status
 - contentinfo:

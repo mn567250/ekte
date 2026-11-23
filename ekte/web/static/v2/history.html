@@ -224,7 +224,9 @@
   .lfoot .confirm { flex: 1 1 100%; margin: 0; }
   .clr { color: var(--ink-muted); font-weight: 600; font-size: var(--t-sm); }
   .clr:hover { color: var(--danger); }
-  .clr .zicon { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; }
+  .clr .zicon, .rsall .zicon { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; }
+  .rsall { color: var(--ink-muted); font-weight: 600; font-size: var(--t-sm); margin-left: auto; }
+  .rsall:hover:not(:disabled) { color: var(--ink); }
 
 
   /* phones: stacked rows, no horizontal scroll */
@@ -267,6 +269,9 @@
     <!-- new runs since the list was loaded (live.js): a notice that offers to
          show them; not a live region itself (#live announces it once) -->
     <div class="znote" id="fresh" hidden></div>
+    <!-- the bulk re-score (Re-score all, or the automatic one after an
+         upgrade): its progress, from GET /api/rescore -->
+    <div class="znote" id="rescoring" hidden></div>
 
     <section class="card filters" id="filters" hidden></section>
     <p class="sr-only" id="live" role="status"></p>
@@ -847,6 +852,9 @@
       '<div class="lfoot">' +
       '<span class="aside" id="hcount">' + esc(footText()) + "</span>" +
       (more ? '<p class="sr-only" id="hmore" role="status"></p>' : "") +
+      // re-scores every run scored by another version (no relay contacted)
+      '<button type="button" class="linkbtn rsall" id="rsall"' + (rescoring.info && rescoring.info.active ? " disabled" : "") + ">" +
+      ico("refresh") + esc(T("用当前版本重新评分全部", "Re-score all with this version")) + "</button>" +
       '<button type="button" class="linkbtn clr" id="clr" aria-expanded="' + (state.confirm === "all") + '" aria-controls="clrConfirm">' +
       ico("trash") + esc(T("清空历史", "Clear history")) + "</button>" +
       confirmHTML("clrConfirm", "all", T("确定清空全部检测历史？此操作不可撤销。", "Clear the entire audit history? This cannot be undone."), T("清空历史", "Clear history")) +
@@ -1231,24 +1239,111 @@
     location.href = RERUN_SURFACES.hasOwnProperty(s) ? "/?surface=" + s + "&" + q : "/?" + q;
   }
 
-  // Re-score a saved run from its evidence file: a background job, followed
-  // on the audit page like any audit.
+  // Re-score a saved run from its evidence file: a background job whose
+  // report replaces the run in place (same id). The page follows the job and
+  // then loads the run again.
+  function postJSON(url) {
+    return fetch(url, { method: "POST" }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+        return j;
+      });
+    });
+  }
   function rescore(id) {
-    fetch("/api/history/" + encodeURIComponent(id) + "/rescore", { method: "POST" })
-      .then(function (r) {
-        return r.json().catch(function () { return {}; }).then(function (j) {
-          if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
-          return j;
-        });
+    var msg = document.getElementById("m-" + id);
+    var tell = function (text) { if (msg) msg.textContent = text; };
+    postJSON("/api/history/" + encodeURIComponent(id) + "/rescore")
+      .then(function (job) {
+        tell(T("正在用当前版本重新评分…", "Re-scoring with this version…"));
+        return waitJob(job.id);
       })
       .then(function (job) {
-        location.href = "/?job=" + encodeURIComponent(job.id);
+        if (job.status !== "done") throw new Error(job.error || job.status);
+        tell(T("已用当前版本重新评分。", "Re-scored with this version."));
+        delete state.reports[String(id)];
+        var panel = host.querySelector('.panel[data-id="' + CSS.escape(String(id)) + '"]');
+        if (panel && !panel.hidden) fetchReport(panel, String(id));
       })
       .catch(function (e) {
-        var msg = document.getElementById("m-" + id);
-        if (msg) msg.textContent = T("无法重新评分：", "Could not re-score: ") + EKTE_LANG.server(String((e && e.message) || e));
+        tell(T("无法重新评分：", "Could not re-score: ") + EKTE_LANG.server(String((e && e.message) || e)));
       });
   }
+  // a job, polled until it has ended
+  function waitJob(jid) {
+    return new Promise(function (resolve, reject) {
+      (function poll() {
+        fetch("/api/jobs/" + encodeURIComponent(jid), { cache: "no-store" })
+          .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+          .then(function (j) {
+            if (j.status === "queued" || j.status === "running") setTimeout(poll, 1000);
+            else resolve(j);
+          }, reject);
+      })();
+    });
+  }
+
+  /* ---------------- bulk re-score (GET/POST /api/rescore) ---------------- */
+  // "Re-score all with this version" and the automatic re-score after an
+  // upgrade: one run after another on the server; this notice shows how far
+  // it is while it runs (polled), and its outcome once it ends.
+  var rescoring = { info: null, seen: false, timer: null };
+  var rescoreBox = $("#rescoring");
+  function paintRescore() {
+    var i = rescoring.info;
+    // shown while one runs, and its outcome once this page saw it run
+    if (!i || (!i.active && !rescoring.seen)) {
+      window.EkteNotice.show(rescoreBox, null);
+      return;
+    }
+    var counts = Tf("已处理 {done}/{total} 次 · {skipped} 次无可用证据而跳过",
+      "{done} of {total} runs · {skipped} skipped (no usable evidence)",
+      { done: i.done || 0, total: i.total == null ? "…" : i.total, skipped: i.skipped || 0 });
+    if (i.active) {
+      window.EkteNotice.show(rescoreBox, {
+        level: "info", icon: "refresh",
+        title: i.trigger === "upgrade"
+          ? Tf("升级后正在用 ekte {v} 重新评分已保存的检测", "Re-scoring saved runs after the upgrade to ekte {v}", { v: i.version })
+          : Tf("正在用 ekte {v} 重新评分已保存的检测", "Re-scoring saved runs with ekte {v}", { v: i.version }),
+        detail: counts, role: false,
+      });
+    } else {
+      window.EkteNotice.show(rescoreBox, {
+        level: i.failed || i.error ? "warning" : "success",
+        title: Tf("已用 ekte {v} 重新评分 {n} 次检测", "Re-scored {n} runs with ekte {v}", { n: i.rescored || 0, v: i.version }),
+        detail: counts + (i.failed ? " · " + Tf("{n} 次失败", "{n} failed", { n: i.failed }) : ""),
+        role: false,
+      });
+    }
+  }
+  function pollRescore() {
+    clearTimeout(rescoring.timer);
+    fetch("/api/rescore", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (info) {
+        if (!info) return;
+        if (info.active) rescoring.seen = true;
+        rescoring.info = info;
+        paintRescore();
+        var btn = $("#rsall");
+        if (btn) btn.disabled = !!info.active;
+        if (info.active) rescoring.timer = setTimeout(pollRescore, 2000);
+      }, function () { /* silent: the next load asks again */ });
+  }
+  function rescoreAll() {
+    var btn = $("#rsall");
+    if (btn) btn.disabled = true;
+    postJSON("/api/rescore").then(function () {
+      rescoring.seen = true;
+      pollRescore();
+    }, function (e) {
+      if (btn) btn.disabled = false;
+      say(T("无法重新评分：", "Could not re-score: ") + EKTE_LANG.server(String((e && e.message) || e)));
+      pollRescore();
+    });
+  }
+  window.addEventListener("ekte:lang", paintRescore);
+  pollRescore();
 
   function rerunBtnHTML(r) {
     var label = T("重新检测", "Re-run audit");
@@ -1409,6 +1504,7 @@
       return setConfirm(state.confirm === id ? null : id);
     }
     if (t.id === "clr") return setConfirm(state.confirm === "all" ? null : "all");
+    if (t.id === "rsall") return rescoreAll();
     if (t.hasAttribute("data-no")) {
       var w = t.getAttribute("data-no");
       setConfirm(null);

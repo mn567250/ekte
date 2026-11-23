@@ -59,11 +59,20 @@ one JSON document (`--as json`); `--seq` picks requests.
 `ekte rescore` judges a recorded run again with the installed ekte version:
 it runs the same audit, but answers every request with the recorded response
 (at the recorded timing) instead of contacting the relay, so improved checks
-apply to old runs. It takes a saved run's id (and saves the result as a new
-run unless `--no-save`), or a report file with `--evidence PATH`. A check that
+apply to old runs. It takes a saved run's id, or a report file with `--evidence PATH`. With
+`--replace` the result replaces the saved run in place (same id, time and
+monitor); without it, it is still saved as a new run, which is deprecated and
+prints a warning (a later ekte replaces by default; `--no-save` saves
+nothing). A check that
 now asks something the recorded run never asked reads inconclusive instead of
 being scored on a guess; the report's `rescored_from` says how many requests
 were replayed and which checks had none.
+
+`ekte rescore --all` re-scores every saved run scored by another ekte version,
+one after another, replaces each and prints its verdict before and after. A run
+without a usable evidence file is not re-scored: it keeps its verdict and is
+skipped with the reason. `ekte serve` does the same in the background on its
+first start after an upgrade (see [Web UI](web-ui.md)).
 
 Keys and sensitive headers are removed before anything is written (see
 [Privacy](privacy.md)). Each line matches `ekte/schemas/evidence.schema.json`

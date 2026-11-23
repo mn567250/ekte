@@ -57,6 +57,21 @@ un'esecuzione vengono inviati contemporaneamente, così uno lento o non
 raggiungibile non blocca gli altri. Le chiavi sono salvate cifrate nella tua
 directory dei dati locale e non vengono mai restituite al browser.
 
+**Esecuzioni rivalutate.** I monitor seguono la valutazione più recente.
+Quando le esecuzioni di un monitor vengono rivalutate con un ekte più recente
+(**Rivaluta con questa versione** o **Rivaluta tutto con questa versione** nella
+Cronologia, `ekte rescore --replace` o `--all`, o la rivalutazione automatica
+dopo un aggiornamento), ogni esecuzione mantiene il suo posto nell'andamento del
+monitor con il nuovo punteggio, e il controllo di regressione dell'esecuzione
+successiva confronta con il verdetto rivalutato. Se l'esecuzione rivalutata è
+l'ultima del monitor, la sua scheda mostra il nuovo verdetto (l'orario
+dell'ultima esecuzione resta) e le sue regole di avviso vengono applicate al
+nuovo verdetto: i webhook ricevono un avviso se raggiunge la soglia o è
+peggiore di prima della rivalutazione, segnato nel payload JSON generico con
+`"rescored": true` e le versioni dell'audit e della valutazione. Rivalutare
+un'esecuzione precedente di un monitor, o un'esecuzione di un monitor in pausa,
+non invia nulla.
+
 **Archiviazione delle chiavi API.** Per impostazione predefinita ekte **non
 salva** le chiavi API dei monitor: una chiave inserita resta solo nella memoria
 di `ekte serve` e non viene mai scritta su disco. Dopo un riavvio la pagina

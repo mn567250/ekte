@@ -61,13 +61,22 @@ JSON-Dokument (`--as json`); `--seq` wählt Anfragen aus.
 `ekte rescore` bewertet einen aufgezeichneten Lauf mit der installierten
 ekte-Version neu: Es führt dieselbe Prüfung aus, beantwortet aber jede Anfrage
 mit der aufgezeichneten Antwort (im aufgezeichneten Takt), statt das Relay zu
-kontaktieren, sodass verbesserte Prüfungen auch für alte Läufe gelten. Es nimmt
-die Id eines gespeicherten Laufs (und speichert das Ergebnis als neuen Lauf,
-außer mit `--no-save`) oder eine Berichtsdatei mit `--evidence PATH`. Eine
+kontaktieren, sodass verbesserte Prüfungen auch für alte Läufe gelten. Es nimmt die Id eines gespeicherten Laufs oder eine Berichtsdatei mit
+`--evidence PATH`. Mit `--replace` ersetzt das Ergebnis den gespeicherten Lauf
+(gleiche Id, Zeit und Überwachung); ohne wird es weiterhin als neuer Lauf
+gespeichert, was veraltet ist und eine Warnung ausgibt (ein späteres ekte
+ersetzt standardmäßig; `--no-save` speichert nichts). Eine
 Prüfung, die jetzt etwas fragt, das der aufgezeichnete Lauf nie gefragt hat,
 bleibt ohne klares Ergebnis, statt auf eine Vermutung hin bewertet zu werden;
 `rescored_from` im Bericht nennt, wie viele Anfragen wiedergegeben wurden und
 welche Prüfungen keine hatten.
+
+`ekte rescore --all` bewertet jeden gespeicherten Lauf, den eine andere
+ekte-Version bewertet hat, nacheinander neu, ersetzt ihn und zeigt sein Urteil
+vorher und nachher. Ein Lauf ohne verwendbare Belegdatei wird nicht neu
+bewertet: Er behält sein Urteil und wird mit Begründung übersprungen.
+`ekte serve` tut dasselbe beim ersten Start nach einem Update im Hintergrund
+(siehe [Web-Oberfläche](web-ui.md)).
 
 Schlüssel und sensible Header werden vor dem Schreiben entfernt (siehe
 [Datenschutz](privacy.md)). Jede Zeile entspricht

@@ -88,8 +88,15 @@ par, og hele kjøringen, kan også lastes ned som HAR eller som et curl-skript
 som sender forespørslene på nytt (`EKTE_API_KEY` gir nøkkelen).
 
 **Vurder på nytt med denne versjonen** på en lagret kjøring med bevis spiller
-den av på samme måte og lagrer resultatet som en ny kjøring i **Historikk**;
-rapporten sier hvilken kjøring som ble spilt av.
+den av på samme måte og erstatter rapporten til kjøringen: kjøringen beholder
+id, tid og overvåking, og rapporten sier hvilken ekte-versjon som registrerte
+den og hvilken som vurderte den. **Vurder alle på nytt med denne versjonen**
+(under listen) gjør dette, én etter én, for hver kjøring en annen ekte-versjon
+har vurdert. En kjøring uten brukbar bevisfil vurderes ikke på nytt: den
+beholder vurderingen sin. Ved første oppstart etter en oppgradering vurderer
+`ekte serve` kjøringene en eldre versjon har vurdert på nytt i bakgrunnen
+(`EKTE_AUTO_RESCORE=0` slår det av); et varsel over listen viser hvor langt
+den har kommet.
 
 **Analyse.** `/analytics` gjør den lokale historikken om til sammenligninger:
 nøkkeltall for valgt periode (kjøringer, medianscore, andel høy risiko,

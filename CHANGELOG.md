@@ -20,6 +20,58 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Re-scoring replaces the stored run; monitors follow the latest scoring ([#168](https://github.com/mn567250/ekte/issues/168))
+
+A run re-scored from its evidence file with a newer ekte used to be saved as a
+second History run, so trends and Analytics counted the audit twice (the copy
+at the time of the re-score) and a monitor's regression check could compare
+with a re-scored copy of an older run. A re-score now replaces the run in
+place, and runs scored by an older ekte are re-scored after an upgrade.
+
+- **Changed: History's "Re-score with this version" replaces the run.** The
+  run keeps its id, time, monitor and evidence file; its report, risk, score,
+  grade, request records and analytics rows are the new scoring's, and
+  Analytics shows the new score at the original time. History follows the job
+  and loads the run again instead of opening the audit page.
+- **Changed (deprecated behavior kept): `ekte rescore ID` and
+  `POST /api/v1/history/{id}/rescore`.** Following the stability policy, both
+  still save a new run by default for the deprecation period; `--replace`
+  (CLI) and `replace=true` (HTTP API) replace the run in place now.
+- **Deprecated:** saving a re-score as a new run (`ekte rescore ID` without
+  `--replace`, `POST /api/v1/history/{id}/rescore` without `replace=true`).
+  It prints a warning on stderr, or logs one and answers with
+  `Deprecation: true`; a later release (0.37.0 at the earliest) replaces by
+  default.
+- **Re-score all:** `ekte rescore --all` re-scores every saved run scored by
+  another ekte version, one after another, replaces each and prints its
+  verdict before and after; History's **Re-score all with this version** does
+  the same as one job per run (`GET` / `POST /api/rescore` for its progress).
+- **After an upgrade:** on its first start with a new version, `ekte serve`
+  re-scores every saved run with evidence that an older version scored, in
+  the background; History shows its progress. It is done once per version and
+  resumes after a restart. `EKTE_AUTO_RESCORE=0` turns it off.
+- **Runs without a usable evidence file are not re-scored.** They keep their
+  verdict; a bulk re-score records the reason (no evidence file, a changed
+  file, an unknown evidence version, ...) in the new `history_rescore` table
+  (history database step 17).
+- **Monitors follow the latest scoring.** Re-scoring a monitor's last run
+  updates its card's risk and score (the run time stays), and the next run's
+  regression check compares with the re-scored verdict. When the re-scored run
+  is the monitor's latest run, its alert rules are evaluated on the new
+  verdict (the threshold, or worse than before the re-score), including the
+  automatic re-score after an upgrade; re-scoring an older run sends nothing.
+- **Webhook schema 1.1:** the generic payload gains `rescored` (true for an
+  alert caused by a re-score), `audit_tool_version` and
+  `scoring_tool_version`; the alert text says it is a re-score and compares
+  with the verdict before it.
+- **Report schema 1.6** (still unreleased): `rescored_from` gains the optional
+  `rescored_at` and `previous_verdict` (`risk_level`, `overall_score`,
+  `rating` before the re-score). A report re-scored again keeps the recorded
+  audit's `tool_version`, `generated_at` and `run_id` in `rescored_from`;
+  `report_id` is the run itself.
+- History rows that earlier versions saved as separate re-scores stay as they
+  are.
+
 ### Docs: the methodology matches the code, and a test keeps it so ([#263](https://github.com/mn567250/ekte/issues/263))
 
 The methodology said every scoring table in it was the detector's published

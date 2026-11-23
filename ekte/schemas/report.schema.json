@@ -1941,6 +1941,17 @@
           "title": "Missing",
           "type": "object"
         },
+        "previous_verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RescoredVerdict"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "replayed": {
           "default": 0,
           "title": "Replayed",
@@ -1957,6 +1968,18 @@
           ],
           "default": null,
           "title": "Report Id"
+        },
+        "rescored_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rescored At"
         },
         "run_id": {
           "title": "Run Id",
@@ -1985,6 +2008,49 @@
         "evidence_sha256"
       ],
       "title": "RescoreRef",
+      "type": "object"
+    },
+    "RescoredVerdict": {
+      "description": "The verdict a re-scored report had before its latest re-score.",
+      "properties": {
+        "overall_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overall Score"
+        },
+        "rating": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rating"
+        },
+        "risk_level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Level"
+        }
+      },
+      "title": "RescoredVerdict",
       "type": "object"
     },
     "RiskLevel": {

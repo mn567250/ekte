@@ -369,6 +369,7 @@
           - button "Elimina"
           - button "Annulla"
   - text: 15 di 15 audit mostrati
+  - button "Rivaluta tutto con questa versione"
   - button "Cancella cronologia"
   - status
 - contentinfo:

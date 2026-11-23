@@ -879,6 +879,14 @@ def get(wid: int) -> dict[str, Any] | None:
     return _row_to_dict(row, include_key=True) if row else None
 
 
+def get_settings(wid: int) -> dict[str, Any] | None:
+    """One watch row WITHOUT its api_key (as :func:`list_all` gives it), or
+    ``None`` if missing: its alert settings without opening the key."""
+    with _connect() as conn:
+        row = conn.execute("SELECT * FROM watches WHERE id = ?", (int(wid),)).fetchone()
+    return _row_to_dict(row, include_key=False) if row else None
+
+
 def set_enabled(wid: int, enabled: bool) -> None:
     """Enable or disable a watch. No-op if it doesn't exist."""
     with _connect() as conn:
@@ -990,6 +998,26 @@ def mark_run(
             ),
         )
         _bump(conn)
+
+
+def update_last(wid: int, report_id: int, risk: str | None, score: float | None) -> bool:
+    """The monitor's last run ``report_id`` was re-scored: its card shows the
+    new verdict. The run time (``last_run_ts``) and duration stay; nothing
+    changes when ``report_id`` is no longer the monitor's last run. True
+    when the monitor was updated."""
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE watches SET last_risk = ?, last_score = ? WHERE id = ? AND last_report_id = ?",
+            (
+                risk,
+                float(score) if isinstance(score, (int, float)) else None,
+                int(wid),
+                int(report_id),
+            ),
+        )
+        if cur.rowcount:
+            _bump(conn)
+        return bool(cur.rowcount)
 
 
 def mark_attempt(wid: int, ts: float) -> None:

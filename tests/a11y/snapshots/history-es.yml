@@ -369,6 +369,7 @@
           - button "Eliminar"
           - button "Cancelar"
   - text: Mostrando 15 de 15 auditorías
+  - button "Volver a puntuar todo con esta versión"
   - button "Borrar historial"
   - status
 - contentinfo:

@@ -369,6 +369,7 @@
           - button "Delete"
           - button "Cancel"
   - text: Showing 15 of 15 audits
+  - button "Re-score all with this version"
   - button "Clear history"
   - status
 - contentinfo:

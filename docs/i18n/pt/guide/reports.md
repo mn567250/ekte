@@ -60,13 +60,22 @@ pedidos.
 `ekte rescore` reavalia uma execução registada com a versão do ekte
 instalada: repete a mesma auditoria, mas responde a cada pedido com a resposta
 registada (ao ritmo registado) em vez de contactar o intermediário, para que as
-verificações melhoradas se apliquem a execuções antigas. Aceita o id de uma
-execução guardada (e guarda o resultado como nova execução, exceto com
-`--no-save`) ou um ficheiro de relatório com `--evidence PATH`. Uma
+verificações melhoradas se apliquem a execuções antigas. Aceita o id de uma execução guardada ou um ficheiro de relatório com
+`--evidence PATH`. Com `--replace` o resultado substitui a execução guardada
+(mesmo id, hora e monitor); sem essa opção continua a ser guardado como nova
+execução, o que está obsoleto e mostra um aviso (uma versão posterior do ekte
+substituirá por omissão; `--no-save` não guarda nada). Uma
 verificação que agora pergunta algo que a execução registada nunca perguntou
 fica inconclusiva em vez de ser pontuada com base num palpite; o campo
 `rescored_from` do relatório indica quantos pedidos foram reproduzidos e que
 verificações não tinham nenhum.
+
+`ekte rescore --all` reavalia, uma após outra, todas as execuções guardadas
+avaliadas por outra versão do ekte, substitui cada uma e mostra o veredito
+antes e depois. Uma execução sem um ficheiro de evidências utilizável não é
+reavaliada: mantém o veredito e é ignorada com o motivo. O `ekte serve` faz o
+mesmo em segundo plano no primeiro arranque após uma atualização (ver
+[Interface web](web-ui.md)).
 
 As chaves e os cabeçalhos sensíveis são removidos antes de qualquer escrita
 (ver [Privacidade](privacy.md)). Cada linha corresponde a

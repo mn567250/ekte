@@ -54,6 +54,20 @@ relé og modell, uansett hvor mange andre kjøringer som er lagret siden.
 Varslingswebhookene for en kjøring sendes samtidig, så en treg eller død webhook
 ikke holder igjen de andre. API-nøkler sendes aldri tilbake til nettleseren.
 
+**Kjøringer vurdert på nytt.** Overvåkinger følger den siste vurderingen. Når
+kjøringene til en overvåking vurderes på nytt med en nyere ekte (**Vurder på
+nytt med denne versjonen** eller **Vurder alle på nytt med denne versjonen** i
+Historikk, `ekte rescore --replace` eller `--all`, eller den automatiske nye
+vurderingen etter en oppgradering), beholder hver kjøring plassen sin i
+overvåkingens trend med den nye poengsummen, og kontrollen av forverring ved
+neste kjøring sammenligner med den nye vurderingen. Er kjøringen som ble
+vurdert på nytt overvåkingens siste, viser kortet den nye vurderingen (tiden
+for siste kjøring står) og varslingsreglene brukes på den nye vurderingen:
+webhookene får et varsel når den når terskelen eller er verre enn før, merket i
+den generiske JSON-meldingen med `"rescored": true` og versjonene for
+revisjonen og vurderingen. Å vurdere en eldre kjøring av en overvåking, eller
+en kjøring av en satt-på-pause overvåking, på nytt sender ingenting.
+
 **Lagring av API-nøkler.** Som standard **lagrer ikke** ekte overvåkingenes
 API-nøkler: en nøkkel du oppgir, blir bare værende i minnet til `ekte serve` og
 skrives aldri til disk. Etter en omstart viser **Overvåking**-siden hvilke

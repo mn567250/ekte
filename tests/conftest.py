@@ -51,8 +51,12 @@ def _isolated_data_dir(tmp_path_factory):
     directory still monkeypatch EKTE_DATA_DIR per test."""
     import os
 
-    saved = {k: os.environ.get(k) for k in ("EKTE_DATA_DIR", "EKTE_KB_DIR", "EKTE_NO_USER_KB")}
+    saved = {k: os.environ.get(k) for k in ("EKTE_DATA_DIR", "EKTE_KB_DIR", "EKTE_NO_USER_KB",
+                                            "EKTE_AUTO_RESCORE")}
     os.environ["EKTE_DATA_DIR"] = str(tmp_path_factory.mktemp("ekte-data"))
+    # No automatic re-score of saved runs at server start (#168), except
+    # where a test turns it on.
+    os.environ["EKTE_AUTO_RESCORE"] = "0"
     os.environ.pop("EKTE_KB_DIR", None)
     os.environ.pop("EKTE_NO_USER_KB", None)
     yield

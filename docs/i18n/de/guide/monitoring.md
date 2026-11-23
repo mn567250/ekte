@@ -57,6 +57,21 @@ wurden. Die Warn-Webhooks eines Laufs werden gleichzeitig gesendet, sodass ein
 langsamer oder toter Webhook die anderen nicht aufhält. Schlüssel werden
 verschlüsselt in Ihrem lokalen Datenverzeichnis gespeichert und nie an den Browser zurückgegeben.
 
+**Neu bewertete Läufe.** Überwachungen folgen der jüngsten Bewertung. Werden
+die Läufe einer Überwachung mit einem neueren ekte neu bewertet (**Mit dieser
+Version neu bewerten** oder **Alle mit dieser Version neu bewerten** im
+Verlauf, `ekte rescore --replace` oder `--all`, oder die automatische
+Neubewertung nach einem Update), behält jeder Lauf seinen Platz im Verlauf der
+Überwachung mit seiner neuen Punktzahl, und die Prüfung auf Verschlechterung
+des nächsten Laufs vergleicht mit dem neu bewerteten Urteil. Ist der neu
+bewertete Lauf der jüngste der Überwachung, zeigt ihre Karte das neue Urteil
+(die Zeit des letzten Laufs bleibt), und ihre Warnregeln werden auf das neue
+Urteil angewandt: Die Webhooks erhalten eine Warnung, wenn es die Schwelle
+erreicht oder schlechter ist als vor der Neubewertung, im generischen
+JSON-Format markiert mit `"rescored": true` und den Versionen von Prüfung und
+Bewertung. Die Neubewertung eines älteren Laufs einer Überwachung, oder eines
+Laufs einer pausierten Überwachung, sendet nichts.
+
 **Speicherung der API-Schlüssel.** Standardmäßig **speichert** ekte die
 API-Schlüssel der Überwachungen **nicht**: Ein eingegebener Schlüssel bleibt nur
 im Arbeitsspeicher von `ekte serve` und wird nie auf die Festplatte geschrieben.

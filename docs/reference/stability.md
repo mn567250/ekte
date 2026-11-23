@@ -267,6 +267,7 @@ Public (all `EKTE_`-prefixed variables below):
 | `EKTE_MAX_PARALLEL_AUDITS` | Concurrent audits in the web UI |
 | `EKTE_NO_EVIDENCE` | Keep no raw request/response pairs for runs saved to history |
 | `EKTE_RUN_NONCE` | Fix the per-run value needles, canaries and cache prefixes are derived from (tests, reproducing a run) |
+| `EKTE_AUTO_RESCORE` | `0` turns off the automatic re-score of saved runs on the first start of `ekte serve` after an upgrade |
 
 Also public: any variable you name yourself and pass as `--api-key env:NAME` or
 `api_key: env:NAME`. The `ZING_*` equivalents are deprecated (see
@@ -372,7 +373,7 @@ small on purpose:
 | `GET /api/v1/history/{id}/evidence` | the run's evidence file |
 | `GET /api/v1/history/{id}/evidence/exchanges` | the run's exchanges, or the pairs of one request |
 | `GET /api/v1/history/{id}/evidence/export` | the exchanges as HAR, a curl script or one JSON document |
-| `POST /api/v1/history/{id}/rescore` | re-score a saved run from its evidence; answers with the job |
+| `POST /api/v1/history/{id}/rescore` | re-score a saved run from its evidence; answers with the job. `replace=true` replaces the run in place; without it the result is saved as a new run (deprecated since 0.36.0, see below) |
 
 Request and response shapes, the error format (`{"error": "..."}`) and the
 status codes are in the [developer guide](../dev/web-server.md#http-api-v1) and
@@ -390,6 +391,13 @@ responses carry `X-Ekte-API: v1`.
 The local-only protections (loopback binding by default, Host check, refusal of
 cross-site requests and non-JSON bodies) apply to every path, `/api/v1/`
 included. The API has no authentication: do not expose it beyond the machine.
+
+Deprecated in 0.36.0 (#168): a re-score saved as a **new** History run, by
+`POST /api/v1/history/{id}/rescore` without `replace=true` (the response carries
+`Deprecation: true` and the server logs a warning) and by `ekte rescore ID`
+without `--replace` (a warning on stderr). It keeps working for at least one
+minor release; then the default becomes the replacement in place, which the web
+UI, `ekte rescore --all` and the automatic re-score after an upgrade use already.
 
 Removed in the release after 0.30.0: `POST /api/audit/stream`, `POST /api/embed`,
 `POST /api/rerank` and `GET /api/history/trend`. Queue an audit with

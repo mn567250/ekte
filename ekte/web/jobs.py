@@ -57,6 +57,7 @@ _KEEP_FINISHED_MAX = 20
 
 Emit = Callable[[dict[str, Any]], None]
 Runner = Callable[[Emit], Awaitable[dict[str, Any]]]
+Saver = Callable[[dict[str, Any]], Awaitable[int | None]]
 
 # The events that change what /api/jobs (or a monitor card) shows: a job was
 # queued behind another audit, started running, or ended ("done" follows every
@@ -240,6 +241,8 @@ class Job:
         self.cancel_requested = False
         # Set while a finished audit is being saved: too late to cancel then.
         self.finishing = False
+        # Stores the finished report (JobManager.submit's ``save``); None: a new run.
+        self.saver: Saver | None = None
 
     @property
     def active(self) -> bool:
@@ -319,13 +322,24 @@ class JobManager:
         self._prune()
         return sorted(self._jobs.values(), key=lambda j: j.created)
 
-    def submit(self, summary: dict[str, Any], urls: Iterable[str | None], run: Runner) -> Job:
-        """Queue an audit; it starts as soon as its relays (and a slot) are free."""
+    def submit(
+        self,
+        summary: dict[str, Any],
+        urls: Iterable[str | None],
+        run: Runner,
+        *,
+        save: Saver | None = None,
+    ) -> Job:
+        """Queue an audit; it starts as soon as its relays (and a slot) are free.
+
+        ``save`` stores the finished report and returns its history id
+        (default: saved as a new run; a re-score replaces its run instead)."""
         self._prune()
         keys = frozenset(relay_key(u) for u in urls if u)
         job = Job(summary, keys)
         self._jobs[job.id] = job
         bump_live()  # a new job in the list, queued
+        job.saver = save
         job.task = asyncio.create_task(self._drive(job, run))
         return job
 
@@ -383,7 +397,10 @@ class JobManager:
     @staticmethod
     async def _finish(job: Job, report: dict[str, Any]) -> None:
         job.finishing = True
-        job.report_id = await asyncio.to_thread(_save, report)
+        if job.saver is None:
+            job.report_id = await asyncio.to_thread(_save, report)
+        else:
+            job.report_id = await job.saver(report)
         perf = report.get("performance")
         if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
             attach_trends(perf["requests"])  # the chart's trend line (after saving: never stored)

@@ -63,12 +63,21 @@ documento JSON (`--as json`); `--seq` elige peticiones.
 ekte instalada: repite la misma auditoría, pero responde a cada petición con la
 respuesta registrada (al ritmo registrado) en lugar de contactar con el
 intermediario, de modo que las comprobaciones mejoradas se aplican a
-ejecuciones antiguas. Admite el id de una ejecución guardada (y guarda el
-resultado como una ejecución nueva salvo con `--no-save`) o un archivo de
-informe con `--evidence PATH`. Una comprobación que ahora pregunta algo que la
+ejecuciones antiguas. Admite el id de una ejecución guardada o un archivo de informe con
+`--evidence PATH`. Con `--replace` el resultado sustituye a la ejecución
+guardada (mismo id, hora y monitor); sin él se sigue guardando como una
+ejecución nueva, lo que está obsoleto y muestra un aviso (una versión posterior
+de ekte sustituirá por defecto; `--no-save` no guarda nada). Una comprobación que ahora pregunta algo que la
 ejecución registrada nunca preguntó queda sin concluir en lugar de puntuarse
 con una suposición; el campo `rescored_from` del informe indica cuántas
 peticiones se reprodujeron y qué comprobaciones no tenían ninguna.
+
+`ekte rescore --all` vuelve a puntuar, una tras otra, todas las ejecuciones
+guardadas que puntuó otra versión de ekte, sustituye cada una y muestra su
+veredicto antes y después. Una ejecución sin un archivo de evidencia utilizable
+no se vuelve a puntuar: conserva su veredicto y se omite indicando el motivo.
+`ekte serve` hace lo mismo en segundo plano en su primer arranque tras una
+actualización (consulta [Interfaz web](web-ui.md)).
 
 Las claves y los encabezados sensibles se eliminan antes de escribir nada (vea
 [Privacidad](privacy.md)). Cada línea cumple
