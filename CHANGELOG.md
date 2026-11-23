@@ -66,7 +66,7 @@ place, and runs scored by an older ekte are re-scored after an upgrade.
   `--replace`, `POST /api/v1/history/{id}/rescore` without `replace=true`).
   It prints a warning on stderr, or logs one and answers with
   `Deprecation: true`; a later release (0.37.0 at the earliest) replaces by
-  default.
+  default ([#294](https://github.com/mn567250/ekte/issues/294)).
 - **Re-score all:** `ekte rescore --all` re-scores every saved run scored by
   another ekte version, one after another, replaces each and prints its
   verdict before and after; History's **Re-score all with this version** does
