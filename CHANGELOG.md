@@ -31,6 +31,16 @@ ekte has three eras:
   had no recorded answer (connectivity 1, prompt_cache 3, ...); those checks
   read inconclusive`. Other local failures keep their traceback.
 
+### Re-score: an old embedding or rerank run's `reliability` selection is `integrity` ([#303](https://github.com/mn567250/ekte/issues/303))
+
+- A custom-suite embedding or rerank run recorded before the `integrity`
+  dimension selected `reliability`, the dimension its determinism check was
+  filed under then. A re-score took that selection as it was, ran no check and
+  replaced the run's verdict with "inconclusive". The re-score now reads it as
+  `integrity`, as monitors and the web UI already did: the run is scored from
+  its recorded answers again, and the re-scored report's
+  `dimensions_selected` names `integrity`.
+
 ### CI tests the locked dependencies; nightly early warning with the latest ones (internal, [#299](https://github.com/mn567250/ekte/issues/299))
 
 - The test, performance budget and accessibility jobs install with

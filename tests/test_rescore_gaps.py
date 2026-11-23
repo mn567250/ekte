@@ -107,3 +107,56 @@ class _Bare:
 
     def _extra_secrets(self):
         return []
+
+
+# --------------------------------------------------------------------------- #
+# #303: an embedding or rerank run's old "reliability" selection is "integrity"
+# --------------------------------------------------------------------------- #
+def _surface(name):
+    if name == "embedding":
+        from tests import test_embed_surface as m
+
+        return m.EmbedServer(), m._target(), m._opts
+    from tests import test_rerank_surface as m
+
+    return m.RerankServer(), m._target(), m._opts
+
+
+def _set_dimensions(dims):
+    def edit(lines):
+        lines[0]["options"]["dimensions"] = dims
+        return lines
+
+    return edit
+
+
+@pytest.mark.parametrize("surface", ["embedding", "rerank"])
+def test_an_old_reliability_selection_is_rescored_as_integrity(data, monkeypatch, surface):
+    from ekte.clients import make_client as real
+    from ekte.runner import run_audit
+    from ekte.web import history, rescore
+
+    server, target, opts = _surface(surface)
+    path = evidence.data_dir_path(evidence.new_run_id())
+    with pytest.MonkeyPatch.context() as mp:  # afterwards the replay answers from the file only
+        mp.setattr("ekte.runner.make_client",
+                   lambda config, **_: real(config, transport=server.transport))
+        report = json.loads(asyncio.run(run_audit(
+            target, opts(suite="custom", dimensions=["integrity"]), evidence=path)).model_dump_json())
+    before = {d["id"]: (d["status"], d["score"]) for d in report["detectors"]}
+    assert before and report["verdict"]["overall_score"] is not None
+    # as an ekte before the integrity dimension recorded it
+    report = _rewrite(path, report, _set_dimensions(["reliability"]))
+    report["dimensions_selected"] = ["reliability"]
+    report["tool_version"] = "0.1.0"
+    rid = history.save(report)
+
+    _, new = asyncio.run(rescore.rescore_run(rid))
+    assert new["dimensions_selected"] == ["integrity"]
+    assert {d["id"]: (d["status"], d["score"]) for d in new["detectors"]} == before
+    integrity = next(d for d in new["dimensions"] if d["dimension"] == "integrity")
+    assert integrity["status"] != "not_run" and integrity["score"] is not None
+    assert new["verdict"]["overall_score"] == report["verdict"]["overall_score"]
+    r = new["rescored_from"]
+    assert r["missing"] == {} and r["unused"] == 0
+

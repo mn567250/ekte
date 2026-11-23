@@ -402,12 +402,15 @@ async def rescore(
     Raises ``ValueError`` when the file is not the one the report names (its
     SHA-256 differs), lacks the run's options, or is of an unknown version.
     """
-    from ekte.config import AuditOptions
+    from ekte.config import AuditOptions, stored_dimensions
     from ekte.runner import run_audit
 
     ref, lines = await asyncio.to_thread(check, report, path)
     head = lines[0]
     options = AuditOptions(**head["options"])
+    # a custom selection recorded by an earlier version, in today's ids (an
+    # embedding or rerank run's "reliability" is "integrity" now, #303)
+    options.dimensions = stored_dimensions(options.surface, options.dimensions)
     target = _config(head.get("target"), "target")
     assert target is not None  # check() refuses a file without one
     baseline = _config(head.get("baseline"), "baseline")
