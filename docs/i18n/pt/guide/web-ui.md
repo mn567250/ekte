@@ -98,7 +98,9 @@ mantém o id, a hora e o monitor, e o relatório indica que versão do ekte a
 registou e qual a avaliou. **Reavaliar tudo com esta versão** (por baixo da
 lista) faz isto, uma após outra, para cada execução avaliada por outra versão
 do ekte. Uma execução sem um ficheiro de evidências utilizável não é
-reavaliada: mantém o veredito. No primeiro arranque após uma atualização, o
+reavaliada: mantém o veredito, tal como uma execução cuja reavaliação não teria
+pontuação nenhuma (nenhuma das suas verificações tem uma resposta gravada); a
+execução indica o motivo. No primeiro arranque após uma atualização, o
 `ekte serve` reavalia em segundo plano as execuções avaliadas por uma versão
 anterior (`EKTE_AUTO_RESCORE=0` desativa-o); um aviso por cima da lista mostra
 o progresso.

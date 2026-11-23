@@ -73,7 +73,10 @@ verificações não tinham nenhum.
 `ekte rescore --all` reavalia, uma após outra, todas as execuções guardadas
 avaliadas por outra versão do ekte, substitui cada uma e mostra o veredito
 antes e depois. Uma execução sem um ficheiro de evidências utilizável não é
-reavaliada: mantém o veredito e é ignorada com o motivo. O `ekte serve` faz o
+reavaliada: mantém o veredito e é ignorada com o motivo. O mesmo acontece a uma
+execução cuja reavaliação não teria pontuação nenhuma (nenhuma das suas
+verificações tem uma resposta gravada, como numa execução anterior a elas);
+`ekte rescore ID` não guarda essa reavaliação. O `ekte serve` faz o
 mesmo em segundo plano no primeiro arranque após uma atualização (ver
 [Interface web](web-ui.md)).
 

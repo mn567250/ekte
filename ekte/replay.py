@@ -323,6 +323,11 @@ HASH_DIFFERS = "the evidence file is not the one the report names (its SHA-256 d
 NO_OPTIONS = "this evidence file does not record the run's options; it cannot be replayed"
 NO_TARGET = "this evidence file names no target"
 UNREADABLE = "the evidence file cannot be read"
+# Known only after the replay: every check lacked recorded answers (#304).
+NO_SCORE = (
+    "the recorded run has no answer to the requests this ekte's checks send, "
+    "so a re-score would have no score; run a new audit to score it"
+)
 
 
 def refusal(report: dict[str, Any], path: Path) -> str | None:
@@ -353,6 +358,16 @@ def check(report: dict[str, Any], path: Path) -> tuple[EvidenceRef, list[dict[st
     if reason is not None:
         raise ValueError(reason)
     return EvidenceRef(**report["evidence"]), list(evidence.iter_lines(path))
+
+
+def missing_summary(ref: RescoreRef | None) -> str | None:
+    """One line on the requests of a re-score that had no recorded answer
+    (``ref.missing``, per detector), or None when every request had one."""
+    if ref is None or not ref.missing:
+        return None
+    total = sum(ref.missing.values())
+    per = ", ".join(f"{d} {n}" for d, n in sorted(ref.missing.items()))
+    return f"{total} request(s) had no recorded answer ({per}); those checks read inconclusive"
 
 
 def recorded_nonce(report: dict[str, Any], head: dict[str, Any]) -> str:
@@ -392,12 +407,15 @@ async def rescore(
     Raises ``ValueError`` when the file is not the one the report names (its
     SHA-256 differs), lacks the run's options, or is of an unknown version.
     """
-    from ekte.config import AuditOptions
+    from ekte.config import AuditOptions, stored_dimensions
     from ekte.runner import run_audit
 
     ref, lines = await asyncio.to_thread(check, report, path)
     head = lines[0]
     options = AuditOptions(**head["options"])
+    # a custom selection recorded by an earlier version, in today's ids (an
+    # embedding or rerank run's "reliability" is "integrity" now, #303)
+    options.dimensions = stored_dimensions(options.surface, options.dimensions)
     target = _config(head.get("target"), "target")
     assert target is not None  # check() refuses a file without one
     baseline = _config(head.get("baseline"), "baseline")

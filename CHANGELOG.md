@@ -20,6 +20,50 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Re-score: one line per run for requests without a recorded answer ([#302](https://github.com/mn567250/ekte/issues/302))
+
+- A request that a re-score sends but the recorded run never sent (a check
+  added since, or a run from before the per-run nonce) was logged as a bug in
+  ekte, with a full traceback per request: `ekte serve` printed hundreds of
+  lines on its automatic re-score after an upgrade, although nothing failed.
+  Such a request is no longer logged on its own. Each re-scored run with such
+  requests logs one warning instead, e.g. `re-score of run 12: 7 request(s)
+  had no recorded answer (connectivity 1, prompt_cache 3, ...); those checks
+  read inconclusive`. Other local failures keep their traceback.
+
+### Re-score: an old embedding or rerank run's `reliability` selection is `integrity` ([#303](https://github.com/mn567250/ekte/issues/303))
+
+- A custom-suite embedding or rerank run recorded before the `integrity`
+  dimension selected `reliability`, the dimension its determinism check was
+  filed under then. A re-score took that selection as it was, ran no check and
+  replaced the run's verdict with "inconclusive". The re-score now reads it as
+  `integrity`, as monitors and the web UI already did: the run is scored from
+  its recorded answers again, and the re-scored report's
+  `dimensions_selected` names `integrity`.
+
+### Re-score: a run that would have no score keeps its verdict ([#304](https://github.com/mn567250/ekte/issues/304))
+
+- When none of a run's checks had recorded answers for the requests this ekte
+  sends (for example a smoke run from before the per-run nonce), its re-score
+  had no score, and it still replaced the run: its verdict, its History row
+  and its monitor's card became "inconclusive", and the verdict before
+  survived only in `rescored_from.previous_verdict`. Such a re-score is no
+  longer stored. The run keeps its report, and the reason ("the recorded run
+  has no answer to the requests this ekte's checks send, so a re-score would
+  have no score; run a new audit to score it", translated in the web UI) is
+  recorded with it like a missing evidence file: History shows it, and the
+  run is not tried again by the same version. `ekte serve` logs one line,
+  `re-score of run N not stored: …`.
+- Bulk re-scores (`ekte rescore --all`, **Re-score all with this version**,
+  the automatic one after an upgrade) count it as skipped, not re-scored; the
+  automatic one still finishes for the version. A single re-score from the
+  web UI or the API ends as an error with that reason, without a traceback in
+  the log. `ekte rescore ID --replace` (and the deprecated save as a new run)
+  refuses it with exit code 2; `--no-save` still prints it. No re-score alert
+  is sent for it.
+- A re-score where only some checks read inconclusive and an overall score
+  remains is stored as before.
+
 ### CI tests the locked dependencies; nightly early warning with the latest ones (internal, [#299](https://github.com/mn567250/ekte/issues/299))
 
 - The test, performance budget and accessibility jobs install with

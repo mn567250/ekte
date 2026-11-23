@@ -75,6 +75,10 @@ de requêtes ont été rejouées et quels contrôles n'en avaient pas.
 enregistrées notées par une autre version d'ekte, remplace chacune et affiche
 son verdict avant et après. Une exécution sans fichier de preuves utilisable
 n'est pas réévaluée : elle garde son verdict et est ignorée avec la raison.
+De même pour une exécution dont la réévaluation n'aurait aucun score (aucune de
+ses vérifications n'a de réponse enregistrée, comme pour une exécution
+antérieure à celles-ci) ; `ekte rescore ID` n'enregistre pas une telle
+réévaluation.
 `ekte serve` fait de même en arrière-plan à son premier démarrage après une
 mise à jour (voir [Interface web](web-ui.md)).
 

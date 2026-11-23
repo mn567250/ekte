@@ -19,6 +19,7 @@
   "this evidence file does not record the run's options; it cannot be replayed": "diese Belegdatei enthält die Optionen des Laufs nicht; sie kann nicht wiedergegeben werden",
   "this evidence file names no target": "diese Belegdatei nennt kein Ziel",
   "the evidence file cannot be read": "die Belegdatei kann nicht gelesen werden",
-  "this evidence file has a schema version this ekte cannot read; update ekte": "diese Belegdatei hat eine Schemaversion, die dieses ekte nicht lesen kann; aktualisieren Sie ekte"
+  "this evidence file has a schema version this ekte cannot read; update ekte": "diese Belegdatei hat eine Schemaversion, die dieses ekte nicht lesen kann; aktualisieren Sie ekte",
+  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "der aufgezeichnete Lauf hat keine Antwort auf die Anfragen, die die Prüfungen dieser ekte-Version senden, daher hätte eine Neubewertung keine Punktzahl; führen Sie ein neues Audit aus, um ihn zu bewerten"
  }
 }

@@ -719,7 +719,10 @@ class BaseHTTPClient:
         duration_ms = (time.perf_counter() - started) * 1000
         error_class = errorclass.classify_exception(exc)
         message = redact_text(str(exc)[:1000], extra_secrets=self._extra_secrets())
-        if error_class == errorclass.LOCAL:
+        # A replay miss (ekte.replay) is local but no bug: the re-score expects
+        # it, its detector reads inconclusive, and the re-score logs one line
+        # per run (ekte.web.rescore) instead of a traceback per request.
+        if error_class == errorclass.LOCAL and type(exc).__name__ != "ReplayMiss":
             # the traceback names ekte's code only; the message is redacted
             _log.warning("ekte failed on a request (%s): %s\n%s", type(exc).__name__, message,
                          "".join(traceback.format_tb(exc.__traceback__)))

@@ -220,6 +220,13 @@ gate = RelayGate()
 _ACTIVE = ("queued", "running")
 
 
+class PublicRefusal(Exception):
+    """A job that ends without a report for a reason its client may see:
+    a fixed text, never internal details. It is no failure of ekte: the job
+    ends with status ``error`` and that text, without a traceback in the log,
+    and ``Job.refused`` is set."""
+
+
 class Job:
     """One background audit: its state, its event log and its subscribers."""
 
@@ -235,6 +242,8 @@ class Job:
         self.waiting_for: list[str] = []
         self.report_id: int | None = None
         self.error: str | None = None
+        # Ended on a PublicRefusal (its text is ``error``).
+        self.refused = False
         self.events: list[dict[str, Any]] = []
         self._subscribers: set[asyncio.Queue[dict[str, Any]]] = set()
         self.task: asyncio.Task[None] | None = None
@@ -381,6 +390,9 @@ class JobManager:
                 job.emit({"type": "cancelled"})
             if not job.cancel_requested:
                 raise  # server shutdown: let it propagate
+        except PublicRefusal as exc:
+            job.status, job.refused, job.error = "error", True, str(exc)
+            job.emit({"type": "error", "message": job.error})
         except Exception as exc:
             # The traceback goes to the server log only: an unexpected
             # exception's text can carry internal details (paths, queries,

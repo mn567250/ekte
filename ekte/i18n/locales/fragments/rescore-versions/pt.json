@@ -19,6 +19,7 @@
   "this evidence file does not record the run's options; it cannot be replayed": "este arquivo de evidências não registra as opções da execução; não pode ser reproduzido",
   "this evidence file names no target": "este arquivo de evidências não indica nenhum alvo",
   "the evidence file cannot be read": "não é possível ler o arquivo de evidências",
-  "this evidence file has a schema version this ekte cannot read; update ekte": "este arquivo de evidências tem uma versão de esquema que este ekte não consegue ler; atualize o ekte"
+  "this evidence file has a schema version this ekte cannot read; update ekte": "este arquivo de evidências tem uma versão de esquema que este ekte não consegue ler; atualize o ekte",
+  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "a execução gravada não tem resposta às solicitações que as verificações desta versão do ekte enviam, então uma nova pontuação ficaria sem pontuação; execute uma nova auditoria para pontuá-la"
  }
 }

@@ -72,7 +72,10 @@ som ble spilt av og hvilke kontroller som ikke hadde noen.
 `ekte rescore --all` vurderer på nytt, én etter én, hver lagrede kjøring som
 en annen ekte-versjon har vurdert, erstatter hver av dem og viser vurderingen
 før og etter. En kjøring uten brukbar bevisfil vurderes ikke på nytt: den
-beholder vurderingen sin og hoppes over med begrunnelse. `ekte serve` gjør det
+beholder vurderingen sin og hoppes over med begrunnelse. Det samme gjelder en
+kjøring der en ny vurdering ikke ville fått noen poengsum (ingen av kontrollene
+har et registrert svar, som for en kjøring fra før de fantes); `ekte rescore ID`
+lagrer ikke en slik ny vurdering. `ekte serve` gjør det
 samme i bakgrunnen ved første oppstart etter en oppgradering (se
 [Nettgrensesnitt](web-ui.md)).
 

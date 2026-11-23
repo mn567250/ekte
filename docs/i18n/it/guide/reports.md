@@ -76,6 +76,10 @@ state riprodotte e quali controlli non ne avevano.
 valutate da un'altra versione di ekte, sostituisce ciascuna e mostra il suo
 verdetto prima e dopo. Un'esecuzione senza un file di prove utilizzabile non
 viene rivalutata: mantiene il suo verdetto e viene saltata con il motivo.
+Lo stesso vale per un'esecuzione la cui rivalutazione non avrebbe alcun
+punteggio (nessuno dei suoi controlli ha una risposta registrata, come per
+un'esecuzione precedente a essi); `ekte rescore ID` non salva una tale
+rivalutazione.
 `ekte serve` fa lo stesso in background al primo avvio dopo un aggiornamento
 (vedi [Interfaccia web](web-ui.md)).
 
