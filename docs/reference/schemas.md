@@ -18,7 +18,10 @@ the wheel and the sdist, and are reachable under a stable URL:
 `https://raw.githubusercontent.com/mn567250/ekte/main/ekte/schemas/report.schema.json`
 (and `webhook.schema.json`). The `--compact` verdict also carries
 `schema_version` (the report schema version it was derived from) but has no
-schema of its own. Slack, Feishu/Lark and DingTalk bodies follow those
+schema of its own. A re-scored report's compact verdict also has `rescored`:
+`audit_version` (the ekte version the audit ran with), `scoring_version`,
+`rescored_at` and `previous_verdict` (`risk`, `score`, `rating` before the
+latest re-score); it is absent for a report never re-scored. Slack, Feishu/Lark and DingTalk bodies follow those
 platforms' formats and carry no `schema_version`.
 
 ## Versions

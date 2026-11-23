@@ -935,7 +935,7 @@
         meta.push(item(T("时间", "Time"), esc(intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(dt))));
     }
     // a re-score: the version the audit ran with and the one that scored it
-    // (#168), when, the verdict before it, the recorded run it replayed, and
+    // (issue 168), when, the verdict before it, the recorded run it replayed, and
     // what had no recorded answer
     var rs = r.rescored_from;
     var dateTime = function (s) {

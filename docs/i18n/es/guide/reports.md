@@ -79,6 +79,10 @@ no se vuelve a puntuar: conserva su veredicto y se omite indicando el motivo.
 `ekte serve` hace lo mismo en segundo plano en su primer arranque tras una
 actualización (consulta [Interfaz web](web-ui.md)).
 
+Las exportaciones en Markdown, HTML y PDF de un informe vuelto a puntuar
+indican ambas versiones, cuándo se volvió a puntuar y el veredicto anterior;
+el veredicto `--compact` las incluye como `rescored`.
+
 Las claves y los encabezados sensibles se eliminan antes de escribir nada (vea
 [Privacidad](privacy.md)). Cada línea cumple
 `ekte/schemas/evidence.schema.json` ([Esquemas](../../../reference/schemas.md)).

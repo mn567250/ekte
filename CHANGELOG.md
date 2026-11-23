@@ -20,6 +20,31 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### History, Analytics and reports show the audit and the scoring version ([#168](https://github.com/mn567250/ekte/issues/168))
+
+A re-scored run's verdict comes from a newer ekte than the one that ran its
+audit. History, Analytics, the report view and the exports now say so.
+
+- **History:** a re-scored run reads "ekte 0.33.1 · re-scored with 0.35.0"
+  and shows its verdict before the re-score. A run a bulk re-score could not
+  re-score shows the reason, and its report explains why **Re-score with this
+  version** is missing (no evidence file, or the recorded reason).
+- **Analytics and History filters:** **Scoring version** (`scoring_version`)
+  and **Audit version** (`audit_version`) filter by either ekte version
+  (`-` for none), on every widget and `GET /api/filters/options`.
+- **Breakdown:** the leaderboard ranks by scoring or audit version
+  (`board.by=scoring_version|audit_version`), with a **Re-scored** column of the
+  runs re-scored by another version; `GET /api/analytics/breakdown` takes
+  `breakdown.by` with the same values.
+- **Report view and exports:** the report names both versions, when it was
+  re-scored and the verdict before; Markdown, HTML and PDF exports say the
+  same, and the `--compact` verdict gains an optional `rescored` object
+  (`audit_version`, `scoring_version`, `rescored_at`, `previous_verdict`).
+- **History database step 18:** the analytics rows gain `audit_tool_version`,
+  `rescored_at` and `previous_verdict`, filled for saved runs by the analytics
+  backfill (extraction version 5) the first time the new ekte opens the
+  history.
+
 ### Re-scoring replaces the stored run; monitors follow the latest scoring ([#168](https://github.com/mn567250/ekte/issues/168))
 
 A run re-scored from its evidence file with a newer ekte used to be saved as a

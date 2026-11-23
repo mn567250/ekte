@@ -284,7 +284,8 @@ run's stored value (`tests/test_query.py`, `tests/test_metrics_e2e.py`).
 
 **URL schema.** One set of keys serves both pages and every widget (`range`,
 `from`, `to`, `surface`, `relay`, `model`, `suite`, `mode`, `api`, `stream`,
-`detect`, `risk`, `min_score`, `exec`, `watch`, `q`, `group`, `tz`; table in
+`detect`, `risk`, `min_score`, `exec`, `watch`, `scoring_version`,
+`audit_version`, `q`, `group`, `tz`; table in
 [Web server](web-server.md#query-core)). Keys with a dot belong to one widget
 (`trend.metric`, `runs.after`, `board.by`); view keys (`tab`) never reach an
 endpoint. Relative ranges are resolved to absolute bounds before caching: a

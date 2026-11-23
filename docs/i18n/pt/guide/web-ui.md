@@ -103,6 +103,17 @@ reavaliada: mantém o veredito. No primeiro arranque após uma atualização, o
 anterior (`EKTE_AUTO_RESCORE=0` desativa-o); um aviso por cima da lista mostra
 o progresso.
 
+**Versão da auditoria e versão de avaliação.** Uma execução reavaliada
+indica duas versões do ekte: aquela com que a auditoria foi feita e a que a
+avaliou. Em **Histórico** uma execução assim mostra, por exemplo, «ekte 0.33.1
+· reavaliado com 0.35.0», seguido do veredito antes da reavaliação. Uma
+execução que uma reavaliação em lote não conseguiu reavaliar indica o motivo
+(por exemplo, nenhum arquivo de evidências), e o relatório explica por que
+falta **Reavaliar com esta versão**. **Histórico** e **Análises** filtram por
+qualquer das duas versões (**Versão de avaliação**, **Versão da auditoria**),
+e a classificação de **Análises** também ordena por elas, com quantas
+execuções de cada versão foram reavaliadas por outra.
+
 **Análises.** `/analytics` transforma o histórico local em
 comparações: indicadores do período escolhido (execuções, pontuação mediana,
 proporção de risco alto, taxa de sucesso, TTFT, velocidade de saída, rácios de

@@ -137,7 +137,7 @@
     min_score: { kind: "number", def: "" },
     exec: { kind: "select", def: "", values: ["manual", "monitor"] },
     watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,18}$/ },
-    // the ekte version that scored a run, and the one its audit ran with (#168)
+    // the ekte version that scored a run, and the one its audit ran with (issue 168)
     scoring_version: { kind: "select", def: "", values: null, unknown: true },
     audit_version: { kind: "select", def: "", values: null, unknown: true },
     group: { kind: "select", def: "relay", values: ["relay", "model", "relay_model", "all"], required: true },

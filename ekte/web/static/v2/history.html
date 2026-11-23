@@ -1204,7 +1204,7 @@
     bits = bits.concat(versionBits(r));
     return '<span class="mi">' + bits.map(function (b) { return "<span>" + esc(b) + "</span>"; }).join(" ") + "</span>";
   }
-  // A re-scored run (#168): the version the audit ran with, the one that
+  // A re-scored run (issue 168): the version the audit ran with, the one that
   // scored it and the verdict before; a run a bulk re-score could not
   // re-score: why (the server's fixed text, translated)
   function versionBits(r) {
@@ -1400,7 +1400,7 @@
         // replays the run's recorded requests and responses: no relay contacted
         { zh: "用当前版本重新评分", en: "Re-score with this version", onClick: function () { rescore(id); } },
       ] : []),
-      // why "Re-score with this version" is missing (#168): no evidence, or a
+      // why "Re-score with this version" is missing (issue 168): no evidence, or a
       // bulk re-score found the evidence unusable
       note: rescorable ? null : refusal
         ? Tf("无法用 ekte {v} 重新评分：{reason}", "Cannot be re-scored with ekte {v}: {reason}",

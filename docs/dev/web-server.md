@@ -167,6 +167,8 @@ not given; `-` means "(unknown)", i.e. the run has no value.
 | `min_score` | 0–100 (runs without a score are left out) | History `min` |
 | `exec` | `manual`, `monitor` | History `exec` (`adhoc`), Analytics `source` |
 | `watch` | a monitor id (positive integer, not repeatable): the runs of exactly that monitor, also after it was deleted | — (new, [#155](https://github.com/mn567250/ekte/issues/155)) |
+| `scoring_version` | the ekte version that scored the run (`tool_version`, the re-score's for a re-scored run), or `-` for none | — (new, [#168](https://github.com/mn567250/ekte/issues/168)) |
+| `audit_version` | the ekte version the audit itself ran with (`rescored_from.tool_version` of a re-scored run, else `tool_version`), or `-` for none | — (new, [#168](https://github.com/mn567250/ekte/issues/168)) |
 | `q` | substring, case-insensitive for ASCII (SQL `LIKE`, `%` `_` `\` literal) of base URL, relay label, claimed model, model, suite, mode, api | History `q` |
 | `group` | `relay` (default), `model`, `relay_model`, `all` | both |
 
@@ -190,7 +192,9 @@ microsecond), the surface on `m.surface_id`, the other few-valued keys as
 `m.facet_id IN (…)` (looked up once in `facet_combo`), relays and models by
 `m.relay_id` / `m.model_id`, `watch` on `m.watch_id` (the run's
 `history.watch_id`, copied onto the run row by its triggers, history schema
-16), `min_score` on `m.score`. Only text search
+16), `scoring_version` / `audit_version` on `m.version_id` / `m.audit_version_id`
+(both numbered in `run_version`, history schema 18; a run whose two ids
+differ was re-scored by another version), `min_score` on `m.score`. Only text search
 (`q`) joins `history h` (through `idx_history_query`) and the run's relay
 `rm`. Runs are grouped by an integer of their row (`run_row.GROUP_ID_SQL`:
 relay id, model id, or both packed as `relay_id << 20 | model_id`), read in
@@ -351,8 +355,8 @@ page only draws. Every endpoint:
 
 - takes every key of the query core's URL schema (`range`, `from`, `to`,
   `surface`, `relay`, `model`, `suite`, `mode`, `api`, `stream`, `detect`,
-  `risk`, `min_score`, `exec`, `watch`, `q`, `group`) plus its own namespaced keys
-  (below); other widgets' dotted keys are ignored. An unknown key (shared or
+  `risk`, `min_score`, `exec`, `watch`, `scoring_version`, `audit_version`, `q`,
+  `group`) plus its own namespaced keys (below); other widgets' dotted keys are ignored. An unknown key (shared or
   of its own namespace), a key given twice or an invalid value answers 400
   `{"error": "..."}` (never cached);
 - is cached (`cached_endpoint`, ETag / `304`): `range` is resolved first, and
@@ -405,7 +409,8 @@ with `deleted: true` (the panel shows it translated); the widget endpoints'
 `prepare` adds the monitors' data version (`options.watches`,
 `watches.data_version()`) to the cache key, so a renamed or deleted monitor
 gets a new answer and `ETag` although the history did not change. `watch` lists only
-monitor runs, so its counts add up to `exec=monitor`'s. Lists are ordered by
+monitor runs, so its counts add up to `exec=monitor`'s. `scoring_version` and
+`audit_version` list the ekte versions (`-` for runs without one). Lists are ordered by
 runs, then label / value.
 `runs` counts the full selection; `span` is the first and last run under
 every filter except `from` / `to`; `dimensions` lists the `dim:<key>` keys of
@@ -507,17 +512,23 @@ all selected runs as one series of group `all`). Same shape as `series` with
 
 ### `GET /api/analytics/leaderboard`
 
-`board.by` `relay|model|relay_model` (default `relay`): one row per group
+`board.by` `relay|model|relay_model|scoring_version|audit_version` (default
+`relay`): one row per group
 with the cells of `BOARD_METRICS` that apply to the surface (score,
 success_rate, error_rate, latency_p50, ttft_p50, decode_tps, billing ratios,
 model_mismatch_rate, risk_high_share), best median score first (no score
 last). Relays of one model: `model=<m>&board.by=relay`. Answer: `by`,
 `metrics` (`Metric.public()`), `rows` (group + `metrics` {id: judged cell}).
+A row per ekte version (`kind` `scoring_version` / `audit_version`, key and
+label the version, `(unknown)` for runs without one) also has `rescored`: how
+many of its runs were re-scored by another version (scoring version ≠ audit
+version, [#168](https://github.com/mn567250/ekte/issues/168)).
 
 ### `GET /api/analytics/breakdown`
 
 `breakdown.metric` (repeatable, 1–8 ids, `dim:<key>` too) per group
-(`group`, `all` included) over the range, busiest group first, cells with
+(`breakdown.by`: a `group` value, `all` included, or `scoring_version` /
+`audit_version`; default `group`) over the range, busiest group first, cells with
 quartiles. Answer: `group`, `metrics`, `runs`, `rows` (as the leaderboard).
 
 ### `GET /api/analytics/errors`
@@ -659,7 +670,11 @@ newest 50 runs, oldest to newest, runs without a value left out; `first` /
     "risk_level": "clean", "score": 84.0, "grade": "B", "kb_match": "match",
     "family": {"risk": "good", "score": "good", "grade": "good"},
     "watch_id": null, "exec": "manual",
-    "latency_p50_ms": 812.4, "ttft_p50_ms": 301.0, "decode_tps_p50": 61.2, "error_rate": 0.02
+    "latency_p50_ms": 812.4, "ttft_p50_ms": 301.0, "decode_tps_p50": 61.2, "error_rate": 0.02,
+    "scoring_version": "0.35.0", "audit_version": "0.33.1", "rescored": true,
+    "rescored_at": "2026-11-20T10:00:00+00:00",
+    "previous_verdict": {"risk_level": "low", "score": 88.0, "grade": "B", "family": "good"},
+    "rescore_refusal": null
   }]
 }
 ```
@@ -669,7 +684,13 @@ grew it); `total` counts the group's runs under the filters; `focus` is null
 without `runs.focus`. `risk_level` is `inconclusive` for a run without one,
 `mode` `check` for one without, `detect` `auto` / `manual` / null and `exec`
 `manual` / `monitor`; `family` holds the colour families of the risk badge,
-score and grade (`metrics.family`).
+score and grade (`metrics.family`). `scoring_version` is the ekte version that
+scored the run, `audit_version` the one its audit ran with; `rescored` is true
+for a run re-scored in place (`rescored_at` set) or by another version (the
+two differ); `previous_verdict` is the verdict before the latest re-score
+(null when none was recorded); `rescore_refusal` (`{"reason", "version"}`,
+null when none) is why a bulk re-score by that version could not re-score the
+run (`history_rescore`, one of `ekte.replay.refusal()`'s texts) ([#168](https://github.com/mn567250/ekte/issues/168)).
 
 ### The `focus` answer
 

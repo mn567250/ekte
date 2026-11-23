@@ -105,6 +105,17 @@ bewertet `ekte serve` die Läufe, die eine ältere Version bewertet hat, im
 Hintergrund neu (`EKTE_AUTO_RESCORE=0` schaltet das ab); ein Hinweis über der
 Liste zeigt den Fortschritt.
 
+**Prüf- und Bewertungsversion.** Ein neu bewerteter Lauf nennt zwei
+ekte-Versionen: die, mit der seine Prüfung lief, und die, die ihn bewertet hat.
+In **Verlauf** steht bei einem solchen Lauf zum Beispiel „ekte 0.33.1 · neu
+bewertet mit 0.35.0“, gefolgt von seinem Ergebnis vor der Neubewertung. Ein
+Lauf, den eine Sammel-Neubewertung nicht neu bewerten konnte, nennt den Grund
+(zum Beispiel keine Belegdatei), und sein Bericht erklärt, warum **Mit dieser
+Version neu bewerten** fehlt. **Verlauf** und **Analyse** filtern nach beiden
+Versionen (**Bewertungsversion**, **Prüfversion**), und die Rangliste in
+**Analyse** ordnet auch nach ihnen, mit der Zahl der Läufe jeder Version, die
+eine andere Version neu bewertet hat.
+
 **Analyse.** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
 hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,

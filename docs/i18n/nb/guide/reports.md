@@ -76,6 +76,10 @@ beholder vurderingen sin og hoppes over med begrunnelse. `ekte serve` gjør det
 samme i bakgrunnen ved første oppstart etter en oppgradering (se
 [Nettgrensesnitt](web-ui.md)).
 
+Markdown-, HTML- og PDF-eksportene av en rapport som er vurdert på nytt,
+oppgir begge versjonene, når den ble vurdert på nytt og resultatet før;
+`--compact`-resultatet har dem som `rescored`.
+
 Nøkler og sensitive hoder fjernes før noe skrives (se [Personvern](privacy.md)).
 Hver linje følger `ekte/schemas/evidence.schema.json`
 ([Skjemaer](../../../reference/schemas.md)). I nettgrensesnittet lister **Vis

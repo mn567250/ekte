@@ -104,6 +104,18 @@ premier démarrage après une mise à jour, `ekte serve` réévalue en arrière-
 les exécutions notées par une version plus ancienne (`EKTE_AUTO_RESCORE=0` le
 désactive) ; un avis au-dessus de la liste montre l'avancement.
 
+**Version de l’audit et version d’évaluation.** Une exécution réévaluée
+indique deux versions d’ekte : celle avec laquelle son audit a tourné et celle
+qui l’a évaluée. Dans **Historique**, une telle exécution affiche par exemple
+« ekte 0.33.1 · réévalué avec 0.35.0 », suivi de son verdict avant la
+réévaluation. Une exécution qu’une réévaluation groupée n’a pas pu réévaluer
+en donne la raison (par exemple, aucun fichier de preuves), et son rapport
+explique pourquoi **Réévaluer avec cette version** est absent. **Historique**
+et **Analyses** filtrent par l’une ou l’autre version (**Version
+d’évaluation**, **Version de l’audit**), et le classement d’**Analyses** les
+utilise aussi, avec le nombre d’exécutions de chaque version réévaluées par
+une autre.
+
 **Analyses.** `/analytics` transforme l'historique
 local en comparaisons : des indicateurs pour la période choisie (exécutions,
 score médian, part à risque élevé, taux de réussite, TTFT, vitesse de sortie,
