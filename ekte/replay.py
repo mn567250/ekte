@@ -355,6 +355,16 @@ def check(report: dict[str, Any], path: Path) -> tuple[EvidenceRef, list[dict[st
     return EvidenceRef(**report["evidence"]), list(evidence.iter_lines(path))
 
 
+def missing_summary(ref: RescoreRef | None) -> str | None:
+    """One line on the requests of a re-score that had no recorded answer
+    (``ref.missing``, per detector), or None when every request had one."""
+    if ref is None or not ref.missing:
+        return None
+    total = sum(ref.missing.values())
+    per = ", ".join(f"{d} {n}" for d, n in sorted(ref.missing.items()))
+    return f"{total} request(s) had no recorded answer ({per}); those checks read inconclusive"
+
+
 def recorded_nonce(report: dict[str, Any], head: dict[str, Any]) -> str:
     """The nonce the recorded run derived its probes from: the report's, else
     the evidence header's; "" (the fixed probes) for a run from before it."""

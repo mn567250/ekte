@@ -161,6 +161,16 @@ async def store(rid: int, old: dict[str, Any], new: dict[str, Any]) -> int:
     return rid
 
 
+def log_missing(rid: int, new: Any) -> None:
+    """Log one line when the re-score of run ``rid`` (``new``: its
+    AuditReport) had requests without a recorded answer (#302)."""
+    from ekte import replay
+
+    line = replay.missing_summary(new.rescored_from)
+    if line is not None:
+        _log.warning("re-score of run %s: %s", rid, line)
+
+
 async def rescore_run(rid: int, *, on_event: Any = None) -> tuple[dict[str, Any], dict[str, Any]]:
     """Re-score saved run ``rid`` and replace it; ``(old report, new report)``.
     Raises :class:`Refused` when it cannot be re-scored."""
@@ -170,6 +180,7 @@ async def rescore_run(rid: int, *, on_event: Any = None) -> tuple[dict[str, Any]
     if reason is not None or old is None or path is None:
         raise Refused(reason or NOT_FOUND)
     out = await replay.rescore(old, path, report_id=rid, on_event=on_event)
+    log_missing(rid, out)
     new = json.loads(out.model_dump_json())
     await store(rid, old, new)
     return old, new
@@ -212,6 +223,7 @@ def submit_job(rid: int, report: dict[str, Any], path: Path, *, replace: bool = 
 
     async def run(emit: jobs.Emit) -> dict[str, Any]:
         out = await replay.rescore(report, path, report_id=rid, on_event=emit)
+        log_missing(rid, out)
         return json.loads(out.model_dump_json())
 
     async def save(new: dict[str, Any]) -> int:

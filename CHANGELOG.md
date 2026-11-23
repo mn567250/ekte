@@ -20,6 +20,17 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Re-score: one line per run for requests without a recorded answer ([#302](https://github.com/mn567250/ekte/issues/302))
+
+- A request that a re-score sends but the recorded run never sent (a check
+  added since, or a run from before the per-run nonce) was logged as a bug in
+  ekte, with a full traceback per request: `ekte serve` printed hundreds of
+  lines on its automatic re-score after an upgrade, although nothing failed.
+  Such a request is no longer logged on its own. Each re-scored run with such
+  requests logs one warning instead, e.g. `re-score of run 12: 7 request(s)
+  had no recorded answer (connectivity 1, prompt_cache 3, ...); those checks
+  read inconclusive`. Other local failures keep their traceback.
+
 ### CI tests the locked dependencies; nightly early warning with the latest ones (internal, [#299](https://github.com/mn567250/ekte/issues/299))
 
 - The test, performance budget and accessibility jobs install with
