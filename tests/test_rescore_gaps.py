@@ -1,5 +1,5 @@
 """Re-scoring runs whose evidence does not answer every request of this ekte
-version (#302, #303, #304)."""
+version (#302, #303, #304, #312)."""
 
 from __future__ import annotations
 
@@ -182,38 +182,60 @@ def sent(monkeypatch):
     return calls
 
 
-def _unscored_on_a_monitor(monkeypatch):
-    """A saved run of a monitor whose evidence answers nothing this ekte asks."""
+def _only(*detectors):
+    """An edit keeping the exchanges of ``detectors`` only: the other checks'
+    requests were never sent by the recorded run (#312)."""
+    return lambda lines: [x for x in lines if x.get("type") != "exchange" or x.get("detector") in detectors]
+
+
+# How each refused case is made: (suite, evidence edit, refusal reason).
+UNSTORED = {
+    # #304: no check has a recorded answer, so the re-score has no score
+    "no_score": ("smoke", _header_only, replay.NO_SCORE),
+    # #312: a graded standard run whose evidence answers only two cheap checks;
+    # the re-score keeps a score but is too little judged to be graded
+    "no_grade": ("standard", _only("connectivity", "security"), replay.NO_RATING),
+}
+
+
+@pytest.fixture(params=sorted(UNSTORED))
+def case(request):
+    return request.param
+
+
+def _unstored_on_a_monitor(monkeypatch, case):
+    """A saved run of a monitor whose re-score would lose its score or grade."""
     import time
 
     from ekte.web import history, watches
 
+    suite, edit, reason = UNSTORED[case]
     wid = watches.create({"name": "w", "base_url": "http://relay/v1", "api_key": "", "model": "m",
                           "alert_on": "low", "webhooks": ["https://hooks.example/x"]})
     path = evidence.data_dir_path(evidence.new_run_id())
-    report = _rewrite(path, _record(monkeypatch, path, suite="smoke"), _header_only)
+    report = _rewrite(path, _record(monkeypatch, path, suite=suite), edit)
     report["tool_version"] = "0.1.0"
     rid = history.save(report, watch_id=wid)
     risk, score = report["verdict"]["risk_level"], report["verdict"]["overall_score"]
-    assert score is not None
+    assert score is not None and report["verdict"]["rating"] is not None
     ran = time.time()
     watches.mark_run(wid, risk, score, rid, ran)
-    return rid, wid, history.get(rid), (risk, score, ran)
+    return rid, wid, history.get(rid), (risk, score, ran), reason
 
 
-def _unchanged(rid, wid, stored, card):
+def _unchanged(rid, wid, stored, card, reason):
     from ekte.web import history, watches
 
     assert history.get(rid) == stored
     w = watches.get_settings(wid)
     assert (w["last_risk"], w["last_score"], w["last_run_ts"]) == card
-    assert history.refusals()[rid]["refusal"] == replay.NO_SCORE
+    assert history.refusals()[rid]["refusal"] == reason
 
 
-def test_rescore_all_skips_a_run_that_would_have_no_score(data, monkeypatch, sent):
+def test_rescore_all_skips_a_run_that_would_lose_its_verdict(data, monkeypatch, sent, case):
     from ekte.web import rescore
 
-    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    rid, wid, stored, card, reason = _unstored_on_a_monitor(monkeypatch, case)
     seen = {}
 
     def on_run(r, old, new, refusal):
@@ -221,14 +243,14 @@ def test_rescore_all_skips_a_run_that_would_have_no_score(data, monkeypatch, sen
 
     counts = asyncio.run(rescore.rescore_all(on_run))
     assert counts == {"rescored": 0, "skipped": 1, "failed": 0}
-    assert seen == {rid: (None, replay.NO_SCORE)}
-    _unchanged(rid, wid, stored, card)
+    assert seen == {rid: (None, reason)}
+    _unchanged(rid, wid, stored, card, reason)
     assert sent == []
     # recorded for this version: not looked at again
     assert asyncio.run(rescore.rescore_all(on_run)) == {"rescored": 0, "skipped": 0, "failed": 0}
 
 
-def test_the_upgrade_rescore_counts_it_skipped_and_finishes(data, monkeypatch, sent, caplog):
+def test_the_upgrade_rescore_counts_it_skipped_and_finishes(data, monkeypatch, sent, caplog, case):
     import time
 
     from fastapi.testclient import TestClient
@@ -236,7 +258,7 @@ def test_the_upgrade_rescore_counts_it_skipped_and_finishes(data, monkeypatch, s
     from ekte.web import history, rescore
     from ekte.web.server import create_app
 
-    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    rid, wid, stored, card, reason = _unstored_on_a_monitor(monkeypatch, case)
     scored = _saved_chat(monkeypatch, suite="smoke")
     monkeypatch.setenv("EKTE_AUTO_RESCORE", "1")
     with caplog.at_level(logging.WARNING), \
@@ -250,41 +272,45 @@ def test_the_upgrade_rescore_counts_it_skipped_and_finishes(data, monkeypatch, s
     assert (info["rescored"], info["skipped"], info["failed"]) == (1, 1, 0)
     assert "audit job" not in caplog.text and "Traceback" not in caplog.text
     msgs = [r.getMessage() for r in caplog.records]
-    assert f"re-score of run {rid} not stored: {replay.NO_SCORE}" in msgs
+    assert f"re-score of run {rid} not stored: {reason}" in msgs
     assert not [m for m in msgs if m.startswith(f"re-score of run {rid}: ")]
-    _unchanged(rid, wid, stored, card)
+    _unchanged(rid, wid, stored, card, reason)
     assert history.get(scored)["rescored_from"] is not None
     assert history.get_meta(rescore.META_KEY) is not None  # finished for this version
     assert sent == []
 
 
-def test_a_single_rescore_job_is_refused_with_the_reason(data, monkeypatch):
+def test_a_single_rescore_job_is_refused_with_the_reason(data, monkeypatch, case):
     from fastapi.testclient import TestClient
 
     from ekte.web.server import create_app
 
-    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    rid, wid, stored, card, reason = _unstored_on_a_monitor(monkeypatch, case)
     monkeypatch.setenv("EKTE_AUTO_RESCORE", "0")
     with TestClient(create_app(), base_url="http://localhost") as client:
         job = client.post(f"/api/v1/history/{rid}/rescore?replace=true").json()
         client.get(f"/api/v1/jobs/{job['id']}/events")  # until it ends
         got = client.get(f"/api/v1/jobs/{job['id']}").json()
-    assert got["status"] == "error" and got["error"] == replay.NO_SCORE
+    assert got["status"] == "error" and got["error"] == reason
     assert got["refused"] is True  # the UI shows it as a refusal, not a failure (#306)
     assert got["report_id"] is None
-    _unchanged(rid, wid, stored, card)
+    _unchanged(rid, wid, stored, card, reason)
 
 
-def test_cli_rescore_refuses_to_store_a_run_without_a_score(data, monkeypatch):
+def test_cli_rescore_refuses_to_store_a_run_that_would_lose_its_verdict(data, monkeypatch, case):
     from typer.testing import CliRunner
 
     from ekte.cli import app
 
-    rid, wid, stored, card = _unscored_on_a_monitor(monkeypatch)
+    rid, wid, stored, card, reason = _unstored_on_a_monitor(monkeypatch, case)
     res = CliRunner().invoke(app, ["rescore", str(rid), "--replace"])
     assert res.exit_code == 2, res.output
     assert "not re-scored" in res.output
-    _unchanged(rid, wid, stored, card)
+    _unchanged(rid, wid, stored, card, reason)
+    # the deprecated save as a new run is refused the same way
+    res = CliRunner().invoke(app, ["rescore", str(rid)])
+    assert res.exit_code == 2, res.output
+    _unchanged(rid, wid, stored, card, reason)
     # only printed, nothing stored: shown as it is
     res = CliRunner().invoke(app, ["rescore", str(rid), "--no-save"])
     assert res.exit_code == 0, res.output
@@ -294,7 +320,56 @@ def test_the_refusal_text_is_translated():
     from ekte import i18n
 
     for lang, d in i18n._load().items():
-        assert replay.NO_SCORE in d.get("strings", {}), lang
+        for text in (replay.NO_SCORE, replay.NO_RATING):
+            assert text in d.get("strings", {}), lang
+
+
+# --------------------------------------------------------------------------- #
+# #312: what is still stored
+# --------------------------------------------------------------------------- #
+def _verdict(score, rating):
+    return {"verdict": {"risk_level": "low", "overall_score": score, "rating": rating}}
+
+
+def test_unstored_reasons():
+    from ekte.web.rescore import unstored
+
+    assert unstored(_verdict(90.0, "A"), _verdict(None, None)) == replay.NO_SCORE
+    assert unstored(_verdict(90.0, "A"), _verdict(95.0, None)) == replay.NO_RATING
+    assert unstored(_verdict(90.0, "A"), _verdict(70.0, "C")) is None
+    # a run without a grade before may be re-scored without one
+    assert unstored(_verdict(90.0, None), _verdict(95.0, None)) is None
+    assert unstored(None, _verdict(95.0, None)) is None
+    assert unstored(_verdict(90.0, None), _verdict(None, None)) == replay.NO_SCORE
+
+
+def test_a_capped_grade_is_stored(data, monkeypatch):
+    """Coverage between the limits caps the grade (#249) but keeps one: the
+    re-score replaces the run."""
+    from ekte.web import history, rescore
+
+    rid = _saved_chat(monkeypatch, edit=_without("billing"))
+    rid2 = _saved_chat(monkeypatch, edit=lambda ls: _without("capability")(_without("billing")(ls)))
+    counts = asyncio.run(rescore.rescore_all(lambda *a: None))
+    assert counts == {"rescored": 2, "skipped": 0, "failed": 0}
+    new = history.get(rid2)["verdict"]
+    assert new["rating"] is not None and new["coverage"] < 0.8
+    assert history.get(rid)["rescored_from"] is not None and rid2 not in history.refusals()
+
+
+def test_a_run_without_a_grade_before_is_rescored_without_one(data, monkeypatch):
+    from ekte.web import history, rescore
+
+    path = evidence.data_dir_path(evidence.new_run_id())
+    report = _rewrite(path, _record(monkeypatch, path, suite="standard"), _only("connectivity", "security"))
+    report["tool_version"] = "0.1.0"
+    report["verdict"]["rating"] = None  # as an older ekte that left it unrated
+    rid = history.save(report)
+    counts = asyncio.run(rescore.rescore_all(lambda *a: None))
+    assert counts == {"rescored": 1, "skipped": 0, "failed": 0}
+    new = history.get(rid)
+    assert new["verdict"]["rating"] is None and new["verdict"]["overall_score"] is not None
+    assert new["rescored_from"]["previous_verdict"]["rating"] is None
 
 
 def test_job_info_tells_a_refusal_from_a_failure():

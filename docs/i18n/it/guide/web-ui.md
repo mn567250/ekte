@@ -101,7 +101,8 @@ questa versione** (sotto l'elenco) lo fa, una dopo l'altra, per ogni esecuzione
 valutata da un'altra versione di ekte. Un'esecuzione senza un file di prove
 utilizzabile non viene rivalutata: mantiene il suo verdetto, come un'esecuzione
 la cui rivalutazione non avrebbe alcun punteggio (nessuno dei suoi controlli ha
-una risposta registrata); l'esecuzione ne indica il motivo. Al primo avvio
+una risposta registrata) o, per un'esecuzione con voto, nessun voto (troppo pochi
+dei suoi controlli ne hanno una); l'esecuzione ne indica il motivo. Al primo avvio
 dopo un aggiornamento, `ekte serve` rivaluta in background le esecuzioni
 valutate da una versione precedente (`EKTE_AUTO_RESCORE=0` lo disattiva); un
 avviso sopra l'elenco mostra l'avanzamento.

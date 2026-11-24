@@ -102,7 +102,8 @@ bewerten** (unter der Liste) tut das nacheinander für jeden Lauf, den eine
 andere ekte-Version bewertet hat. Ein Lauf ohne verwendbare Belegdatei wird
 nicht neu bewertet: Er behält sein Urteil, ebenso ein Lauf, dessen Neubewertung
 gar keine Punktzahl hätte (keine seiner Prüfungen hat eine aufgezeichnete
-Antwort); der Lauf nennt den Grund. Beim ersten Start nach einem Update
+Antwort) oder, bei einem benoteten Lauf, keine Note (zu wenige seiner Prüfungen
+haben eine); der Lauf nennt den Grund. Beim ersten Start nach einem Update
 bewertet `ekte serve` die Läufe, die eine ältere Version bewertet hat, im
 Hintergrund neu (`EKTE_AUTO_RESCORE=0` schaltet das ab); ein Hinweis über der
 Liste zeigt den Fortschritt.

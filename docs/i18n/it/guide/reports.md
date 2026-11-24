@@ -78,7 +78,9 @@ verdetto prima e dopo. Un'esecuzione senza un file di prove utilizzabile non
 viene rivalutata: mantiene il suo verdetto e viene saltata con il motivo.
 Lo stesso vale per un'esecuzione la cui rivalutazione non avrebbe alcun
 punteggio (nessuno dei suoi controlli ha una risposta registrata, come per
-un'esecuzione precedente a essi); `ekte rescore ID` non salva una tale
+un'esecuzione precedente a essi), o per un'esecuzione con voto la cui
+rivalutazione non avrebbe voto (troppo pochi dei suoi controlli hanno una
+risposta registrata); `ekte rescore ID` non salva una tale
 rivalutazione.
 `ekte serve` fa lo stesso in background al primo avvio dopo un aggiornamento
 (vedi [Interfaccia web](web-ui.md)).

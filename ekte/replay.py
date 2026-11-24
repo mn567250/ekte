@@ -328,6 +328,12 @@ NO_SCORE = (
     "the recorded run has no answer to the requests this ekte's checks send, "
     "so a re-score would have no score; run a new audit to score it"
 )
+# Known only after the replay: the run had a grade, but too few of its checks
+# had recorded answers for the re-score to be graded (#312).
+NO_RATING = (
+    "the recorded run has too few answers to the requests this ekte's checks "
+    "send, so a re-score would have no grade; run a new audit to grade it"
+)
 
 
 def refusal(report: dict[str, Any], path: Path) -> str | None:

@@ -101,7 +101,8 @@ la lista) hace esto, una tras otra, con cada ejecución que puntuó otra versió
 de ekte. Una ejecución sin un archivo de evidencia utilizable no se vuelve a
 puntuar: conserva su veredicto, igual que una ejecución cuya nueva puntuación no
 tendría puntuación alguna (ninguna de sus comprobaciones tiene una respuesta
-grabada); la ejecución indica el motivo. En su primer arranque tras una actualización,
+grabada) o, en una ejecución con nota, no tendría nota (muy pocas de sus
+comprobaciones la tienen); la ejecución indica el motivo. En su primer arranque tras una actualización,
 `ekte serve` vuelve a puntuar en segundo plano las ejecuciones que puntuó una
 versión anterior (`EKTE_AUTO_RESCORE=0` lo desactiva); un aviso sobre la lista
 muestra el progreso.

@@ -77,7 +77,9 @@ son verdict avant et après. Une exécution sans fichier de preuves utilisable
 n'est pas réévaluée : elle garde son verdict et est ignorée avec la raison.
 De même pour une exécution dont la réévaluation n'aurait aucun score (aucune de
 ses vérifications n'a de réponse enregistrée, comme pour une exécution
-antérieure à celles-ci) ; `ekte rescore ID` n'enregistre pas une telle
+antérieure à celles-ci), ou pour une exécution notée dont la réévaluation
+n'aurait pas de note (trop peu de ses vérifications ont une réponse
+enregistrée) ; `ekte rescore ID` n'enregistre pas une telle
 réévaluation.
 `ekte serve` fait de même en arrière-plan à son premier démarrage après une
 mise à jour (voir [Interface web](web-ui.md)).
