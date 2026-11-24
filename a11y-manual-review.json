@@ -3,9 +3,9 @@
  "schema_version": "1.0",
  "about": "Manual review of web UI v2 (docs/dev/accessibility.md, Manual review). Fill in fill_in per session and result per check: true = holds, false = fails (give issue), null + reason = not applicable, null without reason = not done yet. Do not change the other fields.",
  "generated_from": {
-  "commit": "700e822f51bb",
-  "ekte_version": "0.35.0",
-  "tests_run_at": "2026-11-16T18:02:50+00:00"
+  "commit": "c3b3ee3ee8d6",
+  "ekte_version": "0.36.0",
+  "tests_run_at": "2026-11-24T07:58:35+00:00"
  },
  "setup": "Run ekte serve and open http://127.0.0.1:8000/. Run one audit so that History, Analytics and a report exist, and add one monitor. Use the UI language and theme the session names unless a check names another.",
  "sessions": {

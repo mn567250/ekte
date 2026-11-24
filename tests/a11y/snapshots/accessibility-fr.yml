@@ -49,7 +49,7 @@
     - definition:
       - code: <id>
     - term: Version de ekte
-    - definition: 0.35.0
+    - definition: 0.36.0
     - term: Version d'axe-core
     - definition: 4.13.0
     - term: Tests
