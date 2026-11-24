@@ -7,7 +7,9 @@ runs the released ekte from PyPI (``uv run --with ekte==0.31.0 --no-project``,
 isolated from this checkout) to write a fresh data directory with invented
 content, and stores it as ``tests/fixtures/upgrade/v0.31.0/``:
 
-* ``history.db``  audit history (reports in the shape that version writes)
+* ``history.db``  audit history (reports in the shape that version writes);
+                  from 0.36.0 also a run re-scored in place and a run whose
+                  re-score was refused (``history_rescore``)
 * ``watches.db``  monitors: one with an encrypted stored key, one whose key is
                   not stored (key storage "memory"), one with a key reference
 * ``kb.db``       the user's own knowledge-base entries (a provider and a model)
@@ -98,6 +100,47 @@ def write(out: Path, report_path: Path) -> None:
         runs.append({"id": rid, "model": model, "score": score, "risk_level": risk,
                      "base_url": rep["target"]["base_url"]})
 
+    # 0.36.0 and later: a run re-scored in place (history.replace, report
+    # schema 1.6 rescored_from) and a run whose re-score was refused
+    # (history_rescore); both were audited by an older ekte.
+    rescored, refusals = [], []
+    if hasattr(history, "replace") and hasattr(history, "record_refusal"):
+        from ekte import replay
+
+        older = "0.35.0"
+        rep = json.loads(json.dumps(base))
+        rep["tool_version"] = older
+        rep["target"]["model"] = rep["target"]["claimed_model"] = "gpt-4.1"
+        rep["target"]["base_url"] = "https://relay4.example.com/v1"
+        rep["verdict"].update(overall_score=70.0, risk_level="medium", rating="C")
+        rid = history.save(rep)
+        previous = {"risk_level": "medium", "overall_score": 70.0, "rating": "C"}
+        new = json.loads(json.dumps(rep))
+        new["tool_version"] = ekte.__version__
+        new["verdict"].update(overall_score=82.0, risk_level="low", rating="B")
+        new["rescored_from"] = {
+            "run_id": "fixture0000000000000000000000004", "evidence_sha256": "0" * 64,
+            "tool_version": older, "generated_at": rep.get("generated_at"), "report_id": rid,
+            "rescored_at": "2026-11-24T10:00:00+00:00", "previous_verdict": previous,
+        }
+        assert history.replace(rid, new)
+        runs.append({"id": rid, "model": "gpt-4.1", "score": 82.0, "risk_level": "low",
+                     "base_url": "https://relay4.example.com/v1"})
+        rescored.append({"id": rid, "audit_version": older, "scoring_version": ekte.__version__,
+                         "previous_verdict": previous})
+
+        rep = json.loads(json.dumps(base))
+        rep["tool_version"] = older
+        rep["target"]["model"] = rep["target"]["claimed_model"] = "gpt-4.1-mini"
+        rep["target"]["base_url"] = "https://relay5.example.com/v1"
+        rep["verdict"].update(overall_score=77.6, risk_level="medium", rating="C")
+        rid = history.save(rep)
+        reason = getattr(replay, "NO_RATING", None) or replay.NO_SCORE
+        history.record_refusal(rid, ekte.__version__, reason)
+        runs.append({"id": rid, "model": "gpt-4.1-mini", "score": 77.6, "risk_level": "medium",
+                     "base_url": "https://relay5.example.com/v1"})
+        refusals.append({"id": rid, "version": ekte.__version__, "refusal": reason})
+
     watches.init()
     box = secretbox.SecretBox([FIXTURE_MASTER_KEY], "fixture")
     secretbox.unlock(box)
@@ -142,6 +185,9 @@ def write(out: Path, report_path: Path) -> None:
         "watches": watch_rows,
         "kb": kb_rows,
     }
+    if rescored or refusals:
+        manifest["rescored"] = rescored
+        manifest["refusals"] = refusals
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 

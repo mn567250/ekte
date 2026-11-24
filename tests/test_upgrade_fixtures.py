@@ -34,7 +34,7 @@ DBS = {"history.db": history.MIGRATIONS, "watches.db": watches.MIGRATIONS, "kb.d
 
 def test_a_fixture_exists_for_every_listed_release():
     names = {p.name for p in DIRS}
-    assert {"v0.30.0", "v0.33.0", "v0.33.1", "v0.34.0", "v0.35.0"} <= names
+    assert {"v0.30.0", "v0.33.0", "v0.33.1", "v0.34.0", "v0.35.0", "v0.36.0"} <= names
 
 
 @pytest.fixture(params=DIRS, ids=lambda p: p.name)
@@ -104,6 +104,32 @@ def test_history_is_complete_and_readable(upgraded):
     new_id = history.save(history.get(manifest["history"][0]["id"]) or {})
     assert new_id > max(rows)
     assert len(history.recent(500)) == len(manifest["history"]) + 1
+
+
+def test_rescored_and_refused_runs_survive(upgraded):
+    """From 0.36.0 a fixture holds a run re-scored in place and a run whose
+    re-score was refused (#168, #304, #312): both keep what they recorded."""
+    data, manifest, _src = upgraded
+    if "rescored" not in manifest:
+        pytest.skip("written before re-scoring in place (0.36.0)")
+    assert manifest["rescored"] and manifest["refusals"]
+    _open_all()
+    for run in manifest["rescored"]:
+        report = history.get(run["id"])
+        assert report is not None and report["tool_version"] == run["scoring_version"]
+        ref = report["rescored_from"]
+        assert ref["tool_version"] == run["audit_version"]
+        assert ref["previous_verdict"] == run["previous_verdict"]
+    with sqlite3.connect(data / "history.db") as c:
+        rows = {r[0]: r[1:] for r in c.execute(
+            "SELECT history_id, audit_tool_version, previous_verdict FROM history_metrics")}
+    for run in manifest["rescored"]:
+        audit, previous = rows[run["id"]]
+        assert audit == run["audit_version"] and json.loads(previous) == run["previous_verdict"]
+    got = history.refusals()
+    for run in manifest["refusals"]:
+        assert got[run["id"]]["version"] == run["version"]
+        assert got[run["id"]]["refusal"] == run["refusal"]
 
 
 def test_web_read_paths(upgraded):
@@ -242,10 +268,12 @@ def test_the_pages_of_150_work_on_upgraded_data(upgraded):
     before = {n: _version(data / n) for n in ("history.db", "watches.db")}
     client = TestClient(create_app(), base_url="http://localhost")
     _open_all()
-    # a release from before #150 is migrated; 0.35.0 and later already write
-    # these schemas, and opening them changes nothing
-    assert _version(data / "history.db") == dbmigrate.latest(history.MIGRATIONS) >= 16 >= before["history.db"]
-    assert _version(data / "watches.db") == dbmigrate.latest(watches.MIGRATIONS) >= 5 >= before["watches.db"]
+    # a release from before #150 is migrated; a release that already writes
+    # the latest schema is opened without a change
+    for name, migrations, least in (("history.db", history.MIGRATIONS, 16), ("watches.db", watches.MIGRATIONS, 5)):
+        latest = dbmigrate.latest(migrations)
+        assert _version(data / name) == latest >= least, name
+        assert before[name] <= latest, name
     assert isinstance(watches.data_version(), int)
     for page in ("/history", "/analytics", "/watches"):
         r = client.get(page)
