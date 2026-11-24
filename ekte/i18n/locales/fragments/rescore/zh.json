@@ -9,6 +9,7 @@
   "Re-score all with this version": "用当前版本重新评分全部",
   "Before the re-score: risk unchanged ({1})": "重新评分前：风险未变（{1}）",
   "Before the re-score: {1} → {2} ({3})": "重新评分前：{1} → {2}（{3}）",
-  "Re-scored with ekte {1} (audit ran with ekte {2})": "已用 ekte {1} 重新评分（检测时为 ekte {2}）"
+  "Re-scored with ekte {1} (audit ran with ekte {2})": "已用 ekte {1} 重新评分（检测时为 ekte {2}）",
+  "Not re-scored: ": "未重新评分："
  }
 }

@@ -270,6 +270,7 @@ def test_a_single_rescore_job_is_refused_with_the_reason(data, monkeypatch):
         client.get(f"/api/v1/jobs/{job['id']}/events")  # until it ends
         got = client.get(f"/api/v1/jobs/{job['id']}").json()
     assert got["status"] == "error" and got["error"] == replay.NO_SCORE
+    assert got["refused"] is True  # the UI shows it as a refusal, not a failure (#306)
     assert got["report_id"] is None
     _unchanged(rid, wid, stored, card)
 
@@ -294,3 +295,24 @@ def test_the_refusal_text_is_translated():
 
     for lang, d in i18n._load().items():
         assert replay.NO_SCORE in d.get("strings", {}), lang
+
+
+def test_job_info_tells_a_refusal_from_a_failure():
+    """``refused`` in a job's info (#306): True only for a PublicRefusal."""
+    from ekte.web import jobs
+
+    async def go(exc):
+        manager = jobs.JobManager(jobs.RelayGate())
+
+        async def run(emit):
+            raise exc
+
+        job = manager.submit({"kind": "audit"}, [], run)
+        await job.task
+        return job.info()
+
+    refused = asyncio.run(go(jobs.PublicRefusal("a fixed reason")))
+    assert (refused["status"], refused["error"], refused["refused"]) == ("error", "a fixed reason", True)
+    failed = asyncio.run(go(RuntimeError("internal detail")))
+    assert failed["status"] == "error" and failed["refused"] is False
+    assert "internal detail" not in failed["error"]  # a failure still shows only its type

@@ -20,6 +20,7 @@ JOB_FIELDS = {
     "id", "kind", "base_url", "model", "claimed_model", "suite", "surface", "dimensions",
     "baseline_url", "api", "api_auto", "stream_mode", "status", "created", "started", "finished",
     "progress", "done", "total", "current", "waiting_for", "report_id", "error",
+    "refused",  # #306: an error that is a refusal, not a failure
 }
 
 

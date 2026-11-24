@@ -316,6 +316,8 @@ class Job:
             "waiting_for": list(self.waiting_for) if self.status == "queued" else [],
             "report_id": self.report_id,
             "error": self.error,
+            # ended on a PublicRefusal: ``error`` is its fixed reason, not a failure (#306)
+            "refused": self.refused,
         }
 
 

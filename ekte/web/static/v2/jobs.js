@@ -219,6 +219,9 @@
           ? Tf("排队中：{h} 正在进行另一项检测", "Queued: another audit is using {h}", { h: hosts })
           : T("排队中：等待空闲的检测位", "Queued: waiting for a free audit slot"));
       }
+      // a refusal (e.g. a re-score that would have no score, issue 306) is no failure:
+      // the run is unchanged and the reason says why
+      if (j.status === "error" && j.refused) return esc(T("未重新评分：", "Not re-scored: ")) + esc(srvT(j.error || ""));
       if (j.status === "error") return esc(T("检测失败：", "Audit failed: ")) + esc(srvT(j.error || ""));
       var line = "<b>" + esc(T("正在运行", "Running now")) + "</b>";
       if (j.total) line += " · " + esc(Tf("已完成 {n} / {total} 项检测", "{n} of {total} checks done", { n: j.done || 0, total: j.total }));
@@ -245,7 +248,8 @@
       var cancel = isActive(j)
         ? '<button type="button" class="btn sm danger" data-jcancel="' + esc(j.id) + '">' + ico("x") + esc(T("取消", "Cancel")) + "</button>"
         : "";
-      return '<li class="job' + (j.status === "error" ? " err" : "") + '" data-job="' + esc(j.id) + '"><div class="jmain">' +
+      var cls = j.status === "error" ? (j.refused ? " refused" : " err") : "";
+      return '<li class="job' + cls + '" data-job="' + esc(j.id) + '"><div class="jmain">' +
         '<div class="jt">' + esc(title) + ' <span class="key">' + esc(j.suite || "standard") + "</span>" +
         (j.api ? ' <span class="key">' + esc(j.api) + (j.api_auto ? " (" + esc(detectLabel("auto")) + ")" : "") + "</span>" : "") +
         (j.stream_mode ? ' <span class="key">' + esc(streamLabel(j.stream_mode)) + "</span>" : "") +

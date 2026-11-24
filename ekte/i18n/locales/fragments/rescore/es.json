@@ -9,6 +9,7 @@
   "Re-score all with this version": "Volver a puntuar todo con esta versión",
   "Before the re-score: risk unchanged ({1})": "Antes de volver a puntuar: riesgo sin cambios ({1})",
   "Before the re-score: {1} → {2} ({3})": "Antes de volver a puntuar: {1} → {2} ({3})",
-  "Re-scored with ekte {1} (audit ran with ekte {2})": "Vuelto a puntuar con ekte {1} (la auditoría se hizo con ekte {2})"
+  "Re-scored with ekte {1} (audit ran with ekte {2})": "Vuelto a puntuar con ekte {1} (la auditoría se hizo con ekte {2})",
+  "Not re-scored: ": "No se volvió a puntuar: "
  }
 }

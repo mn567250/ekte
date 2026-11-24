@@ -185,3 +185,22 @@ def test_the_audit_page_follows_the_change_signal():
     page = (STATIC / "index.html").read_text(encoding="utf-8")
     assert '<script src="/static/live.js"></script>' in page
     assert "live: true," in page
+
+
+def test_a_refused_job_reads_as_a_notice_not_a_failure():
+    """#306: a job that ended on a refusal (a re-score that would have no
+    score) reads "Not re-scored: <reason>"; a failed one "Audit failed: …"."""
+    got = run("""
+      const list = { innerHTML: "", contains: () => false, addEventListener() {}, querySelector: () => null };
+      const j = J.init(list, { kind: "audit", poll: false });
+      await Promise.resolve();
+      j.set([{ id: "job-1", kind: "audit", status: "error", refused: true, error: "no score" },
+             { id: "job-2", kind: "audit", status: "error", refused: false, error: "Audit failed (KeyError)" },
+             { id: "job-3", kind: "audit", status: "error", error: "an older server: no refused field" }]);
+      return list.innerHTML;
+    """)
+    rows = got.split("</li>")
+    assert 'class="job refused"' in rows[0] and "Not re-scored: no score" in rows[0]
+    assert "Audit failed" not in rows[0]
+    assert 'class="job err"' in rows[1] and "Audit failed: Audit failed (KeyError)" in rows[1]
+    assert 'class="job err"' in rows[2] and "Audit failed: " in rows[2]
