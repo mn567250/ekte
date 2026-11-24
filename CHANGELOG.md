@@ -20,103 +20,42 @@ ekte has three eras:
 
 ## [Unreleased]
 
-### Web UI: a refused re-score reads "Not re-scored", not "Audit failed" ([#306](https://github.com/mn567250/ekte/issues/306))
+## [0.36.0] - 2026-11-24
 
-- A re-score that would have no score is refused since
-  [#304](https://github.com/mn567250/ekte/issues/304), and the run keeps its
-  verdict. The Running list still showed that job as **"Audit failed: <reason>"**
-  in red. It now reads **"Not re-scored: <reason>"** as a notice; real failures
-  keep "Audit failed". The new text is translated in every language.
-- **History:** after **Re-score with this version** is refused, the run's row
-  and its open report show the recorded reason at once (before, only after a
-  reload), the report drops its **Re-score with this version** action, and the
-  message is a notice rather than an error.
-- **History:** the other re-score messages under a run are no longer red
-  either: "Re-scoring with this version…" is a notice and "Re-scored with this
-  version." is green. Errors stay red.
-- **API:** a job (`GET /api/v1/jobs`, `GET /api/v1/jobs/{id}`) has a new field
-  `refused`: `true` when it ended with status `error` on a refusal rather than
-  a failure (`error` is then the fixed reason).
+ekte's verdicts are stricter and harder to fool. An audit review of the
+detectors and the scoring (#246) found checks that passed tampering relays,
+flagged honest answers or claimed more confidence than the evidence gave; this
+release fixes them (#247–#263). The risk now caps the overall score and rating
+(#247), coverage limits the rating (#249), a response integrity dimension
+reports tampering apart from reliability (#260), probes differ on every run
+(#256), and model identity tells models of one vendor apart through the echoed
+`model` field, knowledge-cutoff probes and baseline fingerprints (#250, #251).
+History, Analytics and reports name the ekte version that ran an audit and the
+one that scored it, and a re-score replaces the stored run instead of adding a
+copy (#168). Reports gain schema 1.6, evidence schema 1.2 and webhooks schema
+1.1.
 
-### Re-score: one line per run for requests without a recorded answer ([#302](https://github.com/mn567250/ekte/issues/302))
+**Upgrading.**
 
-- A request that a re-score sends but the recorded run never sent (a check
-  added since, or a run from before the per-run nonce) was logged as a bug in
-  ekte, with a full traceback per request: `ekte serve` printed hundreds of
-  lines on its automatic re-score after an upgrade, although nothing failed.
-  Such a request is no longer logged on its own. Each re-scored run with such
-  requests logs one warning instead, e.g. `re-score of run 12: 7 request(s)
-  had no recorded answer (connectivity 1, prompt_cache 3, ...); those checks
-  read inconclusive`. Other local failures keep their traceback.
-
-### Re-score: an old embedding or rerank run's `reliability` selection is `integrity` ([#303](https://github.com/mn567250/ekte/issues/303))
-
-- A custom-suite embedding or rerank run recorded before the `integrity`
-  dimension selected `reliability`, the dimension its determinism check was
-  filed under then. A re-score took that selection as it was, ran no check and
-  replaced the run's verdict with "inconclusive". The re-score now reads it as
-  `integrity`, as monitors and the web UI already did: the run is scored from
-  its recorded answers again, and the re-scored report's
-  `dimensions_selected` names `integrity`.
-
-### Re-score: a graded run that would lose its grade keeps its verdict ([#312](https://github.com/mn567250/ekte/issues/312))
-
-- A run saved by an older ekte has no recorded answers for the checks added or
-  changed since. In a standard, deep or full run, those checks read
-  inconclusive on a re-score, the coverage fell below 50% and the coverage
-  limit ([#249](https://github.com/mn567250/ekte/issues/249)) removed the
-  grade. The re-score still replaced the run. In the upgrade test, a 0.35.0
-  standard run went from "Deviations found, 77.6, grade C" to "Insufficient
-  signal, 95.3, no grade", and the automatic re-score after an upgrade did
-  this to every such run.
-- A re-score that would leave a graded run without a grade is now handled like
-  one without a score (#304): it is not stored, the run keeps its report, and
-  the reason ("the recorded run has too few answers to the requests this
-  ekte's checks send, so a re-score would have no grade; run a new audit to
-  grade it", translated in the web UI) is recorded and shown with it. The
-  same paths apply: bulk re-scores count it as skipped, a single re-score ends
-  refused, and `ekte rescore ID` exits with code 2 (`--no-save` still prints
-  it).
-- Still stored: a re-score whose grade is only capped (coverage from 50% to
-  80%), and the re-score of a run that had no grade before.
-
-### Re-score: a run that would have no score keeps its verdict ([#304](https://github.com/mn567250/ekte/issues/304))
-
-- When none of a run's checks had recorded answers for the requests this ekte
-  sends (for example a smoke run from before the per-run nonce), its re-score
-  had no score, and it still replaced the run: its verdict, its History row
-  and its monitor's card became "inconclusive", and the verdict before
-  survived only in `rescored_from.previous_verdict`. Such a re-score is no
-  longer stored. The run keeps its report, and the reason ("the recorded run
-  has no answer to the requests this ekte's checks send, so a re-score would
-  have no score; run a new audit to score it", translated in the web UI) is
-  recorded with it like a missing evidence file: History shows it, and the
-  run is not tried again by the same version. `ekte serve` logs one line,
-  `re-score of run N not stored: …`.
-- Bulk re-scores (`ekte rescore --all`, **Re-score all with this version**,
-  the automatic one after an upgrade) count it as skipped, not re-scored; the
-  automatic one still finishes for the version. A single re-score from the
-  web UI or the API ends as an error with that reason, without a traceback in
-  the log. `ekte rescore ID --replace` (and the deprecated save as a new run)
-  refuses it with exit code 2; `--no-save` still prints it. No re-score alert
-  is sent for it.
-- A re-score where only some checks read inconclusive and an overall score
-  remains is stored as before.
-
-### CI tests the locked dependencies; nightly early warning with the latest ones (internal, [#299](https://github.com/mn567250/ekte/issues/299))
-
-- The test, performance budget and accessibility jobs install with
-  `uv sync --locked` instead of `pip install -e`, so a pull request is tested
-  with the versions in `uv.lock`, and CI fails when `uv.lock` is out of date
-  with `pyproject.toml`. Before, pip ignored the lockfile: a Dependabot pull
-  request that did not touch PyYAML failed on PyYAML 6.0.4 while `uv.lock`
-  pinned 6.0.3.
-- A new nightly (and manual) job, "test latest dependencies", runs `ruff`,
-  `mypy` and `pytest` on Python 3.11 and 3.14 with the newest versions
-  `pyproject.toml` allows, as an early warning for upstream releases that
-  break ekte. It lists what is newer than `uv.lock` in its job summary and
-  never runs on pull requests.
-- `uv.lock`: PyYAML 6.0.3 → 6.0.4.
+- The first start migrates `history.db` (to schema version 18: the
+  `history_rescore` table and the audit-version columns of the analytics rows),
+  writes a backup first and says so on stderr; the analytics rows of saved runs
+  are updated once.
+- Then `ekte serve` re-scores, in the background, every saved run an older ekte
+  scored that kept its evidence file; History shows the progress, and
+  `EKTE_AUTO_RESCORE=0` turns it off. A run without a usable evidence file, or
+  whose re-score would have no score or would lose its grade, keeps its
+  verdict and says why (#304, #312). That includes most standard, deep and full
+  runs saved by 0.35.0 and earlier: their evidence has no answers for the
+  checks added or changed since. A new audit gives them a 0.36.0 verdict.
+- Verdicts are stricter: the same relay can score lower, get a lower grade or
+  no grade, so `ekte check --fail-under` / `--fail-on-risk`, monitor
+  thresholds and alerts can trigger where 0.35.0 passed. When a re-score
+  changes a monitor's latest verdict so that an alert rule applies, the alert
+  is sent and marked as a re-score.
+- Deprecated: saving a re-score as a new run (`ekte rescore ID` without
+  `--replace`, `POST /api/v1/history/{id}/rescore` without `replace=true`); a
+  later release (0.37.0 at the earliest) replaces the run by default (#294).
 
 ### History, Analytics and reports show the audit and the scoring version ([#168](https://github.com/mn567250/ekte/issues/168))
 
@@ -187,7 +126,7 @@ place, and runs scored by an older ekte are re-scored after an upgrade.
   alert caused by a re-score), `audit_tool_version` and
   `scoring_tool_version`; the alert text says it is a re-score and compares
   with the verdict before it.
-- **Report schema 1.6** (still unreleased): `rescored_from` gains the optional
+- **Report schema 1.6**: `rescored_from` gains the optional
   `rescored_at` and `previous_verdict` (`risk_level`, `overall_score`,
   `rating` before the re-score). A report re-scored again keeps the recorded
   audit's `tool_version`, `generated_at` and `run_id` in `rescored_from`;
@@ -195,147 +134,177 @@ place, and runs scored by an older ekte are re-scored after an upgrade.
 - History rows that earlier versions saved as separate re-scores stay as they
   are.
 
-### Docs: the methodology matches the code, and a test keeps it so ([#263](https://github.com/mn567250/ekte/issues/263))
+### Re-score: a graded run that would lose its grade keeps its verdict ([#312](https://github.com/mn567250/ekte/issues/312))
 
-The methodology said every scoring table in it was the detector's published
-scale, but the embedding and rerank scales were missing, the embedding weights
-were not listed, and some cells and claims had drifted from the code.
-Documentation only; no score or verdict changes.
+- A run saved by an older ekte has no recorded answers for the checks added or
+  changed since. In a standard, deep or full run, those checks read
+  inconclusive on a re-score, the coverage fell below 50% and the coverage
+  limit ([#249](https://github.com/mn567250/ekte/issues/249)) removed the
+  grade. The re-score still replaced the run. In the upgrade test, a 0.35.0
+  standard run went from "Deviations found, 77.6, grade C" to "Insufficient
+  signal, 95.3, no grade", and the automatic re-score after an upgrade did
+  this to every such run.
+- A re-score that would leave a graded run without a grade is now handled like
+  one without a score (#304): it is not stored, the run keeps its report, and
+  the reason ("the recorded run has too few answers to the requests this
+  ekte's checks send, so a re-score would have no grade; run a new audit to
+  grade it", translated in the web UI) is recorded and shown with it. The
+  same paths apply: bulk re-scores count it as skipped, a single re-score ends
+  refused, and `ekte rescore ID` exits with code 2 (`--no-save` still prints
+  it).
+- Still stored: a re-score whose grade is only capped (coverage from 50% to
+  80%), and the re-score of a run that had no grade before.
 
-- **Embedding and rerank scales:** the methodology now has a scoring-scale
-  table (check · outcome · status · effect, the labels verbatim from `SCALE`)
-  for every embedding detector (`embed.connectivity`, `embed.identity`,
-  `embed.drift`, `embed.determinism`, `embed.distinctness`,
-  `performance.embed`) and every rerank detector (`rerank.connectivity`,
-  `rerank.identity`, `rerank.drift`, `rerank.determinism`,
-  `rerank.known_answer`, `performance.rerank`), in all eight languages with
-  the UI's wording.
-- **Weights:** the embedding and rerank sections list their weights as a table
-  like the chat one (embedding: model identity 40, performance 20, capability
-  claims 15, response integrity 15, connectivity 10).
-- **Ids:** both surface tables list detector ids; the embedding identity row
-  is `embed.identity` and names its checks `embed.dimension` and
-  `embed.model_field`, the rerank one names `rerank.model_field`.
-- **`streaming.no_content` and `streaming.failed`** show "No deduction", as the
-  web UI's scoring scale does, with a note that the detector leaves the result
-  unscored.
-- **Model identity:** the fingerprint description no longer lists probe kinds
-  most profiles do not have; it says that few profiles have probes of their
-  own and that models of one vendor are usually not told apart without a
-  judge or a baseline.
-- **Trick map #16** states that a single unconfirmed substitution is MEDIUM.
-- **Billing caveats** state the inflation the tolerance lets pass without a
-  baseline (a slope up to 1.35, or below 2.5× in the single-request fallback).
-- **README:** the capability row says the output probe asks for at most 2,048
-  tokens, instead of promising to catch an undelivered max output.
-- **`tests/test_methodology_scales.py`** compares every scale row of every
-  registered detector with the methodology in both directions (label, status,
-  severity, effect), checks that the seven translations carry the same rows,
-  and that the weight tables equal `SURFACE_WEIGHTS` and the core dimensions.
+### Re-score: a run that would have no score keeps its verdict ([#304](https://github.com/mn567250/ekte/issues/304))
 
-### Compare mode: high confidence needs comparisons, not just a configured baseline ([#257](https://github.com/mn567250/ekte/issues/257))
+- When none of a run's checks had recorded answers for the requests this ekte
+  sends (for example a smoke run from before the per-run nonce), its re-score
+  had no score, and it still replaced the run: its verdict, its History row
+  and its monitor's card became "inconclusive", and the verdict before
+  survived only in `rescored_from.previous_verdict`. Such a re-score is no
+  longer stored. The run keeps its report, and the reason ("the recorded run
+  has no answer to the requests this ekte's checks send, so a re-score would
+  have no score; run a new audit to score it", translated in the web UI) is
+  recorded with it like a missing evidence file: History shows it, and the
+  run is not tried again by the same version. `ekte serve` logs one line,
+  `re-score of run N not stored: …`.
+- Bulk re-scores (`ekte rescore --all`, **Re-score all with this version**,
+  the automatic one after an upgrade) count it as skipped, not re-scored; the
+  automatic one still finishes for the version. A single re-score from the
+  web UI or the API ends as an error with that reason, without a traceback in
+  the log. `ekte rescore ID --replace` (and the deprecated save as a new run)
+  refuses it with exit code 2; `--no-save` still prints it. No re-score alert
+  is sent for it.
+- A re-score where only some checks read inconclusive and an overall score
+  remains is stored as before.
 
-The verdict confidence became **high** as soon as a baseline was configured
-and every core dimension produced a usable result, although `context_window`
-never asks the baseline and the other core detectors only compare with it in
-some cases. A usable LLM judge verdict also lifted medium to high without any
-baseline, while the documentation said only a baseline can reach high.
+### Re-score: an old embedding or rerank run's `reliability` selection is `integrity` ([#303](https://github.com/mn567250/ekte/issues/303))
 
-- **Evidence flag:** every detector result has a new field
-  `baseline_compared` (default false). It is true only when the detector
-  actually compared the target with a usable baseline answer:
-  `model_identity` (a fingerprint or the cutoff probe answered by both sides),
-  `quality_judge` (the baseline answered every probe and was shown to the
-  judge), `billing` (`billing.prompt-vs-baseline` ran), `capability` (the
-  baseline answered a probe the target rejected), `integrity`,
-  `protocol_request` and `performance`. The `model_identity` evidence key
-  `baseline_compared` now carries the same value instead of "a baseline was
-  configured"; the `quality_judge` evidence key of that name, which meant "the
-  baseline was asked", is renamed `baseline_asked`.
-- **Confidence:** **high** now needs a baseline, every core dimension that ran
-  with a usable result, *and* at least two core dimensions (model identity,
-  context window, capability, billing) with a detector that has
-  `baseline_compared` and a usable status. Otherwise it is at most
-  **medium**. A judge verdict alone no longer lifts the confidence; a
-  baseline-corroborated judge verdict counts as the model-identity
-  comparison.
-- **Documentation:** the methodology's "Verdict confidence" section, its
-  compare-mode notes and the suites guide (all eight languages) state this
-  rule.
-- Verdicts can change for the same evidence (see
-  [#168](https://github.com/mn567250/ekte/issues/168)): compare runs in which
-  fewer than two core dimensions were compared with the baseline, and judged
-  runs without a baseline, report **medium** instead of **high**. **Report
-  schema 1.6** (still unreleased) gains the optional
-  `DetectorResult.baseline_compared`.
-- Not in this change (possible follow-ups): `context_window` and `streaming`
-  still do not ask the baseline.
+- A custom-suite embedding or rerank run recorded before the `integrity`
+  dimension selected `reliability`, the dimension its determinism check was
+  filed under then. A re-score took that selection as it was, ran no check and
+  replaced the run's verdict with "inconclusive". The re-score now reads it as
+  `integrity`, as monitors and the web UI already did: the run is scored from
+  its recorded answers again, and the re-scored report's
+  `dimensions_selected` names `integrity`.
 
-### Context window: measured token factors per tokenizer family ([#261](https://github.com/mn567250/ekte/issues/261))
+### Re-score: one line per run for requests without a recorded answer ([#302](https://github.com/mn567250/ekte/issues/302))
 
-- `FILLER_REAL_PER_HEURISTIC` (`ekte/utils/tokenize.py`) now holds the real
-  tokens per heuristic token of the context-window filler, measured offline
-  with each family's published `tokenizer.json` (pinned Hugging Face
-  revisions, 20 filler texts each): `o200k_base` / `o200k_harmony` 1.12,
-  `moonshot-bpe` 1.14, `deepseek-bpe` 1.15, `cl100k_base` / `llama-3.3` 1.16,
-  `glm` 1.22, `nemotron-3` 1.38, `gemma` 1.39, `cohere` 1.40, `qwen` 1.41.
-  Families whose tokenizer is not published (`claude-bpe-*`, `gemini`, `grok`)
-  keep 1.2. Haystacks for the o200k, cl100k, DeepSeek, Kimi and Llama families
-  are now a little larger (closer to the rung), and those for Qwen, Gemma,
-  Command and Nemotron smaller, so these dense tokenizers no longer overshoot
-  the rung by 15-18%. Context-window probes, and therefore some scores, change;
-  see [#168](https://github.com/mn567250/ekte/issues/168).
-- `scripts/measure_tokenizer_factors.py` re-measures the table (not run in CI;
-  see `docs/dev/knowledge-base.md`). It checks that an ungated mirror is
-  byte-identical to the gated official file, or that a converted tokenizer
-  matches the official tiktoken vocabulary and split pattern.
+- A request that a re-score sends but the recorded run never sent (a check
+  added since, or a run from before the per-run nonce) was logged as a bug in
+  ekte, with a full traceback per request: `ekte serve` printed hundreds of
+  lines on its automatic re-score after an upgrade, although nothing failed.
+  Such a request is no longer logged on its own. Each re-scored run with such
+  requests logs one warning instead, e.g. `re-score of run 12: 7 request(s)
+  had no recorded answer (connectivity 1, prompt_cache 3, ...); those checks
+  read inconclusive`. Other local failures keep their traceback.
 
-### Knowledge base: documented cutoff months for 30 more chat profiles ([#251](https://github.com/mn567250/ekte/issues/251))
+### Web UI: a refused re-score reads "Not re-scored", not "Audit failed" ([#306](https://github.com/mn567250/ekte/issues/306))
 
-- **Knowledge cutoff:** 30 chat profiles whose `knowledge_cutoff` was missing,
-  year-only or an estimate now carry the month (or date) the vendor's own model
-  card or model documentation states, so the identity cutoff probe runs for them:
-  Phi-4 (7), Olmo 3 / 3.1 (5), Gemini 4 Argon, Gemma 4 (3) and Gemma 3n, Nemotron 3 Nano and Super, GPT-6 Sol and
-  Luna, Grok 4.7 / 4.6 / 4.5, Command A+ and the Command A family (4) and Command
-  R7B. Each source is listed in the provider file. Profiles whose vendor gives no
-  month (or contradicts itself) are unchanged; 94 chat profiles still have no
-  cutoff month. Gemini 3.8 / 3.6 Flash and 3.5 Flash-Lite stay without one:
-  their cards give March 2026 but say knowledge may be limited to January 2025
-  in some domains, so an honest answer could trip the probe.
+- A re-score that would have no score is refused since
+  [#304](https://github.com/mn567250/ekte/issues/304), and the run keeps its
+  verdict. The Running list still showed that job as **"Audit failed: <reason>"**
+  in red. It now reads **"Not re-scored: <reason>"** as a notice; real failures
+  keep "Audit failed". The new text is translated in every language.
+- **History:** after **Re-score with this version** is refused, the run's row
+  and its open report show the recorded reason at once (before, only after a
+  reload), the report drops its **Re-score with this version** action, and the
+  message is a notice rather than an error.
+- **History:** the other re-score messages under a run are no longer red
+  either: "Re-scoring with this version…" is a notice and "Re-scored with this
+  version." is green. Errors stay red.
+- **API:** a job (`GET /api/v1/jobs`, `GET /api/v1/jobs/{id}`) has a new field
+  `refused`: `true` when it ended with status `error` on a refusal rather than
+  a failure (`error` is then the fixed reason).
 
-### Streaming: a burst signal that fires, and a comparison with the same prompt without streaming ([#259](https://github.com/mn567250/ekte/issues/259))
+### Scoring: the risk caps the overall score and rating ([#247](https://github.com/mn567250/ekte/issues/247))
 
-A buffered answer replayed as 40 chunks in a burst after a 3 s wait was caught
-by the late first token alone: the "uniform gaps" signal required a
-coefficient of variation below 0.1, which jittery burst gaps (0.05–0.45 ms)
-never have. A relay that buffered the whole answer and replayed it with a
-30 ms delay per chunk (a "typing" effect) passed as genuine streaming, score
-100.
+The overall score diluted a failed detector twice (by the mean of its
+dimension, then by the dimension weight) and was computed apart from the risk
+verdict: a tampering relay scored 98.2 and rated **A** with risk `high`, and
+`ekte check --fail-under 80` passed it.
 
-- **Burst:** `streaming.uniform_gaps` (the id is kept for stored reports and
-  translations) now fires when at least four chunks arrive with at least 80%
-  of the gaps between them under 2 ms, once the answer has at least 220
-  characters; there is no CV condition any more. Title "Chunks arrived in a
-  burst".
-- **New signal `streaming.ttft_vs_total`**, Warn · Medium, same deduction
-  ladder as the other buffering signals: the same prompt is sent once without
-  streaming (same `max_tokens`, temperature 0); when the streamed first token
-  (reasoning or content) comes at or after 80% of that request's duration, the
-  answer was complete before the first chunk left. Not compared when either
-  call fails, when the non-streamed answer takes under a second (two calls'
-  timings are then mostly network noise) or for a reasoning model whose
-  thinking is hidden. One extra request: the streaming check's `cost_hint` is
-  now 2.
-- **Late first token:** the bar drops from 90% to 75% of the stream's duration
-  only when `streaming.ttft_vs_total` fires too; alone it stays at 90%.
-- **Compare mode:** the baseline's streamed first token and its time without
-  streaming for the same prompt are recorded in the evidence (`baseline`), not
-  scored.
-- **Reasoning models** are recognised with the shared
-  `ekte.detectors.helpers.is_reasoning` (#262), so an endpoint the client has
-  learned to reason is treated as one here too.
-- Scores can change for the same relay (see #168): a paced replay now scores
-  60 instead of 100. The report schema is unchanged.
+- **Dimension cap:** a dimension scores no higher than its lowest detector with
+  a HIGH or CRITICAL finding (a tampering detector at 10 next to clean siblings
+  makes response integrity 10, not 77.5). Transport advisories
+  (`security.tls`, `reliability.success_rate`, `reliability.latency`) and the
+  connectivity dimension cap nothing; plain HTTP still lowers only its
+  dimension.
+- **Overall cap:** the risk level caps the overall score
+  (`RISK_SCORE_CAPS` in `ekte/scoring.py`): at most 49 for `high` and 69 for
+  `medium`; `low`, `clean` and `inconclusive` are uncapped. The rating follows
+  from the capped score, so a high risk always rates F and a medium risk at
+  best D, and `--fail-under` gates on the capped score. The summary says when
+  the cap applied. Applies to the chat, embedding and rerank surfaces.
+- The Markdown, HTML and PDF reports and the web UI (verdict card and
+  **Dimension details**) show both caps and the findings behind them.
+- **Report schema 1.6** (see #168): new optional fields
+  `DimensionBreakdown.score_cap` (capping detector, findings, cap, uncapped
+  mean), `Verdict.uncapped_score` (the weighted mean before the cap) and
+  `Verdict.score_cap` (risk level, cap, findings that set the risk). Scores
+  and ratings of new runs of a relay with HIGH/CRITICAL findings are lower
+  than those of older runs; reports written before keep their recorded
+  scores.
+
+### Scoring: coverage limits the rating ([#249](https://github.com/mn567250/ekte/issues/249))
+
+A dimension that ran but could not be judged (its detectors inconclusive or
+crashed, no score) dropped out of the overall score and the weights were
+renormalized, so a relay whose context-window probe timed out above 20K tokens
+scored 100.0 and rated **A**, and a run where only model identity and security
+answered also rated **A**.
+
+- **Coverage:** the verdict now records `coverage`, the share of the weight of
+  the dimensions that ran that produced a score, and `not_judged`, the
+  dimensions that ran but could not be judged. Dimensions not in the suite or
+  not selected, and dimensions whose detectors only reported information, do
+  not count, so smoke and `custom` runs keep coverage 1.0.
+- **Rating limit** (`COVERAGE_*` in `ekte/scoring.py`): below 50% coverage
+  there is no rating ("not rated: too little was judged"); below 80%, or when
+  a core dimension (model identity, context window, capability, billing) ran
+  but could not be judged, the rating is at most **B**. The score itself is
+  unchanged. The summary names the dimensions that were not judged and the
+  limit.
+- `--fail-under` also fails (exit 1) a run whose rating was withheld for low
+  coverage.
+- The CLI summary, the Markdown, HTML and PDF reports, the `--compact` verdict
+  and the web UI (a coverage tile next to the score) show the coverage and the
+  limit.
+- **Report schema 1.6** (see #168): new optional fields `Verdict.coverage`,
+  `Verdict.not_judged` and `Verdict.rating_limit` (reason, best rating
+  allowed or none, rating the score alone gives). Ratings of new runs with
+  unjudged dimensions can be lower than those of older runs, or absent.
+
+### Scoring: a response integrity dimension ([#260](https://github.com/mn567250/ekte/issues/260))
+
+The "Transport security" dimension held response tampering, injected system
+prompts and response caches, none of which is transport: a tampering relay could
+read "does not deliver what it advertises: Transport security". The response
+cache check sat under protocol compliance, and on embeddings and rerank under
+concurrency reliability.
+
+- New dimension `integrity`, **Response integrity**: the `integrity`
+  (tampering), `injected_prompt`, `determinism` and `prompt_cache` detectors,
+  and on the embedding and rerank surfaces `embed.determinism` and
+  `rerank.determinism`. It is neither a core nor a profile dimension: its
+  findings set the risk through their severity, as before.
+- `security` (Transport security) keeps the TLS, key-echo and header checks.
+- Chat weights: response integrity 6, transport security 4 (was 6),
+  performance 4 (was 6), protocol compliance 6 (was 8, it no longer holds the
+  determinism check; the sum stays 100). Embedding: response integrity 15 and
+  rerank: response integrity 10 replace concurrency reliability, which those
+  surfaces no longer score. Overall scores of new runs can therefore differ
+  from older runs of the same relay.
+- The `protocol` detector is now named **Wire-protocol conformance** (was
+  "OpenAI-compatibility conformance"): it also checks Anthropic Messages and
+  OpenAI Responses targets. Its id is unchanged.
+- `--dimension`, `run.dimensions` and the web UI's **Dimensions to run** accept
+  `integrity`. A custom selection of `security` no longer runs the integrity
+  detectors; select `integrity` as well. Embedding and rerank monitors and runs
+  saved with `reliability` selected read it as `integrity`.
+- **Report schema 1.5** (see #168): the `Dimension` enum gains `integrity`.
+  Reports written before keep their dimensions and detector assignments as
+  recorded and show response integrity as not recorded.
 
 ### Scoring: a failed stream is no substitution evidence; two HIGH findings need two detectors ([#255](https://github.com/mn567250/ekte/issues/255))
 
@@ -367,223 +336,28 @@ neither says anything about what is served.
   lower risk level (and so a higher score cap) than before. The report schema
   is unchanged.
 
-### Small detector consistency fixes ([#262](https://github.com/mn567250/ekte/issues/262))
+### Model identity: the echoed `model` field is compared through the knowledge base ([#250](https://github.com/mn567250/ekte/issues/250))
 
-- **LLM judge:** a `consistent` verdict now scores 100 points instead of 95,
-  so enabling `--judge` no longer lowers a perfect model-identity dimension
-  (100 + 95 averaged to 97.5). Scores of judged runs change; see
-  [#168](https://github.com/mn567250/ekte/issues/168).
-- **One reasoning rule:** `ekte.detectors.helpers.is_reasoning(ctx, *outcomes)`
-  treats the endpoint as a reasoning model when the profile says so, when the
-  client has learned it (a short probe needed the reasoning repeat), or when a
-  response reports reasoning tokens. `billing`, `determinism`, the maximum
-  output check and the request/response attribute probes use it, so an
-  unprofiled reasoning model no longer gets a `determinism.temp1_variability:
-  identical` or `billing.usage-inflation-completion` finding for its hidden
-  thinking.
-- **Capability: one sample no longer decides a MEDIUM finding.** A claimed
-  tool call that does not come back with `tool_choice: "auto"` is asked for
-  once more with `tool_choice: "required"` (Anthropic `{"type": "any"}`); a
-  call on the repeat is `delivered` with evidence `needed_required: true`, and
-  a 4xx on the forced request alone falls back to the first answer instead of
-  failing the check. A claimed JSON mode that does not deliver is repeated once
-  as well (`needed_repeat: true`).
-- **Reliability slow tail can trigger:** `reliability.latency: slow` used a
-  fixed p95 above 30 s for 8-token requests, which no working relay reached. It
-  now fires when the p95 is above five times the median of the same burst
-  **and** above 5 s. The finding stays an advisory Warning · Low (15% of the
-  remaining score).
-- **Fingerprints: forbidden terms match whole words.** `expect_not_contains`
-  used substring matching, so a fingerprint forbidding `meta` fired on
-  "metadata". It now uses `helpers.contains_term`: whole words at ASCII
-  letter/digit edges, a version may follow (`qwen` matches `Qwen2.5`, `gpt-4`
-  matches `GPT-4o`), and CJK and token-like terms (`通义`, `<|User|>`) keep
-  matching inside text. `expect_contains` / `expect_contains_any` stay
-  substring matches. Every packaged `expect_not_contains` term is tested.
-- **Methodology:** the performance caveats now say that
-  `performance.reference` runs only in compare mode or for a profile with a
-  `performance.decode_tps` range (few packaged profiles have one).
+The echoed `model` field was compared with the requested id by tier words and
+the leading token only: `gpt-4o` answered by `gpt-3.5-turbo`, `claude-opus-4-5`
+by `claude-haiku-4-5` or `deepseek-reasoner` by `deepseek-chat` passed, while
+an honest aggregator requested as `openai/gpt-4o` that echoed
+`gpt-4o-2024-08-06` got a MEDIUM warning and the risk "Deviations found".
 
-### Knowledge-base import: deep nesting is refused the same way with PyYAML 6.0.4
-
-PyYAML 6.0.4's libyaml refuses deeply nested YAML on its own while scanning
-ahead ("exceeded maximum nesting depth"), before the importer's own count of
-32 levels is reached, so `ekte kb-import --check` reported libyaml's message
-instead of "nested more than 32 levels deep", and differently from the
-pure-Python loader. That refusal is now reported as the importer's own.
-
-### Scoring: coverage limits the rating ([#249](https://github.com/mn567250/ekte/issues/249))
-
-A dimension that ran but could not be judged (its detectors inconclusive or
-crashed, no score) dropped out of the overall score and the weights were
-renormalized, so a relay whose context-window probe timed out above 20K tokens
-scored 100.0 and rated **A**, and a run where only model identity and security
-answered also rated **A**.
-
-- **Coverage:** the verdict now records `coverage`, the share of the weight of
-  the dimensions that ran that produced a score, and `not_judged`, the
-  dimensions that ran but could not be judged. Dimensions not in the suite or
-  not selected, and dimensions whose detectors only reported information, do
-  not count, so smoke and `custom` runs keep coverage 1.0.
-- **Rating limit** (`COVERAGE_*` in `ekte/scoring.py`): below 50% coverage
-  there is no rating ("not rated: too little was judged"); below 80%, or when
-  a core dimension (model identity, context window, capability, billing) ran
-  but could not be judged, the rating is at most **B**. The score itself is
-  unchanged. The summary names the dimensions that were not judged and the
-  limit.
-- `--fail-under` also fails (exit 1) a run whose rating was withheld for low
-  coverage.
-- The CLI summary, the Markdown, HTML and PDF reports, the `--compact` verdict
-  and the web UI (a coverage tile next to the score) show the coverage and the
-  limit.
-- **Report schema 1.6** (see #168): new optional fields `Verdict.coverage`,
-  `Verdict.not_judged` and `Verdict.rating_limit` (reason, best rating
-  allowed or none, rating the score alone gives). Ratings of new runs with
-  unjudged dimensions can be lower than those of older runs, or absent.
-
-### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
-
-Needles and canaries came from fixed seeds, so the context-window needle at a
-given size was the same string for every user and every run: a test-aware
-relay could answer from a table, an ordinary response cache made a monitor's
-later runs repeat the first run's answers, and the prompt-cache probe's "cold"
-request was already warm from the second run on.
-
-- Every audit draws a random **run nonce** once (`AuditContext.run_nonce`);
-  `stable_marker(seed, nonce)` derives the connectivity and security canaries,
-  every context-window needle (a fresh one per re-probe, as before) and both
-  prompt-cache prefix markers from it. Within one run the markers stay the
-  same, so the probes stay internally consistent.
-- The long filler of the context-window and prompt-cache probes starts its
-  line numbers and sentence cycle at a nonce-derived offset: a different
-  prompt per run at practically the same token count. `build_filler` stays
-  linear and memoized.
-- The integrity wallet canary's bech32 address is derived from the nonce
-  instead of the endpoint and model, so it changes every run.
-- The nonce is recorded in the report (`run_nonce`, report schema 1.6, still
-  unreleased) and the evidence header (`run_nonce`, **evidence schema 1.2**).
-  `ekte rescore` / replay reuses the recorded nonce, so a replayed run sends
-  the same prompts; a run recorded before this change replays with the fixed
-  probes it sent. `EKTE_RUN_NONCE` fixes the nonce (tests, reproducing a run).
-- Prompts whose wording is the measurement (knowledge-base fingerprints, the
-  billing paragraph, the injected-prompt probes) are unchanged. Scores and
-  verdicts are unchanged (see #168).
-
-### Scoring: the risk caps the overall score and rating ([#247](https://github.com/mn567250/ekte/issues/247))
-
-The overall score diluted a failed detector twice (by the mean of its
-dimension, then by the dimension weight) and was computed apart from the risk
-verdict: a tampering relay scored 98.2 and rated **A** with risk `high`, and
-`ekte check --fail-under 80` passed it.
-
-- **Dimension cap:** a dimension scores no higher than its lowest detector with
-  a HIGH or CRITICAL finding (a tampering detector at 10 next to clean siblings
-  makes response integrity 10, not 77.5). Transport advisories
-  (`security.tls`, `reliability.success_rate`, `reliability.latency`) and the
-  connectivity dimension cap nothing; plain HTTP still lowers only its
-  dimension.
-- **Overall cap:** the risk level caps the overall score
-  (`RISK_SCORE_CAPS` in `ekte/scoring.py`): at most 49 for `high` and 69 for
-  `medium`; `low`, `clean` and `inconclusive` are uncapped. The rating follows
-  from the capped score, so a high risk always rates F and a medium risk at
-  best D, and `--fail-under` gates on the capped score. The summary says when
-  the cap applied. Applies to the chat, embedding and rerank surfaces.
-- The Markdown, HTML and PDF reports and the web UI (verdict card and
-  **Dimension details**) show both caps and the findings behind them.
-- **Report schema 1.6** (see #168): new optional fields
-  `DimensionBreakdown.score_cap` (capping detector, findings, cap, uncapped
-  mean), `Verdict.uncapped_score` (the weighted mean before the cap) and
-  `Verdict.score_cap` (risk level, cap, findings that set the risk). Scores
-  and ratings of new runs of a relay with HIGH/CRITICAL findings are lower
-  than those of older runs; reports written before keep their recorded
-  scores.
-
-### Response integrity: tampering confirmed by a repeat, realistic canaries ([#254](https://github.com/mn567250/ekte/issues/254))
-
-Without a baseline a substituted canary was capped at Fail · Medium: a relay
-rewriting an install URL ended as risk **low** and an A grade. The two canaries
-used synthetic values (`downloads.ekte.test`, `ekte==0.1.0`) that targeted
-tampering never touches, and only non-streamed text was checked.
-
-- **Confirm instead of capping.** When a canary is substituted and there is no
-  usable baseline (none, or one that errors or returns nothing usable), the
-  same canary is sent once more on the same channel. Substituted again (the
-  same or another value) is the new outcome `integrity.verdict` /
-  `tampering_repeated`: Fail · **High**, 20 points, so the risk is at least
-  **medium**. Intact on the repeat (evidence `repeat_intact: true`) or no
-  usable repeat stays `tampering` (Fail · Medium, 45). A substitution the
-  trusted baseline does not make stays `tampering_corroborated` (Critical).
-  New evidence on the finding: `repeated_canary`, `repeat_intact`,
-  `repeat_substituted`, `repeat_substitution`.
-- **Realistic canaries** (new texts in `ekte/prompts/en.json`): a well-known
-  installer (`curl -fsSL https://sh.rustup.rs | sh`), a popular pinned package
-  (`pip install requests==2.32.3`), a `git clone https://github.com/pallets/flask.git`
-  line and a valid-format Bitcoin address derived from the audited endpoint and
-  model, so it is no fixed value a relay could allow-list; a changed address counts only when it is itself a valid
-  bech32 address, so a miscopied character is not tampering. The two existing
-  canaries stay.
-- **Other channels:** the `git clone` canary is sent streamed and, when the
-  profile claims tool calling, an installer URL is sent as a tool-call
-  argument and compared.
-- The canaries run concurrently (at most three at a time); the detector sends
-  at most 8 requests to the target (`cost_hint` 8, was 3).
-- Scores and verdicts change for relays that substitute canary values
-  (see #168); the report schema is unchanged (outcome keys are free strings).
-
-### Injected prompt: an honest "there are no instructions" is no leak ([#258](https://github.com/mn567250/ekte/issues/258))
-
-The leak probe of `injected_prompt` counted any answer over 60 characters that
-contained "system", "instruction", "do not" and the like as a leaked system
-prompt. "There are no system or developer instructions before this message, so
-I have nothing to repeat." was a leak, cost 15 points alone, and with a 40-token
-template overhead (a default system prompt in an open model's chat template)
-became `suspected` (Warning · Medium).
-
-- The answer is classified: **none** (`NONE`, or a denial of system, developer
-  or prior instructions in the first two sentences), **leak** (a quoted or
-  block-quoted passage, or at least two second-person imperative sentences
-  such as "You are …", "Always …", "Do not …" outside a denial) or **unclear**
-  (anything else, such as a refusal, which counts as no leak).
-- The evidence records `leak_answer_kind` and the first 300 characters of the
-  answer (`leak_answer`).
-- The `leak` outcome alone is now Info and not counted (was Info · Low,
-  85 points): models confabulate system prompts. `overhead` and `suspected`
-  and the overhead thresholds are unchanged.
-- Verdict change (see #168): a relay whose model only talks about its
-  instructions is no longer marked down; with a fixed overhead an honest
-  denial now gives `overhead` (Warning · Low, 75) instead of `suspected`.
-
-### Context window: one reference for the verdict and the deduction, and probe overshoot ([#261](https://github.com/mn567250/ekte/issues/261))
-
-The context-window verdict was judged against the probed window (`measured /
-upper < 0.5` was truncation) but deducted against the top rung (90% of it), so
-a window recalled at exactly half the top rung (0.45 of the window, both
-refines failed) read Fail · High "far below the declared one" with a deduction
-of 50, the Warning row's maximum. And a tokenizer that counts the filler more
-densely than the fixed 1.2 correction allows could push the top rung past a
-genuine window and draw a Medium "short" verdict against an honest endpoint.
-Part of the audit review ([#246](https://github.com/mn567250/ekte/issues/246)).
-This changes verdicts and scores ([#168](https://github.com/mn567250/ekte/issues/168)).
-
-- The verdict and the deduction share one reference, the top rung: below half
-  of it is `truncated` (Fail · High), from half of it up `short` (Warning ·
-  Medium, at most −50). A window at half the top rung is now Warning (−50),
-  at a quarter Fail (−75). The scale labels say "of the top rung" instead of
-  "50-90% of the probed window".
-- The verdict's evidence `ratio` (measured / probed window) is replaced by
-  `top_rung_share` (measured / top rung); the translated summaries name it
-  with the top rung's size.
-- New outcome `overshot` (Info, no deduction) of `context_window.window`
-  (finding `context_window.overshot`): when the ascending ladder failed first
-  at the top rung and the endpoint reported more than 5% more
-  `usage.prompt_tokens` for the largest recalled size than its budget, the
-  window above is reported as not exercised instead of `short`, and a
-  rejection in that range is no longer read as "rejected below the claim".
-- Every ladder row records the endpoint's reported `prompt_tokens`; the
-  detector evidence records the token factor used (`real_per_heuristic`).
-- `ekte/utils/tokenize.py` has a table of per-tokenizer filler factors
-  (`FILLER_REAL_PER_HEURISTIC`) that the haystack size uses; it is empty until
-  the factors are measured offline, so every family keeps 1.2.
+- Both ids are normalized (lower case, no `provider/` or `vendor.` prefix, no
+  `:tag`, Bedrock `-v2:0` or snapshot date), then the knowledge base decides:
+  an echoed id that resolves to the claimed model's profile is consistent,
+  one that resolves to another profile diverges, with both profile ids in the
+  evidence.
+- The echo is compared with the claimed model as well as with the id sent,
+  so a deployment alias (`my-gpt4o-deployment` claimed as `gpt-4o`) is fine.
+- An id the knowledge base cannot place is flagged for a smaller-tier word
+  (whole words now: `mini` is not found in `gemini`), a different family or a
+  different version number; any other different id gets the new outcome
+  `model_identity.model_field` · `unknown` (Info, no deduction).
+- The embedding and rerank identity checks (`embed.model_field`,
+  `rerank.model_field`) use the same comparison and gain the same `unknown`
+  outcome (Info, not scored).
 
 ### Model identity: knowledge-cutoff probe, baseline fingerprints and honest vendor-only wording ([#251](https://github.com/mn567250/ekte/issues/251))
 
@@ -624,61 +398,6 @@ mode sent only the self-identification to the baseline.
   identity score can now drop when a model reports a cutoff more than a year
   before its profile's; the report schema is unchanged (#168).
 
-### Scoring: a response integrity dimension ([#260](https://github.com/mn567250/ekte/issues/260))
-
-The "Transport security" dimension held response tampering, injected system
-prompts and response caches, none of which is transport: a tampering relay could
-read "does not deliver what it advertises: Transport security". The response
-cache check sat under protocol compliance, and on embeddings and rerank under
-concurrency reliability.
-
-- New dimension `integrity`, **Response integrity**: the `integrity`
-  (tampering), `injected_prompt`, `determinism` and `prompt_cache` detectors,
-  and on the embedding and rerank surfaces `embed.determinism` and
-  `rerank.determinism`. It is neither a core nor a profile dimension: its
-  findings set the risk through their severity, as before.
-- `security` (Transport security) keeps the TLS, key-echo and header checks.
-- Chat weights: response integrity 6, transport security 4 (was 6),
-  performance 4 (was 6), protocol compliance 6 (was 8, it no longer holds the
-  determinism check; the sum stays 100). Embedding: response integrity 15 and
-  rerank: response integrity 10 replace concurrency reliability, which those
-  surfaces no longer score. Overall scores of new runs can therefore differ
-  from older runs of the same relay.
-- The `protocol` detector is now named **Wire-protocol conformance** (was
-  "OpenAI-compatibility conformance"): it also checks Anthropic Messages and
-  OpenAI Responses targets. Its id is unchanged.
-- `--dimension`, `run.dimensions` and the web UI's **Dimensions to run** accept
-  `integrity`. A custom selection of `security` no longer runs the integrity
-  detectors; select `integrity` as well. Embedding and rerank monitors and runs
-  saved with `reliability` selected read it as `integrity`.
-- **Report schema 1.5** (see #168): the `Dimension` enum gains `integrity`.
-  Reports written before keep their dimensions and detector assignments as
-  recorded and show response integrity as not recorded.
-
-### Capability: the max-output check catches a relay that clamps the output ([#253](https://github.com/mn567250/ekte/issues/253))
-
-A relay that clamped `max_tokens` to 100 returned ten lines, stopped with
-`finish_reason: length` and passed the max-output check with 100 points: any
-answer cut off by length counted as reaching the requested cap.
-
-- An answer cut off by length now reaches the cap (`to_cap`) only when at least
-  80 % of the requested tokens came back: the reported completion tokens, else
-  an estimate from the text. A reasoning model's reasoning tokens (profile or
-  reported reasoning tokens) count as delivered, so a model that spends the
-  whole budget thinking still passes; without any usage its hidden reasoning
-  cannot be counted and it is not called clamped.
-- Below that it is the new outcome `clamped` of `capability.max_output`:
-  Fail · Medium, 0 points. The evidence gives the requested cap, the delivered
-  tokens and where the count comes from, and notes when a non-reasoning
-  model's reported completion tokens and the text estimate are more than 3x
-  apart (billing judges the count).
-- New option `--max-output-probe-tokens` (config `run.max_output_probe_tokens`,
-  default 2048): the probe requests min(declared max output, this), so a
-  higher value catches a relay that caps a long-output model at, say, 4K.
-- The capability score and the verdict of a clamping relay drop (#168): its
-  max-output check now fails instead of passing. The report schema is
-  unchanged.
-
 ### Billing: prompt-token slope over three sizes, and the baseline's counts ([#252](https://github.com/mn567250/ekte/issues/252))
 
 The billing check sent one ~150-token prompt and flagged prompt tokens only
@@ -713,6 +432,30 @@ above 2.5x the estimate, so usage inflated by 1.5x, 2.0x or 2.4x read
   verdict. The report schema is unchanged; score comparability across versions
   is tracked in [#168](https://github.com/mn567250/ekte/issues/168).
 
+### Capability: the max-output check catches a relay that clamps the output ([#253](https://github.com/mn567250/ekte/issues/253))
+
+A relay that clamped `max_tokens` to 100 returned ten lines, stopped with
+`finish_reason: length` and passed the max-output check with 100 points: any
+answer cut off by length counted as reaching the requested cap.
+
+- An answer cut off by length now reaches the cap (`to_cap`) only when at least
+  80 % of the requested tokens came back: the reported completion tokens, else
+  an estimate from the text. A reasoning model's reasoning tokens (profile or
+  reported reasoning tokens) count as delivered, so a model that spends the
+  whole budget thinking still passes; without any usage its hidden reasoning
+  cannot be counted and it is not called clamped.
+- Below that it is the new outcome `clamped` of `capability.max_output`:
+  Fail · Medium, 0 points. The evidence gives the requested cap, the delivered
+  tokens and where the count comes from, and notes when a non-reasoning
+  model's reported completion tokens and the text estimate are more than 3x
+  apart (billing judges the count).
+- New option `--max-output-probe-tokens` (config `run.max_output_probe_tokens`,
+  default 2048): the probe requests min(declared max output, this), so a
+  higher value catches a relay that caps a long-output model at, say, 4K.
+- The capability score and the verdict of a clamping relay drop (#168): its
+  max-output check now fails instead of passing. The report schema is
+  unchanged.
+
 ### Capability: probes the relay rejects count as undelivered ([#248](https://github.com/mn567250/ekte/issues/248))
 
 A relay that answered the tools, JSON-mode and strict-schema probes with HTTP
@@ -734,28 +477,322 @@ every rejected probe was "no usable response" and not counted.
   from 100 to 25 (three zeros and the max-output pass); the verdict can change
   with it ([#168](https://github.com/mn567250/ekte/issues/168)).
 
-### Model identity: the echoed `model` field is compared through the knowledge base ([#250](https://github.com/mn567250/ekte/issues/250))
+### Response integrity: tampering confirmed by a repeat, realistic canaries ([#254](https://github.com/mn567250/ekte/issues/254))
 
-The echoed `model` field was compared with the requested id by tier words and
-the leading token only: `gpt-4o` answered by `gpt-3.5-turbo`, `claude-opus-4-5`
-by `claude-haiku-4-5` or `deepseek-reasoner` by `deepseek-chat` passed, while
-an honest aggregator requested as `openai/gpt-4o` that echoed
-`gpt-4o-2024-08-06` got a MEDIUM warning and the risk "Deviations found".
+Without a baseline a substituted canary was capped at Fail · Medium: a relay
+rewriting an install URL ended as risk **low** and an A grade. The two canaries
+used synthetic values (`downloads.ekte.test`, `ekte==0.1.0`) that targeted
+tampering never touches, and only non-streamed text was checked.
 
-- Both ids are normalized (lower case, no `provider/` or `vendor.` prefix, no
-  `:tag`, Bedrock `-v2:0` or snapshot date), then the knowledge base decides:
-  an echoed id that resolves to the claimed model's profile is consistent,
-  one that resolves to another profile diverges, with both profile ids in the
-  evidence.
-- The echo is compared with the claimed model as well as with the id sent,
-  so a deployment alias (`my-gpt4o-deployment` claimed as `gpt-4o`) is fine.
-- An id the knowledge base cannot place is flagged for a smaller-tier word
-  (whole words now: `mini` is not found in `gemini`), a different family or a
-  different version number; any other different id gets the new outcome
-  `model_identity.model_field` · `unknown` (Info, no deduction).
-- The embedding and rerank identity checks (`embed.model_field`,
-  `rerank.model_field`) use the same comparison and gain the same `unknown`
-  outcome (Info, not scored).
+- **Confirm instead of capping.** When a canary is substituted and there is no
+  usable baseline (none, or one that errors or returns nothing usable), the
+  same canary is sent once more on the same channel. Substituted again (the
+  same or another value) is the new outcome `integrity.verdict` /
+  `tampering_repeated`: Fail · **High**, 20 points, so the risk is at least
+  **medium**. Intact on the repeat (evidence `repeat_intact: true`) or no
+  usable repeat stays `tampering` (Fail · Medium, 45). A substitution the
+  trusted baseline does not make stays `tampering_corroborated` (Critical).
+  New evidence on the finding: `repeated_canary`, `repeat_intact`,
+  `repeat_substituted`, `repeat_substitution`.
+- **Realistic canaries** (new texts in `ekte/prompts/en.json`): a well-known
+  installer (`curl -fsSL https://sh.rustup.rs | sh`), a popular pinned package
+  (`pip install requests==2.32.3`), a `git clone https://github.com/pallets/flask.git`
+  line and a valid-format Bitcoin address derived from the audited endpoint and
+  model, so it is no fixed value a relay could allow-list; a changed address counts only when it is itself a valid
+  bech32 address, so a miscopied character is not tampering. The two existing
+  canaries stay.
+- **Other channels:** the `git clone` canary is sent streamed and, when the
+  profile claims tool calling, an installer URL is sent as a tool-call
+  argument and compared.
+- The canaries run concurrently (at most three at a time); the detector sends
+  at most 8 requests to the target (`cost_hint` 8, was 3).
+- Scores and verdicts change for relays that substitute canary values
+  (see #168); the report schema is unchanged (outcome keys are free strings).
+
+### Probes differ on every run: per-run needles, canaries and cache prefixes ([#256](https://github.com/mn567250/ekte/issues/256))
+
+Needles and canaries came from fixed seeds, so the context-window needle at a
+given size was the same string for every user and every run: a test-aware
+relay could answer from a table, an ordinary response cache made a monitor's
+later runs repeat the first run's answers, and the prompt-cache probe's "cold"
+request was already warm from the second run on.
+
+- Every audit draws a random **run nonce** once (`AuditContext.run_nonce`);
+  `stable_marker(seed, nonce)` derives the connectivity and security canaries,
+  every context-window needle (a fresh one per re-probe, as before) and both
+  prompt-cache prefix markers from it. Within one run the markers stay the
+  same, so the probes stay internally consistent.
+- The long filler of the context-window and prompt-cache probes starts its
+  line numbers and sentence cycle at a nonce-derived offset: a different
+  prompt per run at practically the same token count. `build_filler` stays
+  linear and memoized.
+- The integrity wallet canary's bech32 address is derived from the nonce
+  instead of the endpoint and model, so it changes every run.
+- The nonce is recorded in the report (`run_nonce`, report schema 1.6, still
+  unreleased) and the evidence header (`run_nonce`, **evidence schema 1.2**).
+  `ekte rescore` / replay reuses the recorded nonce, so a replayed run sends
+  the same prompts; a run recorded before this change replays with the fixed
+  probes it sent. `EKTE_RUN_NONCE` fixes the nonce (tests, reproducing a run).
+- Prompts whose wording is the measurement (knowledge-base fingerprints, the
+  billing paragraph, the injected-prompt probes) are unchanged. Scores and
+  verdicts are unchanged (see #168).
+
+### Injected prompt: an honest "there are no instructions" is no leak ([#258](https://github.com/mn567250/ekte/issues/258))
+
+The leak probe of `injected_prompt` counted any answer over 60 characters that
+contained "system", "instruction", "do not" and the like as a leaked system
+prompt. "There are no system or developer instructions before this message, so
+I have nothing to repeat." was a leak, cost 15 points alone, and with a 40-token
+template overhead (a default system prompt in an open model's chat template)
+became `suspected` (Warning · Medium).
+
+- The answer is classified: **none** (`NONE`, or a denial of system, developer
+  or prior instructions in the first two sentences), **leak** (a quoted or
+  block-quoted passage, or at least two second-person imperative sentences
+  such as "You are …", "Always …", "Do not …" outside a denial) or **unclear**
+  (anything else, such as a refusal, which counts as no leak).
+- The evidence records `leak_answer_kind` and the first 300 characters of the
+  answer (`leak_answer`).
+- The `leak` outcome alone is now Info and not counted (was Info · Low,
+  85 points): models confabulate system prompts. `overhead` and `suspected`
+  and the overhead thresholds are unchanged.
+- Verdict change (see #168): a relay whose model only talks about its
+  instructions is no longer marked down; with a fixed overhead an honest
+  denial now gives `overhead` (Warning · Low, 75) instead of `suspected`.
+
+### Streaming: a burst signal that fires, and a comparison with the same prompt without streaming ([#259](https://github.com/mn567250/ekte/issues/259))
+
+A buffered answer replayed as 40 chunks in a burst after a 3 s wait was caught
+by the late first token alone: the "uniform gaps" signal required a
+coefficient of variation below 0.1, which jittery burst gaps (0.05–0.45 ms)
+never have. A relay that buffered the whole answer and replayed it with a
+30 ms delay per chunk (a "typing" effect) passed as genuine streaming, score
+100.
+
+- **Burst:** `streaming.uniform_gaps` (the id is kept for stored reports and
+  translations) now fires when at least four chunks arrive with at least 80%
+  of the gaps between them under 2 ms, once the answer has at least 220
+  characters; there is no CV condition any more. Title "Chunks arrived in a
+  burst".
+- **New signal `streaming.ttft_vs_total`**, Warn · Medium, same deduction
+  ladder as the other buffering signals: the same prompt is sent once without
+  streaming (same `max_tokens`, temperature 0); when the streamed first token
+  (reasoning or content) comes at or after 80% of that request's duration, the
+  answer was complete before the first chunk left. Not compared when either
+  call fails, when the non-streamed answer takes under a second (two calls'
+  timings are then mostly network noise) or for a reasoning model whose
+  thinking is hidden. One extra request: the streaming check's `cost_hint` is
+  now 2.
+- **Late first token:** the bar drops from 90% to 75% of the stream's duration
+  only when `streaming.ttft_vs_total` fires too; alone it stays at 90%.
+- **Compare mode:** the baseline's streamed first token and its time without
+  streaming for the same prompt are recorded in the evidence (`baseline`), not
+  scored.
+- **Reasoning models** are recognised with the shared
+  `ekte.detectors.helpers.is_reasoning` (#262), so an endpoint the client has
+  learned to reason is treated as one here too.
+- Scores can change for the same relay (see #168): a paced replay now scores
+  60 instead of 100. The report schema is unchanged.
+
+### Context window: one reference for the verdict and the deduction, and probe overshoot ([#261](https://github.com/mn567250/ekte/issues/261))
+
+The context-window verdict was judged against the probed window (`measured /
+upper < 0.5` was truncation) but deducted against the top rung (90% of it), so
+a window recalled at exactly half the top rung (0.45 of the window, both
+refines failed) read Fail · High "far below the declared one" with a deduction
+of 50, the Warning row's maximum. And a tokenizer that counts the filler more
+densely than the fixed 1.2 correction allows could push the top rung past a
+genuine window and draw a Medium "short" verdict against an honest endpoint.
+Part of the audit review ([#246](https://github.com/mn567250/ekte/issues/246)).
+This changes verdicts and scores ([#168](https://github.com/mn567250/ekte/issues/168)).
+
+- The verdict and the deduction share one reference, the top rung: below half
+  of it is `truncated` (Fail · High), from half of it up `short` (Warning ·
+  Medium, at most −50). A window at half the top rung is now Warning (−50),
+  at a quarter Fail (−75). The scale labels say "of the top rung" instead of
+  "50-90% of the probed window".
+- The verdict's evidence `ratio` (measured / probed window) is replaced by
+  `top_rung_share` (measured / top rung); the translated summaries name it
+  with the top rung's size.
+- New outcome `overshot` (Info, no deduction) of `context_window.window`
+  (finding `context_window.overshot`): when the ascending ladder failed first
+  at the top rung and the endpoint reported more than 5% more
+  `usage.prompt_tokens` for the largest recalled size than its budget, the
+  window above is reported as not exercised instead of `short`, and a
+  rejection in that range is no longer read as "rejected below the claim".
+- Every ladder row records the endpoint's reported `prompt_tokens`; the
+  detector evidence records the token factor used (`real_per_heuristic`).
+- `ekte/utils/tokenize.py` has a table of per-tokenizer filler factors
+  (`FILLER_REAL_PER_HEURISTIC`) that the haystack size uses; it is empty until
+  the factors are measured offline, so every family keeps 1.2.
+
+### Context window: measured token factors per tokenizer family ([#261](https://github.com/mn567250/ekte/issues/261))
+
+- `FILLER_REAL_PER_HEURISTIC` (`ekte/utils/tokenize.py`) now holds the real
+  tokens per heuristic token of the context-window filler, measured offline
+  with each family's published `tokenizer.json` (pinned Hugging Face
+  revisions, 20 filler texts each): `o200k_base` / `o200k_harmony` 1.12,
+  `moonshot-bpe` 1.14, `deepseek-bpe` 1.15, `cl100k_base` / `llama-3.3` 1.16,
+  `glm` 1.22, `nemotron-3` 1.38, `gemma` 1.39, `cohere` 1.40, `qwen` 1.41.
+  Families whose tokenizer is not published (`claude-bpe-*`, `gemini`, `grok`)
+  keep 1.2. Haystacks for the o200k, cl100k, DeepSeek, Kimi and Llama families
+  are now a little larger (closer to the rung), and those for Qwen, Gemma,
+  Command and Nemotron smaller, so these dense tokenizers no longer overshoot
+  the rung by 15-18%. Context-window probes, and therefore some scores, change;
+  see [#168](https://github.com/mn567250/ekte/issues/168).
+- `scripts/measure_tokenizer_factors.py` re-measures the table (not run in CI;
+  see `docs/dev/knowledge-base.md`). It checks that an ungated mirror is
+  byte-identical to the gated official file, or that a converted tokenizer
+  matches the official tiktoken vocabulary and split pattern.
+
+### Small detector consistency fixes ([#262](https://github.com/mn567250/ekte/issues/262))
+
+- **LLM judge:** a `consistent` verdict now scores 100 points instead of 95,
+  so enabling `--judge` no longer lowers a perfect model-identity dimension
+  (100 + 95 averaged to 97.5). Scores of judged runs change; see
+  [#168](https://github.com/mn567250/ekte/issues/168).
+- **One reasoning rule:** `ekte.detectors.helpers.is_reasoning(ctx, *outcomes)`
+  treats the endpoint as a reasoning model when the profile says so, when the
+  client has learned it (a short probe needed the reasoning repeat), or when a
+  response reports reasoning tokens. `billing`, `determinism`, the maximum
+  output check and the request/response attribute probes use it, so an
+  unprofiled reasoning model no longer gets a `determinism.temp1_variability:
+  identical` or `billing.usage-inflation-completion` finding for its hidden
+  thinking.
+- **Capability: one sample no longer decides a MEDIUM finding.** A claimed
+  tool call that does not come back with `tool_choice: "auto"` is asked for
+  once more with `tool_choice: "required"` (Anthropic `{"type": "any"}`); a
+  call on the repeat is `delivered` with evidence `needed_required: true`, and
+  a 4xx on the forced request alone falls back to the first answer instead of
+  failing the check. A claimed JSON mode that does not deliver is repeated once
+  as well (`needed_repeat: true`).
+- **Reliability slow tail can trigger:** `reliability.latency: slow` used a
+  fixed p95 above 30 s for 8-token requests, which no working relay reached. It
+  now fires when the p95 is above five times the median of the same burst
+  **and** above 5 s. The finding stays an advisory Warning · Low (15% of the
+  remaining score).
+- **Fingerprints: forbidden terms match whole words.** `expect_not_contains`
+  used substring matching, so a fingerprint forbidding `meta` fired on
+  "metadata". It now uses `helpers.contains_term`: whole words at ASCII
+  letter/digit edges, a version may follow (`qwen` matches `Qwen2.5`, `gpt-4`
+  matches `GPT-4o`), and CJK and token-like terms (`通义`, `<|User|>`) keep
+  matching inside text. `expect_contains` / `expect_contains_any` stay
+  substring matches. Every packaged `expect_not_contains` term is tested.
+- **Methodology:** the performance caveats now say that
+  `performance.reference` runs only in compare mode or for a profile with a
+  `performance.decode_tps` range (few packaged profiles have one).
+
+### Compare mode: high confidence needs comparisons, not just a configured baseline ([#257](https://github.com/mn567250/ekte/issues/257))
+
+The verdict confidence became **high** as soon as a baseline was configured
+and every core dimension produced a usable result, although `context_window`
+never asks the baseline and the other core detectors only compare with it in
+some cases. A usable LLM judge verdict also lifted medium to high without any
+baseline, while the documentation said only a baseline can reach high.
+
+- **Evidence flag:** every detector result has a new field
+  `baseline_compared` (default false). It is true only when the detector
+  actually compared the target with a usable baseline answer:
+  `model_identity` (a fingerprint or the cutoff probe answered by both sides),
+  `quality_judge` (the baseline answered every probe and was shown to the
+  judge), `billing` (`billing.prompt-vs-baseline` ran), `capability` (the
+  baseline answered a probe the target rejected), `integrity`,
+  `protocol_request` and `performance`. The `model_identity` evidence key
+  `baseline_compared` now carries the same value instead of "a baseline was
+  configured"; the `quality_judge` evidence key of that name, which meant "the
+  baseline was asked", is renamed `baseline_asked`.
+- **Confidence:** **high** now needs a baseline, every core dimension that ran
+  with a usable result, *and* at least two core dimensions (model identity,
+  context window, capability, billing) with a detector that has
+  `baseline_compared` and a usable status. Otherwise it is at most
+  **medium**. A judge verdict alone no longer lifts the confidence; a
+  baseline-corroborated judge verdict counts as the model-identity
+  comparison.
+- **Documentation:** the methodology's "Verdict confidence" section, its
+  compare-mode notes and the suites guide (all eight languages) state this
+  rule.
+- Verdicts can change for the same evidence (see
+  [#168](https://github.com/mn567250/ekte/issues/168)): compare runs in which
+  fewer than two core dimensions were compared with the baseline, and judged
+  runs without a baseline, report **medium** instead of **high**. **Report
+  schema 1.6** gains the optional
+  `DetectorResult.baseline_compared`.
+- Not in this change (possible follow-ups): `context_window` and `streaming`
+  still do not ask the baseline.
+
+### Knowledge base: documented cutoff months for 30 more chat profiles ([#251](https://github.com/mn567250/ekte/issues/251))
+
+- **Knowledge cutoff:** 30 chat profiles whose `knowledge_cutoff` was missing,
+  year-only or an estimate now carry the month (or date) the vendor's own model
+  card or model documentation states, so the identity cutoff probe runs for them:
+  Phi-4 (7), Olmo 3 / 3.1 (5), Gemini 4 Argon, Gemma 4 (3) and Gemma 3n, Nemotron 3 Nano and Super, GPT-6 Sol and
+  Luna, Grok 4.7 / 4.6 / 4.5, Command A+ and the Command A family (4) and Command
+  R7B. Each source is listed in the provider file. Profiles whose vendor gives no
+  month (or contradicts itself) are unchanged; 94 chat profiles still have no
+  cutoff month. Gemini 3.8 / 3.6 Flash and 3.5 Flash-Lite stay without one:
+  their cards give March 2026 but say knowledge may be limited to January 2025
+  in some domains, so an honest answer could trip the probe.
+
+### Docs: the methodology matches the code, and a test keeps it so ([#263](https://github.com/mn567250/ekte/issues/263))
+
+The methodology said every scoring table in it was the detector's published
+scale, but the embedding and rerank scales were missing, the embedding weights
+were not listed, and some cells and claims had drifted from the code.
+Documentation only; no score or verdict changes.
+
+- **Embedding and rerank scales:** the methodology now has a scoring-scale
+  table (check · outcome · status · effect, the labels verbatim from `SCALE`)
+  for every embedding detector (`embed.connectivity`, `embed.identity`,
+  `embed.drift`, `embed.determinism`, `embed.distinctness`,
+  `performance.embed`) and every rerank detector (`rerank.connectivity`,
+  `rerank.identity`, `rerank.drift`, `rerank.determinism`,
+  `rerank.known_answer`, `performance.rerank`), in all eight languages with
+  the UI's wording.
+- **Weights:** the embedding and rerank sections list their weights as a table
+  like the chat one (embedding: model identity 40, performance 20, capability
+  claims 15, response integrity 15, connectivity 10).
+- **Ids:** both surface tables list detector ids; the embedding identity row
+  is `embed.identity` and names its checks `embed.dimension` and
+  `embed.model_field`, the rerank one names `rerank.model_field`.
+- **`streaming.no_content` and `streaming.failed`** show "No deduction", as the
+  web UI's scoring scale does, with a note that the detector leaves the result
+  unscored.
+- **Model identity:** the fingerprint description no longer lists probe kinds
+  most profiles do not have; it says that few profiles have probes of their
+  own and that models of one vendor are usually not told apart without a
+  judge or a baseline.
+- **Trick map #16** states that a single unconfirmed substitution is MEDIUM.
+- **Billing caveats** state the inflation the tolerance lets pass without a
+  baseline (a slope up to 1.35, or below 2.5× in the single-request fallback).
+- **README:** the capability row says the output probe asks for at most 2,048
+  tokens, instead of promising to catch an undelivered max output.
+- **`tests/test_methodology_scales.py`** compares every scale row of every
+  registered detector with the methodology in both directions (label, status,
+  severity, effect), checks that the seven translations carry the same rows,
+  and that the weight tables equal `SURFACE_WEIGHTS` and the core dimensions.
+
+### Knowledge-base import: deep nesting is refused the same way with PyYAML 6.0.4
+
+PyYAML 6.0.4's libyaml refuses deeply nested YAML on its own while scanning
+ahead ("exceeded maximum nesting depth"), before the importer's own count of
+32 levels is reached, so `ekte kb-import --check` reported libyaml's message
+instead of "nested more than 32 levels deep", and differently from the
+pure-Python loader. That refusal is now reported as the importer's own.
+
+### CI tests the locked dependencies; nightly early warning with the latest ones (internal, [#299](https://github.com/mn567250/ekte/issues/299))
+
+- The test, performance budget and accessibility jobs install with
+  `uv sync --locked` instead of `pip install -e`, so a pull request is tested
+  with the versions in `uv.lock`, and CI fails when `uv.lock` is out of date
+  with `pyproject.toml`. Before, pip ignored the lockfile: a Dependabot pull
+  request that did not touch PyYAML failed on PyYAML 6.0.4 while `uv.lock`
+  pinned 6.0.3.
+- A new nightly (and manual) job, "test latest dependencies", runs `ruff`,
+  `mypy` and `pytest` on Python 3.11 and 3.14 with the newest versions
+  `pyproject.toml` allows, as an early warning for upstream releases that
+  break ekte. It lists what is newer than `uv.lock` in its job summary and
+  never runs on pull requests.
+- `uv.lock`: PyYAML 6.0.3 → 6.0.4.
 
 ### Added
 
