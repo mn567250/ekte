@@ -1,12 +1,12 @@
 {
- "generated_at": "2026-11-16T18:08:17+00:00",
+ "generated_at": "2026-11-24T08:05:17+00:00",
  "model": "claude-opus-5-5",
  "advisory": true,
  "note": "LLM review of the texts. The conformance report (python -m tests.a11y.conformance) counts it as the manual part of the steps it covers and names the model.",
  "endpoint": {
   "base_url": "",
   "api": "anthropic",
-  "source": "Claude Code subagent (no API call)"
+  "source": "Claude Code (review of the changed requests; unchanged ones keep their 0.35.0 answers) (no API call)"
  },
  "pages_reviewed": [
   "accessibility",
@@ -108,7 +108,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Changelog",
+      "name": "v0.36.0+dev Changelog",
       "href": "/changelog"
      },
      {
@@ -521,7 +521,7 @@
      "Partially conformant",
      "Of 44 applicable steps, 33 pass, 0 fail, 11 await a manual review and 0 are not tested yet.",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1,337 run, 1,337 passed, 0 failed, 1 skipped",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "/ /history /watches /kb /analytics /accessibility",
@@ -754,7 +754,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Änderungsprotokoll",
+      "name": "v0.36.0+dev Änderungsprotokoll",
       "href": "/changelog"
      },
      {
@@ -1167,7 +1167,7 @@
      "Teilweise vereinbar",
      "Von 44 anwendbaren Schritten sind 33 bestanden, 0 nicht bestanden, 11 warten auf eine manuelle Prüfung und 0 sind noch nicht geprüft.",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1.337 ausgeführt, 1.337 bestanden, 0 fehlgeschlagen, 1 übersprungen",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "Hell, Dunkel",
@@ -1400,7 +1400,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de cambios",
+      "name": "v0.36.0+dev Registro de cambios",
       "href": "/changelog"
      },
      {
@@ -1813,7 +1813,7 @@
      "Parcialmente conforme",
      "De 44 pasos aplicables, 33 se superan, 0 fallan, 11 esperan una revisión manual y 0 aún no se han probado.",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1337 ejecutadas, 1337 superadas, 0 fallidas, 1 omitidas",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "Claro, Oscuro",
@@ -2046,7 +2046,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Journal des modifications",
+      "name": "v0.36.0+dev Journal des modifications",
       "href": "/changelog"
      },
      {
@@ -2459,7 +2459,7 @@
      "Partiellement conforme",
      "Sur 44 étapes applicables, 33 sont réussies, 0 échouent, 11 attendent une revue manuelle et 0 ne sont pas encore testées.",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1 337 exécutés, 1 337 réussis, 0 échoués, 1 ignorés",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "Clair, Sombre",
@@ -2692,7 +2692,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro delle modifiche",
+      "name": "v0.36.0+dev Registro delle modifiche",
       "href": "/changelog"
      },
      {
@@ -3105,7 +3105,7 @@
      "Parzialmente conforme",
      "Dei 44 passi applicabili, 33 sono superati, 0 non superati, 11 attendono una revisione manuale e 0 non sono ancora verificati.",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1337 eseguiti, 1337 superati, 0 falliti, 1 saltati",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "Chiaro, Scuro",
@@ -3338,7 +3338,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Endringslogg",
+      "name": "v0.36.0+dev Endringslogg",
       "href": "/changelog"
      },
      {
@@ -3751,7 +3751,7 @@
      "Delvis i samsvar",
      "Av 44 aktuelle trinn er 33 bestått, 0 ikke bestått, 11 venter på manuell gjennomgang og 0 er ikke testet ennå.",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1 337 kjørt, 1 337 bestått, 0 ikke bestått, 1 hoppet over",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "/ /history /watches /kb /analytics /accessibility",
@@ -3984,7 +3984,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de alterações",
+      "name": "v0.36.0+dev Registro de alterações",
       "href": "/changelog"
      },
      {
@@ -4397,7 +4397,7 @@
      "Parcialmente conforme",
      "Dos 44 passos aplicáveis, 33 são aprovados, 0 falham, 11 aguardam uma revisão manual e 0 ainda não foram testados.",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1337 executados, 1337 aprovados, 0 falhados, 1 ignorados",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "Claro, Escuro",
@@ -4630,7 +4630,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev 更新日志",
+      "name": "v0.36.0+dev 更新日志",
       "href": "/changelog"
      },
      {
@@ -5043,7 +5043,7 @@
      "部分符合",
      "适用的 44 个步骤中：33 个通过，0 个未通过，11 个待人工审核，0 个尚未测试。",
      "<report date>",
-     "700e822f51bb",
+     "c3b3ee3ee8d6",
      "1,337 个已运行，1,337 个通过，0 个失败，1 个跳过",
      "English, Deutsch, Español, Français, Italiano, Norsk, Português, 中文",
      "浅色, 深色",
@@ -5395,14 +5395,14 @@
      },
      {
       "kind": "link",
-      "en": "v0.35.0+dev Changelog",
-      "de": "v0.35.0+dev Änderungsprotokoll",
-      "es": "v0.35.0+dev Registro de cambios",
-      "fr": "v0.35.0+dev Journal des modifications",
-      "it": "v0.35.0+dev Registro delle modifiche",
-      "nb": "v0.35.0+dev Endringslogg",
-      "pt": "v0.35.0+dev Registro de alterações",
-      "zh": "v0.35.0+dev 更新日志"
+      "en": "v0.36.0+dev Changelog",
+      "de": "v0.36.0+dev Änderungsprotokoll",
+      "es": "v0.36.0+dev Registro de cambios",
+      "fr": "v0.36.0+dev Journal des modifications",
+      "it": "v0.36.0+dev Registro delle modifiche",
+      "nb": "v0.36.0+dev Endringslogg",
+      "pt": "v0.36.0+dev Registro de alterações",
+      "zh": "v0.36.0+dev 更新日志"
      },
      {
       "kind": "link",
@@ -6242,14 +6242,14 @@
      },
      {
       "kind": "instruction",
-      "en": "700e822f51bb",
-      "de": "700e822f51bb",
-      "es": "700e822f51bb",
-      "fr": "700e822f51bb",
-      "it": "700e822f51bb",
-      "nb": "700e822f51bb",
-      "pt": "700e822f51bb",
-      "zh": "700e822f51bb"
+      "en": "c3b3ee3ee8d6",
+      "de": "c3b3ee3ee8d6",
+      "es": "c3b3ee3ee8d6",
+      "fr": "c3b3ee3ee8d6",
+      "it": "c3b3ee3ee8d6",
+      "nb": "c3b3ee3ee8d6",
+      "pt": "c3b3ee3ee8d6",
+      "zh": "c3b3ee3ee8d6"
      },
      {
       "kind": "instruction",
@@ -8096,7 +8096,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "en",
-   "request_chars": 6476,
+   "request_chars": 6884,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -8155,7 +8155,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Changelog",
+      "name": "v0.36.0+dev Changelog",
       "href": "/changelog"
      },
      {
@@ -8229,6 +8229,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Scoring version"
+     },
+     {
+      "role": "select",
+      "name": "Audit version"
      },
      {
       "role": "select",
@@ -8338,6 +8346,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "Scoring version",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "Audit version",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "Time block"
      },
@@ -8405,6 +8423,18 @@
       "type": "select"
      },
      {
+      "label": "SCORING VERSION",
+      "name_from": "label",
+      "visible_label": "Scoring version",
+      "type": "select"
+     },
+     {
+      "label": "AUDIT VERSION",
+      "name_from": "label",
+      "visible_label": "Audit version",
+      "type": "select"
+     },
+     {
       "label": "GROUP BY",
       "name_from": "label",
       "visible_label": "Group by",
@@ -8447,7 +8477,7 @@
     "decorative_images": 23,
     "instructions": [
      "Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.",
-     "Oct 18 – Nov 16, 2026, compared with the period of the same length before (Sep 18 – Oct 17, 2026).",
+     "Oct 26 – Nov 24, 2026, compared with the period of the same length before (Sep 26 – Oct 25, 2026).",
      "No runs match these filters in this range.",
      "All local: audits run from your own machine, and your API keys never leave it.",
      "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
@@ -8462,7 +8492,7 @@
      "Billing (completion) no data No data in the previous period Not measured in these runs",
      "Reasoning token share no data No data in the previous period Not measured in these runs",
      "Cached input share no data No data in the previous period Not measured in these runs",
-     "Changes compare with the period of the same length before (Sep 18 – Oct 17, 2026).",
+     "Changes compare with the period of the same length before (Sep 26 – Oct 25, 2026).",
      "“Billing ratio (prompt)” data from 0 of 0 runs.",
      "No data for “Billing ratio (prompt)” in this range.",
      "Medians and pooled rates over the selected range, best median score first; n is the number of runs that measured a value.",
@@ -8479,7 +8509,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "de",
-   "request_chars": 6993,
+   "request_chars": 7401,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -8538,7 +8568,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Änderungsprotokoll",
+      "name": "v0.36.0+dev Änderungsprotokoll",
       "href": "/changelog"
      },
      {
@@ -8612,6 +8642,14 @@
      {
       "role": "select",
       "name": "Überwachung"
+     },
+     {
+      "role": "select",
+      "name": "Bewertungsversion"
+     },
+     {
+      "role": "select",
+      "name": "Prüfversion"
      },
      {
       "role": "select",
@@ -8721,6 +8759,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "Bewertungsversion",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "Prüfversion",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "Zeitblock"
      },
@@ -8788,6 +8836,18 @@
       "type": "select"
      },
      {
+      "label": "BEWERTUNGSVERSION",
+      "name_from": "label",
+      "visible_label": "Bewertungsversion",
+      "type": "select"
+     },
+     {
+      "label": "PRÜFVERSION",
+      "name_from": "label",
+      "visible_label": "Prüfversion",
+      "type": "select"
+     },
+     {
       "label": "GRUPPIEREN NACH",
       "name_from": "label",
       "visible_label": "Gruppieren nach",
@@ -8830,7 +8890,7 @@
     "decorative_images": 23,
     "instructions": [
      "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was ekte auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung.",
-     "18.10. – 16.11.2026, verglichen mit dem gleich langen Zeitraum davor (18.09. – 17.10.2026).",
+     "26.10. – 24.11.2026, verglichen mit dem gleich langen Zeitraum davor (26.09. – 25.10.2026).",
      "Keine Läufe passen in diesem Zeitraum zu diesen Filtern.",
      "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie.",
      "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
@@ -8845,7 +8905,7 @@
      "Abrechnung (Ausgabe) keine Daten Keine Daten im vorigen Zeitraum In diesen Läufen nicht gemessen",
      "Anteil Reasoning-Tokens keine Daten Keine Daten im vorigen Zeitraum In diesen Läufen nicht gemessen",
      "Anteil gecachter Eingabe keine Daten Keine Daten im vorigen Zeitraum In diesen Läufen nicht gemessen",
-     "Änderungen verglichen mit dem gleich langen Zeitraum davor (18.09. – 17.10.2026).",
+     "Änderungen verglichen mit dem gleich langen Zeitraum davor (26.09. – 25.10.2026).",
      "Daten zu „Abrechnungs­verhältnis (Eingabe)“ aus 0 von 0 Läufen.",
      "Keine Daten für „Abrechnungs­verhältnis (Eingabe)“ in diesem Zeitraum.",
      "Mediane und zusammengefasste Quoten im gewählten Zeitraum, bester Median-Score zuerst; n ist die Zahl der Läufe, die einen Wert gemessen haben.",
@@ -8862,7 +8922,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "es",
-   "request_chars": 7090,
+   "request_chars": 7562,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -8921,7 +8981,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de cambios",
+      "name": "v0.36.0+dev Registro de cambios",
       "href": "/changelog"
      },
      {
@@ -8995,6 +9055,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Versión de puntuación"
+     },
+     {
+      "role": "select",
+      "name": "Versión de la auditoría"
      },
      {
       "role": "select",
@@ -9104,6 +9172,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "Versión de puntuación",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "Versión de la auditoría",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "Bloque horario"
      },
@@ -9171,6 +9249,18 @@
       "type": "select"
      },
      {
+      "label": "VERSIÓN DE PUNTUACIÓN",
+      "name_from": "label",
+      "visible_label": "Versión de puntuación",
+      "type": "select"
+     },
+     {
+      "label": "VERSIÓN DE LA AUDITORÍA",
+      "name_from": "label",
+      "visible_label": "Versión de la auditoría",
+      "type": "select"
+     },
+     {
       "label": "AGRUPAR POR",
       "name_from": "label",
       "visible_label": "Agrupar por",
@@ -9213,7 +9303,7 @@
     "decorative_images": 23,
     "instructions": [
      "Compare relays y modelos a lo largo del tiempo con lo que ekte midió en este equipo: puntuaciones, velocidad, tasas de éxito y facturación.",
-     "18 oct – 16 nov 2026, comparado con el periodo de igual duración anterior (18 sept – 17 oct 2026).",
+     "26 oct – 24 nov 2026, comparado con el periodo de igual duración anterior (26 sept – 25 oct 2026).",
      "Ninguna ejecución coincide con estos filtros en este periodo.",
      "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él.",
      "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
@@ -9228,7 +9318,7 @@
      "Facturación (salida) sin datos Sin datos en el periodo anterior No medido en estas ejecuciones",
      "Proporción de tokens de razonamiento sin datos Sin datos en el periodo anterior No medido en estas ejecuciones",
      "Proporción de entrada en caché sin datos Sin datos en el periodo anterior No medido en estas ejecuciones",
-     "Cambios comparados con el periodo de igual duración anterior (18 sept – 17 oct 2026).",
+     "Cambios comparados con el periodo de igual duración anterior (26 sept – 25 oct 2026).",
      "Datos de “Ratio de facturación (entrada)” de 0 de 0 auditorías.",
      "No hay datos de «Ratio de facturación (entrada)» en este periodo.",
      "Medianas y tasas agrupadas en el rango seleccionado, primero la mejor puntuación mediana; n es el número de ejecuciones que midieron un valor.",
@@ -9245,7 +9335,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "fr",
-   "request_chars": 7213,
+   "request_chars": 7661,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -9304,7 +9394,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Journal des modifications",
+      "name": "v0.36.0+dev Journal des modifications",
       "href": "/changelog"
      },
      {
@@ -9378,6 +9468,14 @@
      {
       "role": "select",
       "name": "Surveillance"
+     },
+     {
+      "role": "select",
+      "name": "Version d’évaluation"
+     },
+     {
+      "role": "select",
+      "name": "Version de l’audit"
      },
      {
       "role": "select",
@@ -9487,6 +9585,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "Version d’évaluation",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "Version de l’audit",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "Tranche horaire"
      },
@@ -9554,6 +9662,18 @@
       "type": "select"
      },
      {
+      "label": "VERSION D’ÉVALUATION",
+      "name_from": "label",
+      "visible_label": "Version d’évaluation",
+      "type": "select"
+     },
+     {
+      "label": "VERSION DE L’AUDIT",
+      "name_from": "label",
+      "visible_label": "Version de l’audit",
+      "type": "select"
+     },
+     {
       "label": "GROUPER PAR",
       "name_from": "label",
       "visible_label": "Grouper par",
@@ -9596,7 +9716,7 @@
     "decorative_images": 23,
     "instructions": [
      "Comparez relais et modèles dans le temps avec ce que ekte a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation.",
-     "18 oct. – 16 nov. 2026, comparé à la période de même durée qui précède (18 sept. – 17 oct. 2026).",
+     "26 oct. – 24 nov. 2026, comparé à la période de même durée qui précède (26 sept. – 25 oct. 2026).",
      "Aucune exécution ne correspond à ces filtres sur cette période.",
      "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais.",
      "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
@@ -9611,7 +9731,7 @@
      "Facturation (sortie) aucune donnée Pas de données sur la période précédente Non mesuré dans ces exécutions",
      "Part de jetons de raisonnement aucune donnée Pas de données sur la période précédente Non mesuré dans ces exécutions",
      "Part d'entrée en cache aucune donnée Pas de données sur la période précédente Non mesuré dans ces exécutions",
-     "Évolutions comparées à la période de même durée qui précède (18 sept. – 17 oct. 2026).",
+     "Évolutions comparées à la période de même durée qui précède (26 sept. – 25 oct. 2026).",
      "Données « Ratio de facturation (entrée) » pour 0 audits sur 0.",
      "Aucune donnée pour « Ratio de facturation (entrée) » sur cette période.",
      "Médianes et taux regroupés sur la période choisie, meilleur score médian en premier ; n est le nombre d'exécutions ayant mesuré une valeur.",
@@ -9628,7 +9748,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "it",
-   "request_chars": 7099,
+   "request_chars": 7563,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -9687,7 +9807,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro delle modifiche",
+      "name": "v0.36.0+dev Registro delle modifiche",
       "href": "/changelog"
      },
      {
@@ -9761,6 +9881,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Versione di valutazione"
+     },
+     {
+      "role": "select",
+      "name": "Versione dell’audit"
      },
      {
       "role": "select",
@@ -9870,6 +9998,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "Versione di valutazione",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "Versione dell’audit",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "Fascia oraria"
      },
@@ -9937,6 +10075,18 @@
       "type": "select"
      },
      {
+      "label": "VERSIONE DI VALUTAZIONE",
+      "name_from": "label",
+      "visible_label": "Versione di valutazione",
+      "type": "select"
+     },
+     {
+      "label": "VERSIONE DELL’AUDIT",
+      "name_from": "label",
+      "visible_label": "Versione dell’audit",
+      "type": "select"
+     },
+     {
       "label": "RAGGRUPPA PER",
       "name_from": "label",
       "visible_label": "Raggruppa per",
@@ -9979,7 +10129,7 @@
     "decorative_images": 23,
     "instructions": [
      "Confronta relay e modelli nel tempo con ciò che ekte ha misurato su questa macchina: punteggi, velocità, tassi di successo e fatturazione.",
-     "18 ott – 16 nov 2026, confrontato con il periodo di pari durata precedente (18 set – 17 ott 2026).",
+     "26 ott – 24 nov 2026, confrontato con il periodo di pari durata precedente (26 set – 25 ott 2026).",
      "Nessuna esecuzione corrisponde a questi filtri in questo periodo.",
      "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai.",
      "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
@@ -9994,7 +10144,7 @@
      "Fatturazione (output) nessun dato Nessun dato nel periodo precedente Non misurato in queste esecuzioni",
      "Quota di token di ragionamento nessun dato Nessun dato nel periodo precedente Non misurato in queste esecuzioni",
      "Quota di input in cache nessun dato Nessun dato nel periodo precedente Non misurato in queste esecuzioni",
-     "Variazioni confrontate con il periodo di pari durata precedente (18 set – 17 ott 2026).",
+     "Variazioni confrontate con il periodo di pari durata precedente (26 set – 25 ott 2026).",
      "Dati di “Rapporto di fatturazione (input)” da 0 audit su 0.",
      "Nessun dato per «Rapporto di fatturazione (input)» in questo periodo.",
      "Mediane e tassi aggregati nell'intervallo scelto, prima il punteggio mediano migliore; n è il numero di esecuzioni che hanno misurato un valore.",
@@ -10011,7 +10161,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "nb",
-   "request_chars": 6720,
+   "request_chars": 7148,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -10070,7 +10220,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Endringslogg",
+      "name": "v0.36.0+dev Endringslogg",
       "href": "/changelog"
      },
      {
@@ -10144,6 +10294,14 @@
      {
       "role": "select",
       "name": "Overvåking"
+     },
+     {
+      "role": "select",
+      "name": "Vurderingsversjon"
+     },
+     {
+      "role": "select",
+      "name": "Revisjonsversjon"
      },
      {
       "role": "select",
@@ -10253,6 +10411,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "Vurderingsversjon",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "Revisjonsversjon",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "Tidsblokk"
      },
@@ -10320,6 +10488,18 @@
       "type": "select"
      },
      {
+      "label": "VURDERINGSVERSJON",
+      "name_from": "label",
+      "visible_label": "Vurderingsversjon",
+      "type": "select"
+     },
+     {
+      "label": "REVISJONSVERSJON",
+      "name_from": "label",
+      "visible_label": "Revisjonsversjon",
+      "type": "select"
+     },
+     {
       "label": "GRUPPER ETTER",
       "name_from": "label",
       "visible_label": "Grupper etter",
@@ -10362,7 +10542,7 @@
     "decorative_images": 23,
     "instructions": [
      "Sammenlign releer og modeller over tid med det ekte har målt på denne maskinen: scorer, hastighet, suksessrater og fakturering.",
-     "18. okt.–16. nov. 2026, sammenlignet med like lang periode før (18. sep.–17. okt. 2026).",
+     "26. okt.–24. nov. 2026, sammenlignet med like lang periode før (26. sep.–25. okt. 2026).",
      "Ingen kjøringer passer med disse filtrene i denne perioden.",
      "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri.",
      "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring.",
@@ -10377,7 +10557,7 @@
      "Fakturering (fullføring) ingen data Ingen data i forrige periode Ikke målt i disse kjøringene",
      "Andel resonneringstokens ingen data Ingen data i forrige periode Ikke målt i disse kjøringene",
      "Andel bufret inndata ingen data Ingen data i forrige periode Ikke målt i disse kjøringene",
-     "Endringer sammenlignet med like lang periode før (18. sep.–17. okt. 2026).",
+     "Endringer sammenlignet med like lang periode før (26. sep.–25. okt. 2026).",
      "«Faktureringsforhold (prompt)»-data fra 0 av 0 kjøringer.",
      "Ingen data for «Faktureringsforhold (prompt)» i denne perioden.",
      "Medianer og samlede rater i valgt periode, beste medianpoengsum først; n er antall kjøringer som målte en verdi.",
@@ -10394,7 +10574,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "pt",
-   "request_chars": 6943,
+   "request_chars": 7391,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -10453,7 +10633,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de alterações",
+      "name": "v0.36.0+dev Registro de alterações",
       "href": "/changelog"
      },
      {
@@ -10527,6 +10707,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Versão de avaliação"
+     },
+     {
+      "role": "select",
+      "name": "Versão da auditoria"
      },
      {
       "role": "select",
@@ -10636,6 +10824,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "Versão de avaliação",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "Versão da auditoria",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "Bloco horário"
      },
@@ -10703,6 +10901,18 @@
       "type": "select"
      },
      {
+      "label": "VERSÃO DE AVALIAÇÃO",
+      "name_from": "label",
+      "visible_label": "Versão de avaliação",
+      "type": "select"
+     },
+     {
+      "label": "VERSÃO DA AUDITORIA",
+      "name_from": "label",
+      "visible_label": "Versão da auditoria",
+      "type": "select"
+     },
+     {
       "label": "AGRUPAR POR",
       "name_from": "label",
       "visible_label": "Agrupar por",
@@ -10745,7 +10955,7 @@
     "decorative_images": 23,
     "instructions": [
      "Compare relays e modelos ao longo do tempo com o que o ekte mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação.",
-     "18/10/2026 – 16/11/2026, comparado com o período de igual duração anterior (18/09/2026 – 17/10/2026).",
+     "26/10/2026 – 24/11/2026, comparado com o período de igual duração anterior (26/09/2026 – 25/10/2026).",
      "Nenhuma execução corresponde a estes filtros neste período.",
      "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela.",
      "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
@@ -10760,7 +10970,7 @@
      "Faturação (saída) sem dados Sem dados no período anterior Não medido nestas execuções",
      "Proporção de tokens de raciocínio sem dados Sem dados no período anterior Não medido nestas execuções",
      "Proporção de entrada em cache sem dados Sem dados no período anterior Não medido nestas execuções",
-     "Variações comparadas com o período de igual duração anterior (18/09/2026 – 17/10/2026).",
+     "Variações comparadas com o período de igual duração anterior (26/09/2026 – 25/10/2026).",
      "Dados de “Rácio de faturação (entrada)” de 0 de 0 auditorias.",
      "Sem dados de «Rácio de faturação (entrada)» neste período.",
      "Medianas e taxas agregadas no período selecionado, primeiro a melhor pontuação mediana; n é o número de execuções que mediram um valor.",
@@ -10777,7 +10987,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "zh",
-   "request_chars": 4487,
+   "request_chars": 4815,
    "collection": {
     "states": 11,
     "names": "accessibility-tree"
@@ -10836,7 +11046,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev 更新日志",
+      "name": "v0.36.0+dev 更新日志",
       "href": "/changelog"
      },
      {
@@ -10910,6 +11120,14 @@
      {
       "role": "select",
       "name": "监控"
+     },
+     {
+      "role": "select",
+      "name": "评分版本"
+     },
+     {
+      "role": "select",
+      "name": "检测版本"
      },
      {
       "role": "select",
@@ -11019,6 +11237,16 @@
       "state": "pressed=false"
      },
      {
+      "role": "button",
+      "name": "评分版本",
+      "state": "pressed=false"
+     },
+     {
+      "role": "button",
+      "name": "检测版本",
+      "state": "pressed=false"
+     },
+     {
       "role": "select",
       "name": "时段"
      },
@@ -11086,6 +11314,18 @@
       "type": "select"
      },
      {
+      "label": "评分版本",
+      "name_from": "label",
+      "visible_label": "评分版本",
+      "type": "select"
+     },
+     {
+      "label": "检测版本",
+      "name_from": "label",
+      "visible_label": "检测版本",
+      "type": "select"
+     },
+     {
       "label": "分组",
       "name_from": "label",
       "visible_label": "分组",
@@ -11128,7 +11368,7 @@
     "decorative_images": 23,
     "instructions": [
      "用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。",
-     "2026/10/18 – 2026/11/16，与之前同样长度的一段时间（2026/9/18 – 2026/10/17）对比。",
+     "2026/10/26 – 2026/11/24，与之前同样长度的一段时间（2026/9/26 – 2026/10/25）对比。",
      "此时间范围内没有符合筛选条件的检测。",
      "全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。",
      "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
@@ -11143,7 +11383,7 @@
      "计费比（输出） 无数据 上一周期无数据 这些检测均未测得此项",
      "推理 token 占比 无数据 上一周期无数据 这些检测均未测得此项",
      "缓存输入占比 无数据 上一周期无数据 这些检测均未测得此项",
-     "变化与之前同样长度的一段时间（2026/9/18 – 2026/10/17）对比。",
+     "变化与之前同样长度的一段时间（2026/9/26 – 2026/10/25）对比。",
      "0 / 0 次检测有“计费比（输入）”的数据。",
      "此时间范围内没有“计费比（输入）”的数据。",
      "所选范围内的中位数和汇总比率，中位健康分最高的排在最前；n 为测得该值的检测次数。",
@@ -11160,7 +11400,7 @@
    "page": "analytics",
    "path": "/analytics",
    "lang": "all",
-   "request_chars": 33986,
+   "request_chars": 35269,
    "status": "reviewed",
    "findings": 0,
    "served_by": "claude-opus-5-5",
@@ -11310,14 +11550,14 @@
      },
      {
       "kind": "link",
-      "en": "v0.35.0+dev Changelog",
-      "de": "v0.35.0+dev Änderungsprotokoll",
-      "es": "v0.35.0+dev Registro de cambios",
-      "fr": "v0.35.0+dev Journal des modifications",
-      "it": "v0.35.0+dev Registro delle modifiche",
-      "nb": "v0.35.0+dev Endringslogg",
-      "pt": "v0.35.0+dev Registro de alterações",
-      "zh": "v0.35.0+dev 更新日志"
+      "en": "v0.36.0+dev Changelog",
+      "de": "v0.36.0+dev Änderungsprotokoll",
+      "es": "v0.36.0+dev Registro de cambios",
+      "fr": "v0.36.0+dev Journal des modifications",
+      "it": "v0.36.0+dev Registro delle modifiche",
+      "nb": "v0.36.0+dev Endringslogg",
+      "pt": "v0.36.0+dev Registro de alterações",
+      "zh": "v0.36.0+dev 更新日志"
      },
      {
       "kind": "link",
@@ -11505,6 +11745,28 @@
       "nb": "Overvåking",
       "pt": "Monitor",
       "zh": "监控"
+     },
+     {
+      "kind": "control",
+      "en": "Scoring version",
+      "de": "Bewertungsversion",
+      "es": "Versión de puntuación",
+      "fr": "Version d’évaluation",
+      "it": "Versione di valutazione",
+      "nb": "Vurderingsversjon",
+      "pt": "Versão de avaliação",
+      "zh": "评分版本"
+     },
+     {
+      "kind": "control",
+      "en": "Audit version",
+      "de": "Prüfversion",
+      "es": "Versión de la auditoría",
+      "fr": "Version de l’audit",
+      "it": "Versione dell’audit",
+      "nb": "Revisjonsversjon",
+      "pt": "Versão da auditoria",
+      "zh": "检测版本"
      },
      {
       "kind": "control",
@@ -11728,6 +11990,28 @@
      },
      {
       "kind": "control",
+      "en": "Scoring version",
+      "de": "Bewertungsversion",
+      "es": "Versión de puntuación",
+      "fr": "Version d’évaluation",
+      "it": "Versione di valutazione",
+      "nb": "Vurderingsversjon",
+      "pt": "Versão de avaliação",
+      "zh": "评分版本"
+     },
+     {
+      "kind": "control",
+      "en": "Audit version",
+      "de": "Prüfversion",
+      "es": "Versión de la auditoría",
+      "fr": "Version de l’audit",
+      "it": "Versione dell’audit",
+      "nb": "Revisjonsversjon",
+      "pt": "Versão da auditoria",
+      "zh": "检测版本"
+     },
+     {
+      "kind": "control",
       "en": "Time block",
       "de": "Zeitblock",
       "es": "Bloque horario",
@@ -11860,6 +12144,28 @@
      },
      {
       "kind": "field.label",
+      "en": "SCORING VERSION",
+      "de": "BEWERTUNGSVERSION",
+      "es": "VERSIÓN DE PUNTUACIÓN",
+      "fr": "VERSION D’ÉVALUATION",
+      "it": "VERSIONE DI VALUTAZIONE",
+      "nb": "VURDERINGSVERSJON",
+      "pt": "VERSÃO DE AVALIAÇÃO",
+      "zh": "评分版本"
+     },
+     {
+      "kind": "field.label",
+      "en": "AUDIT VERSION",
+      "de": "PRÜFVERSION",
+      "es": "VERSIÓN DE LA AUDITORÍA",
+      "fr": "VERSION DE L’AUDIT",
+      "it": "VERSIONE DELL’AUDIT",
+      "nb": "REVISJONSVERSJON",
+      "pt": "VERSÃO DA AUDITORIA",
+      "zh": "检测版本"
+     },
+     {
+      "kind": "field.label",
       "en": "GROUP BY",
       "de": "GRUPPIEREN NACH",
       "es": "AGRUPAR POR",
@@ -11937,14 +12243,14 @@
      },
      {
       "kind": "instruction",
-      "en": "Oct 18 – Nov 16, 2026, compared with the period of the same length before (Sep 18 – Oct 17, 2026).",
-      "de": "18.10. – 16.11.2026, verglichen mit dem gleich langen Zeitraum davor (18.09. – 17.10.2026).",
-      "es": "18 oct – 16 nov 2026, comparado con el periodo de igual duración anterior (18 sept – 17 oct 2026).",
-      "fr": "18 oct. – 16 nov. 2026, comparé à la période de même durée qui précède (18 sept. – 17 oct. 2026).",
-      "it": "18 ott – 16 nov 2026, confrontato con il periodo di pari durata precedente (18 set – 17 ott 2026).",
-      "nb": "18. okt.–16. nov. 2026, sammenlignet med like lang periode før (18. sep.–17. okt. 2026).",
-      "pt": "18/10/2026 – 16/11/2026, comparado com o período de igual duração anterior (18/09/2026 – 17/10/2026).",
-      "zh": "2026/10/18 – 2026/11/16，与之前同样长度的一段时间（2026/9/18 – 2026/10/17）对比。"
+      "en": "Oct 26 – Nov 24, 2026, compared with the period of the same length before (Sep 26 – Oct 25, 2026).",
+      "de": "26.10. – 24.11.2026, verglichen mit dem gleich langen Zeitraum davor (26.09. – 25.10.2026).",
+      "es": "26 oct – 24 nov 2026, comparado con el periodo de igual duración anterior (26 sept – 25 oct 2026).",
+      "fr": "26 oct. – 24 nov. 2026, comparé à la période de même durée qui précède (26 sept. – 25 oct. 2026).",
+      "it": "26 ott – 24 nov 2026, confrontato con il periodo di pari durata precedente (26 set – 25 ott 2026).",
+      "nb": "26. okt.–24. nov. 2026, sammenlignet med like lang periode før (26. sep.–25. okt. 2026).",
+      "pt": "26/10/2026 – 24/11/2026, comparado com o período de igual duração anterior (26/09/2026 – 25/10/2026).",
+      "zh": "2026/10/26 – 2026/11/24，与之前同样长度的一段时间（2026/9/26 – 2026/10/25）对比。"
      },
      {
       "kind": "instruction",
@@ -12102,14 +12408,14 @@
      },
      {
       "kind": "instruction",
-      "en": "Changes compare with the period of the same length before (Sep 18 – Oct 17, 2026).",
-      "de": "Änderungen verglichen mit dem gleich langen Zeitraum davor (18.09. – 17.10.2026).",
-      "es": "Cambios comparados con el periodo de igual duración anterior (18 sept – 17 oct 2026).",
-      "fr": "Évolutions comparées à la période de même durée qui précède (18 sept. – 17 oct. 2026).",
-      "it": "Variazioni confrontate con il periodo di pari durata precedente (18 set – 17 ott 2026).",
-      "nb": "Endringer sammenlignet med like lang periode før (18. sep.–17. okt. 2026).",
-      "pt": "Variações comparadas com o período de igual duração anterior (18/09/2026 – 17/10/2026).",
-      "zh": "变化与之前同样长度的一段时间（2026/9/18 – 2026/10/17）对比。"
+      "en": "Changes compare with the period of the same length before (Sep 26 – Oct 25, 2026).",
+      "de": "Änderungen verglichen mit dem gleich langen Zeitraum davor (26.09. – 25.10.2026).",
+      "es": "Cambios comparados con el periodo de igual duración anterior (26 sept – 25 oct 2026).",
+      "fr": "Évolutions comparées à la période de même durée qui précède (26 sept. – 25 oct. 2026).",
+      "it": "Variazioni confrontate con il periodo di pari durata precedente (26 set – 25 ott 2026).",
+      "nb": "Endringer sammenlignet med like lang periode før (26. sep.–25. okt. 2026).",
+      "pt": "Variações comparadas com o período de igual duração anterior (26/09/2026 – 25/10/2026).",
+      "zh": "变化与之前同样长度的一段时间（2026/9/26 – 2026/10/25）对比。"
      },
      {
       "kind": "instruction",
@@ -12227,7 +12533,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Changelog",
+      "name": "v0.36.0+dev Changelog",
       "href": "/changelog"
      },
      {
@@ -12566,7 +12872,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Änderungsprotokoll",
+      "name": "v0.36.0+dev Änderungsprotokoll",
       "href": "/changelog"
      },
      {
@@ -12906,7 +13212,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de cambios",
+      "name": "v0.36.0+dev Registro de cambios",
       "href": "/changelog"
      },
      {
@@ -13245,7 +13551,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Journal des modifications",
+      "name": "v0.36.0+dev Journal des modifications",
       "href": "/changelog"
      },
      {
@@ -13584,7 +13890,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro delle modifiche",
+      "name": "v0.36.0+dev Registro delle modifiche",
       "href": "/changelog"
      },
      {
@@ -13923,7 +14229,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Endringslogg",
+      "name": "v0.36.0+dev Endringslogg",
       "href": "/changelog"
      },
      {
@@ -14262,7 +14568,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de alterações",
+      "name": "v0.36.0+dev Registro de alterações",
       "href": "/changelog"
      },
      {
@@ -14601,7 +14907,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev 更新日志",
+      "name": "v0.36.0+dev 更新日志",
       "href": "/changelog"
      },
      {
@@ -14982,14 +15288,14 @@
      },
      {
       "kind": "link",
-      "en": "v0.35.0+dev Changelog",
-      "de": "v0.35.0+dev Änderungsprotokoll",
-      "es": "v0.35.0+dev Registro de cambios",
-      "fr": "v0.35.0+dev Journal des modifications",
-      "it": "v0.35.0+dev Registro delle modifiche",
-      "nb": "v0.35.0+dev Endringslogg",
-      "pt": "v0.35.0+dev Registro de alterações",
-      "zh": "v0.35.0+dev 更新日志"
+      "en": "v0.36.0+dev Changelog",
+      "de": "v0.36.0+dev Änderungsprotokoll",
+      "es": "v0.36.0+dev Registro de cambios",
+      "fr": "v0.36.0+dev Journal des modifications",
+      "it": "v0.36.0+dev Registro delle modifiche",
+      "nb": "v0.36.0+dev Endringslogg",
+      "pt": "v0.36.0+dev Registro de alterações",
+      "zh": "v0.36.0+dev 更新日志"
      },
      {
       "kind": "link",
@@ -15824,7 +16130,7 @@
    "page": "history",
    "path": "/history",
    "lang": "en",
-   "request_chars": 3467,
+   "request_chars": 3743,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -15851,7 +16157,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Changelog",
+      "name": "v0.36.0+dev Changelog",
       "href": "/changelog"
      },
      {
@@ -15937,6 +16243,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Scoring version"
+     },
+     {
+      "role": "select",
+      "name": "Audit version"
      },
      {
       "role": "button",
@@ -16070,6 +16384,18 @@
       "name_from": "label",
       "visible_label": "Monitor",
       "type": "select"
+     },
+     {
+      "label": "SCORING VERSION",
+      "name_from": "label",
+      "visible_label": "Scoring version",
+      "type": "select"
+     },
+     {
+      "label": "AUDIT VERSION",
+      "name_from": "label",
+      "visible_label": "Audit version",
+      "type": "select"
      }
     ],
     "images": [],
@@ -16088,7 +16414,7 @@
    "page": "history",
    "path": "/history",
    "lang": "de",
-   "request_chars": 3653,
+   "request_chars": 3929,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -16115,7 +16441,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Änderungsprotokoll",
+      "name": "v0.36.0+dev Änderungsprotokoll",
       "href": "/changelog"
      },
      {
@@ -16201,6 +16527,14 @@
      {
       "role": "select",
       "name": "Überwachung"
+     },
+     {
+      "role": "select",
+      "name": "Bewertungsversion"
+     },
+     {
+      "role": "select",
+      "name": "Prüfversion"
      },
      {
       "role": "button",
@@ -16334,6 +16668,18 @@
       "name_from": "label",
       "visible_label": "Überwachung",
       "type": "select"
+     },
+     {
+      "label": "BEWERTUNGSVERSION",
+      "name_from": "label",
+      "visible_label": "Bewertungsversion",
+      "type": "select"
+     },
+     {
+      "label": "PRÜFVERSION",
+      "name_from": "label",
+      "visible_label": "Prüfversion",
+      "type": "select"
      }
     ],
     "images": [],
@@ -16352,7 +16698,7 @@
    "page": "history",
    "path": "/history",
    "lang": "es",
-   "request_chars": 3758,
+   "request_chars": 4082,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -16379,7 +16725,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de cambios",
+      "name": "v0.36.0+dev Registro de cambios",
       "href": "/changelog"
      },
      {
@@ -16465,6 +16811,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Versión de puntuación"
+     },
+     {
+      "role": "select",
+      "name": "Versión de la auditoría"
      },
      {
       "role": "button",
@@ -16598,6 +16952,18 @@
       "name_from": "label",
       "visible_label": "Monitor",
       "type": "select"
+     },
+     {
+      "label": "VERSIÓN DE PUNTUACIÓN",
+      "name_from": "label",
+      "visible_label": "Versión de puntuación",
+      "type": "select"
+     },
+     {
+      "label": "VERSIÓN DE LA AUDITORÍA",
+      "name_from": "label",
+      "visible_label": "Versión de la auditoría",
+      "type": "select"
      }
     ],
     "images": [],
@@ -16616,7 +16982,7 @@
    "page": "history",
    "path": "/history",
    "lang": "fr",
-   "request_chars": 3755,
+   "request_chars": 4061,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -16643,7 +17009,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Journal des modifications",
+      "name": "v0.36.0+dev Journal des modifications",
       "href": "/changelog"
      },
      {
@@ -16729,6 +17095,14 @@
      {
       "role": "select",
       "name": "Surveillance"
+     },
+     {
+      "role": "select",
+      "name": "Version d’évaluation"
+     },
+     {
+      "role": "select",
+      "name": "Version de l’audit"
      },
      {
       "role": "button",
@@ -16862,6 +17236,18 @@
       "name_from": "label",
       "visible_label": "Surveillance",
       "type": "select"
+     },
+     {
+      "label": "VERSION D’ÉVALUATION",
+      "name_from": "label",
+      "visible_label": "Version d’évaluation",
+      "type": "select"
+     },
+     {
+      "label": "VERSION DE L’AUDIT",
+      "name_from": "label",
+      "visible_label": "Version de l’audit",
+      "type": "select"
      }
     ],
     "images": [],
@@ -16880,7 +17266,7 @@
    "page": "history",
    "path": "/history",
    "lang": "it",
-   "request_chars": 3741,
+   "request_chars": 4059,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -16907,7 +17293,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro delle modifiche",
+      "name": "v0.36.0+dev Registro delle modifiche",
       "href": "/changelog"
      },
      {
@@ -16993,6 +17379,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Versione di valutazione"
+     },
+     {
+      "role": "select",
+      "name": "Versione dell’audit"
      },
      {
       "role": "button",
@@ -17126,6 +17520,18 @@
       "name_from": "label",
       "visible_label": "Monitor",
       "type": "select"
+     },
+     {
+      "label": "VERSIONE DI VALUTAZIONE",
+      "name_from": "label",
+      "visible_label": "Versione di valutazione",
+      "type": "select"
+     },
+     {
+      "label": "VERSIONE DELL’AUDIT",
+      "name_from": "label",
+      "visible_label": "Versione dell’audit",
+      "type": "select"
      }
     ],
     "images": [],
@@ -17144,7 +17550,7 @@
    "page": "history",
    "path": "/history",
    "lang": "nb",
-   "request_chars": 3624,
+   "request_chars": 3915,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -17171,7 +17577,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Endringslogg",
+      "name": "v0.36.0+dev Endringslogg",
       "href": "/changelog"
      },
      {
@@ -17257,6 +17663,14 @@
      {
       "role": "select",
       "name": "Overvåking"
+     },
+     {
+      "role": "select",
+      "name": "Vurderingsversjon"
+     },
+     {
+      "role": "select",
+      "name": "Revisjonsversjon"
      },
      {
       "role": "button",
@@ -17390,6 +17804,18 @@
       "name_from": "label",
       "visible_label": "Overvåking",
       "type": "select"
+     },
+     {
+      "label": "VURDERINGSVERSJON",
+      "name_from": "label",
+      "visible_label": "Vurderingsversjon",
+      "type": "select"
+     },
+     {
+      "label": "REVISJONSVERSJON",
+      "name_from": "label",
+      "visible_label": "Revisjonsversjon",
+      "type": "select"
      }
     ],
     "images": [],
@@ -17408,7 +17834,7 @@
    "page": "history",
    "path": "/history",
    "lang": "pt",
-   "request_chars": 3723,
+   "request_chars": 4029,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -17435,7 +17861,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de alterações",
+      "name": "v0.36.0+dev Registro de alterações",
       "href": "/changelog"
      },
      {
@@ -17521,6 +17947,14 @@
      {
       "role": "select",
       "name": "Monitor"
+     },
+     {
+      "role": "select",
+      "name": "Versão de avaliação"
+     },
+     {
+      "role": "select",
+      "name": "Versão da auditoria"
      },
      {
       "role": "button",
@@ -17654,6 +18088,18 @@
       "name_from": "label",
       "visible_label": "Monitor",
       "type": "select"
+     },
+     {
+      "label": "VERSÃO DE AVALIAÇÃO",
+      "name_from": "label",
+      "visible_label": "Versão de avaliação",
+      "type": "select"
+     },
+     {
+      "label": "VERSÃO DA AUDITORIA",
+      "name_from": "label",
+      "visible_label": "Versão da auditoria",
+      "type": "select"
      }
     ],
     "images": [],
@@ -17672,7 +18118,7 @@
    "page": "history",
    "path": "/history",
    "lang": "zh",
-   "request_chars": 2832,
+   "request_chars": 3048,
    "collection": {
     "states": 1,
     "names": "accessibility-tree"
@@ -17699,7 +18145,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev 更新日志",
+      "name": "v0.36.0+dev 更新日志",
       "href": "/changelog"
      },
      {
@@ -17785,6 +18231,14 @@
      {
       "role": "select",
       "name": "监控"
+     },
+     {
+      "role": "select",
+      "name": "评分版本"
+     },
+     {
+      "role": "select",
+      "name": "检测版本"
      },
      {
       "role": "button",
@@ -17918,6 +18372,18 @@
       "name_from": "label",
       "visible_label": "监控",
       "type": "select"
+     },
+     {
+      "label": "评分版本",
+      "name_from": "label",
+      "visible_label": "评分版本",
+      "type": "select"
+     },
+     {
+      "label": "检测版本",
+      "name_from": "label",
+      "visible_label": "检测版本",
+      "type": "select"
      }
     ],
     "images": [],
@@ -17936,7 +18402,7 @@
    "page": "history",
    "path": "/history",
    "lang": "all",
-   "request_chars": 12903,
+   "request_chars": 13761,
    "status": "reviewed",
    "findings": 0,
    "served_by": "claude-opus-5-5",
@@ -17998,14 +18464,14 @@
      },
      {
       "kind": "link",
-      "en": "v0.35.0+dev Changelog",
-      "de": "v0.35.0+dev Änderungsprotokoll",
-      "es": "v0.35.0+dev Registro de cambios",
-      "fr": "v0.35.0+dev Journal des modifications",
-      "it": "v0.35.0+dev Registro delle modifiche",
-      "nb": "v0.35.0+dev Endringslogg",
-      "pt": "v0.35.0+dev Registro de alterações",
-      "zh": "v0.35.0+dev 更新日志"
+      "en": "v0.36.0+dev Changelog",
+      "de": "v0.36.0+dev Änderungsprotokoll",
+      "es": "v0.36.0+dev Registro de cambios",
+      "fr": "v0.36.0+dev Journal des modifications",
+      "it": "v0.36.0+dev Registro delle modifiche",
+      "nb": "v0.36.0+dev Endringslogg",
+      "pt": "v0.36.0+dev Registro de alterações",
+      "zh": "v0.36.0+dev 更新日志"
      },
      {
       "kind": "link",
@@ -18226,6 +18692,28 @@
       "nb": "Overvåking",
       "pt": "Monitor",
       "zh": "监控"
+     },
+     {
+      "kind": "control",
+      "en": "Scoring version",
+      "de": "Bewertungsversion",
+      "es": "Versión de puntuación",
+      "fr": "Version d’évaluation",
+      "it": "Versione di valutazione",
+      "nb": "Vurderingsversjon",
+      "pt": "Versão de avaliação",
+      "zh": "评分版本"
+     },
+     {
+      "kind": "control",
+      "en": "Audit version",
+      "de": "Prüfversion",
+      "es": "Versión de la auditoría",
+      "fr": "Version de l’audit",
+      "it": "Versione dell’audit",
+      "nb": "Revisjonsversjon",
+      "pt": "Versão da auditoria",
+      "zh": "检测版本"
      },
      {
       "kind": "control",
@@ -18514,6 +19002,28 @@
       "zh": "监控"
      },
      {
+      "kind": "field.label",
+      "en": "SCORING VERSION",
+      "de": "BEWERTUNGSVERSION",
+      "es": "VERSIÓN DE PUNTUACIÓN",
+      "fr": "VERSION D’ÉVALUATION",
+      "it": "VERSIONE DI VALUTAZIONE",
+      "nb": "VURDERINGSVERSJON",
+      "pt": "VERSÃO DE AVALIAÇÃO",
+      "zh": "评分版本"
+     },
+     {
+      "kind": "field.label",
+      "en": "AUDIT VERSION",
+      "de": "PRÜFVERSION",
+      "es": "VERSIÓN DE LA AUDITORÍA",
+      "fr": "VERSION DE L’AUDIT",
+      "it": "VERSIONE DELL’AUDIT",
+      "nb": "REVISJONSVERSJON",
+      "pt": "VERSÃO DA AUDITORIA",
+      "zh": "检测版本"
+     },
+     {
       "kind": "instruction",
       "en": "Every verification you have run on this machine. Grouped by \"relay + claimed model\", with a health-score trend line; click any row to expand that report.",
       "de": "Jede Prüfung, die Sie auf diesem Rechner ausgeführt haben, gruppiert nach „Relay + angegebenes Modell“, mit einer Trendlinie des Health-Scores; klicken Sie auf eine Zeile, um den Bericht aufzuklappen.",
@@ -18624,7 +19134,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Changelog",
+      "name": "v0.36.0+dev Changelog",
       "href": "/changelog"
      },
      {
@@ -19188,7 +19698,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Änderungsprotokoll",
+      "name": "v0.36.0+dev Änderungsprotokoll",
       "href": "/changelog"
      },
      {
@@ -19752,7 +20262,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de cambios",
+      "name": "v0.36.0+dev Registro de cambios",
       "href": "/changelog"
      },
      {
@@ -20316,7 +20826,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Journal des modifications",
+      "name": "v0.36.0+dev Journal des modifications",
       "href": "/changelog"
      },
      {
@@ -20880,7 +21390,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro delle modifiche",
+      "name": "v0.36.0+dev Registro delle modifiche",
       "href": "/changelog"
      },
      {
@@ -21444,7 +21954,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Endringslogg",
+      "name": "v0.36.0+dev Endringslogg",
       "href": "/changelog"
      },
      {
@@ -22008,7 +22518,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de alterações",
+      "name": "v0.36.0+dev Registro de alterações",
       "href": "/changelog"
      },
      {
@@ -22572,7 +23082,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev 更新日志",
+      "name": "v0.36.0+dev 更新日志",
       "href": "/changelog"
      },
      {
@@ -23227,14 +23737,14 @@
      },
      {
       "kind": "link",
-      "en": "v0.35.0+dev Changelog",
-      "de": "v0.35.0+dev Änderungsprotokoll",
-      "es": "v0.35.0+dev Registro de cambios",
-      "fr": "v0.35.0+dev Journal des modifications",
-      "it": "v0.35.0+dev Registro delle modifiche",
-      "nb": "v0.35.0+dev Endringslogg",
-      "pt": "v0.35.0+dev Registro de alterações",
-      "zh": "v0.35.0+dev 更新日志"
+      "en": "v0.36.0+dev Changelog",
+      "de": "v0.36.0+dev Änderungsprotokoll",
+      "es": "v0.36.0+dev Registro de cambios",
+      "fr": "v0.36.0+dev Journal des modifications",
+      "it": "v0.36.0+dev Registro delle modifiche",
+      "nb": "v0.36.0+dev Endringslogg",
+      "pt": "v0.36.0+dev Registro de alterações",
+      "zh": "v0.36.0+dev 更新日志"
      },
      {
       "kind": "link",
@@ -27100,7 +27610,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Changelog",
+      "name": "v0.36.0+dev Changelog",
       "href": "/changelog"
      },
      {
@@ -27459,7 +27969,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Änderungsprotokoll",
+      "name": "v0.36.0+dev Änderungsprotokoll",
       "href": "/changelog"
      },
      {
@@ -27818,7 +28328,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de cambios",
+      "name": "v0.36.0+dev Registro de cambios",
       "href": "/changelog"
      },
      {
@@ -28177,7 +28687,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Journal des modifications",
+      "name": "v0.36.0+dev Journal des modifications",
       "href": "/changelog"
      },
      {
@@ -28536,7 +29046,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro delle modifiche",
+      "name": "v0.36.0+dev Registro delle modifiche",
       "href": "/changelog"
      },
      {
@@ -28895,7 +29405,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Endringslogg",
+      "name": "v0.36.0+dev Endringslogg",
       "href": "/changelog"
      },
      {
@@ -29254,7 +29764,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev Registro de alterações",
+      "name": "v0.36.0+dev Registro de alterações",
       "href": "/changelog"
      },
      {
@@ -29613,7 +30123,7 @@
       "href": "/"
      },
      {
-      "name": "v0.35.0+dev 更新日志",
+      "name": "v0.36.0+dev 更新日志",
       "href": "/changelog"
      },
      {
@@ -30028,14 +30538,14 @@
      },
      {
       "kind": "link",
-      "en": "v0.35.0+dev Changelog",
-      "de": "v0.35.0+dev Änderungsprotokoll",
-      "es": "v0.35.0+dev Registro de cambios",
-      "fr": "v0.35.0+dev Journal des modifications",
-      "it": "v0.35.0+dev Registro delle modifiche",
-      "nb": "v0.35.0+dev Endringslogg",
-      "pt": "v0.35.0+dev Registro de alterações",
-      "zh": "v0.35.0+dev 更新日志"
+      "en": "v0.36.0+dev Changelog",
+      "de": "v0.36.0+dev Änderungsprotokoll",
+      "es": "v0.36.0+dev Registro de cambios",
+      "fr": "v0.36.0+dev Journal des modifications",
+      "it": "v0.36.0+dev Registro delle modifiche",
+      "nb": "v0.36.0+dev Endringslogg",
+      "pt": "v0.36.0+dev Registro de alterações",
+      "zh": "v0.36.0+dev 更新日志"
      },
      {
       "kind": "link",
