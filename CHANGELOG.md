@@ -20,6 +20,18 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Added
+
+- **Upgrade fixture for 0.36.0** ([#311](https://github.com/mn567250/ekte/issues/311)).
+  `tests/fixtures/upgrade/v0.36.0/` is a data directory written by the
+  released 0.36.0 from PyPI (`history.db` schema 18). Besides history,
+  monitors with stored and unstored keys and your own knowledge-base entries,
+  it holds a run re-scored in place (audited by 0.35.0, with its verdict
+  before the re-score) and a run whose re-score was refused, with its reason
+  in `history_rescore`. The upgrade tests open it with the current code and
+  check that the re-score data survives. `scripts/make_upgrade_fixture.py`
+  writes these two runs for 0.36.0 and later.
+
 ## [0.36.0] - 2026-11-24
 
 ekte's verdicts are stricter and harder to fool. An audit review of the
