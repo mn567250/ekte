@@ -20,6 +20,7 @@
   "this evidence file names no target": "este arquivo de evidências não indica nenhum alvo",
   "the evidence file cannot be read": "não é possível ler o arquivo de evidências",
   "this evidence file has a schema version this ekte cannot read; update ekte": "este arquivo de evidências tem uma versão de esquema que este ekte não consegue ler; atualize o ekte",
-  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "a execução gravada não tem resposta às solicitações que as verificações desta versão do ekte enviam, então uma nova pontuação ficaria sem pontuação; execute uma nova auditoria para pontuá-la"
+  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "a execução gravada não tem resposta às solicitações que as verificações desta versão do ekte enviam, então uma nova pontuação ficaria sem pontuação; execute uma nova auditoria para pontuá-la",
+  "the recorded run has too few answers to the requests this ekte's checks send, so a re-score would have no grade; run a new audit to grade it": "a execução gravada tem poucas respostas às solicitações que as verificações desta versão do ekte enviam, então uma nova pontuação ficaria sem nota; execute uma nova auditoria para atribuir uma nota"
  }
 }

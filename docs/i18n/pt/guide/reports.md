@@ -75,7 +75,9 @@ avaliadas por outra versão do ekte, substitui cada uma e mostra o veredito
 antes e depois. Uma execução sem um ficheiro de evidências utilizável não é
 reavaliada: mantém o veredito e é ignorada com o motivo. O mesmo acontece a uma
 execução cuja reavaliação não teria pontuação nenhuma (nenhuma das suas
-verificações tem uma resposta gravada, como numa execução anterior a elas);
+verificações tem uma resposta gravada, como numa execução anterior a elas), ou a
+uma execução com nota cuja reavaliação ficaria sem nota (poucas das suas
+verificações têm uma resposta gravada);
 `ekte rescore ID` não guarda essa reavaliação. O `ekte serve` faz o
 mesmo em segundo plano no primeiro arranque após uma atualização (ver
 [Interface web](web-ui.md)).

@@ -59,6 +59,27 @@ ekte has three eras:
   its recorded answers again, and the re-scored report's
   `dimensions_selected` names `integrity`.
 
+### Re-score: a graded run that would lose its grade keeps its verdict ([#312](https://github.com/mn567250/ekte/issues/312))
+
+- A run saved by an older ekte has no recorded answers for the checks added or
+  changed since. In a standard, deep or full run, those checks read
+  inconclusive on a re-score, the coverage fell below 50% and the coverage
+  limit ([#249](https://github.com/mn567250/ekte/issues/249)) removed the
+  grade. The re-score still replaced the run. In the upgrade test, a 0.35.0
+  standard run went from "Deviations found, 77.6, grade C" to "Insufficient
+  signal, 95.3, no grade", and the automatic re-score after an upgrade did
+  this to every such run.
+- A re-score that would leave a graded run without a grade is now handled like
+  one without a score (#304): it is not stored, the run keeps its report, and
+  the reason ("the recorded run has too few answers to the requests this
+  ekte's checks send, so a re-score would have no grade; run a new audit to
+  grade it", translated in the web UI) is recorded and shown with it. The
+  same paths apply: bulk re-scores count it as skipped, a single re-score ends
+  refused, and `ekte rescore ID` exits with code 2 (`--no-save` still prints
+  it).
+- Still stored: a re-score whose grade is only capped (coverage from 50% to
+  80%), and the re-score of a run that had no grade before.
+
 ### Re-score: a run that would have no score keeps its verdict ([#304](https://github.com/mn567250/ekte/issues/304))
 
 - When none of a run's checks had recorded answers for the requests this ekte

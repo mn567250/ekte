@@ -94,7 +94,8 @@ den og hvilken som vurderte den. **Vurder alle på nytt med denne versjonen**
 (under listen) gjør dette, én etter én, for hver kjøring en annen ekte-versjon
 har vurdert. En kjøring uten brukbar bevisfil vurderes ikke på nytt: den
 beholder vurderingen sin, og det samme gjør en kjøring der en ny vurdering ikke
-ville fått noen poengsum (ingen av kontrollene har et registrert svar);
+ville fått noen poengsum (ingen av kontrollene har et registrert svar) eller, for
+en kjøring med karakter, ingen karakter (for få av kontrollene har et);
 kjøringen viser hvorfor. Ved første oppstart etter en oppgradering vurderer
 `ekte serve` kjøringene en eldre versjon har vurdert på nytt i bakgrunnen
 (`EKTE_AUTO_RESCORE=0` slår det av); et varsel over listen viser hvor langt

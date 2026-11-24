@@ -74,7 +74,9 @@ en annen ekte-versjon har vurdert, erstatter hver av dem og viser vurderingen
 før og etter. En kjøring uten brukbar bevisfil vurderes ikke på nytt: den
 beholder vurderingen sin og hoppes over med begrunnelse. Det samme gjelder en
 kjøring der en ny vurdering ikke ville fått noen poengsum (ingen av kontrollene
-har et registrert svar, som for en kjøring fra før de fantes); `ekte rescore ID`
+har et registrert svar, som for en kjøring fra før de fantes), eller en kjøring
+med karakter der en ny vurdering ikke ville fått noen karakter (for få av
+kontrollene har et registrert svar); `ekte rescore ID`
 lagrer ikke en slik ny vurdering. `ekte serve` gjør det
 samme i bakgrunnen ved første oppstart etter en oppgradering (se
 [Nettgrensesnitt](web-ui.md)).

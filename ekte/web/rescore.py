@@ -7,9 +7,11 @@ evidence file. A run without a usable evidence file is never re-scored: it
 keeps its verdict, and a bulk re-score records the reason
 (:func:`ekte.replay.refusal`) with it (:func:`ekte.web.history.record_refusal`).
 A re-score that ends without an overall score (every check lacked recorded
-answers) is not stored either (:func:`require_score`, #304): the run keeps
-its verdict and the reason (:data:`ekte.replay.NO_SCORE`) is recorded the
-same way; a job ends refused with it, and a bulk re-score counts it skipped.
+answers, #304), or without a grade for a run that had one (too few checks had
+recorded answers, #312), is not stored either (:func:`require_verdict`): the
+run keeps its verdict and the reason (:data:`ekte.replay.NO_SCORE`,
+:data:`ekte.replay.NO_RATING`) is recorded the same way; a job ends refused
+with it, and a bulk re-score counts it skipped.
 
 Monitors follow the latest scoring. When the re-scored run is its monitor's
 last run (``last_report_id``), the monitor card's ``last_risk`` /
@@ -166,18 +168,40 @@ async def store(rid: int, old: dict[str, Any], new: dict[str, Any]) -> int:
     return rid
 
 
-def require_score(rid: int, new: dict[str, Any], version: str = __version__) -> None:
-    """Refuse to store re-score ``new`` of run ``rid`` when it has no overall
-    score (every check lacked recorded answers, #304): the run keeps its
-    verdict, and the reason is recorded with it (blocking)."""
+def _rating(report: dict[str, Any] | None) -> str | None:
+    rating = ((report or {}).get("verdict") or {}).get("rating")
+    return rating if isinstance(rating, str) and rating else None
+
+
+def unstored(old: dict[str, Any] | None, new: dict[str, Any]) -> str | None:
+    """Why re-score ``new`` of a run whose report was ``old`` must not replace
+    it, or None when it may: it has no overall score (every check lacked
+    recorded answers, #304), or the run had a grade and the re-score has none
+    (too few checks had recorded answers to grade it, #312). A run that had
+    no grade before may be re-scored without one."""
     from ekte import replay
+
+    if _verdict(new)[1] is None:
+        return replay.NO_SCORE
+    if _rating(old) is not None and _rating(new) is None:
+        return replay.NO_RATING
+    return None
+
+
+def require_verdict(
+    rid: int, old: dict[str, Any] | None, new: dict[str, Any], version: str = __version__
+) -> None:
+    """Refuse to store re-score ``new`` of run ``rid`` (whose report was
+    ``old``) when it would lose the run's score or grade (:func:`unstored`):
+    the run keeps its verdict, and the reason is recorded with it (blocking)."""
     from ekte.web import history
 
-    if _verdict(new)[1] is not None:
+    reason = unstored(old, new)
+    if reason is None:
         return
-    history.record_refusal(rid, version, replay.NO_SCORE)
-    _log.warning("re-score of run %s not stored: %s", rid, replay.NO_SCORE)
-    raise Refused(replay.NO_SCORE)
+    history.record_refusal(rid, version, reason)
+    _log.warning("re-score of run %s not stored: %s", rid, reason)
+    raise Refused(reason)
 
 
 def log_missing(rid: int, new: Any) -> None:
@@ -200,7 +224,7 @@ async def rescore_run(rid: int, *, on_event: Any = None) -> tuple[dict[str, Any]
         raise Refused(reason or NOT_FOUND)
     out = await replay.rescore(old, path, report_id=rid, on_event=on_event)
     new = json.loads(out.model_dump_json())
-    await asyncio.to_thread(require_score, rid, new)
+    await asyncio.to_thread(require_verdict, rid, old, new)
     log_missing(rid, out)
     await store(rid, old, new)
     return old, new
@@ -244,7 +268,7 @@ def submit_job(rid: int, report: dict[str, Any], path: Path, *, replace: bool = 
     async def run(emit: jobs.Emit) -> dict[str, Any]:
         out = await replay.rescore(report, path, report_id=rid, on_event=emit)
         new = json.loads(out.model_dump_json())
-        await asyncio.to_thread(require_score, rid, new)  # the job ends refused
+        await asyncio.to_thread(require_verdict, rid, report, new)  # the job ends refused
         log_missing(rid, out)
         return new
 

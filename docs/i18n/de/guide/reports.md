@@ -77,7 +77,9 @@ vorher und nachher. Ein Lauf ohne verwendbare Belegdatei wird nicht neu
 bewertet: Er behält sein Urteil und wird mit Begründung übersprungen.
 Ebenso ein Lauf, dessen Neubewertung gar keine Punktzahl hätte (keine seiner
 Prüfungen hat eine aufgezeichnete Antwort, etwa bei einem Lauf von vor diesen
-Prüfungen); `ekte rescore ID` speichert eine solche Neubewertung nicht.
+Prüfungen), oder ein benoteter Lauf, dessen Neubewertung keine Note hätte (zu
+wenige seiner Prüfungen haben eine aufgezeichnete Antwort); `ekte rescore ID`
+speichert eine solche Neubewertung nicht.
 `ekte serve` tut dasselbe beim ersten Start nach einem Update im Hintergrund
 (siehe [Web-Oberfläche](web-ui.md)).
 

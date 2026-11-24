@@ -20,6 +20,7 @@
   "this evidence file names no target": "这个证据文件没有指明检测目标",
   "the evidence file cannot be read": "无法读取证据文件",
   "this evidence file has a schema version this ekte cannot read; update ekte": "这个证据文件的格式版本超出当前 ekte 的支持范围，请更新 ekte",
-  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "录制的运行中没有本版本 ekte 检查所发请求的应答，重新评分将没有分数；请运行新的审计来评分"
+  "the recorded run has no answer to the requests this ekte's checks send, so a re-score would have no score; run a new audit to score it": "录制的运行中没有本版本 ekte 检查所发请求的应答，重新评分将没有分数；请运行新的审计来评分",
+  "the recorded run has too few answers to the requests this ekte's checks send, so a re-score would have no grade; run a new audit to grade it": "录制的运行中对本版本 ekte 检查所发请求的应答太少，重新评分将没有评级；请运行新的审计来评级"
  }
 }
